@@ -32,7 +32,15 @@ function comoMatriculado(turma: string, e: Entrada): Matriculado {
   return { turma, login: e.login, nomeCompleto: e.completo, nome: e.nome, papel: e.papel }
 }
 
-export function TelaVinculo() {
+export function TelaVinculo({
+  turmaInicial,
+  aoMudarBase,
+}: {
+  turmaInicial?: string
+  /** Chamado depois de gravar, não ao ouvir o crachá: quem conta pendências
+      precisa contar sobre a base já escrita, e não competir com a escrita. */
+  aoMudarBase?: () => void
+} = {}) {
   const { leitor, repositorio, config } = useAdsum()
 
   const [turma, setTurma] = useState('')
@@ -91,6 +99,13 @@ export function TelaVinculo() {
     [repositorio],
   )
 
+  // Abre sozinho a turma que tem crachá faltando. Perguntar "qual turma?"
+  // quando só existe uma resposta é o app terceirizando uma decisão que ele
+  // já tomou.
+  useEffect(() => {
+    if (turmaInicial && fila.length === 0) void abrirTurma(turmaInicial)
+  }, [turmaInicial, fila.length, abrirTurma])
+
   const interpretar = useCallback(async () => {
     if (!turma.trim()) {
       setRecado({ tom: 'grave', texto: 'Dê um nome à turma antes — a lista é guardada por turma.' })
@@ -148,7 +163,8 @@ export function TelaVinculo() {
     )
     setTurmasSalvas(await repositorio.listarTurmas())
     setRecado({ tom: 'ok', texto: `Turma ${turma.trim()} guardada com ${fila.length} pessoas.` })
-  }, [repositorio, turma, fila])
+    aoMudarBase?.()
+  }, [repositorio, turma, fila, aoMudarBase])
 
   const proximoPendente = useCallback(
     (apartirDe: number) => {
@@ -204,9 +220,10 @@ export function TelaVinculo() {
         )
         setRecado({ tom: 'ok', texto: `${entrada.nome} vinculado.` })
         setArmado(proximoPendente(armado + 1))
+        aoMudarBase?.()
       })()
     })
-  }, [leitor, armado, fila, repositorio, config.salHex, proximoPendente])
+  }, [leitor, armado, fila, repositorio, config.salHex, proximoPendente, aoMudarBase])
 
   const feitos = useMemo(() => fila.filter((e) => e.estado === 'feito').length, [fila])
   const pendentes = useMemo(() => fila.filter((e) => e.estado === 'pendente').length, [fila])
@@ -362,7 +379,8 @@ export function TelaVinculo() {
           <>
             <Linha rotulo="turma">{turma}</Linha>
             <Linha rotulo="progresso">
-              {feitos} de {fila.length} com crachá · {pendentes} pendentes
+              {feitos} de {fila.length} com crachá
+              {pendentes > 0 && ` · ${pendentes} ${pendentes === 1 ? 'pendente' : 'pendentes'}`}
             </Linha>
             <table className="tabela">
               <thead>

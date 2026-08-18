@@ -378,34 +378,6 @@ button:focus-visible {
   font-size: var(--t12);
 }
 
-/* Abas */
-
-.abas {
-  display: flex;
-  gap: 4px;
-  margin-top: 14px;
-}
-
-.aba {
-  font-size: var(--t15);
-  padding: 5px 14px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  color: var(--tinta-fraca);
-}
-
-.aba:hover {
-  color: var(--tinta);
-  border-color: var(--linha);
-}
-
-.aba--ativa,
-.aba--ativa:hover {
-  color: var(--acento);
-  border-color: color-mix(in srgb, var(--acento) 45%, transparent);
-  background: color-mix(in srgb, var(--acento) 8%, transparent);
-}
-
 /* Escolha entre adaptadores */
 
 .escolhas {
@@ -679,4 +651,137 @@ textarea:focus-visible {
 .ilu-marca {
   fill: var(--acento);
   font: 8px system-ui, sans-serif;
+}
+
+
+/* Repouso — a tela que fica ligada na mesa.
+   Uma coisa grande, o resto quase invisível. Se duas coisas competem por
+   atenção, uma delas está na tela errada. */
+
+.repouso {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.repouso__turma {
+  margin: 0;
+  font-size: var(--t15);
+  color: var(--tinta-fraca);
+}
+
+.repouso__acao {
+  margin: 0;
+  font-size: clamp(34px, 7vw, 58px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--tinta);
+}
+
+.repouso__link {
+  margin-top: 20px;
+  border-color: transparent;
+  color: var(--tinta-fraca);
+}
+
+.repouso__link:hover {
+  color: var(--acento);
+  border-color: color-mix(in srgb, var(--acento) 40%, transparent);
+}
+
+/* Selos de estado — quietos quando está tudo bem. */
+
+.selos {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 40px;
+  padding-top: 16px;
+}
+
+.selo-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-color: transparent;
+  color: var(--tinta-fraca);
+  font-size: var(--t12);
+}
+
+.selo-status:hover {
+  border-color: var(--linha);
+  color: var(--tinta);
+}
+
+.ponto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tinta-fraca);
+}
+
+.ponto--ok {
+  background: var(--acento);
+}
+.ponto--alerta {
+  background: var(--alerta);
+}
+
+/* Folhas — profundidade por sobreposição, não por borda. */
+
+.folha__fundo {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 55%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 10;
+}
+
+.folha {
+  width: min(940px, 100%);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fundo);
+  border: 1px solid var(--linha);
+  border-radius: 18px 18px 0 0;
+  animation: subir 240ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes subir {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .folha {
+    animation: none;
+  }
+}
+
+.folha__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--linha);
+}
+
+.folha__topo h2 {
+  margin: 0;
+  font-size: var(--t20);
+  font-weight: 600;
+}
+
+.folha__corpo {
+  overflow-y: auto;
+  padding: 18px 20px 28px;
 }

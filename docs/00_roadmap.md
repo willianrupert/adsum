@@ -128,7 +128,10 @@ O nome continua não trafegando: sai `uid_hash`, a planilha resolve.
 
 Não implementado. Registro para a próxima sessão não recomeçar do zero.
 
-**Princípio: a rota é o estado.** Não há abas. A tela decorre do que existe na
+**Princípio: a rota é o estado.** Não há abas. *(Implementado em
+`nucleo/rota.ts` e `ui/Fluxo.tsx`; a coleta ainda falta.)*
+
+Não há abas. A tela decorre do que existe na
 pasta e da hora. Seis estados, um de cada vez:
 
 1. sem pasta → *escolha onde guardar* (única ação da tela)

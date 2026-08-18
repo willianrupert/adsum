@@ -314,7 +314,11 @@ Inventário para decidir o que fica:
 com `registros/<turma>.csv`, nas colunas de `docs/02_formato.md`. E `;` + BOM
 **ficam** — nunca foram do firmware, são do Excel em português.
 
-**Ainda a fazer:** a rota única (`docs/00`) e a pasta como dona (`docs/01`).
+**Rota única feita:** `nucleo/rota.ts` decide a tela a partir do estado, e
+`ui/Fluxo.tsx` a monta. Diagnóstico e Repositório viraram folhas, atrás de dois
+selos discretos. Falta a tela de coleta, que é o estado que ainda não existe.
+
+**Ainda a fazer:** a coleta e a pasta como dona (`docs/01`).
 
 **Vale por si, independente de hardware:**
 - ler só o UID público, nunca Crypto1 — é legitimidade, não limitação técnica
