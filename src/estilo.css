@@ -39,7 +39,9 @@ code {
   font-family: var(--mono);
   font-size: 0.92em;
   color: var(--tinta-fraca);
-  word-break: break-all;
+  /* Quebra no meio da palavra só quando não houver alternativa. Com
+     `break-all`, "docente" no meio de uma frase virava "doc / ente". */
+  overflow-wrap: anywhere;
 }
 
 .app {
