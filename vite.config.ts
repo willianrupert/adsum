@@ -16,7 +16,7 @@ export default defineConfig(({ command, isPreview }) => ({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      injectRegister: null,
       includeAssets: ['icone.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Adsum — frequência por crachá',

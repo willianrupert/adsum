@@ -19,8 +19,8 @@ export type Rota =
   | 'turma'
   /** Há gente sem crachá: a tela é a cerimônia. */
   | 'cerimonia'
-  /** Aula aberta: a tela é a coleta, e só ela. */
-  | 'coleta'
+  /** Aula aberta: a tela é a aula — chamada e cadastro na mesma coisa. */
+  | 'aula'
   /** Tudo vinculado: a tela é a espera do próximo crachá. */
   | 'pronto'
 
@@ -34,6 +34,8 @@ export interface EstadoDoApp {
   turmas: number
   pendentes: number
   aulaAberta: boolean
+  /** Nenhum professor tem crachá ainda. É o único caso que exige cerimônia. */
+  professorSemCracha: boolean
 }
 
 export function decidirRota(estado: EstadoDoApp): Rota {
@@ -46,9 +48,11 @@ export function decidirRota(estado: EstadoDoApp): Rota {
 
   if (estado.turmas === 0) return 'turma'
   if (!estado.lendo) return 'problema'
-  // A aula acontecendo vence a cerimônia: quem chegou depois se cadastra
-  // depois, mas a fila na porta não espera ninguém.
-  if (estado.aulaAberta) return 'coleta'
-  if (estado.pendentes > 0) return 'cerimonia'
+  if (estado.aulaAberta) return 'aula'
+
+  // A cerimônia sobrou para uma coisa só: dar o primeiro crachá ao professor.
+  // Sem ele a aula não abre, e é dentro da aula que todo o resto se cadastra —
+  // quem encosta para se cadastrar já está presente.
+  if (estado.professorSemCracha) return 'cerimonia'
   return 'pronto'
 }

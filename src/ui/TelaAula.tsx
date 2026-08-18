@@ -1,4 +1,4 @@
-// A aula acontecendo.
+// A aula acontecendo — e o cadastro junto.
 //
 // **Uma tela só durante a coleta.** Estados viram valores e cores dentro dela,
 // nunca telas diferentes: com fila, uma confirmação de dois segundos seria
@@ -13,7 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import { decidir, eventoDe, proximoEventoId, type Decisao, type Sessao } from '../nucleo/sessao.ts'
-import type { Evento } from '../nucleo/tipos.ts'
+import type { Evento, Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { useAdsum } from './adsum.ts'
@@ -29,12 +29,15 @@ function hhmm(d: Date) {
   return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
-export function TelaColeta({
+export function TelaAula({
   sessao,
+  pendentes,
   aoMudarBase,
   aoRegistrar,
 }: {
   sessao: Sessao
+  /** Quem está na turma e ainda não tem crachá. Vira a fila de cadastro. */
+  pendentes: Matriculado[]
   aoMudarBase: () => void
   /** Grava a linha na pasta. Acontece antes do bipe: som é "está salvo". */
   aoRegistrar?: (evento: Evento) => Promise<void>
@@ -45,8 +48,24 @@ export function TelaColeta({
   const [linhas, setLinhas] = useState<Linha[]>([])
   const [recado, setRecado] = useState<string>()
   const [destaque, setDestaque] = useState<{ nome: string; tom: Linha['tom'] }>()
+  const [armado, setArmado] = useState(0)
   const sequencia = useRef(0)
   const relogioDoDestaque = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const aCadastrar = pendentes[Math.min(armado, Math.max(0, pendentes.length - 1))]
+
+  // Setas andam pela fila de cadastro. Quem opera está com a mão no teclado e
+  // um aluno na frente.
+  useEffect(() => {
+    if (pendentes.length === 0) return
+    const andar = (evento: KeyboardEvent) => {
+      if (evento.key !== 'ArrowRight' && evento.key !== 'ArrowLeft') return
+      setArmado((i) => Math.min(pendentes.length - 1, Math.max(0, i + (evento.key === 'ArrowRight' ? 1 : -1))))
+      evento.preventDefault()
+    }
+    window.addEventListener('keydown', andar)
+    return () => window.removeEventListener('keydown', andar)
+  }, [pendentes.length])
 
   // Reabrir o app no meio da aula tem que reencontrar quem já passou. A fonte
   // é o log, não a memória da tela — fechar o notebook não pode zerar a chamada.
@@ -84,9 +103,23 @@ export function TelaColeta({
         const decisao = decidir(uidHash, {
           sessao,
           vinculo,
+          armado: aCadastrar,
           jaPresentes: presentes,
           agora: leitura.em,
         })
+
+        // Cadastro grava o vínculo antes do evento: se algo falhar no meio,
+        // sobra um crachá vinculado sem presença — que se resolve encostando de
+        // novo — e não uma presença de alguém que o sistema não reconhece.
+        if (decisao.tipo === 'cadastro') {
+          await repositorio.gravarVinculo({
+            uidHash,
+            papel: decisao.pessoa.papel,
+            nome: decisao.pessoa.nome,
+            matricula: decisao.pessoa.matricula || undefined,
+            criadoEm: leitura.em.toISOString(),
+          })
+        }
 
         const evento = eventoDe(decisao, {
           eventoId: proximoEventoId(config.aparelhoId, leitura.em, ++sequencia.current),
@@ -107,7 +140,7 @@ export function TelaColeta({
         aoMudarBase()
       })()
     })
-  }, [leitor, repositorio, config, sessao, presentes, recarregar, aoMudarBase, aoRegistrar])
+  }, [leitor, repositorio, config, sessao, presentes, recarregar, aoMudarBase, aoRegistrar, aCadastrar])
 
   /**
    * O nome ocupa o lugar do contador por um instante e volta.
@@ -131,6 +164,11 @@ export function TelaColeta({
       case 'presenca':
         tocar('ok')
         destacar(decisao.vinculo.nome, 'ok')
+        setRecado(undefined)
+        break
+      case 'cadastro':
+        tocar('ok')
+        destacar(decisao.pessoa.nome, 'ok')
         setRecado(undefined)
         break
       case 'repetido':
@@ -200,6 +238,29 @@ export function TelaColeta({
           ))}
         </ol>
       </div>
+
+      {aCadastrar && (
+        <section className="fila">
+          <p className="fila__rotulo">
+            {pendentes.length === 1
+              ? 'falta o crachá de'
+              : `faltam ${pendentes.length} crachás · agora é o de`}
+          </p>
+          <p className="fila__nome">{aCadastrar.nome}</p>
+          <div className="fila__acoes">
+            <button onClick={() => setArmado((i) => Math.max(0, i - 1))} aria-label="anterior">
+              ←
+            </button>
+            <span className="fila__completo">{aCadastrar.nomeCompleto}</span>
+            <button
+              onClick={() => setArmado((i) => Math.min(pendentes.length - 1, i + 1))}
+              aria-label="próximo"
+            >
+              →
+            </button>
+          </div>
+        </section>
+      )}
 
       <footer className="coleta__rodape">
         {recado ?? 'Encoste seu crachá para encerrar'}

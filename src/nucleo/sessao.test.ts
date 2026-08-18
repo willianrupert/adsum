@@ -116,3 +116,46 @@ describe('linhas do log', () => {
     expect(proximoEventoId('web-a1b2', AGORA, 7)).toBe('web-a1b2-20260818-0007')
   })
 })
+
+describe('cadastro e chamada são a mesma coisa', () => {
+  const PESSOA = {
+    turma: 'IF685 · T01',
+    chave: '20250001',
+    matricula: '20250001',
+    nomeCompleto: 'CARLA REGINA DO NASCIMENTO',
+    nome: 'Carla Regina',
+    papel: 'aluno' as const,
+  }
+
+  // Quem encosta o crachá para se cadastrar já está presente naquela aula.
+  // Separar as duas obrigaria a turma a passar duas vezes.
+  it('crachá novo com nome armado cadastra e conta presença', () => {
+    const decisao = decidir('novo', ctx({ sessao: SESSAO, armado: PESSOA }))
+    expect(decisao).toEqual({ tipo: 'cadastro', pessoa: PESSOA })
+
+    const evento = eventoDe(decisao, {
+      eventoId: 'web-a1b2-20260818-0009',
+      quando: AGORA,
+      turma: 'IF685 · T01',
+      uidHash: 'novo',
+    })
+    expect(evento).toMatchObject({ nome: 'Carla Regina', matricula: '20250001', resultado: 'ok' })
+  })
+
+  // Sem nome armado não há a quem pertencer, e adivinhar é o erro que a
+  // cerimônia existe para evitar.
+  it('crachá novo sem nome armado continua desconhecido', () => {
+    expect(decidir('novo', ctx({ sessao: SESSAO })).tipo).toBe('desconhecido')
+  })
+
+  it('o crachá do professor não é capturado pela fila de cadastro', () => {
+    const decisao = decidir(PROFESSOR.uidHash, ctx({ vinculo: PROFESSOR, sessao: SESSAO, armado: PESSOA }))
+    expect(decisao.tipo).toBe('encerrar')
+  })
+
+  it('quem já tem crachá não vira cadastro de novo', () => {
+    expect(decidir(ALUNA.uidHash, ctx({ vinculo: ALUNA, sessao: SESSAO, armado: PESSOA })).tipo).toBe(
+      'presenca',
+    )
+  })
+})

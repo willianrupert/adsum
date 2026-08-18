@@ -8,6 +8,7 @@ const BASE: EstadoDoApp = {
   turmas: 1,
   pendentes: 0,
   aulaAberta: false,
+  professorSemCracha: false,
 }
 
 describe('a rota decorre do estado', () => {
@@ -15,8 +16,15 @@ describe('a rota decorre do estado', () => {
     expect(decidirRota({ ...BASE, turmas: 0 })).toBe('turma')
   })
 
-  it('com gente sem crachá, a tela é a cerimônia', () => {
-    expect(decidirRota({ ...BASE, pendentes: 7 })).toBe('cerimonia')
+  // A cerimônia sobrou para dar o primeiro crachá ao professor. Aluno sem
+  // crachá se cadastra dentro da aula, encostando — porque quem se cadastra já
+  // está presente.
+  it('sem crachá de professor, a tela é a cerimônia', () => {
+    expect(decidirRota({ ...BASE, professorSemCracha: true })).toBe('cerimonia')
+  })
+
+  it('aluno sem crachá não tira o professor do repouso', () => {
+    expect(decidirRota({ ...BASE, pendentes: 7 })).toBe('pronto')
   })
 
   it('com tudo vinculado, a tela é a espera', () => {
@@ -47,13 +55,15 @@ describe('a rota decorre do estado', () => {
     expect(decidirRota({ ...BASE, ambienteQuebrado: true, pasta: 'sem_pasta' })).toBe('problema')
   })
 
-  it('com aula aberta, a tela é a coleta', () => {
-    expect(decidirRota({ ...BASE, aulaAberta: true })).toBe('coleta')
+  it('com aula aberta, a tela é a aula', () => {
+    expect(decidirRota({ ...BASE, aulaAberta: true })).toBe('aula')
   })
 
-  // Quem chegou depois se cadastra depois; a fila na porta não espera ninguém.
-  it('a aula aberta vence a cerimônia pendente', () => {
-    expect(decidirRota({ ...BASE, aulaAberta: true, pendentes: 9 })).toBe('coleta')
+  // Cadastro acontece dentro da aula: a fila na porta não espera ninguém.
+  it('a aula vence tudo o que não seja falha', () => {
+    expect(decidirRota({ ...BASE, aulaAberta: true, pendentes: 9, professorSemCracha: true })).toBe(
+      'aula',
+    )
   })
 
   // Sem turma não há quem armar, então colar a lista vem antes de reclamar do

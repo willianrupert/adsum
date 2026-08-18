@@ -5,7 +5,7 @@
 // (quem conta presença, quem não conta, quando a aula pode fechar) fica onde
 // dá para testar, e não dentro de um manipulador de clique.
 
-import type { Evento, Papel, Vinculo } from './tipos.ts'
+import type { Evento, Matriculado, Papel, Vinculo } from './tipos.ts'
 
 /**
  * Janela mínima antes de aceitar o fechamento.
@@ -25,6 +25,8 @@ export interface Sessao {
 
 export type Decisao =
   | { tipo: 'abrir'; turma: string }
+  /** Crachá novo com um nome armado: cadastra **e** conta presença. */
+  | { tipo: 'cadastro'; pessoa: Matriculado }
   | { tipo: 'encerrar' }
   | { tipo: 'cedo_demais'; faltamMs: number }
   | { tipo: 'presenca'; vinculo: Vinculo }
@@ -35,6 +37,14 @@ export type Decisao =
 export interface Contexto {
   sessao?: Sessao
   vinculo?: Vinculo
+  /**
+   * Quem está armado na fila de cadastro, se houver.
+   *
+   * É o que faz a cerimônia e a chamada serem a mesma coisa: quem encosta o
+   * crachá para se cadastrar já está presente naquela aula, e separar as duas
+   * obrigaria a turma a passar duas vezes.
+   */
+  armado?: Matriculado
   /** `uid_hash` de quem já foi registrado nesta sessão. */
   jaPresentes: ReadonlySet<string>
   turmaSugerida?: string
@@ -63,7 +73,10 @@ export function decidir(uidHash: string, ctx: Contexto): Decisao {
     return { tipo: 'encerrar' }
   }
 
-  if (!vinculo) return { tipo: 'desconhecido' }
+  // Crachá desconhecido com nome armado é cadastro. A garantia contra trocar
+  // aluno continua sendo a de sempre: existe **um só** nome armado por vez, e
+  // ele está grande na tela para a pessoa conferir antes de encostar.
+  if (!vinculo) return ctx.armado ? { tipo: 'cadastro', pessoa: ctx.armado } : { tipo: 'desconhecido' }
   if (jaPresentes.has(uidHash)) return { tipo: 'repetido', vinculo }
   return { tipo: 'presenca', vinculo }
 }
@@ -94,6 +107,14 @@ export function eventoDe(
         ...base,
         nome: decisao.vinculo.nome,
         matricula: decisao.vinculo.matricula,
+        origem: 'cracha',
+        resultado: 'ok',
+      }
+    case 'cadastro':
+      return {
+        ...base,
+        nome: decisao.pessoa.nome,
+        matricula: decisao.pessoa.matricula,
         origem: 'cracha',
         resultado: 'ok',
       }

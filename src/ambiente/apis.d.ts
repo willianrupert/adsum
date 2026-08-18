@@ -1,3 +1,4 @@
+/// <reference types="vite-plugin-pwa/client" />
 // Declarações mínimas das APIs que o TypeScript ainda não conhece por padrão.
 //
 // Ficam aqui, e não espalhadas em `any`, para que o dia em que o WebSerial

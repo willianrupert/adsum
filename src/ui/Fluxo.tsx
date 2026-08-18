@@ -9,11 +9,12 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { decidirRota } from '../nucleo/rota.ts'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import { decidir, eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
+import type { Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
 import { acrescentarNoLog, repararLog, restaurar, sincronizar } from '../ambiente/sincronia.ts'
 import type { EstadoDaPasta } from '../nucleo/rota.ts'
-import { TelaColeta } from './TelaColeta.tsx'
+import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
 import { levantarCapacidades } from '../ambiente/capacidades.ts'
 import { useAdsum } from './adsum.ts'
@@ -30,6 +31,8 @@ export function Fluxo() {
   const [turmas, setTurmas] = useState(0)
   const [pendentes, setPendentes] = useState(0)
   const [turmaPendente, setTurmaPendente] = useState<string>()
+  const [pendentesDaTurma, setPendentesDaTurma] = useState<Matriculado[]>([])
+  const [professorSemCracha, setProfessorSemCracha] = useState(false)
   const [sessao, setSessao] = useState<Sessao>()
   const [turmas1, setTurmas1] = useState<string>()
   const [pasta, setPasta] = useState<FileSystemDirectoryHandle>()
@@ -56,7 +59,9 @@ export function Fluxo() {
     const faltando = matriculados.filter((m) => !m.matricula || !comCracha.has(m.matricula))
     setTurmas(listaDeTurmas.length)
     setPendentes(faltando.length)
+    setPendentesDaTurma(faltando)
     setTurmaPendente(faltando[0]?.turma)
+    setProfessorSemCracha(!vinculos.some((v) => v.papel === 'professor'))
   }, [repositorio])
 
   useEffect(() => {
@@ -188,6 +193,7 @@ export function Fluxo() {
     turmas,
     pendentes,
     aulaAberta: !!sessao,
+    professorSemCracha,
   })
 
   const ligarPasta = async (escolhendo: boolean) => {
@@ -211,10 +217,11 @@ export function Fluxo() {
       )}
       {rota === 'turma' && <TelaVinculo aoMudarBase={mudou} />}
       {rota === 'cerimonia' && <TelaVinculo turmaInicial={turmaPendente} aoMudarBase={mudou} />}
-      {rota === 'coleta' && sessao && (
-        <TelaColeta
+      {rota === 'aula' && sessao && (
+        <TelaAula
           sessao={sessao}
-          aoMudarBase={recontar}
+          pendentes={pendentesDaTurma.filter((p) => p.turma === sessao.turma)}
+          aoMudarBase={mudou}
           aoRegistrar={gravarLinha}
         />
       )}
