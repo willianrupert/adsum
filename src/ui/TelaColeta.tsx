@@ -44,7 +44,9 @@ export function TelaColeta({
   const [presentes, setPresentes] = useState<Set<string>>(new Set())
   const [linhas, setLinhas] = useState<Linha[]>([])
   const [recado, setRecado] = useState<string>()
+  const [destaque, setDestaque] = useState<{ nome: string; tom: Linha['tom'] }>()
   const sequencia = useRef(0)
+  const relogioDoDestaque = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // Reabrir o app no meio da aula tem que reencontrar quem já passou. A fonte
   // é o log, não a memória da tela — fechar o notebook não pode zerar a chamada.
@@ -107,19 +109,39 @@ export function TelaColeta({
     })
   }, [leitor, repositorio, config, sessao, presentes, recarregar, aoMudarBase, aoRegistrar])
 
+  /**
+   * O nome ocupa o lugar do contador por um instante e volta.
+   *
+   * Não é um cartão que entra e sai: com um crachá a cada 1 ou 2 segundos,
+   * qualquer coisa que precise **terminar** de sumir chega atrasada — ou trunca,
+   * e o aluno não viu, ou enfileira, e a tela fica atrás da fila. Trocar o
+   * conteúdo do mesmo lugar aguenta o ritmo porque nada termina: o próximo
+   * simplesmente substitui, e o relógio recomeça.
+   */
+  function destacar(nome: string, tom: Linha['tom']) {
+    clearTimeout(relogioDoDestaque.current)
+    setDestaque({ nome, tom })
+    relogioDoDestaque.current = setTimeout(() => setDestaque(undefined), 1600)
+  }
+
+  useEffect(() => () => clearTimeout(relogioDoDestaque.current), [])
+
   function anunciar(decisao: Decisao, evento?: Evento) {
     switch (decisao.tipo) {
       case 'presenca':
         tocar('ok')
+        destacar(decisao.vinculo.nome, 'ok')
         setRecado(undefined)
         break
       case 'repetido':
         tocar('repetido')
-        setRecado(`${decisao.vinculo.nome} já estava registrado.`)
+        destacar(decisao.vinculo.nome, 'repetido')
+        setRecado(undefined)
         break
       case 'desconhecido':
         tocar('desconhecido')
-        setRecado('Crachá não cadastrado.')
+        destacar('Crachá não cadastrado', 'desconhecido')
+        setRecado(undefined)
         break
       case 'cedo_demais':
         tocar('desconhecido')
@@ -145,8 +167,27 @@ export function TelaColeta({
 
       <div className="coleta__corpo">
         <div className="coleta__contador">
-          <p className="coleta__numero">{presentes.size}</p>
-          <p className="coleta__rotulo">{presentes.size === 1 ? 'presente' : 'presentes'}</p>
+          {destaque ? (
+            <>
+              <p className={`coleta__destaque coleta__destaque--${destaque.tom}`}>
+                {destaque.nome}
+              </p>
+              <p className="coleta__rotulo">
+                {destaque.tom === 'ok'
+                  ? 'presente'
+                  : destaque.tom === 'repetido'
+                    ? 'já estava'
+                    : 'não cadastrado'}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="coleta__numero">{presentes.size}</p>
+              <p className="coleta__rotulo">
+                {presentes.size === 1 ? 'presente' : 'presentes'}
+              </p>
+            </>
+          )}
         </div>
 
         <ol className="coleta__lista">

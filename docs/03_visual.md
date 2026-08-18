@@ -23,9 +23,21 @@ elimina sozinho a maior parte das ideias boas em telas paradas:
 pequeno, imediato e igual toda vez — a lista cresce, o número muda. Comemoração
 por leitura é desenho de aplicativo de banco, não de fila.
 
-Ideia a testar, se couber: em vez de pop-up, o **nome ocupar por um instante o
-lugar do contador** e voltar. Sem caixa, sem sombra, sem entrada e saída — só
-troca de conteúdo. Aguenta ritmo porque nada precisa terminar.
+**Implementado assim:** em vez de pop-up, o **nome ocupa por um instante o
+lugar do contador** e volta. Sem caixa, sem sombra, sem entrada e saída — só
+troca de conteúdo, e o relógio de 1,6 s recomeça a cada leitura. Aguenta ritmo
+porque nada precisa terminar: o próximo crachá simplesmente substitui o
+anterior, em vez de esperar a vez.
+
+## Feito na passada de 18/08/2026
+
+Tipografia do sistema (`-apple-system`), hierarquia por tamanho e peso, e
+agrupamento por espaço — as bordas de 1px que faziam tudo parecer painel de
+controle saíram. Claro e escuro seguindo o sistema, com o verde mudando entre
+os dois: o `#5DCAA5` do escuro não tem contraste sobre branco.
+
+Falta: os Mushroom cards na folha da base, e o corte de texto das telas de
+vínculo e base.
 
 ## Menos é mais
 

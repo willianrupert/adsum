@@ -1,26 +1,64 @@
-/* Paleta e escala do Adsum A1 — ver `Adsum/docs/03_interface.md`.
-   O aparelho e o app são a mesma família; a cor de acento é a mesma `#5DCAA5`.
-   A escala de tipos do firmware (12, 15, 20, 24, 46, 92) vale aqui como guia,
-   não como camisa de força: a tela do laptop não tem 480×272. */
+/* Sistema visual.
+ *
+ * Hierarquia por tamanho e peso, agrupamento por espaço. A versão anterior
+ * construía tudo com bordas de 1px — é linguagem de painel de controle, e faz
+ * uma tela de dez caixas parecer dez assuntos. Aqui a régua é: se dá para
+ * separar com espaço, não se usa linha.
+ *
+ * Claro e escuro seguem o sistema. O verde muda entre os dois de propósito: o
+ * `#5DCAA5` que funciona no escuro tem contraste baixo demais sobre branco, e
+ * contraste aqui é requisito — isto pode acabar num projetor, visto de longe.
+ */
 
 :root {
-  --fundo: #0b0b0a;
-  --fundo-painel: #131312;
-  --linha: #2a2a28;
-  --tinta: #e8e8e4;
-  --tinta-fraca: #8f8f88;
-  --acento: #5dcaa5;
-  --alerta: #e0b155;
-  --grave: #e06c5d;
+  color-scheme: light dark;
 
-  --t12: 12px;
-  --t15: 15px;
-  --t20: 20px;
-  --t24: 24px;
+  --fundo: #f7f7f8;
+  --superficie: #ffffff;
+  --tinta: #16171a;
+  --tinta-fraca: #6b6d73;
+  --tinta-tenue: #9a9ca2;
+  --acento: #0f8a67;
+  --acento-fraco: #e6f4ef;
+  --alerta: #9a6a00;
+  --alerta-fraco: #fdf3dd;
+  --grave: #c0392b;
+  --grave-fraco: #fbeceb;
+  --separador: #e8e8ec;
+  --sombra: 0 1px 2px rgb(0 0 0 / 5%), 0 8px 24px rgb(0 0 0 / 5%);
 
+  /* Escala tipográfica, no espírito da do sistema da Apple. */
+  --t-nota: 13px;
+  --t-corpo: 15px;
+  --t-titulo: 17px;
+  --t-secao: 22px;
+  --t-grande: clamp(30px, 5vw, 40px);
+  --t-enorme: clamp(56px, 11vw, 96px);
+
+  --fonte: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui,
+    'Helvetica Neue', sans-serif;
   --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
 
-  color-scheme: dark;
+  --raio: 14px;
+  --raio-grande: 22px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fundo: #0c0c0e;
+    --superficie: #16171a;
+    --tinta: #f2f2f4;
+    --tinta-fraca: #9a9ca2;
+    --tinta-tenue: #6b6d73;
+    --acento: #5dcaa5;
+    --acento-fraco: #14261f;
+    --alerta: #e0b155;
+    --alerta-fraco: #2a2115;
+    --grave: #ef7a6d;
+    --grave-fraco: #2b1715;
+    --separador: #25262b;
+    --sombra: 0 1px 2px rgb(0 0 0 / 40%), 0 10px 30px rgb(0 0 0 / 30%);
+  }
 }
 
 * {
@@ -31,257 +69,185 @@ body {
   margin: 0;
   background: var(--fundo);
   color: var(--tinta);
-  font: var(--t15) / 1.55 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--fonte);
+  font-size: var(--t-corpo);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 code {
   font-family: var(--mono);
-  font-size: 0.92em;
+  font-size: 0.9em;
   color: var(--tinta-fraca);
-  /* Quebra no meio da palavra só quando não houver alternativa. Com
-     `break-all`, "docente" no meio de uma frase virava "doc / ente". */
   overflow-wrap: anywhere;
 }
 
 .app {
-  max-width: 940px;
+  max-width: 920px;
   margin: 0 auto;
-  padding: 24px 20px 64px;
-}
-
-/* Cabeçalho */
-
-.cabecalho {
-  border-bottom: 1px solid var(--linha);
-  padding-bottom: 16px;
-  margin-bottom: 24px;
-}
-
-.cabecalho__marca {
+  padding: 28px 22px 40px;
+  min-height: 100dvh;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
 }
 
-.cabecalho h1 {
-  margin: 0;
-  font-size: var(--t24);
-  font-weight: 600;
-  letter-spacing: 0.02em;
+.app > :first-child {
+  flex: 1;
 }
 
-.cabecalho__marca p {
-  margin: 0;
-  font-size: var(--t12);
-  color: var(--tinta-fraca);
-}
-
-.cabecalho__nota {
-  margin: 12px 0 0;
-  font-size: var(--t12);
-  color: var(--tinta-fraca);
-  max-width: 60ch;
-}
-
-.rodape {
-  margin-top: 40px;
-  padding-top: 16px;
-  border-top: 1px solid var(--linha);
-  font-size: var(--t12);
-  color: var(--tinta-fraca);
-}
-
-/* Painéis */
+/* ── Superfícies ─────────────────────────────────────────────────────────── */
 
 .diagnostico {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
 }
 
 .painel {
-  background: var(--fundo-painel);
-  border: 1px solid var(--linha);
-  border-radius: 10px;
-  padding: 16px 18px 18px;
+  background: var(--superficie);
+  border-radius: var(--raio);
+  padding: 20px 22px 22px;
+  box-shadow: var(--sombra);
 }
 
 .painel__topo {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: baseline;
   gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .painel h2 {
   margin: 0;
-  font-size: var(--t20);
+  font-size: var(--t-titulo);
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .painel__legenda {
-  margin: 2px 0 0;
-  font-size: var(--t12);
+  margin: 3px 0 0;
+  font-size: var(--t-nota);
   color: var(--tinta-fraca);
-  max-width: 66ch;
+  max-width: 62ch;
 }
 
 .painel__acoes {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
-/* Linhas rótulo/valor */
+/* Rótulo e valor: separados por espaço, não por régua. */
 
 .linha {
   display: flex;
   gap: 16px;
-  padding: 5px 0;
-  border-top: 1px solid var(--linha);
-  font-size: var(--t12);
+  padding: 4px 0;
+  font-size: var(--t-nota);
 }
 
 .linha__rotulo {
   color: var(--tinta-fraca);
-  min-width: 15ch;
+  min-width: 16ch;
   flex-shrink: 0;
 }
 
 .linha__valor {
   min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-/* Capacidades */
-
-.capacidades {
-  list-style: none;
-  margin: 0 0 12px;
-  padding: 0;
-}
-
-.cap {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  padding: 5px 0;
-  border-top: 1px solid var(--linha);
-  font-size: var(--t12);
 }
 
-.cap:first-child {
-  border-top: none;
-}
-
-.cap__ponto {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--tinta-fraca);
-  flex-shrink: 0;
-  align-self: center;
-}
-
-.cap--ok .cap__ponto {
-  background: var(--acento);
-}
-
-.cap--essencial .cap__ponto {
-  background: var(--grave);
-}
-
-.cap--importante .cap__ponto {
-  background: var(--alerta);
-}
-
-.cap__nome {
-  min-width: 24ch;
-  font-size: var(--t15);
-}
-
-.cap__nota {
-  color: var(--tinta-fraca);
-  flex: 1 1 100%;
-  padding-left: 15px;
-}
-
-/* Selos */
-
-.selo {
-  display: inline-block;
-  padding: 1px 7px;
-  border-radius: 999px;
-  border: 1px solid currentcolor;
-  font-size: 11px;
-  line-height: 1.5;
-  letter-spacing: 0.03em;
-}
-
-.selo--ok {
-  color: var(--acento);
-}
-.selo--alerta {
-  color: var(--alerta);
-}
-.selo--grave {
-  color: var(--grave);
-}
-.selo--neutro {
-  color: var(--tinta-fraca);
-}
-
-/* Controles */
+/* ── Controles ───────────────────────────────────────────────────────────── */
 
 button {
   font: inherit;
-  font-size: var(--t12);
+  font-size: var(--t-nota);
   color: var(--tinta);
   background: transparent;
-  border: 1px solid var(--linha);
-  border-radius: 6px;
-  padding: 5px 12px;
+  border: 1px solid var(--separador);
+  border-radius: 999px;
+  padding: 6px 14px;
   cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
 }
 
 button:hover {
-  border-color: var(--tinta-fraca);
+  background: var(--separador);
 }
 
 .botao--acento {
   color: var(--acento);
-  border-color: color-mix(in srgb, var(--acento) 45%, transparent);
+  border-color: transparent;
+  background: var(--acento-fraco);
+}
+
+.botao--acento:hover {
+  background: var(--acento-fraco);
+  border-color: var(--acento);
 }
 
 .botao--grave {
   color: var(--grave);
-  border-color: color-mix(in srgb, var(--grave) 45%, transparent);
+  border-color: transparent;
 }
 
-input {
+.botao--grave:hover {
+  background: var(--grave-fraco);
+}
+
+input,
+select,
+textarea {
   font: inherit;
-  font-family: var(--mono);
-  font-size: var(--t12);
+  font-size: var(--t-nota);
   color: var(--tinta);
   background: var(--fundo);
-  border: 1px solid var(--linha);
-  border-radius: 6px;
-  padding: 5px 9px;
-  min-width: 16ch;
+  border: 1px solid var(--separador);
+  border-radius: 10px;
+  padding: 7px 11px;
+}
+
+input,
+textarea {
+  font-family: var(--mono);
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
 }
 
 input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--acento);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 .entrada--larga {
-  min-width: 36ch;
-  flex: 1 1 36ch;
+  min-width: 30ch;
+  flex: 1 1 30ch;
+}
+
+.entrada--celula {
+  font-family: var(--fonte);
+  min-width: 20ch;
+  width: 100%;
+  border-color: transparent;
+  background: transparent;
+  padding: 4px 8px;
+}
+
+.entrada--celula:hover,
+.entrada--celula:focus {
+  border-color: var(--separador);
+  background: var(--fundo);
 }
 
 .ferramentas {
@@ -289,27 +255,96 @@ button:focus-visible {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--linha);
+  margin-top: 16px;
 }
 
-.ferramentas__ou {
-  font-size: var(--t12);
+.ferramentas--topo {
+  margin-top: 0;
+  margin-bottom: 14px;
+}
+
+.ferramentas__ou,
+.ferramentas__nota {
+  font-size: var(--t-nota);
   color: var(--tinta-fraca);
 }
 
 .ferramentas__nota {
   flex: 1 1 100%;
-  margin: 2px 0 0;
-  font-size: var(--t12);
+  margin: 4px 0 0;
+  max-width: 68ch;
+}
+
+/* ── Selos ───────────────────────────────────────────────────────────────── */
+
+.selo {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.5;
+  background: var(--separador);
   color: var(--tinta-fraca);
 }
 
-/* Tabelas.
-   Rolam dentro da própria caixa em vez de empurrar a página: o `uid_hash` tem
-   16 dígitos que não devem quebrar em três linhas — hash picado é hash que
-   ninguém confere a olho. */
+.selo--ok {
+  color: var(--acento);
+  background: var(--acento-fraco);
+}
+.selo--alerta {
+  color: var(--alerta);
+  background: var(--alerta-fraco);
+}
+.selo--grave {
+  color: var(--grave);
+  background: var(--grave-fraco);
+}
+
+/* ── Capacidades e tabelas ───────────────────────────────────────────────── */
+
+.capacidades {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+}
+
+.cap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 5px 0;
+  font-size: var(--t-nota);
+}
+
+.cap__ponto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tinta-tenue);
+  flex-shrink: 0;
+}
+
+.cap--ok .cap__ponto {
+  background: var(--acento);
+}
+.cap--essencial .cap__ponto {
+  background: var(--grave);
+}
+.cap--importante .cap__ponto {
+  background: var(--alerta);
+}
+
+.cap__nome {
+  min-width: 22ch;
+  font-size: var(--t-corpo);
+}
+
+.cap__nota {
+  color: var(--tinta-fraca);
+  flex: 1 1 100%;
+  padding-left: 17px;
+}
 
 .tabela {
   display: block;
@@ -317,7 +352,7 @@ button:focus-visible {
   min-width: 100%;
   border-collapse: collapse;
   margin-top: 12px;
-  font-size: var(--t12);
+  font-size: var(--t-nota);
   white-space: nowrap;
 }
 
@@ -328,212 +363,21 @@ button:focus-visible {
 .tabela th {
   text-align: left;
   font-weight: 500;
-  color: var(--tinta-fraca);
-  border-bottom: 1px solid var(--linha);
-  padding: 4px 10px 4px 0;
+  color: var(--tinta-tenue);
+  padding: 4px 14px 8px 0;
 }
 
 .tabela td {
-  padding: 5px 10px 5px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--linha) 50%, transparent);
-  vertical-align: top;
+  padding: 6px 14px 6px 0;
+  vertical-align: middle;
 }
 
-.vazio {
-  margin: 0;
-  font-size: var(--t12);
-  color: var(--tinta-fraca);
-}
-
-/* Avisos */
-
-.aviso {
-  border: 1px solid var(--linha);
-  border-left-width: 3px;
-  border-radius: 6px;
-  padding: 10px 14px;
-  font-size: var(--t12);
-}
-
-.aviso p {
-  margin: 4px 0 0;
-  color: var(--tinta-fraca);
-  max-width: 72ch;
-}
-
-.aviso--ok {
-  border-left-color: var(--acento);
-}
-.aviso--alerta {
-  border-left-color: var(--alerta);
-  margin-top: 14px;
-}
-.aviso--grave {
-  border-left-color: var(--grave);
-}
-
-.carregando {
-  padding: 32px 0;
-  color: var(--tinta-fraca);
-  font-size: var(--t12);
-}
-
-/* Escolha entre adaptadores */
-
-.escolhas {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.escolha {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-  text-align: left;
-  padding: 6px 12px;
-  max-width: 34ch;
-}
-
-.escolha__nome {
-  font-size: var(--t15);
-}
-
-.escolha__quando {
-  font-size: 11px;
-  color: var(--tinta-fraca);
-  line-height: 1.4;
-}
-
-.escolha--ativa {
-  color: var(--acento);
-  border-color: color-mix(in srgb, var(--acento) 45%, transparent);
-}
-
-.escolha--ativa .escolha__quando {
-  color: color-mix(in srgb, var(--acento) 60%, var(--tinta-fraca));
-}
-
-/* Formulários de tabela */
-
-select {
-  font: inherit;
-  font-size: var(--t12);
-  color: var(--tinta);
-  background: var(--fundo);
-  border: 1px solid var(--linha);
-  border-radius: 6px;
-  padding: 5px 8px;
-}
-
-select:focus-visible {
-  outline: 2px solid var(--acento);
-  outline-offset: 1px;
-}
-
-.entrada--celula {
-  font-family: inherit;
-  min-width: 22ch;
-  width: 100%;
-  border-color: transparent;
-  background: transparent;
-  padding: 3px 6px;
-}
-
-.entrada--celula:hover {
-  border-color: var(--linha);
-}
-
-.entrada--celula:focus {
-  border-color: var(--linha);
-  background: var(--fundo);
-}
-
-.ferramentas--topo {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
-  margin-bottom: 12px;
+.tabela tbody tr + tr td {
+  border-top: 1px solid var(--separador);
 }
 
 .tabela td button {
-  padding: 3px 9px;
-}
-
-/* Cerimônia de vínculo.
-   O nome grande é o mecanismo, não enfeite: é o que o aluno lê antes de
-   encostar, e é o que permite dizer "não sou eu". Corpo 46, como no aparelho. */
-
-.armado {
-  border: 1px solid color-mix(in srgb, var(--acento) 40%, transparent);
-  background: color-mix(in srgb, var(--acento) 6%, var(--fundo-painel));
-  border-radius: 10px;
-  padding: 24px 18px 18px;
-  text-align: center;
-}
-
-.armado__rotulo {
-  margin: 0;
-  font-size: var(--t12);
-  color: var(--tinta-fraca);
-  letter-spacing: 0.06em;
-  text-transform: lowercase;
-}
-
-.armado__nome {
-  margin: 6px 0 2px;
-  font-size: 46px;
-  line-height: 1.15;
-  font-weight: 600;
-  color: var(--acento);
-  overflow-wrap: anywhere;
-}
-
-.armado__completo {
-  margin: 0;
-  font-size: var(--t12);
-  color: var(--tinta-fraca);
-}
-
-.armado__acoes {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin-top: 16px;
-}
-
-.armado__nota {
-  margin: 14px auto 0;
-  max-width: 56ch;
-  font-size: var(--t12);
-  color: var(--tinta-fraca);
-}
-
-.linha--armada {
-  background: color-mix(in srgb, var(--acento) 8%, transparent);
-}
-
-textarea {
-  font: inherit;
-  font-size: var(--t12);
-  font-family: var(--mono);
-  width: 100%;
-  color: var(--tinta);
-  background: var(--fundo);
-  border: 1px solid var(--linha);
-  border-radius: 6px;
-  padding: 10px 12px;
-  resize: vertical;
-}
-
-textarea:focus-visible {
-  outline: 2px solid var(--acento);
-  outline-offset: 1px;
-}
-
-.aviso a {
-  color: var(--acento);
+  padding: 4px 10px;
 }
 
 .celula--estado {
@@ -542,21 +386,381 @@ textarea:focus-visible {
   gap: 8px;
 }
 
-.armado__login {
-  margin: 0 0 2px;
-  font-family: var(--mono);
-  font-size: var(--t15);
-  color: color-mix(in srgb, var(--acento) 70%, var(--tinta-fraca));
+.vazio {
+  margin: 0;
+  font-size: var(--t-nota);
+  color: var(--tinta-fraca);
 }
 
-/* Manual de como copiar do SIGAA */
+/* ── Avisos ──────────────────────────────────────────────────────────────── */
+
+.aviso {
+  border-radius: var(--raio);
+  padding: 14px 18px;
+  font-size: var(--t-nota);
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+}
+
+.aviso p {
+  margin: 5px 0 0;
+  color: var(--tinta-fraca);
+  max-width: 70ch;
+}
+
+.aviso button {
+  margin-top: 10px;
+}
+
+.aviso--ok {
+  background: var(--acento-fraco);
+  box-shadow: none;
+}
+.aviso--alerta {
+  background: var(--alerta-fraco);
+  box-shadow: none;
+}
+.aviso--grave {
+  background: var(--grave-fraco);
+  box-shadow: none;
+}
+
+.aviso a {
+  color: var(--acento);
+}
+
+.carregando {
+  padding: 40px 0;
+  color: var(--tinta-fraca);
+  font-size: var(--t-nota);
+}
+
+/* ── Telas grandes: repouso e pasta ──────────────────────────────────────── */
+
+.repouso {
+  min-height: 62vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.repouso__turma {
+  margin: 0;
+  font-size: var(--t-corpo);
+  color: var(--tinta-fraca);
+}
+
+.repouso__acao {
+  margin: 0;
+  font-size: var(--t-grande);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.repouso__link {
+  margin-top: 26px;
+  border-color: transparent;
+  color: var(--tinta-fraca);
+}
+
+.repouso__link:hover {
+  color: var(--acento);
+  background: var(--acento-fraco);
+}
+
+.pasta__nota {
+  margin: 16px auto 0;
+  max-width: 44ch;
+  font-size: var(--t-nota);
+  color: var(--tinta-fraca);
+}
+
+.pasta__botao {
+  margin-top: 24px;
+  padding: 10px 22px;
+  font-size: var(--t-corpo);
+}
+
+/* ── Cerimônia ───────────────────────────────────────────────────────────── */
+
+.armado {
+  background: var(--superficie);
+  border-radius: var(--raio-grande);
+  padding: 34px 24px 26px;
+  text-align: center;
+  box-shadow: var(--sombra);
+}
+
+.armado__rotulo {
+  margin: 0;
+  font-size: var(--t-nota);
+  color: var(--tinta-fraca);
+}
+
+.armado__nome {
+  margin: 8px 0 2px;
+  font-size: var(--t-grande);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--acento);
+  overflow-wrap: anywhere;
+}
+
+.armado__login {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--t-nota);
+  color: var(--tinta-fraca);
+}
+
+.armado__completo {
+  margin: 4px 0 0;
+  font-size: var(--t-nota);
+  color: var(--tinta-tenue);
+}
+
+.armado__acoes {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.armado__nota {
+  margin: 18px auto 0;
+  max-width: 52ch;
+  font-size: var(--t-nota);
+  color: var(--tinta-tenue);
+}
+
+.linha--armada td {
+  background: var(--acento-fraco);
+}
+
+/* ── Coleta ──────────────────────────────────────────────────────────────── */
+
+.coleta {
+  display: flex;
+  flex-direction: column;
+  min-height: 68vh;
+}
+
+.coleta__topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: var(--t-nota);
+  color: var(--tinta-fraca);
+}
+
+.coleta__topo strong {
+  font-size: var(--t-corpo);
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.coleta__corpo {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 40px;
+  align-items: center;
+  padding: 32px 0;
+}
+
+/* O destaque troca o **conteúdo** do contador, sem caixa e sem sair de cena.
+   Com um crachá a cada 1–2 s, qualquer coisa que precise terminar de sumir
+   chega atrasada; trocar o conteúdo aguenta o ritmo porque nada termina. */
+
+.coleta__contador {
+  min-height: 9rem;
+}
+
+.coleta__numero {
+  margin: 0;
+  font-size: var(--t-enorme);
+  line-height: 0.92;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.coleta__destaque {
+  margin: 0;
+  font-size: var(--t-grande);
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--acento);
+  overflow-wrap: anywhere;
+}
+
+.coleta__destaque--repetido {
+  color: var(--tinta-fraca);
+}
+
+.coleta__destaque--desconhecido {
+  color: var(--grave);
+}
+
+.coleta__rotulo {
+  margin: 8px 0 0;
+  font-size: var(--t-corpo);
+  color: var(--tinta-fraca);
+}
+
+.coleta__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.coleta__linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  font-size: var(--t-secao);
+}
+
+.coleta__linha + .coleta__linha {
+  border-top: 1px solid var(--separador);
+}
+
+.coleta__linha time {
+  font-size: var(--t-nota);
+  color: var(--tinta-tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+.coleta__linha--repetido span {
+  color: var(--tinta-fraca);
+}
+
+.coleta__linha--desconhecido span {
+  color: var(--grave);
+}
+
+.coleta__vazio {
+  font-size: var(--t-secao);
+  color: var(--tinta-tenue);
+}
+
+.coleta__rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--t-nota);
+  color: var(--tinta-fraca);
+}
+
+.coleta__simular {
+  border-color: transparent;
+  color: var(--tinta-tenue);
+}
+
+@media (max-width: 640px) {
+  .coleta__corpo {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+}
+
+/* ── Selos de estado e folhas ────────────────────────────────────────────── */
+
+.selos {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  padding-top: 28px;
+}
+
+.selo-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-color: transparent;
+  color: var(--tinta-tenue);
+}
+
+.selo-status:hover {
+  color: var(--tinta);
+}
+
+.ponto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tinta-tenue);
+}
+
+.ponto--ok {
+  background: var(--acento);
+}
+.ponto--alerta {
+  background: var(--alerta);
+}
+.ponto--grave {
+  background: var(--grave);
+}
+
+.folha__fundo {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 40%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 10;
+}
+
+.folha {
+  width: min(920px, 100%);
+  max-height: 92dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fundo);
+  border-radius: var(--raio-grande) var(--raio-grande) 0 0;
+  animation: subir 260ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes subir {
+  from {
+    transform: translateY(28px);
+    opacity: 0;
+  }
+}
+
+.folha__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 14px;
+}
+
+.folha__topo h2 {
+  margin: 0;
+  font-size: var(--t-titulo);
+  font-weight: 600;
+}
+
+.folha__corpo {
+  overflow-y: auto;
+  padding: 4px 22px 30px;
+}
+
+/* ── Manual ──────────────────────────────────────────────────────────────── */
 
 .manual {
-  margin-top: 14px;
-  border: 1px solid var(--linha);
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: var(--t12);
+  margin-top: 16px;
+  font-size: var(--t-nota);
 }
 
 .manual summary {
@@ -565,40 +769,32 @@ textarea:focus-visible {
 }
 
 .manual__passos {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   padding-left: 20px;
   color: var(--tinta-fraca);
   line-height: 1.6;
 }
 
-.manual__passos li {
-  margin-bottom: 4px;
-}
-
 .manual__nota {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   color: var(--tinta-fraca);
-  max-width: 72ch;
+  max-width: 70ch;
 }
 
 .manual kbd {
   font-family: var(--mono);
   font-size: 0.9em;
-  border: 1px solid var(--linha);
-  border-radius: 4px;
-  padding: 0 4px;
+  border: 1px solid var(--separador);
+  border-radius: 5px;
+  padding: 0 5px;
 }
-
-/* Ilustração da página do SIGAA — desenhada, nunca capturada: um print da tela
-   real levaria nome, matrícula, login, e-mail e foto de quarenta e nove pessoas
-   para um repositório público. */
 
 .ilustracao {
   display: block;
   width: 100%;
-  margin: 14px 0 0;
-  border: 1px solid var(--linha);
-  border-radius: 6px;
+  margin: 16px 0 0;
+  border-radius: var(--raio);
+  background: #0f1417;
 }
 
 .ilu-fundo {
@@ -606,11 +802,10 @@ textarea:focus-visible {
 }
 .ilu-menu {
   fill: #16202a;
-  stroke: #24323d;
 }
 .ilu-selecao {
-  fill: color-mix(in srgb, var(--acento) 12%, transparent);
-  stroke: var(--acento);
+  fill: rgb(93 202 165 / 12%);
+  stroke: #5dcaa5;
   stroke-dasharray: 4 3;
 }
 .ilu-foto {
@@ -625,7 +820,7 @@ textarea:focus-visible {
   font: 8px system-ui, sans-serif;
 }
 .ilu-menu-ativo {
-  fill: var(--acento);
+  fill: #5dcaa5;
   font: 600 8px system-ui, sans-serif;
 }
 .ilu-secao {
@@ -645,281 +840,19 @@ textarea:focus-visible {
   font: 7.5px system-ui, sans-serif;
 }
 .ilu-usuario {
-  fill: var(--acento);
+  fill: #5dcaa5;
   font: 600 7.5px ui-monospace, monospace;
 }
 .ilu-marca {
-  fill: var(--acento);
+  fill: #5dcaa5;
   font: 8px system-ui, sans-serif;
 }
 
-
-/* Repouso — a tela que fica ligada na mesa.
-   Uma coisa grande, o resto quase invisível. Se duas coisas competem por
-   atenção, uma delas está na tela errada. */
-
-.repouso {
-  min-height: 60vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  text-align: center;
-}
-
-.repouso__turma {
-  margin: 0;
-  font-size: var(--t15);
-  color: var(--tinta-fraca);
-}
-
-.repouso__acao {
-  margin: 0;
-  font-size: clamp(34px, 7vw, 58px);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--tinta);
-}
-
-.repouso__link {
-  margin-top: 20px;
-  border-color: transparent;
-  color: var(--tinta-fraca);
-}
-
-.repouso__link:hover {
-  color: var(--acento);
-  border-color: color-mix(in srgb, var(--acento) 40%, transparent);
-}
-
-/* Selos de estado — quietos quando está tudo bem. */
-
-.selos {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  margin-top: 40px;
-  padding-top: 16px;
-}
-
-.selo-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border-color: transparent;
-  color: var(--tinta-fraca);
-  font-size: var(--t12);
-}
-
-.selo-status:hover {
-  border-color: var(--linha);
-  color: var(--tinta);
-}
-
-.ponto {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--tinta-fraca);
-}
-
-.ponto--ok {
-  background: var(--acento);
-}
-.ponto--alerta {
-  background: var(--alerta);
-}
-
-/* Folhas — profundidade por sobreposição, não por borda. */
-
-.folha__fundo {
-  position: fixed;
-  inset: 0;
-  background: rgb(0 0 0 / 55%);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 10;
-}
-
-.folha {
-  width: min(940px, 100%);
-  max-height: 92vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--fundo);
-  border: 1px solid var(--linha);
-  border-radius: 18px 18px 0 0;
-  animation: subir 240ms cubic-bezier(0.2, 0.9, 0.3, 1);
-}
-
-@keyframes subir {
-  from {
-    transform: translateY(24px);
-    opacity: 0;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .folha {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
-}
-
-.folha__topo {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid var(--linha);
-}
-
-.folha__topo h2 {
-  margin: 0;
-  font-size: var(--t20);
-  font-weight: 600;
-}
-
-.folha__corpo {
-  overflow-y: auto;
-  padding: 18px 20px 28px;
-}
-
-/* Coleta — uma tela só, do começo ao fim da aula.
-   Estados são valores e cores dentro dela, nunca telas diferentes: com fila,
-   uma confirmação de dois segundos seria interrompida antes de terminar. */
-
-.coleta {
-  display: flex;
-  flex-direction: column;
-  min-height: 70vh;
-}
-
-.coleta__topo {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding-bottom: 12px;
-  font-size: var(--t12);
-  color: var(--tinta-fraca);
-}
-
-.coleta__topo strong {
-  font-size: var(--t15);
-  color: var(--tinta);
-  font-weight: 600;
-}
-
-.coleta__corpo {
-  flex: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-  gap: 32px;
-  align-items: start;
-  padding: 24px 0;
-}
-
-.coleta__numero {
-  margin: 0;
-  font-size: clamp(72px, 16vw, 132px);
-  line-height: 0.9;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-}
-
-.coleta__rotulo {
-  margin: 6px 0 0;
-  font-size: var(--t15);
-  color: var(--tinta-fraca);
-}
-
-.coleta__lista {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.coleta__linha {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 7px 0;
-  font-size: var(--t20);
-  animation: entrar 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
-}
-
-.coleta__linha time {
-  font-size: var(--t12);
-  color: var(--tinta-fraca);
-  font-variant-numeric: tabular-nums;
-}
-
-.coleta__linha--repetido span {
-  color: var(--tinta-fraca);
-}
-
-.coleta__linha--desconhecido span {
-  color: var(--grave);
-}
-
-@keyframes entrar {
-  from {
-    transform: translateY(-6px);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .coleta__linha {
-    animation: none;
-  }
-}
-
-.coleta__vazio {
-  font-size: var(--t20);
-  color: var(--tinta-fraca);
-}
-
-.coleta__rodape {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--linha);
-  font-size: var(--t12);
-  color: var(--tinta-fraca);
-}
-
-.coleta__simular {
-  border-color: transparent;
-  color: var(--tinta-fraca);
-}
-
-@media (max-width: 640px) {
-  .coleta__corpo {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-}
-
-.pasta__nota {
-  margin: 14px auto 0;
-  max-width: 46ch;
-  font-size: var(--t12);
-  color: var(--tinta-fraca);
-  line-height: 1.6;
-}
-
-.pasta__botao {
-  margin-top: 22px;
-  padding: 9px 20px;
-  font-size: var(--t15);
-}
-
-.ponto--grave {
-  background: var(--grave);
 }
