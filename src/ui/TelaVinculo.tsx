@@ -12,14 +12,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { calcularUidHash } from '../nucleo/hash.ts'
-import {
-  LIMITE_LISTA,
-  MAX_BYTES,
-  bytesLatin1,
-  largura,
-  prepararLista,
-  type NomePreparado,
-} from '../nucleo/nomes.ts'
+import { MAX_BYTES, prepararLista, remedir, type NomePreparado } from '../nucleo/nomes.ts'
 import { uidLegivel } from '../nucleo/uid.ts'
 import type { Papel } from '../nucleo/tipos.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
@@ -67,11 +60,12 @@ export function TelaVinculo() {
     )
     setArmado(undefined)
 
-    const professores = preparados.filter((p) => p.papel === 'professor').length
+    const docentes = preparados.filter((p) => p.docenteNoSigaa).length
     const largos = preparados.filter((p) => !p.cabeNaLista).length
     const longos = preparados.filter((p) => !p.cabeNoBuffer).length
+    const ambiguos = preparados.filter((p) => p.ambiguo).length
     const avisos = [
-      professores === 0 && 'nenhum professor na lista — o crachá que abre a sessão não seria vinculado',
+      ambiguos > 0 && `${ambiguos} ficaram com nomes iguais — edite antes de armar`,
       largos > 0 && `${largos} não cabem na coluna do aparelho e apareceriam cortados`,
       longos > 0 && `${longos} passam de ${MAX_BYTES} bytes e seriam truncados pelo firmware`,
     ].filter(Boolean)
@@ -79,8 +73,9 @@ export function TelaVinculo() {
     setRecado({
       tom: avisos.length > 0 ? 'alerta' : 'ok',
       texto:
-        `${preparados.length} nomes, ${professores} de professor.` +
-        (avisos.length > 0 ? ` Atenção: ${avisos.join('; ')}. Clique no nome para editar.` : ''),
+        `${preparados.length} nomes, todos como aluno.` +
+        (docentes > 0 ? ` O SIGAA marcou ${docentes} como docente, no topo da lista.` : '') +
+        (avisos.length > 0 ? ` Atenção: ${avisos.join('; ')}.` : ''),
     })
   }, [colado, repositorio])
 
@@ -147,21 +142,11 @@ export function TelaVinculo() {
 
   const feitos = useMemo(() => fila.filter((e) => e.estado === 'feito').length, [fila])
   const pendentes = useMemo(() => fila.filter((e) => e.estado === 'pendente').length, [fila])
+  const semProfessor = fila.length > 0 && fila.every((e) => e.papel !== 'professor')
 
   function renomear(indice: number, nome: string) {
     setFila((antes) =>
-      antes.map((e, i) =>
-        i === indice
-          ? {
-              ...e,
-              nome,
-              larguraNaLista: largura(nome),
-              cabeNaLista: largura(nome) <= LIMITE_LISTA,
-              bytes: bytesLatin1(nome),
-              cabeNoBuffer: bytesLatin1(nome) <= MAX_BYTES,
-            }
-          : e,
-      ),
+      antes.map((e, i) => (i === indice ? { ...e, ...remedir(e, nome), ambiguo: false } : e)),
     )
   }
 
@@ -175,6 +160,17 @@ export function TelaVinculo() {
   return (
     <div className="diagnostico">
       {recado && <div className={`aviso aviso--${recado.tom}`}>{recado.texto}</div>}
+
+      {semProfessor && (
+        <div className="aviso aviso--alerta">
+          <strong>Ninguém está marcado como professor.</strong>
+          <p>
+            Todo mundo entra como aluno de propósito — mas o crachá que abre a sessão é o
+            do professor, e sem ele a aula não começa. Se o SIGAA sinalizou algum docente,
+            ele está no topo da lista com a dica <code>SIGAA: docente</code>.
+          </p>
+        </div>
+      )}
 
       {estadoLeitor !== 'lendo' && (
         <div className="aviso aviso--alerta">
@@ -288,7 +284,7 @@ export function TelaVinculo() {
                         aria-label={`nome de ${e.completo}`}
                       />
                     </td>
-                    <td>
+                    <td className="celula--estado">
                       <select
                         value={e.papel}
                         onChange={(evento) => trocarPapel(i, evento.target.value as Papel)}
@@ -297,12 +293,16 @@ export function TelaVinculo() {
                         <option value="aluno">aluno</option>
                         <option value="professor">professor</option>
                       </select>
+                      {e.docenteNoSigaa && e.papel === 'aluno' && (
+                        <Selo tom="alerta">SIGAA: docente</Selo>
+                      )}
                     </td>
-                    <td>
+                    <td className="celula--estado">
                       <Selo tom={e.cabeNaLista && e.cabeNoBuffer ? 'neutro' : 'alerta'}>
                         {e.larguraNaLista}
                         {!e.cabeNoBuffer && ` · ${e.bytes}B`}
                       </Selo>
+                      {e.ambiguo && <Selo tom="grave">nome repetido</Selo>}
                     </td>
                     {/* Armar continua disponível depois de vinculado: um aluno com
                         dois crachás é permitido de propósito, porque segunda via

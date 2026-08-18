@@ -40,15 +40,25 @@ medida em pixel, **um nome armado por vez**. A garantia contra trocar aluno não
 vem do meio de transporte; vem de não haver segundo candidato.
 
 Cuidados que já custaram bug e não podem se perder: aluno vem seguido de
-`(Perfil)` e docente de `Departamento:`; professor primeiro na ordem, para que
-cerimônia interrompida no meio já tenha o essencial feito.
+`(Perfil)` e docente de `Departamento:`; a dica de docente vem primeiro na
+ordem, para que cerimônia interrompida no meio já tenha o essencial feito.
 
-Feito: `nucleo/nomes.ts` é porte direto do `vincular.html`, **com as tabelas de
-avanço das fontes do firmware**, e tem teste para cada regra — sufixo de
-linhagem preservado, partícula descartada, colisão desempatada, e os dois
-limites (210 px na coluna, 31 bytes no buffer). A tela arma um nome por vez,
-recusa crachá já vinculado dizendo de quem é, e permite armar de novo um nome
-já feito, porque segunda via existe.
+Feito: `nucleo/nomes.ts` traz do `vincular.html` **as tabelas de avanço das
+fontes do firmware**, com teste para cada regra — partícula, colisão
+desempatada, e os dois limites (210 px na coluna, 31 bytes no buffer). A tela
+arma um nome por vez, recusa crachá já vinculado dizendo de quem é, e permite
+armar de novo um nome já feito, porque segunda via existe.
+
+Duas regras mudaram em relação ao `vincular.html`, e as duas por decisão de
+produto:
+
+- **O nome exibido é primeiro + segundo nome** — "Willian Neves", não "Willian
+  Jones". É como a pessoa é chamada, e é o que o mockup de `Adsum/docs/03` já
+  mostrava. De quebra, a regra de sufixo de linhagem deixa de ser necessária:
+  pegando pela frente, "Breno Filho" não é mais alcançável.
+- **Todo mundo entra como aluno**, e professor é um toque. A dica do SIGAA vira
+  marca na linha em vez de decisão automática, e um aviso fica na tela enquanto
+  ninguém estiver marcado — a trava passa de recusa para visibilidade.
 
 Medida que ficou registrada no teste: **"Amanda Nascimento" ocupa 209 dos 210
 pixels da coluna.** Nome comum já raspa o limite — é o número que explica por

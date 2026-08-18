@@ -51,7 +51,6 @@ export function bytesLatin1(texto: string): number {
 }
 
 const PARTICULAS = new Set(['de', 'da', 'do', 'das', 'dos', 'e'])
-const SUFIXOS = new Set(['neto', 'filho', 'junior', 'sobrinho', 'neta', 'filha', 'jr'])
 
 /** O SIGAA entrega em caixa alta. Partícula fica em minúscula. */
 export function titulo(nome: string): string {
@@ -65,26 +64,42 @@ export function titulo(nome: string): string {
 }
 
 /**
- * Primeiro nome + último sobrenome. Sufixo de linhagem carrega o anterior
- * junto, senão "Breno Filho" não identifica ninguém.
+ * Primeiro e segundo nome — "Willian Neves", não "Willian Jones".
+ *
+ * É como a pessoa é chamada, e é exatamente o que o mockup de `docs/03` já
+ * mostrava: Willian Neves, Maria Vitória, João Pedro, Luiz Felipe. O
+ * `vincular.html` usava primeiro nome + último sobrenome, e por isso precisava
+ * de uma regra para sufixo de linhagem — sem ela "Breno Oliveira Filho" virava
+ * "Breno Filho", que não identifica ninguém. Pegando pela frente, esse problema
+ * deixa de existir: some a regra e some a classe de erro junto.
+ *
+ * Partícula no meio é preservada ("Maria de Fátima"), porque lê melhor. Quando
+ * não couber na coluna, `comParticula: false` a descarta.
  */
-export function curto(completo: string, comSufixo: boolean): string {
+export function curto(completo: string, comParticula = true): string {
   const partes = completo.split(/\s+/)
   if (partes.length < 2) return completo
 
-  const ultima = partes[partes.length - 1]
-  let fim = [ultima]
-  if (SUFIXOS.has(ultima.toLowerCase()) && partes.length > 2) {
-    fim = comSufixo ? [partes[partes.length - 2], ultima] : [partes[partes.length - 2]]
+  const seguintes: string[] = []
+  for (let i = 1; i < partes.length; i++) {
+    if (PARTICULAS.has(partes[i].toLowerCase())) {
+      if (comParticula) seguintes.push(partes[i])
+      continue
+    }
+    seguintes.push(partes[i])
+    break
   }
-  while (fim.length && PARTICULAS.has(fim[0].toLowerCase())) fim.shift()
 
-  return [partes[0], ...fim].join(' ')
+  return [partes[0], ...seguintes].join(' ')
 }
 
 export interface NomeCru {
   completo: string
-  papel: Papel
+  /**
+   * O SIGAA disse que é docente. **Não** define o papel — é dica, e a dica não
+   * grava nada sozinha. Ver `prepararLista`.
+   */
+  docenteNoSigaa: boolean
 }
 
 /**
@@ -103,7 +118,7 @@ export function extrairNomes(texto: string): NomeCru[] {
     while ((casou = padrao.exec(texto)) !== null) {
       achados.push({
         completo: titulo(casou[1].trim()),
-        papel: casou[2].startsWith('(') ? 'aluno' : 'professor',
+        docenteNoSigaa: !casou[2].startsWith('('),
       })
     }
     return achados
@@ -113,7 +128,7 @@ export function extrairNomes(texto: string): NomeCru[] {
     .split('\n')
     .map((linha) => linha.trim())
     .filter((linha) => linha.length > 1)
-    .map((nome) => ({ completo: titulo(nome), papel: 'aluno' as const }))
+    .map((nome) => ({ completo: titulo(nome), docenteNoSigaa: false }))
 }
 
 export interface NomePreparado {
@@ -121,54 +136,96 @@ export interface NomePreparado {
   completo: string
   /** Como vai aparecer no aparelho. É este que o aluno confere. */
   nome: string
+  /**
+   * Sempre `aluno` aqui. Quem decide o contrário é quem opera, num toque — e o
+   * toque é registro de decisão, não padrão silencioso.
+   */
   papel: Papel
+  /** O SIGAA listou como docente. Só marca a linha; não muda o papel. */
+  docenteNoSigaa: boolean
+  /** Colidiu com outro nome e o desempate não resolveu. Precisa de edição. */
+  ambiguo: boolean
   larguraNaLista: number
   cabeNaLista: boolean
   bytes: number
   cabeNoBuffer: boolean
 }
 
+function medir(
+  base: Omit<NomePreparado, 'larguraNaLista' | 'cabeNaLista' | 'bytes' | 'cabeNoBuffer'>,
+): NomePreparado {
+  const larguraNaLista = largura(base.nome)
+  const bytes = bytesLatin1(base.nome)
+  return {
+    ...base,
+    larguraNaLista,
+    cabeNaLista: larguraNaLista <= LIMITE_LISTA,
+    bytes,
+    cabeNoBuffer: bytes <= MAX_BYTES,
+  }
+}
+
 /**
- * A lista pronta para a cerimônia: professor primeiro, nome encurtado, colisão
- * desempatada.
+ * A lista pronta para a cerimônia: dica de docente primeiro, nome encurtado,
+ * colisão desempatada.
  *
- * Professor primeiro porque o crachá dele é o que abre a sessão — cerimônia
+ * **Todo mundo entra como aluno.** O papel de professor é um toque explícito de
+ * quem opera. O `docenteNoSigaa` só ordena e marca a linha, para que o toque
+ * seja óbvio em vez de lembrado — o erro a evitar continua sendo vincular o
+ * professor como aluno e descobrir quando a sessão não abre na frente da turma.
+ * Por isso a lista também avisa quando nenhum professor foi marcado.
+ *
+ * Docente primeiro porque o crachá dele é o que abre a sessão: cerimônia
  * interrompida no meio já tem o essencial feito.
  *
- * Colisão desempatada porque dois "Luiz Silva" na tela é exatamente o erro que
- * a cerimônia existe para evitar: o professor não distingue, e o aluno confere
- * um nome que também é de outro.
+ * Colisão desempatada porque dois nomes iguais na tela é exatamente o erro que
+ * a cerimônia existe para evitar — o aluno conferiria um nome que também é de
+ * outro.
  */
 export function prepararLista(texto: string): NomePreparado[] {
   const achados = [...extrairNomes(texto)].sort((a, b) =>
-    a.papel === b.papel ? 0 : a.papel === 'professor' ? -1 : 1,
+    a.docenteNoSigaa === b.docenteNoSigaa ? 0 : a.docenteNoSigaa ? -1 : 1,
   )
   const completos = achados.map((a) => a.completo)
 
-  // Encurta; se nem assim couber, larga o sufixo de linhagem.
+  // Encurta; se não couber na coluna, larga a partícula do meio.
   let base = completos.map((completo) => {
-    const comSufixo = curto(completo, true)
-    return largura(comSufixo) > LIMITE_LISTA ? curto(completo, false) : comSufixo
+    const comParticula = curto(completo, true)
+    return largura(comParticula) > LIMITE_LISTA ? curto(completo, false) : comParticula
   })
 
-  const quantos = new Map<string, number>()
-  for (const nome of base) quantos.set(nome, (quantos.get(nome) ?? 0) + 1)
+  const quantos = (nomes: string[]) => {
+    const conta = new Map<string, number>()
+    for (const nome of nomes) conta.set(nome, (conta.get(nome) ?? 0) + 1)
+    return conta
+  }
 
+  // Desempate: inicial do último sobrenome. "Maria Vitória" vira
+  // "Maria Vitória S." e "Maria Vitória A.".
+  const antes = quantos(base)
   base = base.map((nome, i) => {
-    if ((quantos.get(nome) ?? 0) < 2) return nome
+    if ((antes.get(nome) ?? 0) < 2) return nome
     const partes = completos[i].split(/\s+/)
-    if (partes.length <= 2) return nome
-    const resto = nome.split(' ').slice(1).join(' ')
-    return `${partes[0]} ${partes[1].charAt(0)}. ${resto}`
+    const ultimo = partes[partes.length - 1]
+    return partes.length > 2 ? `${nome} ${ultimo.charAt(0)}.` : nome
   })
 
-  return base.map((nome, i) => ({
-    completo: completos[i],
-    nome,
-    papel: achados[i].papel,
-    larguraNaLista: largura(nome),
-    cabeNaLista: largura(nome) <= LIMITE_LISTA,
-    bytes: bytesLatin1(nome),
-    cabeNoBuffer: bytesLatin1(nome) <= MAX_BYTES,
-  }))
+  // Sobrou empate? Não dá para resolver sozinho — a linha é marcada e a tela
+  // pede edição, em vez de deixar dois nomes iguais passarem.
+  const depois = quantos(base)
+
+  return base.map((nome, i) =>
+    medir({
+      completo: completos[i],
+      nome,
+      papel: 'aluno',
+      docenteNoSigaa: achados[i].docenteNoSigaa,
+      ambiguo: (depois.get(nome) ?? 0) > 1,
+    }),
+  )
+}
+
+/** Remede um nome editado na tela, mantendo o resto da linha. */
+export function remedir(entrada: NomePreparado, nome: string): NomePreparado {
+  return medir({ ...entrada, nome })
 }

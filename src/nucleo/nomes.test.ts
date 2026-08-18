@@ -50,25 +50,34 @@ describe('caixa de título', () => {
 })
 
 describe('encurtamento', () => {
-  it('fica com primeiro nome e último sobrenome', () => {
-    expect(curto('Willian Neves Rupert Jones', true)).toBe('Willian Jones')
+  // É o nome pelo qual a pessoa é chamada — e é o que o mockup de docs/03 já
+  // mostrava: Willian Neves, Maria Vitória, João Pedro, Luiz Felipe.
+  it('fica com primeiro e segundo nome', () => {
+    expect(curto('Willian Neves Rupert Jones')).toBe('Willian Neves')
+    expect(curto('Maria Vitória Wanderley Lima')).toBe('Maria Vitória')
   })
 
-  // "Breno Filho" não identifica ninguém — docs/04.
-  it('preserva sufixo de linhagem com o sobrenome anterior', () => {
-    expect(curto('Breno Oliveira Filho', true)).toBe('Breno Oliveira Filho')
+  // Pegando pela frente, "Breno Filho" deixa de ser possível: a regra de sufixo
+  // de linhagem some junto com a classe de erro que ela existia para tapar.
+  it('não tem como cair em sufixo de linhagem', () => {
+    expect(curto('Breno Oliveira Filho')).toBe('Breno Oliveira')
+    expect(curto('Paulo Freitas de Araujo Filho')).toBe('Paulo Freitas')
   })
 
-  it('larga o sufixo quando não cabe, mantendo o sobrenome', () => {
-    expect(curto('Breno Oliveira Filho', false)).toBe('Breno Oliveira')
+  it('pula a partícula para alcançar o segundo nome', () => {
+    expect(curto('Luiz Miguel da Silva')).toBe('Luiz Miguel')
   })
 
-  it('não deixa partícula sozinha no fim', () => {
-    expect(curto('Luiz Miguel da Silva', true)).toBe('Luiz Silva')
+  it('preserva partícula no meio, porque lê melhor', () => {
+    expect(curto('Maria de Fátima Souza')).toBe('Maria de Fátima')
+  })
+
+  it('larga a partícula quando pedem por espaço', () => {
+    expect(curto('Maria de Fátima Souza', false)).toBe('Maria Fátima')
   })
 
   it('deixa nome único em paz', () => {
-    expect(curto('Madonna', true)).toBe('Madonna')
+    expect(curto('Madonna')).toBe('Madonna')
   })
 })
 
@@ -85,15 +94,18 @@ describe('extração do SIGAA', () => {
   it('acha aluno e docente na mesma colagem', () => {
     const achados = extrairNomes(COLADO)
     expect(achados).toHaveLength(3)
-    expect(achados.filter((a) => a.papel === 'professor')).toHaveLength(1)
-    expect(achados[1]).toEqual({ completo: 'Paulo Freitas de Araujo Filho', papel: 'professor' })
+    expect(achados.filter((a) => a.docenteNoSigaa)).toHaveLength(1)
+    expect(achados[1]).toEqual({
+      completo: 'Paulo Freitas de Araujo Filho',
+      docenteNoSigaa: true,
+    })
   })
 
-  it('aceita também um nome por linha, tratando como aluno', () => {
+  it('aceita também um nome por linha', () => {
     const achados = extrairNomes('Amanda Nascimento\nJoão Pedro\n')
     expect(achados).toEqual([
-      { completo: 'Amanda Nascimento', papel: 'aluno' },
-      { completo: 'João Pedro', papel: 'aluno' },
+      { completo: 'Amanda Nascimento', docenteNoSigaa: false },
+      { completo: 'João Pedro', docenteNoSigaa: false },
     ])
   })
 
@@ -103,31 +115,46 @@ describe('extração do SIGAA', () => {
 })
 
 describe('lista pronta para a cerimônia', () => {
-  it('põe o professor primeiro — cerimônia interrompida já tem o essencial', () => {
-    const lista = prepararLista(
-      [
-        'SIGAA Amanda Nascimento (Perfil)',
-        'SIGAA Paulo Freitas De Araujo Filho',
-        '   Departamento: CENTRO DE INFORMATICA',
-      ].join('\n'),
-    )
-    expect(lista[0].papel).toBe('professor')
+  const TURMA = [
+    'SIGAA Amanda Nascimento (Perfil)',
+    'SIGAA Paulo Freitas De Araujo Filho',
+    '   Departamento: CENTRO DE INFORMATICA',
+  ].join('\n')
+
+  // Todo mundo entra como aluno. Virar professor é um toque de quem opera —
+  // decisão registrada, não padrão silencioso.
+  it('cadastra todo mundo como aluno, inclusive o docente do SIGAA', () => {
+    const lista = prepararLista(TURMA)
+    expect(lista.every((n) => n.papel === 'aluno')).toBe(true)
   })
 
-  // Dois "Luiz Silva" na tela é o erro que a cerimônia existe para evitar.
-  it('desempata nome curto repetido com a inicial do segundo nome', () => {
-    const lista = prepararLista('Luiz Miguel da Silva\nLuiz Pedro da Silva')
-    expect(lista.map((n) => n.nome)).toEqual(['Luiz M. Silva', 'Luiz P. Silva'])
+  it('põe a dica de docente primeiro e marca a linha', () => {
+    const lista = prepararLista(TURMA)
+    expect(lista[0].completo).toBe('Paulo Freitas de Araujo Filho')
+    expect(lista[0].docenteNoSigaa).toBe(true)
+    expect(lista[1].docenteNoSigaa).toBe(false)
+  })
+
+  // Dois nomes iguais na tela é o erro que a cerimônia existe para evitar.
+  it('desempata nome repetido com a inicial do último sobrenome', () => {
+    const lista = prepararLista('Maria Vitória Souza\nMaria Vitória Andrade')
+    expect(lista.map((n) => n.nome)).toEqual(['Maria Vitória S.', 'Maria Vitória A.'])
+    expect(lista.every((n) => !n.ambiguo)).toBe(true)
+  })
+
+  it('marca como ambíguo o que nem o desempate resolve', () => {
+    const lista = prepararLista('Maria Vitória\nMaria Vitória')
+    expect(lista.every((n) => n.ambiguo)).toBe(true)
   })
 
   it('não mexe em quem não colide', () => {
     const lista = prepararLista('Luiz Miguel da Silva\nAmanda Nascimento')
-    expect(lista.map((n) => n.nome)).toEqual(['Luiz Silva', 'Amanda Nascimento'])
+    expect(lista.map((n) => n.nome)).toEqual(['Luiz Miguel', 'Amanda Nascimento'])
   })
 
   it('avisa quem estoura a coluna, em vez de cortar calado', () => {
     const [longo] = prepararLista('Wilhelmina Wollstonecraft Wallingford')
-    expect(longo.nome).toBe('Wilhelmina Wallingford')
+    expect(longo.nome).toBe('Wilhelmina Wollstonecraft')
     expect(longo.larguraNaLista).toBeGreaterThan(LIMITE_LISTA)
     expect(longo.cabeNaLista).toBe(false)
   })
@@ -137,12 +164,12 @@ describe('lista pronta para a cerimônia', () => {
   it('encurtar é o que faz o nome caber no buffer', () => {
     const [maria] = prepararLista('Maria Fernanda Albuquerque Cavalcanti')
     expect(bytesLatin1(maria.completo)).toBeGreaterThan(MAX_BYTES)
-    expect(maria.nome).toBe('Maria Cavalcanti')
+    expect(maria.nome).toBe('Maria Fernanda')
     expect(maria.cabeNoBuffer).toBe(true)
   })
 
   it('avisa quando nem encurtado cabe no buffer', () => {
-    const [enorme] = prepararLista('Wellington Vasconcelos Albuquerquerensissimos')
+    const [enorme] = prepararLista('Wellington Albuquerquerensissimos Souza')
     expect(enorme.bytes).toBeGreaterThan(MAX_BYTES)
     expect(enorme.cabeNoBuffer).toBe(false)
   })
@@ -156,9 +183,10 @@ describe('lista pronta para a cerimônia', () => {
   })
 
   it('mede cada nome contra os dois limites do aparelho', () => {
-    const [amanda] = prepararLista('Amanda Nascimento')
+    const [amanda] = prepararLista('Amanda Nascimento Ferreira')
     expect(amanda.cabeNaLista).toBe(amanda.larguraNaLista <= LIMITE_LISTA)
     expect(amanda.cabeNoBuffer).toBe(amanda.bytes <= MAX_BYTES)
-    expect(amanda.completo).toBe('Amanda Nascimento')
+    expect(amanda.completo).toBe('Amanda Nascimento Ferreira')
+    expect(amanda.nome).toBe('Amanda Nascimento')
   })
 })

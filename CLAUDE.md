@@ -32,6 +32,19 @@ Específicas do app:
   a assinatura não existe, o bug não se escreve.
 - **`src/ui/adsum.ts` é o único lugar que escolhe adaptadores.** Tela que
   importa `LeitorSimulado` ou `RepositorioDexie` diretamente é bug de camada.
+- **O nome exibido é primeiro + segundo nome**, não primeiro + último
+  sobrenome. Divergência deliberada do `vincular.html`: é como a pessoa é
+  chamada, e é o que o mockup de `Adsum/docs/03` já mostrava — Willian Neves,
+  Maria Vitória, João Pedro, Luiz Felipe. Consequência boa: pegando pela frente,
+  "Breno Filho" deixa de ser alcançável, e a regra de sufixo de linhagem some
+  junto com a classe de erro que ela existia para tapar.
+- **Todo mundo entra como aluno.** Virar professor é um toque explícito de quem
+  opera. Isso **não** contradiz o "`ARMAR` exige o papel" de `Adsum/docs/04`: o
+  comando continua exigindo, o que mudou foi o padrão da lista na tela. A trava
+  contra vincular o professor como aluno deixa de ser a recusa do comando e
+  passa a ser visível — dica `SIGAA: docente` na linha, e um aviso enquanto
+  ninguém estiver marcado. Padrão silencioso continua proibido; o que existe
+  agora é padrão **anunciado**.
 - **O firmware é a fonte da verdade dos formatos e do protocolo CDC.** Divergiu,
   o firmware está certo — é ele que grava o CSV que a planilha consome. Os
   testes de `nucleo/csv.ts` usam as linhas literais dos documentos do firmware:
@@ -95,11 +108,13 @@ Verificado no navegador:
   respondendo;
 - vínculo renomeado na tela sobrevive ao recarregamento — gravou no banco, não
   só no React;
-- a cerimônia inteira, com leitor simulado: professor primeiro, avanço
-  automático, `Luiz M. Silva` / `Luiz P. Silva` desempatados, `Breno Oliveira
-  Filho` com o sufixo preservado, quatro crachás para o mesmo aluno aceitos, e
-  crachá já vinculado **recusado dizendo de quem é**, com o nome armado
-  permanecendo armado;
+- a cerimônia inteira, com leitor simulado: dica de docente no topo, avanço
+  automático, `Maria Vitoria S.` / `Maria Vitoria A.` desempatadas pela inicial
+  do último sobrenome, quatro crachás para o mesmo aluno aceitos, e crachá já
+  vinculado **recusado dizendo de quem é**, com o nome armado permanecendo
+  armado;
+- o toggle de papel: marcar professor grava `papel: professor` e apaga o aviso
+  de "ninguém está marcado como professor";
 - trocar para o `LeitorWebNfc` no desktop falha **dizendo o motivo** ("só o
   Chrome no Android tem"), e voltar para o simulado recupera o estado `lendo`;
 - `semear` duas vezes não cria aula duplicada nem evento duplicado.
