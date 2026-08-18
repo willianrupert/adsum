@@ -193,3 +193,14 @@ describe('login no vínculo', () => {
     expect((await repo.vinculoPorHash('9bb18ff5da8824b2'))?.login).toBe('wnrj')
   })
 })
+
+describe('listar tudo', () => {
+  // Passar um número enorme como limite não é o mesmo que não limitar: o cursor
+  // do IndexedDB rejeita acima de 2³²−1, e a tela fica vazia sem erro à vista.
+  it('sem limite devolve tudo, sem estourar o cursor', async () => {
+    for (let i = 0; i < 60; i++) {
+      await repo.acrescentarEvento(evento({ eventoId: `web-a1b2-20260818-${String(i).padStart(4, '0')}` }))
+    }
+    expect(await repo.listarEventos()).toHaveLength(60)
+  })
+})

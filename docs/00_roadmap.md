@@ -78,7 +78,7 @@ Medida que ficou registrada no teste: **"Amanda Nascimento" ocupa 209 dos 210
 pixels da coluna.** Nome comum já raspa o limite — é o número que explica por
 que 47 dos 48 nomes reais não cabiam, e por que contar letras nunca resolveria.
 
-## 4 · Sessão e coleta
+## 4 · Sessão e coleta — **feito**
 
 A máquina de estados de `Adsum/docs/02` no navegador: `SEM_HORA` → `OCIOSO` →
 `IDENTIFICANDO_TURMA` → `CONFIRMANDO` → `COLETANDO` → `ENCERRANDO`, com a janela

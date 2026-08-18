@@ -316,9 +316,15 @@ com `registros/<turma>.csv`, nas colunas de `docs/02_formato.md`. E `;` + BOM
 
 **Rota única feita:** `nucleo/rota.ts` decide a tela a partir do estado, e
 `ui/Fluxo.tsx` a monta. Diagnóstico e Repositório viraram folhas, atrás de dois
-selos discretos. Falta a tela de coleta, que é o estado que ainda não existe.
+selos discretos.
 
-**Ainda a fazer:** a coleta e a pasta como dona (`docs/01`).
+**Coleta feita:** `nucleo/sessao.ts` tem as regras puras (quem conta presença,
+quem não conta, a janela de 60 s antes de aceitar o fechamento) e
+`ui/TelaColeta.tsx` desenha. Som por Web Audio, tocado **depois** de gravar. A
+tela se reconstrói do log: fechar o notebook no meio da aula não perde a
+chamada.
+
+**Ainda a fazer:** a pasta como dona (`docs/01`).
 
 **Vale por si, independente de hardware:**
 - ler só o UID público, nunca Crypto1 — é legitimidade, não limitação técnica

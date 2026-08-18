@@ -381,7 +381,7 @@ export function TelaRepositorio() {
             <button onClick={importarRegistros}>importar</button>
             <button
               onClick={tentar('Exportar registros', async () => {
-                const eventos = await repositorio.listarEventos(Number.MAX_SAFE_INTEGER)
+                const eventos = await repositorio.listarEventos()
                 // O login não fica no evento: fica no vínculo, que é onde ele
                 // pertence. A coluna é preenchida na saída, com o vínculo de
                 // hoje — assim corrigir um login corrige as exportações futuras

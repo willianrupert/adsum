@@ -9,6 +9,7 @@
 
 import Dexie, { type EntityTable } from 'dexie'
 import type { Aula, Config, Evento, Matriculado, Vinculo } from '../../nucleo/tipos.ts'
+import type { Sessao } from '../../nucleo/sessao.ts'
 
 export interface LinhaConfig extends Config {
   id: number
@@ -21,6 +22,7 @@ export type BancoAdsum = Dexie & {
   config: EntityTable<LinhaConfig, 'id'>
   vinculos: EntityTable<Vinculo, 'uidHash'>
   matriculados: EntityTable<Matriculado, 'login'>
+  sessao: EntityTable<Sessao & { id: number }, 'id'>
   aulas: EntityTable<Aula, 'id'>
   eventos: EntityTable<Evento, 'eventoId'>
 }
@@ -49,6 +51,12 @@ export function criarBanco(nome: string = NOME_DO_BANCO): BancoAdsum {
   // de que aula é a linha. Ver `docs/02_formato.md`.
   banco.version(3).stores({
     eventos: 'eventoId, quando, turma, uidHash',
+  })
+
+  // v4: a aula acontecendo. Uma linha só — não existem duas aulas ao mesmo
+  // tempo no computador de um professor.
+  banco.version(4).stores({
+    sessao: 'id',
   })
 
   return banco

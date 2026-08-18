@@ -8,6 +8,7 @@
 
 import { sortearSal } from '../../nucleo/hash.ts'
 import type { Aula, Config, Evento, Matriculado, UidHash, Vinculo } from '../../nucleo/tipos.ts'
+import type { Sessao } from '../../nucleo/sessao.ts'
 import type { DiagnosticoRepositorio, Repositorio } from '../../portas/Repositorio.ts'
 import { criarBanco, ID_DA_CONFIG, NOME_DO_BANCO, type BancoAdsum } from './banco.ts'
 
@@ -106,6 +107,18 @@ export class RepositorioDexie implements Repositorio {
     await this.#banco.aulas.clear()
   }
 
+  async sessaoAberta(): Promise<Sessao | undefined> {
+    return await this.#banco.sessao.get(1)
+  }
+
+  async abrirSessao(sessao: Sessao): Promise<void> {
+    await this.#banco.sessao.put({ ...sessao, id: 1 })
+  }
+
+  async encerrarSessao(): Promise<void> {
+    await this.#banco.sessao.delete(1)
+  }
+
   async acrescentarEvento(evento: Evento): Promise<void> {
     try {
       await this.#banco.eventos.add(evento)
@@ -119,8 +132,12 @@ export class RepositorioDexie implements Repositorio {
     }
   }
 
-  async listarEventos(limite = 50): Promise<Evento[]> {
-    return await this.#banco.eventos.orderBy('quando').reverse().limit(limite).toArray()
+  async listarEventos(limite?: number): Promise<Evento[]> {
+    // Sem limite significa sem `limit()`. Passar um número enorme não é o mesmo
+    // que não limitar: o cursor do IndexedDB só avança até 2³²−1, e acima disso
+    // a consulta rejeita — a tela fica vazia sem nenhum erro à vista.
+    const ordenados = this.#banco.eventos.orderBy('quando').reverse()
+    return await (limite === undefined ? ordenados : ordenados.limit(limite)).toArray()
   }
 
   async contarEventos(): Promise<number> {

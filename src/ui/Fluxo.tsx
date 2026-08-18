@@ -7,6 +7,10 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { decidirRota } from '../nucleo/rota.ts'
+import { calcularUidHash } from '../nucleo/hash.ts'
+import { decidir, eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
+import { tocar } from '../ambiente/som.ts'
+import { TelaColeta } from './TelaColeta.tsx'
 import { levantarCapacidades } from '../ambiente/capacidades.ts'
 import { useAdsum } from './adsum.ts'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
@@ -16,12 +20,14 @@ import { TelaVinculo } from './TelaVinculo.tsx'
 type Folha = 'diagnostico' | 'repositorio'
 
 export function Fluxo() {
-  const { leitor, repositorio } = useAdsum()
+  const { leitor, repositorio, config } = useAdsum()
 
   const [lendo, setLendo] = useState(leitor.estado() === 'lendo')
   const [turmas, setTurmas] = useState(0)
   const [pendentes, setPendentes] = useState(0)
   const [turmaPendente, setTurmaPendente] = useState<string>()
+  const [sessao, setSessao] = useState<Sessao>()
+  const [turmas1, setTurmas1] = useState<string>()
   const [folha, setFolha] = useState<Folha>()
 
   const ambienteQuebrado = levantarCapacidades().some((c) => c.peso === 'essencial' && !c.presente)
@@ -29,11 +35,14 @@ export function Fluxo() {
   useEffect(() => leitor.aoMudarEstado((e) => setLendo(e === 'lendo')), [leitor])
 
   const recontar = useCallback(async () => {
-    const [listaDeTurmas, matriculados, vinculos] = await Promise.all([
+    const [listaDeTurmas, matriculados, vinculos, aberta] = await Promise.all([
       repositorio.listarTurmas(),
       repositorio.listarMatriculados(),
       repositorio.listarVinculos(),
+      repositorio.sessaoAberta(),
     ])
+    setSessao(aberta)
+    setTurmas1(listaDeTurmas.length === 1 ? listaDeTurmas[0] : undefined)
     const comCracha = new Set(vinculos.map((v) => v.login).filter(Boolean))
     const faltando = matriculados.filter((m) => !comCracha.has(m.login))
     setTurmas(listaDeTurmas.length)
@@ -50,7 +59,45 @@ export function Fluxo() {
   // grava avisa, e é isso que faz a tela sair sozinha da cerimônia para o
   // repouso sem ninguém clicar em nada.
 
-  const rota = decidirRota({ ambienteQuebrado, lendo, turmas, pendentes })
+  // Fora da coleta, o crachá do professor é o que abre a aula. É o único
+  // gesto que a tela de repouso precisa entender — e é o que faz a aula
+  // começar sem ninguém tocar em nada.
+  useEffect(() => {
+    if (sessao) return
+    return leitor.aoLer((leitura) => {
+      void (async () => {
+        const uidHash = await calcularUidHash(config.salHex, leitura.uid)
+        const vinculo = await repositorio.vinculoPorHash(uidHash)
+        if (vinculo?.papel !== 'professor') return
+
+        const decisao = decidir(uidHash, {
+          vinculo,
+          jaPresentes: new Set(),
+          agora: leitura.em,
+          turmaSugerida: turmas1,
+        })
+        if (decisao.tipo !== 'abrir') return
+
+        const total = await repositorio.contarEventos()
+        const evento = eventoDe(decisao, {
+          eventoId: proximoEventoId(config.aparelhoId, leitura.em, total + 1),
+          quando: leitura.em,
+          turma: decisao.turma,
+          uidHash,
+        })
+        if (evento) await repositorio.acrescentarEvento(evento)
+        await repositorio.abrirSessao({
+          turma: decisao.turma,
+          abertaEm: leitura.em.toISOString(),
+          uidHashProfessor: uidHash,
+        })
+        tocar('sessao')
+        await recontar()
+      })()
+    })
+  }, [leitor, repositorio, config, sessao, turmas1, recontar])
+
+  const rota = decidirRota({ ambienteQuebrado, lendo, turmas, pendentes, aulaAberta: !!sessao })
 
   return (
     <>
@@ -59,6 +106,7 @@ export function Fluxo() {
       {rota === 'cerimonia' && (
         <TelaVinculo turmaInicial={turmaPendente} aoMudarBase={recontar} />
       )}
+      {rota === 'coleta' && sessao && <TelaColeta sessao={sessao} aoMudarBase={recontar} />}
       {rota === 'pronto' && <Repouso turmas={turmas} aoAbrirCerimonia={() => setFolha(undefined)} />}
 
       <footer className="selos">

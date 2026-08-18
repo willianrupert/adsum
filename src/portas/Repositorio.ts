@@ -8,6 +8,7 @@
 //    camada, e nunca do caminho da leitura.
 
 import type { Aula, Config, Evento, Matriculado, UidHash, Vinculo } from '../nucleo/tipos.ts'
+import type { Sessao } from '../nucleo/sessao.ts'
 
 export interface DiagnosticoRepositorio {
   nome: string
@@ -52,9 +53,17 @@ export interface Repositorio {
   gravarAula(aula: Aula): Promise<void>
   zerarAulas(): Promise<void>
 
+  /**
+   * A aula acontecendo, se houver. Fica fora do log de propósito: "está aberta
+   * agora" é estado mutável, e o log só guarda o que aconteceu.
+   */
+  sessaoAberta(): Promise<Sessao | undefined>
+  abrirSessao(sessao: Sessao): Promise<void>
+  encerrarSessao(): Promise<void>
+
   /** Único caminho de escrita de evento. Rejeita `eventoId` repetido. */
   acrescentarEvento(evento: Evento): Promise<void>
-  /** Mais recentes primeiro. */
+  /** Mais recentes primeiro. Sem limite, devolve tudo. */
   listarEventos(limite?: number): Promise<Evento[]>
   contarEventos(): Promise<number>
 

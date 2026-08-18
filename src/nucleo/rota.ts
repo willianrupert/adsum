@@ -17,6 +17,8 @@ export type Rota =
   | 'turma'
   /** Há gente sem crachá: a tela é a cerimônia. */
   | 'cerimonia'
+  /** Aula aberta: a tela é a coleta, e só ela. */
+  | 'coleta'
   /** Tudo vinculado: a tela é a espera do próximo crachá. */
   | 'pronto'
 
@@ -25,12 +27,16 @@ export interface EstadoDoApp {
   lendo: boolean
   turmas: number
   pendentes: number
+  aulaAberta: boolean
 }
 
 export function decidirRota(estado: EstadoDoApp): Rota {
   if (estado.ambienteQuebrado) return 'problema'
   if (estado.turmas === 0) return 'turma'
   if (!estado.lendo) return 'problema'
+  // A aula acontecendo vence a cerimônia: quem chegou depois se cadastra
+  // depois, mas a fila na porta não espera ninguém.
+  if (estado.aulaAberta) return 'coleta'
   if (estado.pendentes > 0) return 'cerimonia'
   return 'pronto'
 }

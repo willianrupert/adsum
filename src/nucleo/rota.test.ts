@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { decidirRota, type EstadoDoApp } from './rota.ts'
 
-const BASE: EstadoDoApp = { ambienteQuebrado: false, lendo: true, turmas: 1, pendentes: 0 }
+const BASE: EstadoDoApp = {
+  ambienteQuebrado: false,
+  lendo: true,
+  turmas: 1,
+  pendentes: 0,
+  aulaAberta: false,
+}
 
 describe('a rota decorre do estado', () => {
   it('sem turma, a tela é colar a turma', () => {
@@ -23,6 +29,15 @@ describe('a rota decorre do estado', () => {
 
   it('ambiente quebrado vence tudo, inclusive não ter turma', () => {
     expect(decidirRota({ ...BASE, ambienteQuebrado: true, turmas: 0 })).toBe('problema')
+  })
+
+  it('com aula aberta, a tela é a coleta', () => {
+    expect(decidirRota({ ...BASE, aulaAberta: true })).toBe('coleta')
+  })
+
+  // Quem chegou depois se cadastra depois; a fila na porta não espera ninguém.
+  it('a aula aberta vence a cerimônia pendente', () => {
+    expect(decidirRota({ ...BASE, aulaAberta: true, pendentes: 9 })).toBe('coleta')
   })
 
   // Sem turma não há quem armar, então colar a lista vem antes de reclamar do
