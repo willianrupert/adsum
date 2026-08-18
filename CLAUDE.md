@@ -300,3 +300,27 @@ conferido pelo texto do DOM, não a olho.
 - **O firmware ainda não é repositório.** Se um dia for, `adsum` já estará
   ocupado por este — o nome natural para ele é `adsum-a1`, que é a nomenclatura
   do próprio projeto: Adsum é o sistema, Adsum A1 é o aparelho.
+
+## Herança indevida — a decidir antes de continuar
+
+O autor criou este projeto **do zero**. A sessão de 18/08/2026 ancorou tudo no
+`~/Projetos/Adsum` (hardware ESP32, hoje morto) sem que isso fosse pedido.
+Inventário para decidir o que fica:
+
+**Só existe por causa do aparelho — candidato a sumir:**
+- `LIMITE_LISTA` 210 px e `MAX_BYTES` 31 — medidas de um display que não existe
+- Tabelas `A20`/`A24` em `nucleo/nomes.ts` — avanços de fontes de um firmware
+- `;` + BOM e as 8 colunas de `registros.csv`, justificadas por "é o que o
+  firmware grava"
+- `alunos.csv` com três colunas "porque o firmware lê três"
+- `grade.csv` indexada por hash do professor "porque o aparelho circula"
+
+**Vale por si, independente de hardware:**
+- ler só o UID público, nunca Crypto1 — é legitimidade, não limitação técnica
+- hash com sal — é privacidade
+- registro append-only
+- um só nome armado por vez na cerimônia — é a garantia contra trocar aluno
+- leitura da página do SIGAA: nome, login, conferência do total
+- encurtar nome por legibilidade (o conceito, não os números)
+
+**Nascido aqui:** rota é o estado, orçamento de toques, o cofre em `docs/01`.
