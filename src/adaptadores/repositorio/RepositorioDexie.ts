@@ -144,6 +144,28 @@ export class RepositorioDexie implements Repositorio {
     return await this.#banco.eventos.count()
   }
 
+  async lerPasta(): Promise<FileSystemDirectoryHandle | undefined> {
+    return (await this.#banco.pasta.get(1))?.handle
+  }
+
+  async guardarPasta(handle: FileSystemDirectoryHandle): Promise<void> {
+    await this.#banco.pasta.put({ id: 1, handle })
+  }
+
+  async esquecerPasta(): Promise<void> {
+    await this.#banco.pasta.delete(1)
+  }
+
+  async esvaziarCache(): Promise<void> {
+    await Promise.all([
+      this.#banco.vinculos.clear(),
+      this.#banco.matriculados.clear(),
+      this.#banco.aulas.clear(),
+      this.#banco.eventos.clear(),
+      this.#banco.sessao.clear(),
+    ])
+  }
+
   async diagnostico(): Promise<DiagnosticoRepositorio> {
     const [vinculos, professores, aulas, eventos, matriculados, turmas] = await Promise.all([
       this.#banco.vinculos.count(),

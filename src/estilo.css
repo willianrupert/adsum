@@ -905,3 +905,17 @@ textarea:focus-visible {
     gap: 16px;
   }
 }
+
+.pasta__nota {
+  margin: 14px auto 0;
+  max-width: 46ch;
+  font-size: var(--t12);
+  color: var(--tinta-fraca);
+  line-height: 1.6;
+}
+
+.pasta__botao {
+  margin-top: 22px;
+  padding: 9px 20px;
+  font-size: var(--t15);
+}

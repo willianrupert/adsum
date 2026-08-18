@@ -3,6 +3,7 @@ import { decidirRota, type EstadoDoApp } from './rota.ts'
 
 const BASE: EstadoDoApp = {
   ambienteQuebrado: false,
+  pasta: 'ligada',
   lendo: true,
   turmas: 1,
   pendentes: 0,
@@ -29,6 +30,21 @@ describe('a rota decorre do estado', () => {
 
   it('ambiente quebrado vence tudo, inclusive não ter turma', () => {
     expect(decidirRota({ ...BASE, ambienteQuebrado: true, turmas: 0 })).toBe('problema')
+  })
+
+  it('sem pasta escolhida, a tela é escolher onde guardar', () => {
+    expect(decidirRota({ ...BASE, pasta: 'sem_pasta', turmas: 3 })).toBe('pasta')
+    expect(decidirRota({ ...BASE, pasta: 'sem_permissao' })).toBe('pasta')
+  })
+
+  // Onde não há seletor de pasta, seguir é a única opção — quem avisa que os
+  // dados não estão seguros é a tela da base, não uma parede.
+  it('navegador sem seletor de pasta não fica preso', () => {
+    expect(decidirRota({ ...BASE, pasta: 'indisponivel', turmas: 0 })).toBe('turma')
+  })
+
+  it('ambiente quebrado vence até a pasta', () => {
+    expect(decidirRota({ ...BASE, ambienteQuebrado: true, pasta: 'sem_pasta' })).toBe('problema')
   })
 
   it('com aula aberta, a tela é a coleta', () => {

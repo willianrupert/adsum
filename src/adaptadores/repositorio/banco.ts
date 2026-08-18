@@ -23,6 +23,7 @@ export type BancoAdsum = Dexie & {
   vinculos: EntityTable<Vinculo, 'uidHash'>
   matriculados: EntityTable<Matriculado, 'login'>
   sessao: EntityTable<Sessao & { id: number }, 'id'>
+  pasta: EntityTable<{ id: number; handle: FileSystemDirectoryHandle }, 'id'>
   aulas: EntityTable<Aula, 'id'>
   eventos: EntityTable<Evento, 'eventoId'>
 }
@@ -57,6 +58,12 @@ export function criarBanco(nome: string = NOME_DO_BANCO): BancoAdsum {
   // tempo no computador de um professor.
   banco.version(4).stores({
     sessao: 'id',
+  })
+
+  // v5: o handle da pasta. Ele é clonável estruturalmente, então o IndexedDB
+  // guarda a referência e a sessão seguinte reabre a mesma pasta sem perguntar.
+  banco.version(5).stores({
+    pasta: 'id',
   })
 
   return banco

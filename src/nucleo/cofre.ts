@@ -11,6 +11,7 @@
 // se perde a base de alguém.
 
 import type { Aula, Config, Matriculado, Vinculo } from './tipos.ts'
+import { nomeSeguroDeTurma } from './csv.ts'
 
 export const VERSAO = 1
 
@@ -73,7 +74,7 @@ export const NOMES = {
   config: 'config.json',
   vinculos: 'vinculos.json',
   grade: 'grade.json',
-  turma: (turma: string) => `turmas/${turma.replace(/[^\w.-]+/g, '-')}.json`,
+  turma: (turma: string) => `turmas/${nomeSeguroDeTurma(turma)}.json`,
 } as const
 
 export const paraJsonConfig = (config: Config) => embrulhar(config)

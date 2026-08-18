@@ -67,6 +67,17 @@ export interface Repositorio {
   listarEventos(limite?: number): Promise<Evento[]>
   contarEventos(): Promise<number>
 
+  /**
+   * A pasta escolhida, se houver. Guardar o handle é o que dispensa reescolher
+   * a cada sessão — e perdê-lo (ao limpar dados do site) **não** apaga a pasta.
+   */
+  lerPasta(): Promise<FileSystemDirectoryHandle | undefined>
+  guardarPasta(handle: FileSystemDirectoryHandle): Promise<void>
+  esquecerPasta(): Promise<void>
+
+  /** Apaga o cache local. A pasta, se houver, continua onde está. */
+  esvaziarCache(): Promise<void>
+
   diagnostico(): Promise<DiagnosticoRepositorio>
 }
 

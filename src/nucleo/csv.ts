@@ -131,12 +131,23 @@ export function porTurma(eventos: Evento[]): Map<string, Evento[]> {
   return mapa
 }
 
-/** `IF685 · T01` → `IF685-T01.csv`, que é nome de arquivo em qualquer sistema. */
+/**
+ * `IF685 · T01` → `IF685-T01`, que é nome de arquivo em qualquer sistema.
+ *
+ * Mora aqui e é usado também pelo cofre, para que `turmas/IF685-T01.json` e
+ * `registros/IF685-T01.csv` sejam reconhecíveis como a mesma turma por quem
+ * abrir a pasta no Finder.
+ */
+export function nomeSeguroDeTurma(turma: string): string {
+  return (
+    turma
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Za-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'turma'
+  )
+}
+
 export function nomeDoArquivo(turma: string): string {
-  const limpo = turma
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^A-Za-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-  return `${limpo || 'turma'}.csv`
+  return `${nomeSeguroDeTurma(turma)}.csv`
 }

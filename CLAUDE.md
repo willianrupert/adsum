@@ -32,7 +32,7 @@ Leia antes de qualquer tarefa.
 
 ## Duas perguntas em aberto, e são as que mais importam
 
-### 1. O professor não pode perder a base. Hoje ele pode.
+### 1. O professor não pode perder a base. *(Resolvido no Chrome/Edge.)*
 
 Tudo vive no IndexedDB de **um navegador de uma máquina**. Trocar de
 computador, limpar dados do site, ou o navegador despejar sob pressão de espaço
@@ -324,7 +324,14 @@ quem não conta, a janela de 60 s antes de aceitar o fechamento) e
 tela se reconstrói do log: fechar o notebook no meio da aula não perde a
 chamada.
 
-**Ainda a fazer:** a pasta como dona (`docs/01`).
+**Cofre feito:** `ambiente/pasta.ts` (File System Access) e
+`ambiente/sincronia.ts`. A pasta é a dona; o IndexedDB é cache. `restaurar()`
+reconstrói a base inteira lendo a pasta, e há teste que apaga o cache e prova
+isso — é o que separa "cofre" de "mais um backup". O handle fica guardado, e
+limpar dados do site apaga o handle, **não** a pasta.
+
+**Ainda a fazer:** a passada visual (tipografia, espaço, claro/escuro,
+Mushroom cards) e o corte de texto das telas de vínculo e base.
 
 **Vale por si, independente de hardware:**
 - ler só o UID público, nunca Crypto1 — é legitimidade, não limitação técnica

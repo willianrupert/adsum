@@ -12,11 +12,22 @@ interface OpcoesDeArquivo {
 }
 
 declare global {
+  type EstadoDaPermissao = 'granted' | 'denied' | 'prompt'
+
+  interface FileSystemHandle {
+    queryPermission?: (opcoes?: { mode?: 'read' | 'readwrite' }) => Promise<EstadoDaPermissao>
+    requestPermission?: (opcoes?: { mode?: 'read' | 'readwrite' }) => Promise<EstadoDaPermissao>
+  }
+
   interface Window {
     /** File System Access — gravar por cima do mesmo arquivo, sem download novo. */
     showSaveFilePicker?: (opcoes?: OpcoesDeArquivo & { suggestedName?: string }) => Promise<FileSystemFileHandle>
     showOpenFilePicker?: (opcoes?: OpcoesDeArquivo & { multiple?: boolean }) => Promise<FileSystemFileHandle[]>
-    showDirectoryPicker?: (opcoes?: unknown) => Promise<unknown>
+    showDirectoryPicker?: (opcoes?: {
+      id?: string
+      mode?: 'read' | 'readwrite'
+      startIn?: string
+    }) => Promise<FileSystemDirectoryHandle>
   }
 
   interface Navigator {

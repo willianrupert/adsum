@@ -134,7 +134,7 @@ Não implementado. Registro para a próxima sessão não recomeçar do zero.
 Não há abas. A tela decorre do que existe na
 pasta e da hora. Seis estados, um de cada vez:
 
-1. sem pasta → *escolha onde guardar* (única ação da tela)
+1. sem pasta → *escolha onde guardar* (única ação da tela) — **feito**
 2. sem turma → *cole sua turma*
 3. turma sem crachás → cerimônia de vínculo
 4. tudo pronto, fora de horário → repouso, com a próxima aula

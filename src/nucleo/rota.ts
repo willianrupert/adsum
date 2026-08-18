@@ -13,6 +13,8 @@
 export type Rota =
   /** Falta peça essencial do navegador, ou não há leitor lendo. */
   | 'problema'
+  /** Falta escolher onde guardar. Enquanto isso, a base pode ser perdida. */
+  | 'pasta'
   /** Nenhuma turma cadastrada: a tela é colar a lista do SIGAA. */
   | 'turma'
   /** Há gente sem crachá: a tela é a cerimônia. */
@@ -22,8 +24,12 @@ export type Rota =
   /** Tudo vinculado: a tela é a espera do próximo crachá. */
   | 'pronto'
 
+/** Ver `ambiente/pasta.ts`. `indisponivel` = navegador sem seletor de pasta. */
+export type EstadoDaPasta = 'indisponivel' | 'sem_pasta' | 'sem_permissao' | 'ligada'
+
 export interface EstadoDoApp {
   ambienteQuebrado: boolean
+  pasta: EstadoDaPasta
   lendo: boolean
   turmas: number
   pendentes: number
@@ -32,6 +38,12 @@ export interface EstadoDoApp {
 
 export function decidirRota(estado: EstadoDoApp): Rota {
   if (estado.ambienteQuebrado) return 'problema'
+
+  // Escolher a pasta vem antes de tudo o que grava. Onde o navegador não
+  // oferece seletor, seguir é a única opção — e aí a tela da base é que precisa
+  // dizer que os dados não estão seguros, em vez de fingir que estão.
+  if (estado.pasta === 'sem_pasta' || estado.pasta === 'sem_permissao') return 'pasta'
+
   if (estado.turmas === 0) return 'turma'
   if (!estado.lendo) return 'problema'
   // A aula acontecendo vence a cerimônia: quem chegou depois se cadastra
