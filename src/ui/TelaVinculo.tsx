@@ -29,7 +29,14 @@ interface Entrada extends NomePreparado {
 }
 
 function comoMatriculado(turma: string, e: Entrada): Matriculado {
-  return { turma, login: e.login, nomeCompleto: e.completo, nome: e.nome, papel: e.papel }
+  return {
+    turma,
+    chave: e.matricula || e.completo.toLowerCase(),
+    matricula: e.matricula,
+    nomeCompleto: e.completo,
+    nome: e.nome,
+    papel: e.papel,
+  }
 }
 
 export function TelaVinculo({
@@ -65,31 +72,30 @@ export function TelaVinculo({
         repositorio.listarMatriculados(nomeDaTurma),
         repositorio.listarVinculos(),
       ])
-      const comCracha = new Set(vinculos.map((v) => v.login).filter(Boolean))
+      const comCracha = new Set(vinculos.map((v) => v.matricula).filter(Boolean))
       const preparados = prepararLista(
         pessoas.map((p) => ({
           nomeCompleto: p.nomeCompleto,
-          login: p.login,
+          matricula: p.matricula,
           docenteNoSigaa: p.papel === 'professor',
-          loginProvisorio: /^\d+$/.test(p.login),
         })),
       )
       // Casado por login, nunca por índice: `prepararLista` reordena para pôr a
       // dica de docente no topo, e casar por posição devolveria o papel de uma
       // pessoa para outra — em silêncio, que é o pior jeito de errar isso.
-      const porLogin = new Map(pessoas.map((p) => [p.login, p]))
+      const porChave = new Map(pessoas.map((p) => [p.matricula || p.nomeCompleto.toLowerCase(), p]))
 
       setTurma(nomeDaTurma)
       setFila(
         preparados.map((p) => {
-          const guardado = porLogin.get(p.login)
+          const guardado = porChave.get(p.matricula || p.completo.toLowerCase())
           return {
             ...p,
             // O que está guardado vence o que o encurtamento supôs: já foi
             // decidido por quem opera, e edição de nome não se perde.
             papel: guardado?.papel ?? p.papel,
             nome: guardado?.nome ?? p.nome,
-            estado: comCracha.has(p.login) ? ('feito' as const) : ('pendente' as const),
+            estado: p.matricula && comCracha.has(p.matricula) ? ('feito' as const) : ('pendente' as const),
           }
         }),
       )
@@ -122,37 +128,24 @@ export function TelaVinculo({
 
     const preparados = prepararLista(leitura.pessoas)
     const vinculos = await repositorio.listarVinculos()
-    const comCracha = new Set(vinculos.map((v) => v.login).filter(Boolean))
+    const comCracha = new Set(vinculos.map((v) => v.matricula).filter(Boolean))
 
     setFila(
       preparados.map((p) => ({
         ...p,
-        estado: p.login && comCracha.has(p.login) ? 'feito' : 'pendente',
+        estado: p.matricula && comCracha.has(p.matricula) ? 'feito' : 'pendente',
       })),
     )
     setArmado(undefined)
 
-    const docentes = preparados.filter((p) => p.docenteNoSigaa).length
-    const semLogin = preparados.filter((p) => !p.login).length
-    const provisorios = preparados.filter((p) => p.loginProvisorio).length
+    const docentes = preparados.filter((p) => p.papel === 'professor').length
     const ambiguos = preparados.filter((p) => p.ambiguo).length
 
-    const avisos = [
-      ambiguos > 0 && `${ambiguos} ficaram com nomes iguais — edite antes de armar`,
-      semLogin > 0 && `${semLogin} sem login do CIn`,
-      provisorios > 0 &&
-        `${provisorios} com login que é só número (matrícula ou CPF) — confira antes de gravar`,
-    ].filter(Boolean)
-
     setRecado({
-      tom: avisos.length > 0 ? 'alerta' : 'ok',
+      tom: ambiguos > 0 ? 'alerta' : 'ok',
       texto:
-        `${preparados.length} pessoas, todas como aluno` +
-        (docentes > 0
-          ? `, ${docentes === 1 ? '1 marcada' : `${docentes} marcadas`} como docente pelo SIGAA`
-          : '') +
-        '.' +
-        (avisos.length > 0 ? ` Atenção: ${avisos.join('; ')}.` : ''),
+        `${preparados.length} pessoas, ${docentes === 1 ? '1 professor' : `${docentes} professores`}.` +
+        (ambiguos > 0 ? ` ${ambiguos} com nomes iguais — edite antes de armar.` : ''),
     })
   }, [colado, turma, repositorio])
 
@@ -211,7 +204,7 @@ export function TelaVinculo({
           uidHash,
           papel: entrada.papel,
           nome: entrada.nome,
-          login: entrada.login || undefined,
+          matricula: entrada.matricula || undefined,
           criadoEm: leitura.em.toISOString(),
         })
 
@@ -224,6 +217,24 @@ export function TelaVinculo({
       })()
     })
   }, [leitor, armado, fila, repositorio, config.salHex, proximoPendente, aoMudarBase])
+
+  // Setas andam pela lista. Quem opera está com a mão no teclado e um aluno na
+  // frente: pedir para mirar e clicar numa linha é atrito onde não cabe.
+  useEffect(() => {
+    if (armado === undefined) return
+    const andar = (evento: KeyboardEvent) => {
+      if (evento.key !== 'ArrowRight' && evento.key !== 'ArrowLeft') return
+      const passo = evento.key === 'ArrowRight' ? 1 : -1
+      setArmado((atual) => {
+        if (atual === undefined) return atual
+        const proximo = atual + passo
+        return proximo >= 0 && proximo < fila.length ? proximo : atual
+      })
+      evento.preventDefault()
+    }
+    window.addEventListener('keydown', andar)
+    return () => window.removeEventListener('keydown', andar)
+  }, [armado, fila.length])
 
   const feitos = useMemo(() => fila.filter((e) => e.estado === 'feito').length, [fila])
   const pendentes = useMemo(() => fila.filter((e) => e.estado === 'pendente').length, [fila])
@@ -272,11 +283,17 @@ export function TelaVinculo({
         <section className="armado">
           <p className="armado__rotulo">encoste o crachá de</p>
           <p className="armado__nome">{atual.nome}</p>
-          {atual.login && <p className="armado__login">&lt;{atual.login}&gt;</p>}
           <p className="armado__completo">
             {atual.completo} · {atual.papel}
           </p>
           <div className="armado__acoes">
+            <button
+              onClick={() => setArmado(Math.max(0, armado - 1))}
+              aria-label="anterior"
+              disabled={armado === 0}
+            >
+              ←
+            </button>
             <button
               onClick={() => {
                 setFila((antes) =>
@@ -287,8 +304,16 @@ export function TelaVinculo({
             >
               pular
             </button>
+            <button
+              onClick={() => setArmado(Math.min(fila.length - 1, armado + 1))}
+              aria-label="próximo"
+              disabled={armado === fila.length - 1}
+            >
+              →
+            </button>
             <button onClick={() => setArmado(undefined)}>encerrar</button>
           </div>
+          <p className="armado__atalho">use ← e → para andar pela turma</p>
 
           {/* Com leitor simulado a cerimônia inteira roda sem hardware — é como
               se ensaia o roteiro antes de ter cinquenta alunos na fila. */}
@@ -378,14 +403,13 @@ export function TelaVinculo({
               <thead>
                 <tr>
                   <th>nome no aparelho</th>
-                  <th>login</th>
                   <th>papel</th>
                   <th>estado</th>
                 </tr>
               </thead>
               <tbody>
                 {fila.map((e, i) => (
-                  <tr key={`${e.login || e.completo}-${i}`} className={i === armado ? 'linha--armada' : ''}>
+                  <tr key={`${e.matricula || e.completo}-${i}`} className={i === armado ? 'linha--armada' : ''}>
                     <td>
                       <input
                         className="entrada--celula"
@@ -394,10 +418,7 @@ export function TelaVinculo({
                         aria-label={`nome de ${e.completo}`}
                       />
                     </td>
-                    <td className="celula--estado">
-                      {e.login ? <code>{e.login}</code> : <Selo tom="alerta">sem login</Selo>}
-                      {e.loginProvisorio && <Selo tom="alerta">só número</Selo>}
-                    </td>
+
                     <td className="celula--estado">
                       <select
                         value={e.papel}

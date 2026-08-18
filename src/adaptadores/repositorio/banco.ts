@@ -21,7 +21,7 @@ export const ID_DA_CONFIG = 1
 export type BancoAdsum = Dexie & {
   config: EntityTable<LinhaConfig, 'id'>
   vinculos: EntityTable<Vinculo, 'uidHash'>
-  matriculados: EntityTable<Matriculado, 'login'>
+  matriculados: EntityTable<Matriculado, 'chave'>
   sessao: EntityTable<Sessao & { id: number }, 'id'>
   pasta: EntityTable<{ id: number; handle: FileSystemDirectoryHandle }, 'id'>
   aulas: EntityTable<Aula, 'id'>
@@ -64,6 +64,14 @@ export function criarBanco(nome: string = NOME_DO_BANCO): BancoAdsum {
   // guarda a referência e a sessão seguinte reabre a mesma pasta sem perguntar.
   banco.version(5).stores({
     pasta: 'id',
+  })
+
+  // v6: some o login do SIGAA e entra a matrícula. O campo `Usuário:` da página
+  // é credencial de acesso de outra pessoa e não tem por que morar numa base de
+  // frequência — quem identifica é a matrícula.
+  banco.version(6).stores({
+    vinculos: 'uidHash, papel, nome, matricula',
+    matriculados: '[turma+chave], turma, chave, nome',
   })
 
   return banco

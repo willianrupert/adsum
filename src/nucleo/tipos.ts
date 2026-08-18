@@ -20,11 +20,11 @@ export interface Vinculo {
   /** Nome exibido, já encurtado para caber na tela. Não é o nome de registro. */
   nome: string
   /**
-   * Login do CIn. É o identificador estável da pessoa — nome muda com casamento
-   * e correção de cadastro, login não — e é por ele que a planilha fecha a
-   * chamada. Fica vazio quando a lista não veio do SIGAA.
+   * Matrícula. É o identificador da pessoa na instituição, e é por ele que a
+   * planilha fecha a chamada. Fica vazio para quem não tem matrícula na página
+   * (docente) ou quando a lista não veio do SIGAA.
    */
-  login?: string
+  matricula?: string
   /** Quando o crachá foi encostado. É o timestamp do vínculo. */
   criadoEm: string
 }
@@ -40,7 +40,9 @@ export interface Vinculo {
 export interface Matriculado {
   /** Como o professor chama a turma. `IF685 · T01`. */
   turma: string
-  login: string
+  /** Matrícula quando existe, nome em minúsculas quando não — docente não tem. */
+  chave: string
+  matricula: string
   nomeCompleto: string
   /** Já encurtado e medido contra a coluna do aparelho. */
   nome: string
@@ -75,12 +77,8 @@ export interface Evento {
   quando: string
   turma: string
   uidHash: UidHash
-  /**
-   * Login do SIGAA, quando conhecido. O vínculo guarda só `hash → nome`, então
-   * aqui costuma vir vazio — a coluna existe porque `registros.csv` do aparelho
-   * a tem, e mudar a contagem de colunas quebraria a leitura pelo firmware.
-   */
-  login?: string
+  /** Matrícula, preenchida na saída a partir do vínculo. */
+  matricula?: string
   /** Fica só aqui. O nome não trafega — a planilha resolve o hash. */
   nome: string
   origem: Origem

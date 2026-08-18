@@ -52,14 +52,9 @@ export interface NomePreparado {
   completo: string
   /** Como aparece na tela. É este que o aluno confere antes de encostar. */
   nome: string
-  /** O login do CIn. Vazio quando a lista não veio do SIGAA. */
-  login: string
-  /** O login é só dígitos — matrícula ou CPF no lugar de login escolhido. */
-  loginProvisorio: boolean
-  /**
-   * Sempre `aluno` aqui. Quem decide o contrário é quem opera, num toque — e o
-   * toque é registro de decisão, não padrão silencioso.
-   */
+  /** Matrícula. Não aparece na tela: identifica no registro. */
+  matricula: string
+  /** Vem da seção da página: Docentes → professor, Discentes → aluno. */
   papel: Papel
   /** O SIGAA listou como docente. Só marca a linha; não muda o papel. */
   docenteNoSigaa: boolean
@@ -114,9 +109,11 @@ export function prepararLista(entrada: string | PessoaSigaa[]): NomePreparado[] 
   return base.map((nome, i) => ({
     completo: completos[i],
     nome,
-    login: achados[i].login,
-    loginProvisorio: achados[i].loginProvisorio,
-    papel: 'aluno' as const,
+    matricula: achados[i].matricula,
+    // O SIGAA diz a seção com todas as letras: quem está em Docentes é
+    // professor, e fingir que é dica seria pedir ao professor que confirmasse
+    // algo que a página já afirmou. O toggle continua ali para corrigir.
+    papel: achados[i].docenteNoSigaa ? ('professor' as const) : ('aluno' as const),
     docenteNoSigaa: achados[i].docenteNoSigaa,
     ambiguo: (depois.get(nome) ?? 0) > 1,
   }))

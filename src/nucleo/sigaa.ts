@@ -20,33 +20,51 @@
 
 /** `Usuário Off-Line no SIGAA ` — e a variante de quem está on-line. */
 const MARCA = /Usuári[oa]\s+(?:Off|On)-?\s?Line\s+no\s+SIGAA\s+/gi
+/** A mesma, sem `g`, porque `test` numa regex global guarda posição. */
+const TEM_MARCA = new RegExp(MARCA.source, 'i')
 
 export interface PessoaSigaa {
   nomeCompleto: string
-  /** O login do CIn. É o identificador estável — nome muda, login não. */
-  login: string
-  /** O SIGAA listou na seção de docentes. Dica, não papel. */
-  docenteNoSigaa: boolean
   /**
-   * O login é só dígitos, ou seja, o SIGAA caiu na matrícula (ou no CPF) por
-   * falta de login escolhido. Vale conferir antes de gravar: CPF não deveria
-   * virar identificador de presença.
+   * A matrícula. É o identificador que a instituição já usa e o único que faz
+   * sentido levar para a chamada.
+   *
+   * O campo `Usuário:` da página **não é lido de propósito**: ele é o login do
+   * SIGAA, credencial de acesso de outra pessoa, e não tem por que existir numa
+   * base de frequência. Docente não tem matrícula na página, então a dele vem
+   * vazia — quem identifica ali é o nome.
    */
-  loginProvisorio: boolean
+  matricula: string
+  /**
+   * O SIGAA listou numa seção que não é a de discentes — docente, docência
+   * assistida, monitoria. Dica, não papel.
+   */
+  docenteNoSigaa: boolean
 }
 
 export interface LeituraSigaa {
   pessoas: PessoaSigaa[]
-  /** O que o cabeçalho `Docentes (N)` declarou, quando havia cabeçalho. */
-  docentesDeclarados?: number
-  discentesDeclarados?: number
+  /** Uma entrada por cabeçalho encontrado, com o declarado e o lido. */
+  secoes: Secao[]
   /** Cada motivo pelo qual algo ficou de fora, ou não bate. */
   problemas: string[]
 }
 
-function contarDeclarados(texto: string, rotulo: string): number | undefined {
-  const casou = new RegExp(`${rotulo}\\s*\\((\\d+)\\)`, 'i').exec(texto)
-  return casou ? Number(casou[1]) : undefined
+/**
+ * `Docentes (2)`, `Discentes (47)`, `Docência Assistida (1)`.
+ *
+ * A página tem mais seções do que as duas óbvias, e **quem decide o papel é a
+ * seção, não os campos da pessoa**. Inferir por `Departamento:` fazia a docente
+ * assistida virar docente — e aí a conferência contra `Docentes (2)` acusava um
+ * erro que não existia. Reconhecer o cabeçalho genericamente também evita ter
+ * que voltar aqui quando aparecer `Monitores (3)`.
+ */
+const CABECALHO = /^[ \t]*([\p{L}][\p{L} ]{2,40}?)[ \t]*\((\d+)\)[ \t]*$/u
+
+export interface Secao {
+  nome: string
+  declarados: number
+  lidos: number
 }
 
 function limparNome(bruto: string): string {
@@ -57,92 +75,105 @@ function limparNome(bruto: string): string {
     .trim()
 }
 
+/** Discente é aluno; todo o resto da página é quem dá aula, de um jeito ou de outro. */
+function ehDiscente(secao: string): boolean {
+  return /discente/i.test(secao)
+}
+
+interface Pedaco {
+  secao: string
+  declarados?: number
+  texto: string
+}
+
+function fatiarPorSecao(texto: string): Pedaco[] {
+  const pedacos: Pedaco[] = []
+  let atual: Pedaco = { secao: '', texto: '' }
+
+  for (const linha of texto.split(/\r?\n/)) {
+    const casou = CABECALHO.exec(linha)
+    if (casou) {
+      if (atual.texto.trim()) pedacos.push(atual)
+      atual = { secao: casou[1].trim(), declarados: Number(casou[2]), texto: '' }
+      continue
+    }
+    atual.texto += linha + '\n'
+  }
+  if (atual.texto.trim()) pedacos.push(atual)
+  return pedacos
+}
+
 /**
  * Interpreta a colagem. Nunca lança: devolve o que entendeu e a lista do que
  * não entendeu, para que a tela possa mostrar as duas coisas.
  */
 export function interpretarParticipantes(texto: string): LeituraSigaa {
   const problemas: string[] = []
-  const docentesDeclarados = contarDeclarados(texto, 'Docentes')
-  const discentesDeclarados = contarDeclarados(texto, 'Discentes')
+  const pessoas: PessoaSigaa[] = []
+  const secoes: Secao[] = []
+  const vistos = new Set<string>()
 
-  const pedacos = texto.split(MARCA).slice(1)
+  for (const pedaco of fatiarPorSecao(texto)) {
+    const blocos = pedaco.texto.split(MARCA).slice(1)
+    let lidos = 0
 
-  // Caminho de reserva: um nome por linha, sem login. Serve para turma que não
-  // veio do SIGAA e para conferir um nome solto — mas sem login o vínculo não
-  // tem como virar linha de planilha, e a tela avisa.
-  if (pedacos.length === 0) {
+    for (const bloco of blocos) {
+      const nomeCompleto = limparNome(bloco)
+      const matricula = /Matr[íi]cula:\s*([^\s\t]+)/i.exec(bloco)?.[1] ?? ''
+
+      if (!nomeCompleto) {
+        problemas.push('Um bloco veio sem nome e ficou de fora.')
+        continue
+      }
+      // Docente não tem matrícula na página, então a identidade dele é o nome.
+      const chave = matricula || nomeCompleto.toLowerCase()
+      if (vistos.has(chave)) {
+        problemas.push(`${nomeCompleto} aparece duas vezes na colagem — só a primeira entrou.`)
+        continue
+      }
+      vistos.add(chave)
+      lidos++
+
+      pessoas.push({
+        nomeCompleto,
+        matricula,
+        docenteNoSigaa: pedaco.secao !== '' && !ehDiscente(pedaco.secao),
+      })
+    }
+
+    if (pedaco.declarados !== undefined) {
+      secoes.push({ nome: pedaco.secao, declarados: pedaco.declarados, lidos })
+      if (pedaco.declarados !== lidos) {
+        problemas.push(
+          `A página diz ${pedaco.secao} (${pedaco.declarados}) e foram lidos ${lidos}. Faltou copiar parte da página?`,
+        )
+      }
+    }
+  }
+
+  // Caminho de reserva: um nome por linha, sem login. Só quando a colagem não
+  // tem marca de SIGAA nenhuma — se tem, e ainda assim ninguém foi lido, o
+  // problema é outro, e transformar a página crua em nomes esconderia isso.
+  if (pessoas.length === 0 && !TEM_MARCA.test(texto)) {
     const soltos = texto
       .split('\n')
       .map((linha) => linha.trim())
-      .filter((linha) => linha.length > 1)
+      .filter((linha) => linha.length > 1 && !CABECALHO.test(linha))
     if (soltos.length > 0) {
       problemas.push(
-        'Isto não parece a página de participantes do SIGAA. Cada linha virou um nome, sem login do CIn.',
+        'Isto não parece a página de participantes do SIGAA. Cada linha virou um nome, sem matrícula.',
       )
-    }
-    return {
-      pessoas: soltos.map((nomeCompleto) => ({
-        nomeCompleto,
-        login: '',
-        docenteNoSigaa: false,
-        loginProvisorio: false,
-      })),
-      docentesDeclarados,
-      discentesDeclarados,
-      problemas,
+      return {
+        pessoas: soltos.map((nomeCompleto) => ({
+          nomeCompleto,
+          matricula: '',
+          docenteNoSigaa: false,
+        })),
+        secoes,
+        problemas,
+      }
     }
   }
 
-  const pessoas: PessoaSigaa[] = []
-  const vistos = new Set<string>()
-
-  for (const pedaco of pedacos) {
-    const nomeCompleto = limparNome(pedaco)
-    // `Usuário:` com dois-pontos. A marca de presença é "Usuário Off-Line",
-    // sem dois-pontos, então não há como confundir uma com a outra.
-    const login = /Usuári[oa]:\s*([^\s\t]+)/i.exec(pedaco)?.[1]
-
-    if (!nomeCompleto) {
-      problemas.push('Um bloco veio sem nome e ficou de fora.')
-      continue
-    }
-    if (!login) {
-      problemas.push(`${nomeCompleto}: sem linha "Usuário:" — ficou de fora.`)
-      continue
-    }
-    if (vistos.has(login)) {
-      problemas.push(`${nomeCompleto}: login "${login}" repetido na colagem — só o primeiro entrou.`)
-      continue
-    }
-    vistos.add(login)
-
-    // Docente traz `Departamento:`; discente traz `Matrícula:`. Quando os dois
-    // aparecem, `Matrícula:` decide — é o campo que só aluno tem.
-    const temMatricula = /Matr[íi]cula:/i.test(pedaco)
-    const temDepartamento = /Departamento:/i.test(pedaco)
-
-    pessoas.push({
-      nomeCompleto,
-      login,
-      docenteNoSigaa: temDepartamento && !temMatricula,
-      loginProvisorio: /^\d+$/.test(login),
-    })
-  }
-
-  const docentes = pessoas.filter((p) => p.docenteNoSigaa).length
-  const discentes = pessoas.length - docentes
-
-  if (docentesDeclarados !== undefined && docentesDeclarados !== docentes) {
-    problemas.push(
-      `A página diz Docentes (${docentesDeclarados}) e foram lidos ${docentes}. Faltou copiar parte da página?`,
-    )
-  }
-  if (discentesDeclarados !== undefined && discentesDeclarados !== discentes) {
-    problemas.push(
-      `A página diz Discentes (${discentesDeclarados}) e foram lidos ${discentes}. Faltou copiar parte da página?`,
-    )
-  }
-
-  return { pessoas, docentesDeclarados, discentesDeclarados, problemas }
+  return { pessoas, secoes, problemas }
 }

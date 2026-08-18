@@ -21,7 +21,7 @@ export const COLUNAS = [
   'evento_id',
   'quando',
   'turma',
-  'login',
+  'matricula',
   'nome',
   'origem',
   'resultado',
@@ -55,7 +55,7 @@ export function linhaCsv(e: Evento): string {
     e.eventoId,
     e.quando,
     limpar(e.turma),
-    limpar(e.login ?? ''),
+    limpar(e.matricula ?? ''),
     limpar(e.nome),
     e.origem,
     e.resultado,
@@ -93,7 +93,7 @@ export function deCsv(texto: string): Leitura {
       continue
     }
 
-    const [eventoId, quando, turma, login, nome, origem, resultado, uidHash] = campos
+    const [eventoId, quando, turma, matricula, nome, origem, resultado, uidHash] = campos
 
     if (!eventoId) {
       recusar('sem evento_id — sem ele não há idempotência')
@@ -116,7 +116,7 @@ export function deCsv(texto: string): Leitura {
       eventoId,
       quando,
       turma,
-      login: login || undefined,
+      matricula: matricula || undefined,
       nome,
       origem: origem as Origem,
       resultado: resultado as Resultado,

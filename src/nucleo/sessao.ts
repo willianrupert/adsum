@@ -93,7 +93,7 @@ export function eventoDe(
       return {
         ...base,
         nome: decisao.vinculo.nome,
-        login: decisao.vinculo.login,
+        matricula: decisao.vinculo.matricula,
         origem: 'cracha',
         resultado: 'ok',
       }
@@ -101,7 +101,7 @@ export function eventoDe(
       return {
         ...base,
         nome: decisao.vinculo.nome,
-        login: decisao.vinculo.login,
+        matricula: decisao.vinculo.matricula,
         origem: 'cracha',
         resultado: 'duplicado',
       }

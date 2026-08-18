@@ -407,10 +407,10 @@ export function TelaRepositorio() {
                 // hoje — assim corrigir um login corrige as exportações futuras
                 // sem reescrever uma linha sequer do log.
                 const vinculos = await repositorio.listarVinculos()
-                const loginPorHash = new Map(vinculos.map((v) => [v.uidHash, v.login]))
+                const matriculaPorHash = new Map(vinculos.map((v) => [v.uidHash, v.matricula]))
                 const ordenados = [...eventos]
                   .reverse()
-                  .map((e) => ({ ...e, login: e.login ?? loginPorHash.get(e.uidHash) }))
+                  .map((e) => ({ ...e, matricula: e.matricula ?? matriculaPorHash.get(e.uidHash) }))
 
                 // Um arquivo por turma: cada turma vira uma planilha, e turma
                 // nova não mexe em arquivo de turma antiga.
@@ -433,7 +433,7 @@ export function TelaRepositorio() {
       >
         <Linha rotulo="linhas gravadas">{totalEventos}</Linha>
         <Linha rotulo="colunas">
-          <code>evento_id;quando;turma;login;nome;origem;resultado;uid_hash</code>
+          <code>evento_id;quando;turma;matricula;nome;origem;resultado;uid_hash</code>
         </Linha>
 
       </Painel>

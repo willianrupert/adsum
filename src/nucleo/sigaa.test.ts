@@ -23,6 +23,15 @@ const DISCENTE = (nome: string, matricula: string, login: string) =>
     'E-mail: fulano@gmail.com\tEnviar Mensagem',
   ].join('\n')
 
+const ASSISTIDA = (nome: string, login: string) =>
+  [
+    `\tUsuário Off-Line no SIGAA ${nome}`,
+    'Departamento: PROGRAMA DE PÓS-GRADUAÇÃO - CIN',
+    `Usuário: ${login}`,
+    'E-Mail: fulano@gmail.com',
+    'Enviar Mensagem',
+  ].join('\n')
+
 const PAGINA = [
   'Docentes (1)',
   DOCENTE('ANA PAULA MENDES DE SOUZA', 'ana.mendes'),
@@ -41,15 +50,53 @@ describe('participantes do SIGAA', () => {
     const { pessoas, problemas } = interpretarParticipantes(PAGINA)
     expect(problemas).toEqual([])
     expect(pessoas).toEqual([
-      { nomeCompleto: 'ANA PAULA MENDES DE SOUZA', login: 'ana.mendes', docenteNoSigaa: true, loginProvisorio: false },
-      { nomeCompleto: 'BRENO OLIVEIRA FILHO', login: 'breno.of', docenteNoSigaa: false, loginProvisorio: false },
-      { nomeCompleto: 'CARLA REGINA DO NASCIMENTO', login: 'carla.rn', docenteNoSigaa: false, loginProvisorio: false },
+      { nomeCompleto: 'ANA PAULA MENDES DE SOUZA', matricula: '', docenteNoSigaa: true },
+      { nomeCompleto: 'BRENO OLIVEIRA FILHO', matricula: '20250000001', docenteNoSigaa: false },
+      { nomeCompleto: 'CARLA REGINA DO NASCIMENTO', matricula: '20250000002', docenteNoSigaa: false },
     ])
   })
 
-  it('separa docente de discente por Matrícula, não por (Perfil)', () => {
+  it('quem decide o papel é a seção, não os campos da pessoa', () => {
     const { pessoas } = interpretarParticipantes(PAGINA)
-    expect(pessoas.filter((p) => p.docenteNoSigaa).map((p) => p.login)).toEqual(['ana.mendes'])
+    expect(pessoas.filter((p) => p.docenteNoSigaa).map((p) => p.nomeCompleto)).toEqual([
+      'ANA PAULA MENDES DE SOUZA',
+    ])
+  })
+
+  // A turma real tem `Docência Assistida (1)`, que traz `Departamento:` como
+  // qualquer docente. Inferir pelos campos fazia ela virar a terceira docente,
+  // e a conferência acusava um erro que não existia.
+  it('reconhece Docência Assistida sem estragar a contagem de Docentes', () => {
+    const pagina = [
+      'Docentes (1)',
+      DOCENTE('ANA PAULA MENDES DE SOUZA', 'ana.mendes'),
+      '',
+      'Docência Assistida (1)',
+      ASSISTIDA('PATRICIA DRAPAL DA SILVA', 'pdrapal'),
+      '',
+      'Discentes (1)',
+      DISCENTE('BRENO OLIVEIRA FILHO', '1', 'breno.of'),
+    ].join('\n')
+
+    const { pessoas, secoes, problemas } = interpretarParticipantes(pagina)
+    expect(problemas).toEqual([])
+    expect(secoes.map((s) => `${s.nome}:${s.declarados}/${s.lidos}`)).toEqual([
+      'Docentes:1/1',
+      'Docência Assistida:1/1',
+      'Discentes:1/1',
+    ])
+    // A docência assistida também dá aula: entra como dica de docente.
+    expect(pessoas.filter((p) => p.docenteNoSigaa).map((p) => p.nomeCompleto)).toEqual([
+      'ANA PAULA MENDES DE SOUZA',
+      'PATRICIA DRAPAL DA SILVA',
+    ])
+  })
+
+  it('uma seção nova não quebra a leitura', () => {
+    const pagina = ['Monitores (1)', DOCENTE('CARLOS MONITOR', 'carlos.m')].join('\n')
+    const { secoes, problemas } = interpretarParticipantes(pagina)
+    expect(problemas).toEqual([])
+    expect(secoes).toEqual([{ nome: 'Monitores', declarados: 1, lidos: 1 }])
   })
 
   // A checagem que pega perda silenciosa. Sem ela, colar metade da página dá
@@ -61,18 +108,16 @@ describe('participantes do SIGAA', () => {
     expect(problemas[0]).toMatch(/Discentes \(2\).*lidos 1/)
   })
 
-  it('marca login que é só dígitos — matrícula ou CPF no lugar de login', () => {
-    const pagina = ['Discentes (1)', DISCENTE('DANIEL SOUZA LIMA', '20250000003', '70783995440')].join('\n')
-    const { pessoas } = interpretarParticipantes(pagina)
-    expect(pessoas[0].loginProvisorio).toBe(true)
-  })
-
-  it('não confunde "Usuário Off-Line" com a linha "Usuário:"', () => {
+  // O campo `Usuário:` é o login do SIGAA — credencial de acesso de outra
+  // pessoa. Não tem por que existir numa base de frequência, e por isso não é
+  // lido: o que identifica é a matrícula.
+  it('não guarda o login do SIGAA em lugar nenhum', () => {
     const { pessoas } = interpretarParticipantes(PAGINA)
-    expect(pessoas.every((p) => !p.login.includes('Off'))).toBe(true)
+    expect(JSON.stringify(pessoas)).not.toContain('ana.mendes')
+    expect(JSON.stringify(pessoas)).not.toContain('breno.of')
   })
 
-  it('reclama de login repetido em vez de gravar duas vezes', () => {
+  it('a mesma pessoa duas vezes entra uma vez só', () => {
     const pagina = [
       'Discentes (2)',
       DISCENTE('EVA MARIA COSTA', '1', 'eva.costa'),
@@ -80,29 +125,17 @@ describe('participantes do SIGAA', () => {
     ].join('\n')
     const { pessoas, problemas } = interpretarParticipantes(pagina)
     expect(pessoas).toHaveLength(1)
-    expect(problemas.some((p) => /repetido/.test(p))).toBe(true)
+    expect(problemas.some((p) => /duas vezes/.test(p))).toBe(true)
   })
 
-  it('descarta bloco sem linha de usuário, dizendo quem foi', () => {
-    const pagina = ['Discentes (1)', '\tUsuário Off-Line no SIGAA FABIO LEAL  (Perfil)', 'Curso: X'].join('\n')
-    const { pessoas, problemas } = interpretarParticipantes(pagina)
-    expect(pessoas).toEqual([])
-    expect(problemas[0]).toMatch(/FABIO LEAL/)
-  })
-
-  it('aceita um nome por linha como reserva, avisando que não tem login', () => {
+  it('aceita um nome por linha como reserva, avisando que não tem matrícula', () => {
     const { pessoas, problemas } = interpretarParticipantes('Gabriela Ramos\nHelena Dias')
     expect(pessoas.map((p) => p.nomeCompleto)).toEqual(['Gabriela Ramos', 'Helena Dias'])
-    expect(pessoas.every((p) => p.login === '')).toBe(true)
-    expect(problemas[0]).toMatch(/sem login/)
+    expect(pessoas.every((p) => p.matricula === '')).toBe(true)
+    expect(problemas[0]).toMatch(/sem matrícula/)
   })
 
   it('devolve vazio para colagem vazia, sem inventar problema', () => {
-    expect(interpretarParticipantes('   ')).toEqual({
-      pessoas: [],
-      docentesDeclarados: undefined,
-      discentesDeclarados: undefined,
-      problemas: [],
-    })
+    expect(interpretarParticipantes('   ')).toEqual({ pessoas: [], secoes: [], problemas: [] })
   })
 })

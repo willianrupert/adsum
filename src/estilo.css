@@ -915,3 +915,18 @@ button:focus-visible {
   font-size: var(--t-nota);
   color: var(--tinta-fraca);
 }
+
+.armado__atalho {
+  margin: 14px 0 0;
+  font-size: var(--t-nota);
+  color: var(--tinta-tenue);
+}
+
+button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+button:disabled:hover {
+  background: transparent;
+}

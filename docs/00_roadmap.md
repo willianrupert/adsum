@@ -187,3 +187,24 @@ Decorrências que esse número impõe:
   ruído.
 - **Fechar o notebook no meio não perde o lugar.** Reabriu, a sessão continua
   onde estava — sem "bem-vindo de volta".
+
+
+## A decidir na próxima sessão: cerimônia e chamada são a mesma coisa
+
+Dito pelo autor em 18/08/2026. **A cerimônia de vínculo é também a primeira
+chamada** — quem encosta o crachá para se cadastrar já está presente naquela
+aula, e fazer as duas coisas em telas separadas obriga a turma a passar duas
+vezes.
+
+Consequências a desenhar:
+
+- a primeira aula abre em modo cadastro, e cada crachá novo faz **duas** coisas:
+  cria o vínculo e registra presença;
+- as setas ← e → andam pela turma (já feito), e a lista da turma vira a fila da
+  chamada;
+- a partir da segunda aula, quem já tem crachá só registra presença, e quem
+  ainda não tem cai no cadastro sem que ninguém troque de tela.
+
+Isso reduz a rota: `cerimonia` e `coleta` deixam de ser dois estados e viram um
+só, com o cadastro sendo o que acontece quando o crachá é desconhecido **e** a
+pessoa está na lista da turma.

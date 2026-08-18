@@ -6,7 +6,7 @@ const EVENTO: Evento = {
   eventoId: 'web-a1b2-20260818-0001',
   quando: '2026-08-18T10:06:00.000Z',
   turma: 'IF685 · T01',
-  login: 'wnrj',
+  matricula: '20250023010',
   nome: 'Willian Neves',
   origem: 'cracha',
   resultado: 'ok',
@@ -33,13 +33,13 @@ describe('registros em CSV', () => {
   it('aceita linha sem login, que é o caso do crachá desconhecido', () => {
     const desconhecido: Evento = {
       ...EVENTO,
-      login: undefined,
+      matricula: undefined,
       nome: '',
       resultado: 'desconhecido',
     }
     const { itens, problemas } = deCsv(paraCsv([desconhecido]))
     expect(problemas).toEqual([])
-    expect(itens[0].login).toBeUndefined()
+    expect(itens[0].matricula).toBeUndefined()
     // Sem login, o hash é o único jeito de descobrir depois quem era.
     expect(itens[0].uidHash).toBe('309940e145b847cf')
   })

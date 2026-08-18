@@ -6,10 +6,10 @@ const PROFESSOR: Vinculo = {
   uidHash: 'aaaa000000000000',
   papel: 'professor',
   nome: 'Ana Paula',
-  login: 'ana.mendes',
+  matricula: '',
   criadoEm: '2026-08-18T08:00:00.000Z',
 }
-const ALUNA: Vinculo = { ...PROFESSOR, uidHash: 'bbbb', papel: 'aluno', nome: 'Bia Souza', login: 'bia.s' }
+const ALUNA: Vinculo = { ...PROFESSOR, uidHash: 'bbbb', papel: 'aluno', nome: 'Bia Souza', matricula: '2025002' }
 
 const AGORA = new Date('2026-08-18T10:00:00.000Z')
 const SESSAO = {
@@ -89,7 +89,7 @@ describe('linhas do log', () => {
 
   it('presença leva nome e login', () => {
     const evento = eventoDe({ tipo: 'presenca', vinculo: ALUNA }, dados)
-    expect(evento).toMatchObject({ login: 'bia.s', nome: 'Bia Souza', origem: 'cracha', resultado: 'ok' })
+    expect(evento).toMatchObject({ matricula: '2025002', nome: 'Bia Souza', origem: 'cracha', resultado: 'ok' })
   })
 
   it('repetição entra no log como duplicado, não some', () => {
