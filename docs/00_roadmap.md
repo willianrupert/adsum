@@ -156,3 +156,31 @@ denominador, nomes abreviados, uma tela só. Foi pensada, não improvisada.
 
 **Evitar:** vidro sobre fundo variável (contraste é requisito), texto que
 explica decisão de projeto, e qualquer pergunta que o app poderia responder.
+
+### Orçamento de toques
+
+O projeto mede flash e pixel em vez de preferir. Vale medir interação também.
+
+| Situação | Toques na tela |
+|---|---|
+| Aula normal, do começo ao fim | **0** |
+| Cerimônia de vínculo | 1 por aluno — e é o crachá dele, não a tela |
+| Primeira configuração | 2: escolher a pasta, colar a turma |
+
+Zero na aula normal é o número que importa: crachá abre, crachás registram,
+crachá fecha. **Se uma aula normal exigir um clique, algo do desenho falhou** —
+e isso é verificável, não opinião.
+
+Decorrências que esse número impõe:
+
+- **Não existe "exportar".** Se a pasta é a dona, `registros.csv` já está
+  pronto no disco o tempo todo. Botão de exportar é o app pedindo que o humano
+  faça o trabalho dele.
+- **Erro não interrompe a fila.** Crachá desconhecido é linha vermelha e bipe
+  grave, nunca diálogo. Nada bloqueia quem está atrás.
+- **Confirmação vira desfazer.** "Tem certeza?" é o app terceirizando
+  responsabilidade. Age, e oferece voltar atrás.
+- **Só falar quando há decisão a tomar.** "Turma salva!" não é informação, é
+  ruído.
+- **Fechar o notebook no meio não perde o lugar.** Reabriu, a sessão continua
+  onde estava — sem "bem-vindo de volta".
