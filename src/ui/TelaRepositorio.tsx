@@ -19,9 +19,14 @@ import type { Aula, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.ts'
 import { useAdsum } from './adsum.ts'
 import { Linha, Painel, Selo } from './componentes/Painel.tsx'
+import { Cartao } from './componentes/Cartao.tsx'
 import { Importacao, type Resultado } from './componentes/Importacao.tsx'
 
 const AULA_VAZIA = { uidHashProfessor: '', dia: 1, inicio: '08:00', fim: '10:00', turma: '' }
+
+function plural(n: number, singular: string, plural: string): string {
+  return `${n} ${n === 1 ? singular : plural}`
+}
 
 function comoFoi(salvou: ComoSalvou, nome: string): string {
   if (salvou === 'cancelado') return 'cancelado.'
@@ -122,12 +127,33 @@ export function TelaRepositorio() {
 
   return (
     <div className="diagnostico">
+      <div className="cartoes">
+        <Cartao
+          icone="◎"
+          tom={vinculos.length > 0 ? 'ok' : 'neutro'}
+          titulo={plural(vinculos.length, 'crachá', 'crachás')}
+          apoio={`${professores.length} de professor`}
+        />
+        <Cartao
+          icone="☰"
+          tom={aulas.length > 0 ? 'ok' : 'neutro'}
+          titulo={plural(aulas.length, 'aula', 'aulas')}
+          apoio="na grade"
+        />
+        <Cartao
+          icone="↓"
+          tom="neutro"
+          titulo={plural(totalEventos, 'registro', 'registros')}
+          apoio="nunca reescritos"
+        />
+      </div>
+
       {recado && <div className={`aviso aviso--${recado.tom}`}>{recado.texto}</div>}
       {importacao && <Importacao resultado={importacao} />}
 
       <Painel
         titulo="Vínculos"
-        legenda="A tabela uid_hash → nome. Decide o que aparece na tela, nunca quem pode entrar: matrícula é assunto da planilha."
+        legenda="Quais crachás são de quem."
         acoes={
           <>
             <button onClick={importarVinculos}>importar</button>
@@ -169,10 +195,7 @@ export function TelaRepositorio() {
         </div>
 
         {vinculos.length === 0 ? (
-          <p className="vazio">
-            Nenhum vínculo. Importe o <code>alunos.csv</code> do cartão, ou semeie pelo
-            diagnóstico.
-          </p>
+          <p className="vazio">Nenhum crachá vinculado ainda.</p>
         ) : (
           <table className="tabela">
             <thead>
@@ -236,7 +259,7 @@ export function TelaRepositorio() {
 
       <Painel
         titulo="Grade horária"
-        legenda="Indexada pelo crachá do professor: quem encosta define de quem é a aula."
+        legenda="Quando cada turma tem aula."
         acoes={
           <>
             <button onClick={importarGrade}>importar</button>
@@ -260,10 +283,7 @@ export function TelaRepositorio() {
         }
       >
         {aulas.length === 0 ? (
-          <p className="vazio">
-            Sem grade, o professor escolhe a turma na tela toda aula. Com ela, o crachá basta
-            quando há exatamente uma aula acontecendo.
-          </p>
+          <p className="vazio">Nenhuma aula cadastrada.</p>
         ) : (
           <table className="tabela">
             <thead>
@@ -375,7 +395,7 @@ export function TelaRepositorio() {
 
       <Painel
         titulo="Registros"
-        legenda="Nada é reescrito, só acrescentado. Reimportar o mesmo arquivo não duplica linha — o evento_id é a chave."
+        legenda="O que a planilha consome."
         acoes={
           <>
             <button onClick={importarRegistros}>importar</button>
@@ -415,16 +435,12 @@ export function TelaRepositorio() {
         <Linha rotulo="colunas">
           <code>evento_id;quando;turma;login;nome;origem;resultado;uid_hash</code>
         </Linha>
-        <p className="ferramentas__nota">
-          O <code>login</code> é preenchido na saída, a partir do vínculo de hoje — assim
-          corrigir um login corrige as exportações seguintes sem reescrever uma linha do
-          log.
-        </p>
+
       </Painel>
 
       <Painel
         titulo="Sal"
-        legenda="16 bytes que nunca saem daqui. Sem eles, uid_hash é o UID com outra roupa."
+        legenda="O segredo que protege os crachás."
       >
         <div className="ferramentas ferramentas--topo">
           <input
@@ -453,15 +469,9 @@ export function TelaRepositorio() {
             gravar
           </button>
         </div>
-        <div className="aviso aviso--alerta">
-          <strong>Não troque o sal depois de vincular alguém.</strong>
-          <p>
-            Todo vínculo e toda a grade são indexados pelo hash, e o hash depende do sal:
-            trocá-lo transforma todos os crachás em desconhecidos de uma vez. Ele existe
-            para que o identificador que vai à planilha não seja o UID disfarçado — e para
-            isso precisa ser secreto e estável.
-          </p>
-        </div>
+        <p className="ferramentas__nota">
+          Trocar o sal transforma todos os crachás em desconhecidos de uma vez.
+        </p>
       </Painel>
     </div>
   )

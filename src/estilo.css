@@ -856,3 +856,62 @@ button:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Cartões de estado — ícone à esquerda, uma linha principal e uma de apoio. */
+
+.cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.cartao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--superficie);
+  border-radius: var(--raio);
+  padding: 14px 16px;
+  box-shadow: var(--sombra);
+}
+
+.cartao__icone {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 15px;
+  flex-shrink: 0;
+  background: var(--separador);
+  color: var(--tinta-fraca);
+}
+
+.cartao__icone--ok {
+  background: var(--acento-fraco);
+  color: var(--acento);
+}
+.cartao__icone--alerta {
+  background: var(--alerta-fraco);
+  color: var(--alerta);
+}
+.cartao__icone--grave {
+  background: var(--grave-fraco);
+  color: var(--grave);
+}
+
+.cartao__texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cartao__texto strong {
+  font-size: var(--t-corpo);
+  font-weight: 600;
+}
+
+.cartao__texto small {
+  font-size: var(--t-nota);
+  color: var(--tinta-fraca);
+}

@@ -36,8 +36,15 @@ agrupamento por espaço — as bordas de 1px que faziam tudo parecer painel de
 controle saíram. Claro e escuro seguindo o sistema, com o verde mudando entre
 os dois: o `#5DCAA5` do escuro não tem contraste sobre branco.
 
-Falta: os Mushroom cards na folha da base, e o corte de texto das telas de
-vínculo e base.
+Cartões de estado no topo da folha da base — ícone à esquerda, uma linha
+principal e uma de apoio, para ler de relance em vez de somar números.
+
+Corte de texto: as legendas dos painéis passaram de explicação de projeto para
+uma frase — "Quais crachás são de quem", "O que a planilha consome". O que
+saiu era documentação, e documentação mora aqui.
+
+Falta: a mesma dieta na tela de diagnóstico, e um passe de revisão nas telas com
+a régua "isto ajuda quem quer fazer a chamada?".
 
 ## Menos é mais
 

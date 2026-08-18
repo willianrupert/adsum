@@ -254,11 +254,7 @@ export function TelaVinculo({
       {semProfessor && (
         <div className="aviso aviso--alerta">
           <strong>Ninguém está marcado como professor.</strong>
-          <p>
-            Todo mundo entra como aluno de propósito — mas o crachá que abre a sessão é o
-            do professor, e sem ele a aula não começa. Quem o SIGAA listou como docente
-            está no topo, com a dica <code>SIGAA: docente</code>.
-          </p>
+          <p>Sem ele, a aula não abre. Quem o SIGAA listou como docente está no topo.</p>
         </div>
       )}
 
@@ -293,10 +289,6 @@ export function TelaVinculo({
             </button>
             <button onClick={() => setArmado(undefined)}>encerrar</button>
           </div>
-          <p className="armado__nota">
-            O aluno lê o próprio nome antes de encostar, e pode dizer "não sou eu". É por
-            isso que não existe segundo candidato.
-          </p>
 
           {/* Com leitor simulado a cerimônia inteira roda sem hardware — é como
               se ensaia o roteiro antes de ter cinquenta alunos na fila. */}
@@ -320,7 +312,7 @@ export function TelaVinculo({
 
       <Painel
         titulo="A turma"
-        legenda="Cole a página de participantes do SIGAA. A lista fica neste navegador."
+        legenda="Cole a página de participantes do SIGAA."
         acoes={
           fila.length === 0 ? (
             <button className="botao--acento" onClick={() => void interpretar()}>
@@ -461,8 +453,7 @@ export function TelaVinculo({
                 trocar de turma
               </button>
               <span className="ferramentas__ou">
-                Um aluno com dois crachás é permitido — segunda via existe. Basta armar o
-                nome de novo.
+                Segunda via: arme o nome de novo.
               </span>
             </div>
           </>
