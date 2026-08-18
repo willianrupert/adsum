@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { calcularUidHash } from '../nucleo/hash.ts'
-import { MAX_BYTES, prepararLista, remedir, type NomePreparado } from '../nucleo/nomes.ts'
+import { prepararLista, type NomePreparado } from '../nucleo/nomes.ts'
 import { interpretarParticipantes } from '../nucleo/sigaa.ts'
 import { uidLegivel } from '../nucleo/uid.ts'
 import type { Matriculado, Papel } from '../nucleo/tipos.ts'
@@ -80,7 +80,7 @@ export function TelaVinculo() {
             // O que está guardado vence o que o encurtamento supôs: já foi
             // decidido por quem opera, e edição de nome não se perde.
             papel: guardado?.papel ?? p.papel,
-            ...(guardado ? remedir({ ...p, papel: guardado.papel }, guardado.nome) : {}),
+            nome: guardado?.nome ?? p.nome,
             estado: comCracha.has(p.login) ? ('feito' as const) : ('pendente' as const),
           }
         }),
@@ -120,8 +120,6 @@ export function TelaVinculo() {
     const docentes = preparados.filter((p) => p.docenteNoSigaa).length
     const semLogin = preparados.filter((p) => !p.login).length
     const provisorios = preparados.filter((p) => p.loginProvisorio).length
-    const largos = preparados.filter((p) => !p.cabeNaLista).length
-    const longos = preparados.filter((p) => !p.cabeNoBuffer).length
     const ambiguos = preparados.filter((p) => p.ambiguo).length
 
     const avisos = [
@@ -129,8 +127,6 @@ export function TelaVinculo() {
       semLogin > 0 && `${semLogin} sem login do CIn`,
       provisorios > 0 &&
         `${provisorios} com login que é só número (matrícula ou CPF) — confira antes de gravar`,
-      largos > 0 && `${largos} não cabem na coluna do aparelho`,
-      longos > 0 && `${longos} passam de ${MAX_BYTES} bytes`,
     ].filter(Boolean)
 
     setRecado({
@@ -219,7 +215,7 @@ export function TelaVinculo() {
 
   function renomear(indice: number, nome: string) {
     setFila((antes) =>
-      antes.map((e, i) => (i === indice ? { ...e, ...remedir(e, nome), ambiguo: false } : e)),
+      antes.map((e, i) => (i === indice ? { ...e, nome, ambiguo: false } : e)),
     )
   }
 
@@ -374,7 +370,6 @@ export function TelaVinculo() {
                   <th>nome no aparelho</th>
                   <th>login</th>
                   <th>papel</th>
-                  <th>px</th>
                   <th>estado</th>
                 </tr>
               </thead>
@@ -413,10 +408,6 @@ export function TelaVinculo() {
                       )}
                     </td>
                     <td className="celula--estado">
-                      <Selo tom={e.cabeNaLista && e.cabeNoBuffer ? 'neutro' : 'alerta'}>
-                        {e.larguraNaLista}
-                        {!e.cabeNoBuffer && ` · ${e.bytes}B`}
-                      </Selo>
                       {e.ambiguo && <Selo tom="grave">nome repetido</Selo>}
                     </td>
                     {/* Armar continua disponível depois de vinculado: um aluno com

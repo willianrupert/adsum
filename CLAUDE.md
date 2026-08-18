@@ -24,9 +24,8 @@ Leia antes de qualquer tarefa.
 > - **Um só nome armado por vez** na cerimônia de vínculo.
 > - **Sem hora confiável, a sessão não abre.**
 >
-> **Os limites de tela (210 px, 31 bytes) eram do display do A1 e provavelmente
-> não valem mais.** O encurtamento de nome continua útil por legibilidade, mas
-> os números em `nucleo/nomes.ts` precisam de nova justificativa ou de sumir.
+> **Os limites de tela (210 px, 31 bytes) sumiram**, junto com as tabelas de
+> avanço de fonte. O encurtamento continua, por legibilidade em fila.
 >
 > **Os comentários do código ainda falam do A1 em vários lugares.** Foi feita a
 > limpeza dos textos de tela; a dos comentários ficou pendente por orçamento.
@@ -307,13 +306,12 @@ O autor criou este projeto **do zero**. A sessão de 18/08/2026 ancorou tudo no
 `~/Projetos/Adsum` (hardware ESP32, hoje morto) sem que isso fosse pedido.
 Inventário para decidir o que fica:
 
-**Só existe por causa do aparelho — candidato a sumir:**
-- `LIMITE_LISTA` 210 px e `MAX_BYTES` 31 — medidas de um display que não existe
-- Tabelas `A20`/`A24` em `nucleo/nomes.ts` — avanços de fontes de um firmware
-- `;` + BOM e as 8 colunas de `registros.csv`, justificadas por "é o que o
-  firmware grava"
-- `alunos.csv` com três colunas "porque o firmware lê três"
-- `grade.csv` indexada por hash do professor "porque o aparelho circula"
+**Já removido:** `LIMITE_LISTA`, `MAX_BYTES` e as tabelas `A20`/`A24` de
+`nucleo/nomes.ts` — mediam um display que não existe.
+
+**Ainda a fazer:** `csv.ts` reescrito conforme `docs/02_formato.md`; `alunos.csv`
+e `grade.csv` viram JSON no cofre. E `;` + BOM **ficam** — nunca foram do
+firmware, são do Excel em português (ver `docs/02`).
 
 **Vale por si, independente de hardware:**
 - ler só o UID público, nunca Crypto1 — é legitimidade, não limitação técnica

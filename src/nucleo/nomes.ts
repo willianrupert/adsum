@@ -1,55 +1,16 @@
-// Nomes que cabem na tela do aparelho.
+// Como a pessoa aparece na tela.
 //
-// Porte direto de `Adsum/computador/vincular.html`, que é a fonte da verdade:
-// as tabelas abaixo são os **avanços reais** das fontes do firmware, extraídos
-// de `fonte_texto20.h` e `fonte_texto24.h`. Cada caractere guarda um avanço
-// (código − 32), da faixa 0x20 a 0xFF.
+// Aqui havia as tabelas de avanço das fontes de um firmware, um limite de
+// 210 px e um buffer de 31 bytes. Tudo isso media uma tela de 480×272 que não
+// existe mais — o navegador reflui, e medir em pixel virou resposta para uma
+// pergunta que ninguém faz. Saiu.
 //
-// Medir em pixel não é preciosismo. Contar letras não serve porque "iii" e
-// "mmm" não ocupam o mesmo espaço, e a turma real quebrou um desenho de tela
-// que tinha sido validado com nomes inventados curtos: dos 48 nomes do IF685,
-// **47 não cabiam** na coluna a 20 px e **14 passavam do buffer de 31 bytes**.
-//
-// Trocar a versão das fontes do firmware invalida estas tabelas.
+// O encurtamento fica, e por um motivo que nunca dependeu de hardware: numa
+// fila, o professor lê o nome de relance. "Willian Neves" se lê num piscar;
+// "Willian Neves Rupert Jones" obriga a parar.
 
 import type { Papel } from './tipos.ts'
 import { interpretarParticipantes, type PessoaSigaa } from './sigaa.ts'
-
-/** Avanços da fonte de 20 px — a coluna de nomes da lista. */
-export const A20 =
-  "&(*1-3/&((*1&'&'----------''111+4.../-,0/&&-+1/0,0.-,/.4.,.('(1**,-+-,'--&&,&4-,--(*(-+1+++-'-1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,&(----'**4),1'4**1((*--&*(),333+......4.----&&&&//0000010////,,-,,,,,,3+,,,,&&&&,-,,,,,1,----+- "
-
-/** Avanços da fonte de 24 px — a linha em destaque durante a cerimônia. */
-export const A24 =
-  "(*+4/73')),4()((//////////((444-80012/.32''0-523.31//2081/0)()4,,./-/.(//''.&8/.//*,)//4//-/(/4.................................(*////(,,8+/4)8,,4**,//(,*+/777-00000071////''''3233333432222///......7-....''''./.....4.////// "
-
-/** Largura da coluna de nomes, em pixels. */
-export const LIMITE_LISTA = 210
-
-/** Largura da linha em destaque, em pixels. */
-export const LIMITE_DESTAQUE = 246
-
-/** Buffer de nome no firmware. Passar disso é truncar. */
-export const MAX_BYTES = 31
-
-export function largura(texto: string, tabela: string = A20): number {
-  let total = 0
-  for (const caractere of texto) {
-    const codigo = caractere.codePointAt(0)!
-    if (codigo >= 32 && codigo < 256) total += tabela.charCodeAt(codigo - 32) - 32
-  }
-  return total
-}
-
-/** O buffer do firmware conta bytes Latin-1, não caracteres. */
-export function bytesLatin1(texto: string): number {
-  let total = 0
-  for (const caractere of texto) {
-    const codigo = caractere.codePointAt(0)!
-    total += codigo < 256 ? 1 : 2
-  }
-  return total
-}
 
 const PARTICULAS = new Set(['de', 'da', 'do', 'das', 'dos', 'e'])
 
@@ -67,28 +28,20 @@ export function titulo(nome: string): string {
 /**
  * Primeiro e segundo nome — "Willian Neves", não "Willian Jones".
  *
- * É como a pessoa é chamada, e é exatamente o que o mockup de `docs/03` já
- * mostrava: Willian Neves, Maria Vitória, João Pedro, Luiz Felipe. O
- * `vincular.html` usava primeiro nome + último sobrenome, e por isso precisava
- * de uma regra para sufixo de linhagem — sem ela "Breno Oliveira Filho" virava
- * "Breno Filho", que não identifica ninguém. Pegando pela frente, esse problema
- * deixa de existir: some a regra e some a classe de erro junto.
+ * É como a pessoa é chamada. Pegando pela frente, some junto a regra de sufixo
+ * de linhagem: "Breno Filho" deixa de ser alcançável, e a classe de erro vai
+ * embora com o código que existia para tapá-la.
  *
- * Partícula no meio é preservada ("Maria de Fátima"), porque lê melhor. Quando
- * não couber na coluna, `comParticula: false` a descarta.
+ * Partícula no meio é preservada — "Maria de Fátima" é o nome dela.
  */
-export function curto(completo: string, comParticula = true): string {
+export function curto(completo: string): string {
   const partes = completo.split(/\s+/)
   if (partes.length < 2) return completo
 
   const seguintes: string[] = []
   for (let i = 1; i < partes.length; i++) {
-    if (PARTICULAS.has(partes[i].toLowerCase())) {
-      if (comParticula) seguintes.push(partes[i])
-      continue
-    }
     seguintes.push(partes[i])
-    break
+    if (!PARTICULAS.has(partes[i].toLowerCase())) break
   }
 
   return [partes[0], ...seguintes].join(' ')
@@ -97,7 +50,7 @@ export function curto(completo: string, comParticula = true): string {
 export interface NomePreparado {
   /** Como veio do SIGAA, em caixa de título. */
   completo: string
-  /** Como vai aparecer no aparelho. É este que o aluno confere. */
+  /** Como aparece na tela. É este que o aluno confere antes de encostar. */
   nome: string
   /** O login do CIn. Vazio quando a lista não veio do SIGAA. */
   login: string
@@ -112,24 +65,6 @@ export interface NomePreparado {
   docenteNoSigaa: boolean
   /** Colidiu com outro nome e o desempate não resolveu. Precisa de edição. */
   ambiguo: boolean
-  larguraNaLista: number
-  cabeNaLista: boolean
-  bytes: number
-  cabeNoBuffer: boolean
-}
-
-function medir(
-  base: Omit<NomePreparado, 'larguraNaLista' | 'cabeNaLista' | 'bytes' | 'cabeNoBuffer'>,
-): NomePreparado {
-  const larguraNaLista = largura(base.nome)
-  const bytes = bytesLatin1(base.nome)
-  return {
-    ...base,
-    larguraNaLista,
-    cabeNaLista: larguraNaLista <= LIMITE_LISTA,
-    bytes,
-    cabeNoBuffer: bytes <= MAX_BYTES,
-  }
 }
 
 /**
@@ -137,12 +72,10 @@ function medir(
  * colisão desempatada.
  *
  * **Todo mundo entra como aluno.** O papel de professor é um toque explícito de
- * quem opera. O `docenteNoSigaa` só ordena e marca a linha, para que o toque
- * seja óbvio em vez de lembrado — o erro a evitar continua sendo vincular o
- * professor como aluno e descobrir quando a sessão não abre na frente da turma.
- * Por isso a lista também avisa quando nenhum professor foi marcado.
+ * quem opera; o `docenteNoSigaa` só ordena e marca a linha, para que o toque
+ * seja óbvio em vez de lembrado.
  *
- * Docente primeiro porque o crachá dele é o que abre a sessão: cerimônia
+ * Docente primeiro porque o crachá dele é o que abre a aula: cerimônia
  * interrompida no meio já tem o essencial feito.
  *
  * Colisão desempatada porque dois nomes iguais na tela é exatamente o erro que
@@ -157,20 +90,15 @@ export function prepararLista(entrada: string | PessoaSigaa[]): NomePreparado[] 
   )
   const completos = achados.map((a) => titulo(a.nomeCompleto))
 
-  // Encurta; se não couber na coluna, larga a partícula do meio.
-  let base = completos.map((completo) => {
-    const comParticula = curto(completo, true)
-    return largura(comParticula) > LIMITE_LISTA ? curto(completo, false) : comParticula
-  })
-
   const quantos = (nomes: string[]) => {
     const conta = new Map<string, number>()
     for (const nome of nomes) conta.set(nome, (conta.get(nome) ?? 0) + 1)
     return conta
   }
 
-  // Desempate: inicial do último sobrenome. "Maria Vitória" vira
+  // Desempate: inicial do último sobrenome. Duas "Maria Vitória" viram
   // "Maria Vitória S." e "Maria Vitória A.".
+  let base = completos.map(curto)
   const antes = quantos(base)
   base = base.map((nome, i) => {
     if ((antes.get(nome) ?? 0) < 2) return nome
@@ -183,20 +111,13 @@ export function prepararLista(entrada: string | PessoaSigaa[]): NomePreparado[] 
   // pede edição, em vez de deixar dois nomes iguais passarem.
   const depois = quantos(base)
 
-  return base.map((nome, i) =>
-    medir({
-      completo: completos[i],
-      nome,
-      login: achados[i].login,
-      loginProvisorio: achados[i].loginProvisorio,
-      papel: 'aluno',
-      docenteNoSigaa: achados[i].docenteNoSigaa,
-      ambiguo: (depois.get(nome) ?? 0) > 1,
-    }),
-  )
-}
-
-/** Remede um nome editado na tela, mantendo o resto da linha. */
-export function remedir(entrada: NomePreparado, nome: string): NomePreparado {
-  return medir({ ...entrada, nome })
+  return base.map((nome, i) => ({
+    completo: completos[i],
+    nome,
+    login: achados[i].login,
+    loginProvisorio: achados[i].loginProvisorio,
+    papel: 'aluno' as const,
+    docenteNoSigaa: achados[i].docenteNoSigaa,
+    ambiguo: (depois.get(nome) ?? 0) > 1,
+  }))
 }
