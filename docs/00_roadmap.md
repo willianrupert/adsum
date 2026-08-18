@@ -123,3 +123,36 @@ O nome continua não trafegando: sai `uid_hash`, a planilha resolve.
 - **Não substitui o aparelho.** O A1 funciona sem laptop, sem rede e sem
   navegador aberto. O app é a ponte e o cadastro, não o registrador.
 - **Não cria backend.** Se um dia precisar, é Apps Script preso à planilha.
+
+## Desenho — ideação de 18/08/2026
+
+Não implementado. Registro para a próxima sessão não recomeçar do zero.
+
+**Princípio: a rota é o estado.** Não há abas. A tela decorre do que existe na
+pasta e da hora. Seis estados, um de cada vez:
+
+1. sem pasta → *escolha onde guardar* (única ação da tela)
+2. sem turma → *cole sua turma*
+3. turma sem crachás → cerimônia de vínculo
+4. tudo pronto, fora de horário → repouso, com a próxima aula
+5. dentro do horário → coleta
+6. algo quebrado → o problema e a ação que resolve, nada mais
+
+**Uma coisa grande por vez.** Um número ou um nome em corpo enorme; todo o
+resto pequeno e cinza. Acento só para o que acabou de acontecer.
+
+**O som é o feedback primário.** Em fila ninguém olha a tela — isso valia para
+o display e vale igual no navegador. Web Audio, bipe curto depois de gravar.
+
+**O diagnóstico vira selo discreto** (leitor ✓ pasta ✓) num canto, que só fica
+alto quando algo falha. Deixa de ser aba.
+
+**Nunca perguntar o que dá para saber.** A grade e o relógio escolhem a turma;
+só o caso ambíguo vira pergunta. É a lógica de `CONFIRMANDO`/`ESCOLHENDO` do
+desenho antigo, que já era isso.
+
+**A tela de coleta do mockup antigo continua valendo** — contador sem
+denominador, nomes abreviados, uma tela só. Foi pensada, não improvisada.
+
+**Evitar:** vidro sobre fundo variável (contraste é requisito), texto que
+explica decisão de projeto, e qualquer pergunta que o app poderia responder.
