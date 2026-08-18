@@ -79,6 +79,24 @@ Consequências práticas para a próxima sessão:
 - **Menos texto.** As telas de hoje explicam decisões de projeto para o usuário.
   Isso é documentação, e documentação mora em `docs/`.
 
+**Sobre a estética.** Referências levantadas pelo autor: *liquid glass*, Apple
+recente, *Mushroom cards* (Home Assistant), iPadOS. A leitura da linguagem:
+
+- O que faz uma interface Apple parecer "só funciona" **não é o material — é a
+  ausência de decisão.** Uma ação óbvia por tela, navegação que decorre do
+  estado, e nada de configuração à vista. Vidro sobre a arquitetura de hoje
+  continuaria sendo três abas com nomes de módulo.
+- **Mushroom** é a referência mais útil das três para este app: cartão compacto
+  e arredondado, ícone colorido à esquerda, uma linha de informação principal e
+  uma de apoio. É desenho de estado num relance — que é exatamente o que uma
+  tela de coleta precisa.
+- **Cuidado com o vidro.** Isto pode acabar num projetor ou numa sala clara,
+  visto de longe e de canto de olho. `backdrop-filter` sobre fundo variável
+  derruba contraste, e contraste aqui é requisito, não gosto. Translucidez só
+  onde existe camada de verdade (algo sobreposto), nunca como textura de fundo.
+- Ordem sugerida: primeiro a rota única e a redução de texto; depois tipografia
+  grande e espaço; **material por último**, quando já houver o que vestir.
+
 ## O que é
 
 PWA que roda no navegador do professor e guarda tudo localmente. Companheiro do
