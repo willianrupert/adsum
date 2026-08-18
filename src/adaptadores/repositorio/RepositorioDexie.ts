@@ -1,10 +1,10 @@
 // Adaptador: a base local, em IndexedDB.
 //
-// "Dados 100% locais" não é slogan — é o que dispensa backend, conta, termo de
-// uso e conversa com a Gerinfra. O preço é que o navegador pode apagar tudo sob
-// pressão de espaço, e por isso `abrir()` pede armazenamento persistente e o
-// diagnóstico mostra se foi concedido. Sem essa checagem, "local" e "perdido"
-// são indistinguíveis até o dia em que somem.
+// "Dados 100% locais" não é slogan — é o que dispensa backend, conta e termo de
+// uso. O preço é que o navegador pode apagar tudo sob pressão de espaço, e por
+// isso `abrir()` pede armazenamento persistente e o diagnóstico mostra se foi
+// concedido. Sem essa checagem, "local" e "perdido" são indistinguíveis até o
+// dia em que somem.
 
 import { sortearSal } from '../../nucleo/hash.ts'
 import type { Aula, Config, Evento, Matriculado, UidHash, Vinculo } from '../../nucleo/tipos.ts'
@@ -12,7 +12,7 @@ import type { Sessao } from '../../nucleo/sessao.ts'
 import type { DiagnosticoRepositorio, Repositorio } from '../../portas/Repositorio.ts'
 import { criarBanco, ID_DA_CONFIG, NOME_DO_BANCO, type BancoAdsum } from './banco.ts'
 
-function sortearAparelhoId(): string {
+function sortearInstalacaoId(): string {
   const bytes = new Uint8Array(2)
   crypto.getRandomValues(bytes)
   return `web-${Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')}`
@@ -47,8 +47,8 @@ export class RepositorioDexie implements Repositorio {
     await this.#banco.config.update(ID_DA_CONFIG, { salHex: salHex.trim().toLowerCase() })
   }
 
-  async definirAparelhoId(id: string): Promise<void> {
-    await this.#banco.config.update(ID_DA_CONFIG, { aparelhoId: id })
+  async definirInstalacaoId(id: string): Promise<void> {
+    await this.#banco.config.update(ID_DA_CONFIG, { instalacaoId: id })
   }
 
   async vinculoPorHash(uidHash: UidHash): Promise<Vinculo | undefined> {
@@ -124,7 +124,7 @@ export class RepositorioDexie implements Repositorio {
       await this.#banco.eventos.add(evento)
     } catch (erro) {
       if (erro instanceof Error && erro.name === 'ConstraintError') {
-        // Não é falha: é a idempotência funcionando. Reenviar o mesmo lote não
+        // Não é falha: é a idempotência funcionando. Reler o mesmo arquivo não
         // pode duplicar linha, aqui nem na planilha.
         return
       }
@@ -205,7 +205,7 @@ export class RepositorioDexie implements Repositorio {
     const nova = {
       id: ID_DA_CONFIG,
       salHex: sortearSal(),
-      aparelhoId: sortearAparelhoId(),
+      instalacaoId: sortearInstalacaoId(),
       criadoEm: new Date().toISOString(),
     }
     await this.#banco.config.put(nova)

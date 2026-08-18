@@ -4,8 +4,7 @@
 // `cofre.ts`), porque são reescritos por inteiro quando alguém corrige um nome.
 // Registro nunca é corrigido: linha nova sempre.
 //
-// `;` e BOM não vieram de firmware nenhum, ao contrário do que este arquivo já
-// afirmou. São do Excel em português: com vírgula a planilha abre como uma
+// `;` e BOM são do Excel em português: com vírgula a planilha abre como uma
 // coluna só, e sem BOM "João" vira "JoÃ£o". Quem decide o formato é o
 // consumidor real, e o consumidor real é a planilha.
 //

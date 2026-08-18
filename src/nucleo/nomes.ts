@@ -1,13 +1,7 @@
 // Como a pessoa aparece na tela.
 //
-// Aqui havia as tabelas de avanço das fontes de um firmware, um limite de
-// 210 px e um buffer de 31 bytes. Tudo isso media uma tela de 480×272 que não
-// existe mais — o navegador reflui, e medir em pixel virou resposta para uma
-// pergunta que ninguém faz. Saiu.
-//
-// O encurtamento fica, e por um motivo que nunca dependeu de hardware: numa
-// fila, o professor lê o nome de relance. "Willian Neves" se lê num piscar;
-// "Willian Neves Rupert Jones" obriga a parar.
+// Numa fila, o professor lê o nome de relance: "Willian Neves" se lê num
+// piscar, "Willian Neves Rupert Jones" obriga a parar.
 
 import type { Papel } from './tipos.ts'
 import { interpretarParticipantes, type PessoaSigaa } from './sigaa.ts'

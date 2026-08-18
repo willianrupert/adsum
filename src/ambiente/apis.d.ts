@@ -32,7 +32,7 @@ declare global {
   }
 
   interface Navigator {
-    /** WebSerial — o caminho até o Adsum A1 por USB CDC. */
+    /** WebSerial. O dongle de hoje é HID de teclado e não precisa dela. */
     serial?: unknown
   }
 

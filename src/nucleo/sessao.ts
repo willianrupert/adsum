@@ -12,7 +12,7 @@ import type { Evento, Matriculado, Papel, Vinculo } from './tipos.ts'
  *
  * O professor encosta duas vezes sem querer com facilidade — e sem esta janela
  * a segunda leitura encerra a aula que a primeira acabou de abrir, na frente da
- * turma. Herdado do desenho antigo porque o problema é humano, não do hardware.
+ * turma.
  */
 export const JANELA_MINIMA_MS = 60_000
 
@@ -81,10 +81,10 @@ export function decidir(uidHash: string, ctx: Contexto): Decisao {
   return { tipo: 'presenca', vinculo }
 }
 
-/** `<aparelho>-<AAAAMMDD>-<sequência>` — ver `docs/02_formato.md`. */
-export function proximoEventoId(aparelhoId: string, quando: Date, sequencia: number): string {
+/** `<origem>-<AAAAMMDD>-<sequência>` — ver `docs/02_formato.md`. */
+export function proximoEventoId(instalacaoId: string, quando: Date, sequencia: number): string {
   const dia = quando.toISOString().slice(0, 10).replace(/-/g, '')
-  return `${aparelhoId}-${dia}-${String(sequencia).padStart(4, '0')}`
+  return `${instalacaoId}-${dia}-${String(sequencia).padStart(4, '0')}`
 }
 
 export function eventoDe(

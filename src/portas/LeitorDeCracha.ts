@@ -1,9 +1,8 @@
 // Porta: de onde vêm os UIDs.
 //
-// Existe para que trocar leitor não toque em mais nada. No firmware esse ponto
-// já é único (`leuCartao()`), e a mesma disciplina vale aqui: hoje o UID vem de
-// um leitor simulado; amanhã vem do Adsum A1 por WebSerial, ou de WebNFC no
-// celular. Quem consome uma `Leitura` não sabe — nem deve saber — a diferença.
+// Existe para que trocar de leitor não toque em mais nada: o UID pode vir do
+// dongle USB, de um leitor simulado ou do NFC do celular, e quem consome uma
+// `Leitura` não sabe — nem deve saber — a diferença.
 
 import type { Uid } from '../nucleo/tipos.ts'
 
@@ -40,9 +39,8 @@ export interface LeitorDeCracha {
 }
 
 /**
- * Leitor que aceita leitura injetada — o `SIMULAR <uid-hex>` do protocolo CDC.
- * Fica fora da porta de propósito: só a tela de diagnóstico usa, e só depois de
- * perguntar. Um leitor de verdade não implementa isto.
+ * Leitor que aceita leitura injetada. Fica fora da porta de propósito: só o
+ * diagnóstico e o ensaio usam. Um leitor de verdade não implementa isto.
  */
 export interface LeitorSimulavel extends LeitorDeCracha {
   simular(uidHex: string): void

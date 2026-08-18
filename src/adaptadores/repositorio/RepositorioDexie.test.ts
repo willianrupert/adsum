@@ -29,7 +29,7 @@ describe('configuração', () => {
   it('nasce com sal e identificador próprios', async () => {
     const config = await repo.lerConfig()
     expect(config.salHex).toMatch(/^[0-9a-f]{32}$/)
-    expect(config.aparelhoId).toMatch(/^web-[0-9a-f]{4}$/)
+    expect(config.instalacaoId).toMatch(/^web-[0-9a-f]{4}$/)
   })
 
   it('não sorteia sal de novo a cada leitura', async () => {

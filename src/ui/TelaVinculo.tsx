@@ -18,7 +18,7 @@ import { uidLegivel } from '../nucleo/uid.ts'
 import type { Matriculado, Papel } from '../nucleo/tipos.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { useAdsum } from './adsum.ts'
-import { Linha, Painel, Selo } from './componentes/Painel.tsx'
+import { Painel, Selo } from './componentes/Painel.tsx'
 import { ComoCopiar } from './componentes/ComoCopiar.tsx'
 
 type EstadoDaVez = 'pendente' | 'feito' | 'recusado' | 'pulado'
@@ -237,7 +237,6 @@ export function TelaVinculo({
   }, [armado, fila.length])
 
   const feitos = useMemo(() => fila.filter((e) => e.estado === 'feito').length, [fila])
-  const pendentes = useMemo(() => fila.filter((e) => e.estado === 'pendente').length, [fila])
   const semProfessor = fila.length > 0 && fila.every((e) => e.papel !== 'professor')
   const atual = armado !== undefined ? fila[armado] : undefined
 
@@ -335,17 +334,52 @@ export function TelaVinculo({
         </section>
       )}
 
-      <Painel
-        titulo="A turma"
-        legenda="Cole a página de participantes do SIGAA."
-        acoes={
-          fila.length === 0 ? (
-            <button className="botao--acento" onClick={() => void interpretar()}>
-              interpretar
+      {fila.length === 0 ? (
+        <section className="colagem">
+          <h1 className="colagem__titulo">Cole sua turma</h1>
+          <p className="colagem__nota">
+            No SIGAA, abra Turma › Participantes e copie a página.
+          </p>
+
+          <textarea
+            className="colagem__campo"
+            value={colado}
+            onChange={(e) => setColado(e.target.value)}
+            placeholder="Cole aqui"
+            aria-label="lista da turma"
+          />
+
+          <div className="colagem__acoes">
+            <input
+              value={turma}
+              onChange={(e) => setTurma(e.target.value)}
+              placeholder="IF685 · T01"
+              aria-label="turma"
+            />
+            <button className="botao--acento pasta__botao" onClick={() => void interpretar()}>
+              continuar
             </button>
-          ) : (
+          </div>
+
+          {turmasSalvas.length > 0 && (
+            <div className="colagem__acoes">
+              {turmasSalvas.map((t) => (
+                <button key={t} onClick={() => void abrirTurma(t)}>
+                  abrir {t}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <ComoCopiar />
+        </section>
+      ) : (
+        <Painel
+          titulo={turma}
+          legenda={`${feitos} de ${fila.length} com crachá`}
+          acoes={
             <>
-              <button onClick={() => void guardarTurma()}>guardar turma</button>
+              <button onClick={() => void guardarTurma()}>guardar</button>
               <button
                 className="botao--acento"
                 onClick={() => {
@@ -357,52 +391,17 @@ export function TelaVinculo({
                   setArmado(primeiro)
                 }}
               >
-                iniciar cerimônia
+                começar
               </button>
             </>
-          )
-        }
-      >
-        {fila.length === 0 ? (
+          }
+        >
+
           <>
-            <div className="ferramentas ferramentas--topo">
-              <input
-                value={turma}
-                onChange={(e) => setTurma(e.target.value)}
-                placeholder="IF685 · T01"
-                aria-label="turma"
-              />
-              {turmasSalvas.length > 0 && (
-                <>
-                  <span className="ferramentas__ou">ou abra uma já guardada</span>
-                  {turmasSalvas.map((t) => (
-                    <button key={t} onClick={() => void abrirTurma(t)}>
-                      {t}
-                    </button>
-                  ))}
-                </>
-              )}
-            </div>
-            <textarea
-              value={colado}
-              onChange={(e) => setColado(e.target.value)}
-              placeholder="Cole aqui a página Turma › Participantes do SIGAA."
-              rows={8}
-              aria-label="lista da turma"
-            />
-            <ComoCopiar />
-          </>
-        ) : (
-          <>
-            <Linha rotulo="turma">{turma}</Linha>
-            <Linha rotulo="progresso">
-              {feitos} de {fila.length} com crachá
-              {pendentes > 0 && ` · ${pendentes} ${pendentes === 1 ? 'pendente' : 'pendentes'}`}
-            </Linha>
             <table className="tabela">
               <thead>
                 <tr>
-                  <th>nome no aparelho</th>
+                  <th>nome exibido</th>
                   <th>papel</th>
                   <th>estado</th>
                 </tr>
@@ -478,8 +477,8 @@ export function TelaVinculo({
               </span>
             </div>
           </>
-        )}
-      </Painel>
+        </Painel>
+      )}
     </div>
   )
 }

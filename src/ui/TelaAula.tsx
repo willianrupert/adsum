@@ -122,7 +122,7 @@ export function TelaAula({
         }
 
         const evento = eventoDe(decisao, {
-          eventoId: proximoEventoId(config.aparelhoId, leitura.em, ++sequencia.current),
+          eventoId: proximoEventoId(config.instalacaoId, leitura.em, ++sequencia.current),
           quando: leitura.em,
           turma: sessao.turma,
           uidHash,

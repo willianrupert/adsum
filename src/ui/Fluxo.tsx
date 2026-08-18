@@ -166,7 +166,7 @@ export function Fluxo() {
 
         const total = await repositorio.contarEventos()
         const evento = eventoDe(decisao, {
-          eventoId: proximoEventoId(config.aparelhoId, leitura.em, total + 1),
+          eventoId: proximoEventoId(config.instalacaoId, leitura.em, total + 1),
           quando: leitura.em,
           turma: decisao.turma,
           uidHash,

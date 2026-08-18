@@ -1,9 +1,8 @@
 // Adaptador: leitor sem hardware.
 //
-// Não é andaime descartável. O firmware da etapa 0 rodou meses assim — o toque
-// na tela fazia as vezes do crachá, com seis cartões virtuais em rodízio — e foi
-// justamente isso que permitiu exercitar duplicata sem ter dois crachás na mão.
-// A mesma ideia aqui: repetir a volta do baralho reencontra um UID já visto.
+// Não é andaime descartável: é o que permite ensaiar a aula inteira sem
+// hardware, e exercitar crachá repetido sem ter dois crachás na mão — repetir a
+// volta do baralho reencontra um UID já visto.
 
 import { hexParaUid, uidParaHex } from '../../nucleo/uid.ts'
 import type { Uid } from '../../nucleo/tipos.ts'
@@ -17,10 +16,9 @@ import type {
 import { criarEmissor } from './emissor.ts'
 
 /**
- * Seis cartões. Todos com prefixo `04` — é o que a NXP usa em Mifare Classic,
- * e o crachá do CIn é Mifare Classic 1K de UID de 4 bytes. O último tem 7 bytes
- * de propósito: UID é campo de tamanho variável, e código que assume 4 quebra
- * na frente da turma, não aqui.
+ * Seis cartões, todos com prefixo `04`, que é o que a NXP usa no crachá do
+ * CIn. O último tem 7 bytes de propósito: UID é campo de tamanho variável, e
+ * código que assume 4 quebra na frente da turma, não aqui.
  */
 const BARALHO_PADRAO = [
   '04a23b91',

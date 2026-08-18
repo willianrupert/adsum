@@ -1,9 +1,7 @@
 // Tela de diagnóstico.
 //
-// É a primeira tela do app de propósito. Toda regra de negócio precisa de voz
-// na tela — no firmware, a janela de 60 s existia, funcionava e recusava em
-// silêncio, o que é indistinguível de aparelho quebrado. Aqui a mesma ideia
-// aplicada ao ambiente: nada de "não funcionou", sempre qual peça faltou.
+// Toda regra precisa de voz na tela: nada de "não funcionou", sempre qual peça
+// faltou. Recusa muda é indistinguível de coisa quebrada.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { calcularUidHash } from '../nucleo/hash.ts'
@@ -222,7 +220,7 @@ export function TelaDiagnostico() {
     const linhas = [professor, ...hashes.filter((h) => h.papel === 'aluno').slice(0, 3)]
     for (const [i, quem] of linhas.entries()) {
       await repositorio.acrescentarEvento({
-        eventoId: `${config.aparelhoId}-${dia}-${String(i + 1).padStart(4, '0')}`,
+        eventoId: `${config.instalacaoId}-${dia}-${String(i + 1).padStart(4, '0')}`,
         quando: new Date(agora.getTime() + i * 60_000).toISOString(),
         turma: 'IF685 · T01',
         uidHash: quem.uidHash,
@@ -459,8 +457,8 @@ export function TelaDiagnostico() {
         <Linha rotulo="espaço usado">
           {formatarBytes(diagRepo?.usoEstimado)} de {formatarBytes(diagRepo?.cotaEstimada)}
         </Linha>
-        <Linha rotulo="aparelho">
-          <code>{config.aparelhoId}</code>
+        <Linha rotulo="instalação">
+          <code>{config.instalacaoId}</code>
         </Linha>
 
         {eventos.length > 0 && (

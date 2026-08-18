@@ -1,6 +1,4 @@
-// Tipos do domínio. Espelham o firmware do Adsum A1 — ver `Adsum/docs/02` e
-// `Adsum/docs/04`. Onde houver divergência entre este arquivo e o firmware,
-// o firmware está certo: ele é quem grava o CSV que a planilha consome.
+// Tipos do domínio.
 
 /** UID do crachá. Campo de tamanho variável — 4, 7 ou 10 bytes. */
 export type Uid = Uint8Array
@@ -17,7 +15,7 @@ export type Papel = 'aluno' | 'professor'
 export interface Vinculo {
   uidHash: UidHash
   papel: Papel
-  /** Nome exibido, já encurtado para caber na tela. Não é o nome de registro. */
+  /** Nome exibido, já encurtado. Não é o nome de registro. */
   nome: string
   /**
    * Matrícula. É o identificador da pessoa na instituição, e é por ele que a
@@ -44,12 +42,12 @@ export interface Matriculado {
   chave: string
   matricula: string
   nomeCompleto: string
-  /** Já encurtado e medido contra a coluna do aparelho. */
+  /** Já encurtado para leitura de relance. */
   nome: string
   papel: Papel
 }
 
-/** Uma linha da grade horária. Indexada pelo professor, porque o aparelho circula. */
+/** Uma linha da grade horária, indexada pelo professor. */
 export interface Aula {
   id?: number
   uidHashProfessor: UidHash
@@ -68,7 +66,7 @@ export type Resultado = 'ok' | 'duplicado' | 'desconhecido'
 /** Uma linha de `registros/<turma>.csv`. Nunca é reescrita — só acrescentada. */
 export interface Evento {
   /**
-   * `<aparelho>-<AAAAMMDD>-<sequência>`. Chave de idempotência: reimportar o
+   * `<instalação>-<AAAAMMDD>-<sequência>`. Chave de idempotência: reimportar o
    * mesmo arquivo não duplica linha, e é ela que permite juntar dois arquivos
    * que a sincronização da pasta duplicou.
    */
@@ -88,7 +86,7 @@ export interface Evento {
 export interface Config {
   /** 16 bytes em hexadecimal. Sem sal, o hash é o UID com outra roupa. */
   salHex: string
-  /** Entra no `eventoId`. */
-  aparelhoId: string
+  /** Distingue esta instalação de outra. Entra no `eventoId`. */
+  instalacaoId: string
   criadoEm: string
 }

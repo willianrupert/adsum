@@ -82,5 +82,17 @@ export function criarBanco(nome: string = NOME_DO_BANCO): BancoAdsum {
     matriculados: '[turma+chave], turma, chave, nome',
   })
 
+  // v8: `aparelhoId` era o identificador de um aparelho que não existe mais.
+  // O que ele distingue é uma instalação do app de outra.
+  banco.version(8).upgrade(async (tx) => {
+    await tx
+      .table('config')
+      .toCollection()
+      .modify((config: Record<string, unknown>) => {
+        config.instalacaoId = config.instalacaoId ?? config.aparelhoId
+        delete config.aparelhoId
+      })
+  })
+
   return banco
 }

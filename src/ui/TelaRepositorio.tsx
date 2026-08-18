@@ -1,8 +1,6 @@
 // Tela do repositório: vínculos, grade, registros e sal.
 //
-// O formato dos arquivos é o do cartão, não um formato desta tela. É isso que
-// permite arrastar `alunos.csv` do volume `ADSUM` para cá e o `registros.csv`
-// daqui para a planilha, sem conversor no meio — ver `nucleo/csv.ts`.
+// Os arquivos daqui são os mesmos do cofre em pasta — ver `docs/01_cofre.md`.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { deCsv, nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'

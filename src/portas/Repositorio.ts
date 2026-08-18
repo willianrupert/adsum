@@ -35,7 +35,7 @@ export interface Repositorio {
 
   lerConfig(): Promise<Config>
   definirSal(salHex: string): Promise<void>
-  definirAparelhoId(id: string): Promise<void>
+  definirInstalacaoId(id: string): Promise<void>
 
   vinculoPorHash(uidHash: UidHash): Promise<Vinculo | undefined>
   listarVinculos(): Promise<Vinculo[]>

@@ -1,10 +1,9 @@
 // Entrada e saída de arquivo, com dois caminhos e uma promessa só.
 //
 // Com File System Access (Chrome, Edge), gravar é **gravar por cima do mesmo
-// arquivo**: o professor escolhe `alunos.csv` uma vez e as exportações seguintes
-// caem no mesmo lugar, inclusive direto no volume `ADSUM` do aparelho. Sem ela
-// (Firefox, Safari), cai no download comum — que funciona, mas espalha
-// `alunos (3).csv` pela pasta de downloads.
+// arquivo**: escolhe-se uma vez e as exportações seguintes caem no mesmo lugar.
+// Sem ela (Firefox, Safari), cai no download comum — que funciona, mas espalha
+// `registros (3).csv` pela pasta de downloads.
 //
 // A degradação é silenciosa por escolha: o resultado diz qual caminho foi usado,
 // e quem chama decide se conta ao professor.
@@ -17,7 +16,7 @@ export interface ArquivoLido {
 }
 
 const TIPO_CSV = {
-  description: 'Arquivo CSV do Adsum',
+  description: 'Arquivo do Adsum',
   accept: { 'text/csv': ['.csv'] },
 }
 

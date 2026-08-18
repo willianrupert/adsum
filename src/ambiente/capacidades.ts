@@ -65,7 +65,7 @@ export function levantarCapacidades(): Capacidade[] {
       nome: 'WebSerial',
       presente: tem(() => navigator.serial),
       peso: 'futuro',
-      semEla: 'Não dá para falar com o Adsum A1 por USB (passo 5 do roteiro).',
+      semEla: 'Sem ela, só leitores que se apresentam como teclado.',
     },
     {
       nome: 'WebNFC',

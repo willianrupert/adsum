@@ -7,9 +7,9 @@ export interface Resultado {
 }
 
 /**
- * O relatório de uma importação. Existe porque descartar linha em silêncio é o
- * mesmo defeito da recusa muda no aparelho: a lista vem com 46 de 48 alunos e
- * nada na tela diz que dois ficaram para trás.
+ * O relatório de uma importação. Existe porque descartar linha em silêncio é
+ * defeito: a lista vem com 46 de 48 alunos e nada diz que dois ficaram para
+ * trás.
  */
 export function Importacao({ resultado }: { resultado: Resultado }) {
   const { arquivo, aceitos, problemas } = resultado

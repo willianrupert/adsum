@@ -5,11 +5,11 @@
 // é proprietário da NXP e não é nenhum desses tipos. O Chromium *pode* disparar
 // `reading` com o `serialNumber` preenchido e a mensagem vazia para tags que ele
 // não sabe interpretar como NDEF — mas isso é comportamento de implementação, não
-// promessa de especificação, e varia com a versão e com o chip NFC do aparelho.
+// promessa de especificação, e varia com a versão e com o chip NFC do celular.
 //
 // Por isso este adaptador conta `readingerror` separado das leituras: "encostou
 // e não veio nada" é resultado de medição, não silêncio. É o número que responde
-// se um professor com Android consegue registrar presença sem aparelho nenhum.
+// se um professor com Android consegue registrar presença sem dongle nenhum.
 //
 // Só o `serialNumber` é usado. A mensagem NDEF é ignorada de propósito — a regra
 // de ler apenas o UID público vale aqui igual.
@@ -121,7 +121,7 @@ export class LeitorWebNfc implements LeitorDeCracha {
       case 'NotAllowedError':
         return 'permissão de NFC negada — o navegador precisa do sim do usuário, num toque'
       case 'NotSupportedError':
-        return 'sem hardware de NFC, ou desligado nas configurações do aparelho'
+        return 'sem hardware de NFC, ou desligado nas configurações do celular'
       case 'NotReadableError':
         return 'o NFC está ocupado por outro aplicativo'
       default:
