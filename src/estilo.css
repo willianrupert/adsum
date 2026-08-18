@@ -1,0 +1,488 @@
+/* Paleta e escala do Adsum A1 — ver `Adsum/docs/03_interface.md`.
+   O aparelho e o app são a mesma família; a cor de acento é a mesma `#5DCAA5`.
+   A escala de tipos do firmware (12, 15, 20, 24, 46, 92) vale aqui como guia,
+   não como camisa de força: a tela do laptop não tem 480×272. */
+
+:root {
+  --fundo: #0b0b0a;
+  --fundo-painel: #131312;
+  --linha: #2a2a28;
+  --tinta: #e8e8e4;
+  --tinta-fraca: #8f8f88;
+  --acento: #5dcaa5;
+  --alerta: #e0b155;
+  --grave: #e06c5d;
+
+  --t12: 12px;
+  --t15: 15px;
+  --t20: 20px;
+  --t24: 24px;
+
+  --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--fundo);
+  color: var(--tinta);
+  font: var(--t15) / 1.55 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  color: var(--tinta-fraca);
+  word-break: break-all;
+}
+
+.app {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+
+/* Cabeçalho */
+
+.cabecalho {
+  border-bottom: 1px solid var(--linha);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.cabecalho__marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cabecalho h1 {
+  margin: 0;
+  font-size: var(--t24);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.cabecalho__marca p {
+  margin: 0;
+  font-size: var(--t12);
+  color: var(--tinta-fraca);
+}
+
+.cabecalho__nota {
+  margin: 12px 0 0;
+  font-size: var(--t12);
+  color: var(--tinta-fraca);
+  max-width: 60ch;
+}
+
+.rodape {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--linha);
+  font-size: var(--t12);
+  color: var(--tinta-fraca);
+}
+
+/* Painéis */
+
+.diagnostico {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.painel {
+  background: var(--fundo-painel);
+  border: 1px solid var(--linha);
+  border-radius: 10px;
+  padding: 16px 18px 18px;
+}
+
+.painel__topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.painel h2 {
+  margin: 0;
+  font-size: var(--t20);
+  font-weight: 600;
+}
+
+.painel__legenda {
+  margin: 2px 0 0;
+  font-size: var(--t12);
+  color: var(--tinta-fraca);
+  max-width: 66ch;
+}
+
+.painel__acoes {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Linhas rótulo/valor */
+
+.linha {
+  display: flex;
+  gap: 16px;
+  padding: 5px 0;
+  border-top: 1px solid var(--linha);
+  font-size: var(--t12);
+}
+
+.linha__rotulo {
+  color: var(--tinta-fraca);
+  min-width: 15ch;
+  flex-shrink: 0;
+}
+
+.linha__valor {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Capacidades */
+
+.capacidades {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.cap {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 5px 0;
+  border-top: 1px solid var(--linha);
+  font-size: var(--t12);
+}
+
+.cap:first-child {
+  border-top: none;
+}
+
+.cap__ponto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tinta-fraca);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.cap--ok .cap__ponto {
+  background: var(--acento);
+}
+
+.cap--essencial .cap__ponto {
+  background: var(--grave);
+}
+
+.cap--importante .cap__ponto {
+  background: var(--alerta);
+}
+
+.cap__nome {
+  min-width: 24ch;
+  font-size: var(--t15);
+}
+
+.cap__nota {
+  color: var(--tinta-fraca);
+  flex: 1 1 100%;
+  padding-left: 15px;
+}
+
+/* Selos */
+
+.selo {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid currentcolor;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.03em;
+}
+
+.selo--ok {
+  color: var(--acento);
+}
+.selo--alerta {
+  color: var(--alerta);
+}
+.selo--grave {
+  color: var(--grave);
+}
+.selo--neutro {
+  color: var(--tinta-fraca);
+}
+
+/* Controles */
+
+button {
+  font: inherit;
+  font-size: var(--t12);
+  color: var(--tinta);
+  background: transparent;
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--tinta-fraca);
+}
+
+.botao--acento {
+  color: var(--acento);
+  border-color: color-mix(in srgb, var(--acento) 45%, transparent);
+}
+
+.botao--grave {
+  color: var(--grave);
+  border-color: color-mix(in srgb, var(--grave) 45%, transparent);
+}
+
+input {
+  font: inherit;
+  font-family: var(--mono);
+  font-size: var(--t12);
+  color: var(--tinta);
+  background: var(--fundo);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  padding: 5px 9px;
+  min-width: 16ch;
+}
+
+input:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+}
+
+.entrada--larga {
+  min-width: 36ch;
+  flex: 1 1 36ch;
+}
+
+.ferramentas {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--linha);
+}
+
+.ferramentas__ou {
+  font-size: var(--t12);
+  color: var(--tinta-fraca);
+}
+
+.ferramentas__nota {
+  flex: 1 1 100%;
+  margin: 2px 0 0;
+  font-size: var(--t12);
+  color: var(--tinta-fraca);
+}
+
+/* Tabelas.
+   Rolam dentro da própria caixa em vez de empurrar a página: o `uid_hash` tem
+   16 dígitos que não devem quebrar em três linhas — hash picado é hash que
+   ninguém confere a olho. */
+
+.tabela {
+  display: block;
+  overflow-x: auto;
+  min-width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: var(--t12);
+  white-space: nowrap;
+}
+
+.tabela code {
+  word-break: normal;
+}
+
+.tabela th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--tinta-fraca);
+  border-bottom: 1px solid var(--linha);
+  padding: 4px 10px 4px 0;
+}
+
+.tabela td {
+  padding: 5px 10px 5px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--linha) 50%, transparent);
+  vertical-align: top;
+}
+
+.vazio {
+  margin: 0;
+  font-size: var(--t12);
+  color: var(--tinta-fraca);
+}
+
+/* Avisos */
+
+.aviso {
+  border: 1px solid var(--linha);
+  border-left-width: 3px;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: var(--t12);
+}
+
+.aviso p {
+  margin: 4px 0 0;
+  color: var(--tinta-fraca);
+  max-width: 72ch;
+}
+
+.aviso--ok {
+  border-left-color: var(--acento);
+}
+.aviso--alerta {
+  border-left-color: var(--alerta);
+  margin-top: 14px;
+}
+.aviso--grave {
+  border-left-color: var(--grave);
+}
+
+.carregando {
+  padding: 32px 0;
+  color: var(--tinta-fraca);
+  font-size: var(--t12);
+}
+
+/* Abas */
+
+.abas {
+  display: flex;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.aba {
+  font-size: var(--t15);
+  padding: 5px 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--tinta-fraca);
+}
+
+.aba:hover {
+  color: var(--tinta);
+  border-color: var(--linha);
+}
+
+.aba--ativa,
+.aba--ativa:hover {
+  color: var(--acento);
+  border-color: color-mix(in srgb, var(--acento) 45%, transparent);
+  background: color-mix(in srgb, var(--acento) 8%, transparent);
+}
+
+/* Escolha entre adaptadores */
+
+.escolhas {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.escolha {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  text-align: left;
+  padding: 6px 12px;
+  max-width: 34ch;
+}
+
+.escolha__nome {
+  font-size: var(--t15);
+}
+
+.escolha__quando {
+  font-size: 11px;
+  color: var(--tinta-fraca);
+  line-height: 1.4;
+}
+
+.escolha--ativa {
+  color: var(--acento);
+  border-color: color-mix(in srgb, var(--acento) 45%, transparent);
+}
+
+.escolha--ativa .escolha__quando {
+  color: color-mix(in srgb, var(--acento) 60%, var(--tinta-fraca));
+}
+
+/* Formulários de tabela */
+
+select {
+  font: inherit;
+  font-size: var(--t12);
+  color: var(--tinta);
+  background: var(--fundo);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+
+select:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+}
+
+.entrada--celula {
+  font-family: inherit;
+  min-width: 22ch;
+  width: 100%;
+  border-color: transparent;
+  background: transparent;
+  padding: 3px 6px;
+}
+
+.entrada--celula:hover {
+  border-color: var(--linha);
+}
+
+.entrada--celula:focus {
+  border-color: var(--linha);
+  background: var(--fundo);
+}
+
+.ferramentas--topo {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  margin-bottom: 12px;
+}
+
+.tabela td button {
+  padding: 3px 9px;
+}
