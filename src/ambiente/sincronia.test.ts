@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts'
 import { criarPastaFalsa } from '../testes/pastaFalsa.ts'
-import { restaurar, sincronizar } from './sincronia.ts'
+import { acrescentarNoLog, restaurar, sincronizar } from './sincronia.ts'
 
 let n = 0
 let repo: RepositorioDexie
@@ -37,17 +37,56 @@ beforeEach(async () => {
 })
 
 describe('cofre em pasta', () => {
-  it('grava os arquivos com os nomes do desenho', async () => {
+  it('grava o cadastro com os nomes do desenho', async () => {
     const { handle } = criarPastaFalsa()
     await repo.gravarVinculo(VINCULO)
     await repo.salvarTurma('IF685 · T01', [PESSOA])
-    await repo.acrescentarEvento(EVENTO)
 
     const { arquivos } = await sincronizar(repo, handle)
-    expect(arquivos).toContain('config.json')
-    expect(arquivos).toContain('vinculos.json')
-    expect(arquivos).toContain('turmas/IF685-T01.json')
-    expect(arquivos).toContain('registros/IF685-T01.csv')
+    expect(arquivos).toEqual([
+      'config.json',
+      'vinculos.json',
+      'grade.json',
+      'turmas/IF685-T01.json',
+    ])
+  })
+
+  // O log não entra na sincronização do cadastro: ele cresce por append, um
+  // evento por vez. Regravá-lo a cada crachá seria trabalho crescente por
+  // leitura — e, com a pasta sincronizada, apagaria a aula da outra máquina.
+  it('o log cresce por append, e o cabeçalho vai uma vez só', async () => {
+    const { handle, raiz } = criarPastaFalsa()
+    await acrescentarNoLog(handle, EVENTO)
+    await acrescentarNoLog(handle, { ...EVENTO, eventoId: 'web-a1b2-20260818-0002' })
+
+    const texto = raiz.pastas.get('registros')!.arquivos.get('IF685-T01.csv')!
+    // `trim()` come o BOM — ele é espaço em branco para o JavaScript. Por isso
+    // a checagem do BOM é no texto cru.
+    expect(texto.startsWith('\ufeff')).toBe(true)
+    const linhas = texto.trim().split('\n')
+    expect(linhas).toHaveLength(3)
+    expect(linhas[0]).toMatch(/^evento_id;/)
+    expect(linhas[1]).toContain('20260818-0001')
+    expect(linhas[2]).toContain('20260818-0002')
+  })
+
+  it('acrescentar nunca reescreve o que já estava lá', async () => {
+    const { handle, raiz } = criarPastaFalsa()
+    await acrescentarNoLog(handle, EVENTO)
+    const antes = raiz.pastas.get('registros')!.arquivos.get('IF685-T01.csv')!
+    await acrescentarNoLog(handle, { ...EVENTO, eventoId: 'outro' })
+    const depois = raiz.pastas.get('registros')!.arquivos.get('IF685-T01.csv')!
+    expect(depois.startsWith(antes)).toBe(true)
+  })
+
+  it('cada turma tem seu próprio arquivo', async () => {
+    const { handle, raiz } = criarPastaFalsa()
+    await acrescentarNoLog(handle, EVENTO)
+    await acrescentarNoLog(handle, { ...EVENTO, eventoId: 'b', turma: 'IF669 · T02' })
+    expect([...raiz.pastas.get('registros')!.arquivos.keys()].sort()).toEqual([
+      'IF669-T02.csv',
+      'IF685-T01.csv',
+    ])
   })
 
   // O teste de que a inversão aconteceu de fato: jogar fora o IndexedDB inteiro
@@ -58,6 +97,7 @@ describe('cofre em pasta', () => {
     await repo.gravarVinculo(VINCULO)
     await repo.salvarTurma('IF685 · T01', [PESSOA])
     await repo.acrescentarEvento(EVENTO)
+    await acrescentarNoLog(handle, EVENTO)
     await repo.gravarAula({
       uidHashProfessor: VINCULO.uidHash,
       dia: 3,
@@ -81,6 +121,7 @@ describe('cofre em pasta', () => {
   it('restaurar duas vezes não duplica evento', async () => {
     const { handle } = criarPastaFalsa()
     await repo.acrescentarEvento(EVENTO)
+    await acrescentarNoLog(handle, EVENTO)
     await sincronizar(repo, handle)
     await repo.esvaziarCache()
     await restaurar(repo, handle)

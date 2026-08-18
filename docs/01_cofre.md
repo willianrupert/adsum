@@ -34,6 +34,19 @@ arquivo inteiro é o certo. Registro nunca é corrigido: linha nova sempre.
 Um arquivo por turma, e não um arquivo com todas: reimportar uma turma toca um
 arquivo só, e uma turma corrompida não leva as outras junto.
 
+## Como cada arquivo é escrito
+
+| Arquivo | Escrita | Por quê |
+|---|---|---|
+| `config.json`, `vinculos.json`, `grade.json`, `turmas/*.json` | reescrita inteira | são corrigidos: nome errado, papel trocado, aluno que trancou |
+| `registros/<turma>.csv` | **append, uma linha por vez** | é log; e regravar a cada crachá seria trabalho crescente por leitura |
+
+O append não é preferência de estilo. Com cinquenta alunos numa fila, regravar
+o arquivo a cada leitura cresce com o tamanho da aula. E com a pasta
+sincronizada, reescrever apagaria a aula que a outra máquina acabou de gravar —
+enquanto o append, no pior caso, gera arquivo em conflito com **nenhuma linha
+perdida**, e `evento_id` deduplica na junção.
+
 ## Regras
 
 - **`registros.csv` é append puro.** Sem `seek`, sem reescrita, sem rename.

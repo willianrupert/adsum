@@ -38,13 +38,15 @@ export function criarPastaFalsa() {
           name: nome,
           async getFile() {
             const texto = atual.arquivos.get(nome) ?? ''
-            return { text: async () => texto } as File
+            return { text: async () => texto, size: texto.length } as File
           },
-          async createWritable() {
-            let buffer = ''
+          async createWritable(opcoes?: { keepExistingData?: boolean }) {
+            let buffer = opcoes?.keepExistingData ? (atual.arquivos.get(nome) ?? '') : ''
             return {
-              write: async (dado: string) => {
-                buffer += dado
+              write: async (dado: string | { type: string; position?: number; data: string }) => {
+                if (typeof dado === 'string') return void (buffer += dado)
+                const posicao = dado.position ?? buffer.length
+                buffer = buffer.slice(0, posicao) + dado.data
               },
               close: async () => {
                 atual.arquivos.set(nome, buffer)

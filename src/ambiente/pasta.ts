@@ -108,3 +108,31 @@ export async function listarArquivos(
     return []
   }
 }
+
+/**
+ * Acrescenta ao fim, sem reescrever o que já está lá.
+ *
+ * É a diferença entre um log e um arquivo que se regrava: com append, a pasta
+ * pode estar no iCloud com duas máquinas escrevendo e nenhuma linha se perde —
+ * no pior caso a sincronização gera um arquivo em conflito, e `evento_id`
+ * deduplica na junção. Reescrever o arquivo inteiro a cada crachá perderia a
+ * aula da outra máquina, silenciosamente.
+ */
+export async function acrescentar(
+  raiz: FileSystemDirectoryHandle,
+  caminho: string,
+  texto: string,
+  cabecalho?: string,
+): Promise<void> {
+  const partes = caminho.split('/')
+  const arquivo = partes.pop()!
+  const pasta = await subpasta(raiz, partes)
+  const alvo = await pasta.getFileHandle(arquivo, { create: true })
+
+  const tamanho = (await alvo.getFile()).size
+  const fluxo = await alvo.createWritable({ keepExistingData: true })
+  // Arquivo recém-criado nasce com o cabeçalho; os seguintes só crescem.
+  const conteudo = tamanho === 0 && cabecalho ? cabecalho + texto : texto
+  await fluxo.write({ type: 'write', position: tamanho, data: conteudo })
+  await fluxo.close()
+}

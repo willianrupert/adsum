@@ -11,7 +11,7 @@ import { calcularUidHash } from '../nucleo/hash.ts'
 import { decidir, eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
-import { restaurar, sincronizar } from '../ambiente/sincronia.ts'
+import { acrescentarNoLog, restaurar, sincronizar } from '../ambiente/sincronia.ts'
 import type { EstadoDaPasta } from '../nucleo/rota.ts'
 import { TelaColeta } from './TelaColeta.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
@@ -128,7 +128,10 @@ export function Fluxo() {
           turma: decisao.turma,
           uidHash,
         })
-        if (evento) await repositorio.acrescentarEvento(evento)
+        if (evento) {
+          await repositorio.acrescentarEvento(evento)
+          if (pasta) await acrescentarNoLog(pasta, evento)
+        }
         await repositorio.abrirSessao({
           turma: decisao.turma,
           abertaEm: leitura.em.toISOString(),
@@ -138,7 +141,7 @@ export function Fluxo() {
         await mudou()
       })()
     })
-  }, [leitor, repositorio, config, sessao, turmas1, mudou])
+  }, [leitor, repositorio, config, sessao, turmas1, mudou, pasta])
 
   const rota = decidirRota({
     ambienteQuebrado,
@@ -170,7 +173,15 @@ export function Fluxo() {
       )}
       {rota === 'turma' && <TelaVinculo aoMudarBase={mudou} />}
       {rota === 'cerimonia' && <TelaVinculo turmaInicial={turmaPendente} aoMudarBase={mudou} />}
-      {rota === 'coleta' && sessao && <TelaColeta sessao={sessao} aoMudarBase={mudou} />}
+      {rota === 'coleta' && sessao && (
+        <TelaColeta
+          sessao={sessao}
+          aoMudarBase={recontar}
+          aoRegistrar={async (evento) => {
+            if (pasta) await acrescentarNoLog(pasta, evento)
+          }}
+        />
+      )}
       {rota === 'pronto' && <Repouso turmas={turmas} aoAbrirCerimonia={() => setFolha(undefined)} />}
 
       <footer className="selos">

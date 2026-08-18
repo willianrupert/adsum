@@ -15,26 +15,54 @@ import {
   paraJsonTurma,
   paraJsonVinculos,
 } from '../nucleo/cofre.ts'
-import { deCsv, nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'
+import { cabecalhoCsv, deCsv, linhaCsv, nomeDoArquivo } from '../nucleo/csv.ts'
+import type { Evento } from '../nucleo/tipos.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
-import { escrever, ler, listarArquivos } from './pasta.ts'
+import { acrescentar, escrever, ler, listarArquivos } from './pasta.ts'
 
 export interface Resumo {
   arquivos: string[]
   problemas: string[]
 }
 
-/** Grava o estado inteiro na pasta. Chamado depois de cada mudança. */
+export function caminhoDosRegistros(turma: string): string {
+  return `registros/${nomeDoArquivo(turma)}`
+}
+
+/**
+ * Uma linha nova no log da turma. **Nunca reescreve o arquivo.**
+ *
+ * Chamada por evento, e não por sincronização inteira: com cinquenta alunos
+ * numa fila, regravar o arquivo a cada crachá seria trabalho crescente por
+ * leitura — e, com a pasta sincronizada, apagaria o que outra máquina escreveu.
+ */
+export async function acrescentarNoLog(
+  pasta: FileSystemDirectoryHandle,
+  evento: Evento,
+): Promise<void> {
+  await acrescentar(
+    pasta,
+    caminhoDosRegistros(evento.turma),
+    linhaCsv(evento) + '\n',
+    cabecalhoCsv(),
+  )
+}
+
+/**
+ * Grava o cadastro na pasta: config, vínculos, grade e turmas.
+ *
+ * Só o que é reescrito por inteiro passa por aqui. O log não — ele cresce por
+ * `acrescentarNoLog`.
+ */
 export async function sincronizar(
   repositorio: Repositorio,
   pasta: FileSystemDirectoryHandle,
 ): Promise<Resumo> {
-  const [config, vinculos, aulas, matriculados, eventos] = await Promise.all([
+  const [config, vinculos, aulas, matriculados] = await Promise.all([
     repositorio.lerConfig(),
     repositorio.listarVinculos(),
     repositorio.listarAulas(),
     repositorio.listarMatriculados(),
-    repositorio.listarEventos(),
   ])
 
   const arquivos: string[] = []
@@ -53,12 +81,6 @@ export async function sincronizar(
   }
   for (const [turma, pessoas] of turmas) {
     await gravar(NOMES.turma(turma), paraJsonTurma(pessoas))
-  }
-
-  // Registros em ordem de acontecimento: o arquivo cresce pelo fim, como o log
-  // que ele é.
-  for (const [turma, linhas] of porTurma([...eventos].reverse())) {
-    await gravar(`registros/${nomeDoArquivo(turma)}`, paraCsv(linhas))
   }
 
   return { arquivos, problemas: [] }

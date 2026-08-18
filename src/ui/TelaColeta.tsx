@@ -32,9 +32,12 @@ function hhmm(d: Date) {
 export function TelaColeta({
   sessao,
   aoMudarBase,
+  aoRegistrar,
 }: {
   sessao: Sessao
   aoMudarBase: () => void
+  /** Grava a linha na pasta. Acontece antes do bipe: som é "está salvo". */
+  aoRegistrar?: (evento: Evento) => Promise<void>
 }) {
   const { leitor, repositorio, config } = useAdsum()
 
@@ -91,7 +94,10 @@ export function TelaColeta({
         })
 
         // Grava primeiro. O bipe significa "está salvo", não "eu ouvi".
-        if (evento) await repositorio.acrescentarEvento(evento)
+        if (evento) {
+          await repositorio.acrescentarEvento(evento)
+          await aoRegistrar?.(evento)
+        }
         if (decisao.tipo === 'encerrar') await repositorio.encerrarSessao()
 
         anunciar(decisao, evento)
@@ -99,7 +105,7 @@ export function TelaColeta({
         aoMudarBase()
       })()
     })
-  }, [leitor, repositorio, config, sessao, presentes, recarregar, aoMudarBase])
+  }, [leitor, repositorio, config, sessao, presentes, recarregar, aoMudarBase, aoRegistrar])
 
   function anunciar(decisao: Decisao, evento?: Evento) {
     switch (decisao.tipo) {

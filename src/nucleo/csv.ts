@@ -49,20 +49,27 @@ function limpar(campo: string): string {
   return campo.replace(/[;\r\n]+/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
+/** Uma linha, sem quebra. É a unidade de escrita: o log cresce por append. */
+export function linhaCsv(e: Evento): string {
+  return [
+    e.eventoId,
+    e.quando,
+    limpar(e.turma),
+    limpar(e.login ?? ''),
+    limpar(e.nome),
+    e.origem,
+    e.resultado,
+    e.uidHash,
+  ].join(SEP)
+}
+
+/** BOM e cabeçalho. Vai uma vez, quando o arquivo nasce. */
+export function cabecalhoCsv(): string {
+  return BOM + CABECALHO + '\n'
+}
+
 export function paraCsv(eventos: Evento[]): string {
-  const linhas = eventos.map((e) =>
-    [
-      e.eventoId,
-      e.quando,
-      limpar(e.turma),
-      limpar(e.login ?? ''),
-      limpar(e.nome),
-      e.origem,
-      e.resultado,
-      e.uidHash,
-    ].join(SEP),
-  )
-  return BOM + [CABECALHO, ...linhas].join('\n') + '\n'
+  return cabecalhoCsv() + eventos.map((e) => linhaCsv(e) + '\n').join('')
 }
 
 export function deCsv(texto: string): Leitura {
