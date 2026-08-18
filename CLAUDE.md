@@ -41,11 +41,30 @@ computador, limpar dados do site, ou o navegador despejar sob pressão de espaç
 inaceitável, e a promessa de "dados 100% locais" é justamente o que cria esse
 risco. **As duas coisas não podem ser verdade ao mesmo tempo.**
 
-Ideia do autor: o professor "entra na conta dele" encostando o próprio crachá e
-tudo carrega. Isso é bom de usar, mas note o que implica: para carregar em
-outra máquina, os dados precisam existir em algum lugar fora dela. E o crachá
-sozinho não é credencial — o UID é público e clonável, então ele identifica,
-não autentica.
+**Decidido pelo autor em 18/08/2026: o crachá do professor autentica.** Ele
+encosta o próprio crachá e a base dele carrega. Não reabrir sem motivo novo.
+
+O que ainda decorre disso, e é o que precisa de desenho: para carregar em outra
+máquina, os dados precisam existir em algum lugar fora dela. Autenticação
+resolve *quem entra*, não *de onde vem o dado*.
+
+Sobre a força do crachá como credencial, para não se perder o raciocínio: o UID
+trafega em claro na anticolisão, antes de qualquer chave — é por isso que o
+projeto consegue ler o crachá do CIn sem as chaves do CIn, e é o que a regra
+"só o UID público é lido" sempre significou. Clonar exige cartão de UID
+gravável e intenção deliberada. **Para uma sala de aula isso é aceitável**, e a
+avaliação de risco é do autor: quem clona um crachá já podia forjar presença,
+e o professor está na sala.
+
+O que muda de natureza é o **alcance** do que o crachá abre. Presença é um
+registro; a conta do professor guarda nome, login e e-mail de dezenas de
+alunos. Se a entrada em máquina nova destravar isso só com um toque, deixa de
+ser questão de frequência e vira questão de dado pessoal.
+
+Meio-termo que preserva o gesto: **crachá abre máquina já confiada; máquina
+nova exige o arquivo de backup** (ou um PIN definido uma vez). O professor
+encosta o crachá todo dia e nunca pensa nisso; um crachá clonado sozinho, num
+computador qualquer, não abre nada.
 
 Caminhos, do mais barato ao mais caro, para decidir com o professor:
 
