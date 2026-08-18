@@ -309,9 +309,12 @@ Inventário para decidir o que fica:
 **Já removido:** `LIMITE_LISTA`, `MAX_BYTES` e as tabelas `A20`/`A24` de
 `nucleo/nomes.ts` — mediam um display que não existe.
 
-**Ainda a fazer:** `csv.ts` reescrito conforme `docs/02_formato.md`; `alunos.csv`
-e `grade.csv` viram JSON no cofre. E `;` + BOM **ficam** — nunca foram do
-firmware, são do Excel em português (ver `docs/02`).
+**Já removido também:** `alunos.csv` e `grade.csv` — viraram `vinculos.json` e
+`grade.json` em `nucleo/cofre.ts`, com `versao` no topo. O `csv.ts` ficou só
+com `registros/<turma>.csv`, nas colunas de `docs/02_formato.md`. E `;` + BOM
+**ficam** — nunca foram do firmware, são do Excel em português.
+
+**Ainda a fazer:** a rota única (`docs/00`) e a pasta como dona (`docs/01`).
 
 **Vale por si, independente de hardware:**
 - ler só o UID público, nunca Crypto1 — é legitimidade, não limitação técnica

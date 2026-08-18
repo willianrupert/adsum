@@ -218,13 +218,12 @@ export function TelaDiagnostico() {
       })
     }
 
-    const sessaoId = '0001'
+    const dia = agora.toISOString().slice(0, 10).replace(/-/g, '')
     const linhas = [professor, ...hashes.filter((h) => h.papel === 'aluno').slice(0, 3)]
     for (const [i, quem] of linhas.entries()) {
       await repositorio.acrescentarEvento({
-        eventoId: `${config.aparelhoId}-${sessaoId}-${String(i + 1).padStart(4, '0')}`,
-        sessaoId,
-        timestamp: new Date(agora.getTime() + i * 60_000).toISOString(),
+        eventoId: `${config.aparelhoId}-${dia}-${String(i + 1).padStart(4, '0')}`,
+        quando: new Date(agora.getTime() + i * 60_000).toISOString(),
         turma: 'IF685 · T01',
         uidHash: quem.uidHash,
         nome: quem.nome,
@@ -480,7 +479,7 @@ export function TelaDiagnostico() {
                   <td>
                     <code>{e.eventoId}</code>
                   </td>
-                  <td>{hora(new Date(e.timestamp))}</td>
+                  <td>{hora(new Date(e.quando))}</td>
                   <td>{e.nome}</td>
                   <td>{e.origem}</td>
                 </tr>

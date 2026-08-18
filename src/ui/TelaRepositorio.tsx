@@ -5,16 +5,15 @@
 // daqui para a planilha, sem conversor no meio — ver `nucleo/csv.ts`.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { deCsv, nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'
 import {
-  DIAS,
-  deCsvEventos,
-  deCsvGrade,
-  deCsvVinculos,
-  horaValida,
-  paraCsvEventos,
-  paraCsvGrade,
-  paraCsvVinculos,
-} from '../nucleo/csv.ts'
+  deJsonGrade,
+  deJsonVinculos,
+  NOMES,
+  paraJsonGrade,
+  paraJsonVinculos,
+} from '../nucleo/cofre.ts'
+import { DIAS, horaValida } from '../nucleo/grade.ts'
 import { salValido, sortearSal } from '../nucleo/hash.ts'
 import type { Aula, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.ts'
@@ -84,29 +83,38 @@ export function TelaRepositorio() {
     )
   }, [vinculos, busca])
 
-  const importarVinculos = tentar('Importar alunos.csv', async () => {
+  const importarVinculos = tentar(`Importar ${NOMES.vinculos}`, async () => {
     const arquivo = await abrirTexto()
     if (!arquivo) return 'cancelado.'
-    const { itens, problemas } = deCsvVinculos(arquivo.texto)
-    for (const vinculo of itens) await repositorio.gravarVinculo(vinculo)
-    setImportacao({ arquivo: arquivo.nome, aceitos: itens.length, problemas })
-    return `${itens.length} vínculos.`
+    const { conteudo, problemas } = deJsonVinculos(arquivo.texto)
+    for (const vinculo of conteudo ?? []) await repositorio.gravarVinculo(vinculo)
+    setImportacao({
+      arquivo: arquivo.nome,
+      aceitos: conteudo?.length ?? 0,
+      problemas: problemas.map((p, i) => ({ linha: i + 1, texto: arquivo.nome, motivo: p.motivo })),
+    })
+    return `${conteudo?.length ?? 0} vínculos.`
   })
 
-  const importarGrade = tentar('Importar grade.csv', async () => {
+  const importarGrade = tentar(`Importar ${NOMES.grade}`, async () => {
     const arquivo = await abrirTexto()
     if (!arquivo) return 'cancelado.'
-    const { itens, problemas } = deCsvGrade(arquivo.texto)
-    for (const aula of itens) await repositorio.gravarAula(aula)
-    setImportacao({ arquivo: arquivo.nome, aceitos: itens.length, problemas })
-    return `${itens.length} aulas.`
+    const { conteudo, problemas } = deJsonGrade(arquivo.texto)
+    for (const aula of conteudo ?? []) await repositorio.gravarAula({ ...aula, id: undefined })
+    setImportacao({
+      arquivo: arquivo.nome,
+      aceitos: conteudo?.length ?? 0,
+      problemas: problemas.map((p, i) => ({ linha: i + 1, texto: arquivo.nome, motivo: p.motivo })),
+    })
+    return `${conteudo?.length ?? 0} aulas.`
   })
 
-  const importarRegistros = tentar('Importar registros.csv', async () => {
+  const importarRegistros = tentar('Importar registros', async () => {
     const arquivo = await abrirTexto()
     if (!arquivo) return 'cancelado.'
-    const { itens, problemas } = deCsvEventos(arquivo.texto)
-    // `evento_id` é a chave: reimportar o mesmo arquivo não duplica linha.
+    const { itens, problemas } = deCsv(arquivo.texto)
+    // `evento_id` é a chave: reimportar o mesmo arquivo não duplica linha, e é
+    // ela que permite juntar dois arquivos que a sincronização duplicou.
     for (const evento of itens) await repositorio.acrescentarEvento(evento)
     setImportacao({ arquivo: arquivo.nome, aceitos: itens.length, problemas })
     return `${itens.length} linhas lidas.`
@@ -124,8 +132,11 @@ export function TelaRepositorio() {
           <>
             <button onClick={importarVinculos}>importar</button>
             <button
-              onClick={tentar('Exportar alunos.csv', async () =>
-                comoFoi(await salvarTexto('alunos.csv', paraCsvVinculos(vinculos)), 'alunos.csv'),
+              onClick={tentar(`Exportar ${NOMES.vinculos}`, async () =>
+                comoFoi(
+                  await salvarTexto(NOMES.vinculos, paraJsonVinculos(vinculos)),
+                  NOMES.vinculos,
+                ),
               )}
             >
               exportar
@@ -230,8 +241,8 @@ export function TelaRepositorio() {
           <>
             <button onClick={importarGrade}>importar</button>
             <button
-              onClick={tentar('Exportar grade.csv', async () =>
-                comoFoi(await salvarTexto('grade.csv', paraCsvGrade(aulas)), 'grade.csv'),
+              onClick={tentar(`Exportar ${NOMES.grade}`, async () =>
+                comoFoi(await salvarTexto(NOMES.grade, paraJsonGrade(aulas)), NOMES.grade),
               )}
             >
               exportar
@@ -369,7 +380,7 @@ export function TelaRepositorio() {
           <>
             <button onClick={importarRegistros}>importar</button>
             <button
-              onClick={tentar('Exportar registros.csv', async () => {
+              onClick={tentar('Exportar registros', async () => {
                 const eventos = await repositorio.listarEventos(Number.MAX_SAFE_INTEGER)
                 // O login não fica no evento: fica no vínculo, que é onde ele
                 // pertence. A coluna é preenchida na saída, com o vínculo de
@@ -380,10 +391,19 @@ export function TelaRepositorio() {
                 const ordenados = [...eventos]
                   .reverse()
                   .map((e) => ({ ...e, login: e.login ?? loginPorHash.get(e.uidHash) }))
-                return comoFoi(
-                  await salvarTexto('registros.csv', paraCsvEventos(ordenados)),
-                  'registros.csv',
-                )
+
+                // Um arquivo por turma: cada turma vira uma planilha, e turma
+                // nova não mexe em arquivo de turma antiga.
+                const turmas = porTurma(ordenados)
+                if (turmas.size === 0) throw new Error('nenhum registro para exportar')
+                const nomes: string[] = []
+                for (const [turma, linhas] of turmas) {
+                  const alvo = nomeDoArquivo(turma)
+                  const salvou = await salvarTexto(alvo, paraCsv(linhas))
+                  if (salvou === 'cancelado') break
+                  nomes.push(alvo)
+                }
+                return nomes.length > 0 ? `${nomes.join(', ')}.` : 'cancelado.'
               })}
             >
               exportar
@@ -393,12 +413,12 @@ export function TelaRepositorio() {
       >
         <Linha rotulo="linhas gravadas">{totalEventos}</Linha>
         <Linha rotulo="colunas">
-          <code>evento_id;sessao_id;timestamp;turma;login;nome;origem;resultado</code>
+          <code>evento_id;quando;turma;login;nome;origem;resultado;uid_hash</code>
         </Linha>
         <p className="ferramentas__nota">
-          A coluna <code>login</code> sai vazia: o vínculo guarda só{' '}
-          <code>hash → nome</code>. Ela existe porque o <code>registros.csv</code> do
-          aparelho a tem, e mudar a contagem de colunas quebraria a leitura pelo firmware.
+          O <code>login</code> é preenchido na saída, a partir do vínculo de hoje — assim
+          corrigir um login corrige as exportações seguintes sem reescrever uma linha do
+          log.
         </p>
       </Painel>
 

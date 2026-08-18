@@ -14,9 +14,8 @@ beforeEach(async () => {
 
 function evento(parcial: Partial<Evento> = {}): Evento {
   return {
-    eventoId: 'web-0001-0001-0001',
-    sessaoId: '0001',
-    timestamp: '2026-08-18T10:00:00.000Z',
+    eventoId: 'web-a1b2-20260818-0001',
+    quando: '2026-08-18T10:00:00.000Z',
     turma: 'IF685 · T01',
     uidHash: '309940e145b847cf',
     nome: 'Willian Neves',
@@ -63,13 +62,13 @@ describe('eventos', () => {
     for (const [i, hora] of ['10:00', '10:02', '10:01'].entries()) {
       await repo.acrescentarEvento(
         evento({
-          eventoId: `web-0001-0001-000${i}`,
-          timestamp: `2026-08-18T${hora}:00.000Z`,
+          eventoId: `web-a1b2-20260818-000${i}`,
+          quando: `2026-08-18T${hora}:00.000Z`,
         }),
       )
     }
     const lista = await repo.listarEventos()
-    expect(lista.map((e) => e.timestamp)).toEqual([
+    expect(lista.map((e) => e.quando)).toEqual([
       '2026-08-18T10:02:00.000Z',
       '2026-08-18T10:01:00.000Z',
       '2026-08-18T10:00:00.000Z',
@@ -78,7 +77,7 @@ describe('eventos', () => {
 
   it('respeita o limite pedido', async () => {
     for (let i = 0; i < 5; i++) {
-      await repo.acrescentarEvento(evento({ eventoId: `web-0001-0001-000${i}` }))
+      await repo.acrescentarEvento(evento({ eventoId: `web-a1b2-20260818-000${i}` }))
     }
     expect(await repo.listarEventos(2)).toHaveLength(2)
   })

@@ -1,20 +1,37 @@
-// Os três arquivos do cartão, em texto.
+// `registros/<turma>.csv` — a saída que a planilha consome.
 //
-// O formato não é escolha deste app: é o que o Adsum A1 grava e lê. Compatível
-// de verdade significa que dá para arrastar `alunos.csv` do volume `ADSUM` para
-// cá, e o `registros.csv` daqui para a planilha, sem conversor no meio.
+// É o único CSV que sobrou. Vínculos e turmas viram JSON no cofre (ver
+// `cofre.ts`), porque são reescritos por inteiro quando alguém corrige um nome.
+// Registro nunca é corrigido: linha nova sempre.
 //
-// Separador `;` porque é o que o Excel brasileiro abre sem perguntar nada, e
-// BOM porque sem ele o Excel lê UTF-8 como Latin-1 e "João" vira "JoÃ£o".
+// `;` e BOM não vieram de firmware nenhum, ao contrário do que este arquivo já
+// afirmou. São do Excel em português: com vírgula a planilha abre como uma
+// coluna só, e sem BOM "João" vira "JoÃ£o". Quem decide o formato é o
+// consumidor real, e o consumidor real é a planilha.
 //
-// Toda leitura devolve os problemas junto com o resultado. Linha descartada em
-// silêncio é o mesmo defeito da recusa muda: o professor vê 46 alunos onde
-// deveria haver 48 e nada na tela diz por quê.
+// Leitura nunca descarta linha em silêncio. 46 alunos onde deveria haver 48,
+// sem explicação, é bug — não economia de mensagem.
 
-import type { Aula, Evento, Origem, Papel, Resultado, Vinculo } from './tipos.ts'
+import type { Evento, Origem, Resultado } from './tipos.ts'
 
 const BOM = '﻿'
 const SEP = ';'
+
+export const COLUNAS = [
+  'evento_id',
+  'quando',
+  'turma',
+  'login',
+  'nome',
+  'origem',
+  'resultado',
+  'uid_hash',
+] as const
+
+export const CABECALHO = COLUNAS.join(SEP)
+
+const ORIGENS: Origem[] = ['cracha', 'professor', 'manual']
+const RESULTADOS: Resultado[] = ['ok', 'duplicado', 'desconhecido']
 
 export interface Problema {
   linha: number
@@ -22,216 +39,104 @@ export interface Problema {
   motivo: string
 }
 
-export interface Leitura<T> {
-  itens: T[]
+export interface Leitura {
+  itens: Evento[]
   problemas: Problema[]
 }
 
-/**
- * `;` e quebra de linha não cabem num campo sem aspas — e aspas o firmware não
- * lê. Espaços em excesso somem junto: "Silva; Maria" vira "Silva Maria", não
- * "Silva  Maria", porque o nome vai para uma coluna de largura contada em pixel.
- */
+/** `;` e quebra de linha não cabem num campo sem aspas. */
 function limpar(campo: string): string {
   return campo.replace(/[;\r\n]+/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
-function linhasUteis(texto: string): { numero: number; campos: string[]; crua: string }[] {
-  return texto
-    .replace(/^﻿/, '')
-    .split(/\r?\n/)
-    .map((crua, i) => ({ numero: i + 1, crua, campos: crua.split(SEP).map((c) => c.trim()) }))
-    .filter(({ crua }) => crua.trim() !== '' && !crua.trimStart().startsWith('#'))
-}
-
-// ── alunos.csv ────────────────────────────────────────────────────────────────
-// `uid_hash;papel;nome`, com `A` para aluno e `P` para professor.
-
-const PARA_LETRA: Record<Papel, string> = { aluno: 'A', professor: 'P' }
-
-export function paraCsvVinculos(vinculos: Vinculo[]): string {
-  return (
-    BOM +
-    vinculos
-      .map((v) => [v.uidHash, PARA_LETRA[v.papel], limpar(v.nome)].join(SEP))
-      .join('\n') +
-    '\n'
-  )
-}
-
-export function deCsvVinculos(texto: string, criadoEm = new Date().toISOString()): Leitura<Vinculo> {
-  const itens: Vinculo[] = []
-  const problemas: Problema[] = []
-
-  for (const { numero, campos, crua } of linhasUteis(texto)) {
-    const [hash, segundo, terceiro] = campos
-    if (!/^[0-9a-f]{16}$/i.test(hash ?? '')) {
-      problemas.push({ linha: numero, texto: crua, motivo: 'uid_hash não tem 16 dígitos hexadecimais' })
-      continue
-    }
-
-    // O formato antigo era `hash;nome`, sem papel. Uma tabela gravada antes de o
-    // papel existir não se perde: vira aluno, que é o que ela sempre significou.
-    const temPapel = campos.length >= 3
-    const letra = temPapel ? (segundo ?? '').toUpperCase() : 'A'
-    const nome = temPapel ? terceiro : segundo
-
-    if (letra !== 'A' && letra !== 'P') {
-      problemas.push({ linha: numero, texto: crua, motivo: `papel "${segundo}" não é A nem P` })
-      continue
-    }
-    if (!nome?.trim()) {
-      problemas.push({ linha: numero, texto: crua, motivo: 'sem nome' })
-      continue
-    }
-
-    itens.push({
-      uidHash: hash.toLowerCase(),
-      papel: letra === 'P' ? 'professor' : 'aluno',
-      nome: nome.trim(),
-      criadoEm,
-    })
-  }
-
-  return { itens, problemas }
-}
-
-// ── grade.csv ─────────────────────────────────────────────────────────────────
-// `hash_prof;dia;hh:mm;hh:mm;turma`, dia 0 = domingo … 6 = sábado.
-
-export const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
-
-export function horaValida(hhmm: string): boolean {
-  const casou = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim())
-  if (!casou) return false
-  const h = Number(casou[1])
-  const m = Number(casou[2])
-  return h >= 0 && h <= 23 && m >= 0 && m <= 59
-}
-
-function normalizarHora(hhmm: string): string {
-  const [h, m] = hhmm.trim().split(':')
-  return `${h.padStart(2, '0')}:${m}`
-}
-
-export function paraCsvGrade(aulas: Aula[]): string {
-  return (
-    BOM +
-    aulas
-      .map((a) =>
-        [a.uidHashProfessor, a.dia, a.inicio, a.fim, limpar(a.turma)].join(SEP),
-      )
-      .join('\n') +
-    '\n'
-  )
-}
-
-export function deCsvGrade(texto: string): Leitura<Aula> {
-  const itens: Aula[] = []
-  const problemas: Problema[] = []
-
-  for (const { numero, campos, crua } of linhasUteis(texto)) {
-    const [hash, dia, inicio, fim, ...resto] = campos
-    const turma = resto.join(SEP).trim()
-
-    if (!/^[0-9a-f]{16}$/i.test(hash ?? '')) {
-      problemas.push({ linha: numero, texto: crua, motivo: 'uid_hash do professor inválido' })
-      continue
-    }
-    const numeroDoDia = Number(dia)
-    if (!Number.isInteger(numeroDoDia) || numeroDoDia < 0 || numeroDoDia > 6) {
-      problemas.push({ linha: numero, texto: crua, motivo: `dia "${dia}" fora de 0–6` })
-      continue
-    }
-    if (!horaValida(inicio ?? '') || !horaValida(fim ?? '')) {
-      problemas.push({ linha: numero, texto: crua, motivo: 'horário fora do formato hh:mm' })
-      continue
-    }
-    if (!turma) {
-      problemas.push({ linha: numero, texto: crua, motivo: 'sem turma' })
-      continue
-    }
-
-    itens.push({
-      uidHashProfessor: hash.toLowerCase(),
-      dia: numeroDoDia,
-      inicio: normalizarHora(inicio),
-      fim: normalizarHora(fim),
-      turma,
-    })
-  }
-
-  return { itens, problemas }
-}
-
-// ── registros.csv ─────────────────────────────────────────────────────────────
-// `evento_id;sessao_id;timestamp;turma;login;nome;origem;resultado`
-
-export const CABECALHO_REGISTROS =
-  'evento_id;sessao_id;timestamp;turma;login;nome;origem;resultado'
-
-const ORIGENS: Origem[] = ['cracha', 'professor', 'manual']
-const RESULTADOS: Resultado[] = ['ok', 'duplicado', 'desconhecido']
-
-export function paraCsvEventos(eventos: Evento[]): string {
+export function paraCsv(eventos: Evento[]): string {
   const linhas = eventos.map((e) =>
     [
       e.eventoId,
-      e.sessaoId,
-      e.timestamp,
+      e.quando,
       limpar(e.turma),
       limpar(e.login ?? ''),
       limpar(e.nome),
       e.origem,
       e.resultado,
+      e.uidHash,
     ].join(SEP),
   )
-  return BOM + [CABECALHO_REGISTROS, ...linhas].join('\n') + '\n'
+  return BOM + [CABECALHO, ...linhas].join('\n') + '\n'
 }
 
-export function deCsvEventos(texto: string): Leitura<Evento> {
+export function deCsv(texto: string): Leitura {
   const itens: Evento[] = []
   const problemas: Problema[] = []
 
-  for (const { numero, campos, crua } of linhasUteis(texto)) {
-    if (campos[0] === 'evento_id') continue
-    const [eventoId, sessaoId, timestamp, turma, login, nome, origem, resultado] = campos
+  const linhas = texto
+    .replace(/^﻿/, '')
+    .split(/\r?\n/)
+    .map((crua, i) => ({ numero: i + 1, crua }))
+    .filter(({ crua }) => crua.trim() !== '')
 
-    if (campos.length < 8) {
-      problemas.push({ linha: numero, texto: crua, motivo: `${campos.length} colunas, esperado 8` })
+  for (const { numero, crua } of linhas) {
+    const campos = crua.split(SEP).map((c) => c.trim())
+    if (campos[0] === 'evento_id') continue
+
+    const recusar = (motivo: string) => problemas.push({ linha: numero, texto: crua, motivo })
+
+    if (campos.length !== COLUNAS.length) {
+      recusar(`${campos.length} colunas, esperado ${COLUNAS.length}`)
       continue
     }
+
+    const [eventoId, quando, turma, login, nome, origem, resultado, uidHash] = campos
+
     if (!eventoId) {
-      problemas.push({ linha: numero, texto: crua, motivo: 'sem evento_id — sem ele não há idempotência' })
+      recusar('sem evento_id — sem ele não há idempotência')
       continue
     }
-    if (Number.isNaN(Date.parse(timestamp))) {
-      problemas.push({ linha: numero, texto: crua, motivo: `timestamp "${timestamp}" ilegível` })
+    if (Number.isNaN(Date.parse(quando))) {
+      recusar(`"${quando}" não é uma data ISO 8601`)
       continue
     }
     if (!ORIGENS.includes(origem as Origem)) {
-      problemas.push({ linha: numero, texto: crua, motivo: `origem "${origem}" desconhecida` })
+      recusar(`origem "${origem}" desconhecida`)
       continue
     }
     if (!RESULTADOS.includes(resultado as Resultado)) {
-      problemas.push({ linha: numero, texto: crua, motivo: `resultado "${resultado}" desconhecido` })
+      recusar(`resultado "${resultado}" desconhecido`)
       continue
     }
 
     itens.push({
       eventoId,
-      sessaoId,
-      timestamp,
+      quando,
       turma,
       login: login || undefined,
       nome,
-      // O CSV do cartão não carrega o uid_hash: ele guarda nome e login, e o
-      // hash mora na tabela de vínculos. Importar registros não reconstrói isso.
-      uidHash: '',
       origem: origem as Origem,
       resultado: resultado as Resultado,
+      uidHash,
     })
   }
 
   return { itens, problemas }
+}
+
+/** Um arquivo por turma: cada turma vira uma planilha. */
+export function porTurma(eventos: Evento[]): Map<string, Evento[]> {
+  const mapa = new Map<string, Evento[]>()
+  for (const evento of eventos) {
+    const lista = mapa.get(evento.turma) ?? []
+    lista.push(evento)
+    mapa.set(evento.turma, lista)
+  }
+  return mapa
+}
+
+/** `IF685 · T01` → `IF685-T01.csv`, que é nome de arquivo em qualquer sistema. */
+export function nomeDoArquivo(turma: string): string {
+  const limpo = turma
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^A-Za-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return `${limpo || 'turma'}.csv`
 }

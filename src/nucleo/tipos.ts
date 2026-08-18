@@ -63,12 +63,16 @@ export interface Aula {
 export type Origem = 'cracha' | 'professor' | 'manual'
 export type Resultado = 'ok' | 'duplicado' | 'desconhecido'
 
-/** Uma linha de `registros.csv`. Nunca é reescrita — apenas acrescentada. */
+/** Uma linha de `registros/<turma>.csv`. Nunca é reescrita — só acrescentada. */
 export interface Evento {
-  /** `<aparelho>-<sessão>-<sequência>`. Chave de idempotência. */
+  /**
+   * `<aparelho>-<AAAAMMDD>-<sequência>`. Chave de idempotência: reimportar o
+   * mesmo arquivo não duplica linha, e é ela que permite juntar dois arquivos
+   * que a sincronização da pasta duplicou.
+   */
   eventoId: string
-  sessaoId: string
-  timestamp: string
+  /** ISO 8601 com fuso. Data em formato local é como se perde uma turma. */
+  quando: string
   turma: string
   uidHash: UidHash
   /**

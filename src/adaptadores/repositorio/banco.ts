@@ -45,5 +45,11 @@ export function criarBanco(nome: string = NOME_DO_BANCO): BancoAdsum {
     matriculados: '[turma+login], turma, login, nome',
   })
 
+  // v3: `timestamp` virou `quando` e `sessaoId` saiu — turma mais data já dizem
+  // de que aula é a linha. Ver `docs/02_formato.md`.
+  banco.version(3).stores({
+    eventos: 'eventoId, quando, turma, uidHash',
+  })
+
   return banco
 }

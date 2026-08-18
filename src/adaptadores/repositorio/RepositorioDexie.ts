@@ -120,7 +120,7 @@ export class RepositorioDexie implements Repositorio {
   }
 
   async listarEventos(limite = 50): Promise<Evento[]> {
-    return await this.#banco.eventos.orderBy('timestamp').reverse().limit(limite).toArray()
+    return await this.#banco.eventos.orderBy('quando').reverse().limit(limite).toArray()
   }
 
   async contarEventos(): Promise<number> {
