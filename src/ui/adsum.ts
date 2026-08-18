@@ -28,7 +28,7 @@ export const LEITORES: OpcaoDeLeitor[] = [
   {
     id: 'webnfc',
     nome: 'WebNFC',
-    quando: 'crachá encostado no próprio celular — Chrome no Android, ainda por medir',
+    quando: 'crachá encostado no próprio celular — Chrome no Android, experimental',
     criar: () => new LeitorWebNfc(),
   },
 ]

@@ -1,7 +1,83 @@
 # Adsum Web — contexto do projeto
 
-Leia antes de qualquer tarefa. Leia também `../Adsum/CLAUDE.md`: as regras do
-aparelho valem aqui, e este arquivo só registra o que é específico do app.
+Leia antes de qualquer tarefa.
+
+> ## ⚠️ O Adsum A1 não existe mais
+>
+> Corrigido em 18/08/2026. **Não há aparelho ESP32.** O leitor é um **dongle USB**
+> ligado ao computador do professor; ler pelo **celular Android com NFC** é
+> caminho experimental e não é o foco.
+>
+> Some junto com o A1: firmware, cartão microSD, protocolo CDC (`ARMAR`, `SAL`,
+> `SALDEF`, `SIMULAR`), volume `ADSUM`, "o aparelho circula entre professores",
+> "sal de frota", tela de 480×272 e a divisão "aparelho é cache, planilha é
+> dona". **O repositório `../Adsum` é histórico**, não fonte da verdade — exceto
+> pelas regras de crachá e privacidade, que continuam valendo por si.
+>
+> O que sobrevive, e por quê:
+>
+> - **Só o UID público é lido.** Nunca autenticar setores, nunca Crypto1.
+> - **UID é campo de tamanho variável** — 4, 7 ou 10 bytes.
+> - **`uid_hash` = SHA-256(sal ‖ uid), 8 primeiros bytes.** Sem sal, o hash é o
+>   UID disfarçado e cai por força bruta em segundos.
+> - **Nada é reescrito — apenas acrescentado.**
+> - **Um só nome armado por vez** na cerimônia de vínculo.
+> - **Sem hora confiável, a sessão não abre.**
+>
+> **Os limites de tela (210 px, 31 bytes) eram do display do A1 e provavelmente
+> não valem mais.** O encurtamento de nome continua útil por legibilidade, mas
+> os números em `nucleo/nomes.ts` precisam de nova justificativa ou de sumir.
+>
+> **Os comentários do código ainda falam do A1 em vários lugares.** Foi feita a
+> limpeza dos textos de tela; a dos comentários ficou pendente por orçamento.
+
+## Duas perguntas em aberto, e são as que mais importam
+
+### 1. O professor não pode perder a base. Hoje ele pode.
+
+Tudo vive no IndexedDB de **um navegador de uma máquina**. Trocar de
+computador, limpar dados do site, ou o navegador despejar sob pressão de espaço
+— e o cadastro da turma inteira se vai. Recadastrar quarenta e nove alunos é
+inaceitável, e a promessa de "dados 100% locais" é justamente o que cria esse
+risco. **As duas coisas não podem ser verdade ao mesmo tempo.**
+
+Ideia do autor: o professor "entra na conta dele" encostando o próprio crachá e
+tudo carrega. Isso é bom de usar, mas note o que implica: para carregar em
+outra máquina, os dados precisam existir em algum lugar fora dela. E o crachá
+sozinho não é credencial — o UID é público e clonável, então ele identifica,
+não autentica.
+
+Caminhos, do mais barato ao mais caro, para decidir com o professor:
+
+1. **Exportação obrigatória e lembrada.** A base continua local; o app insiste
+   num arquivo de backup e avisa quando está velho. Zero infraestrutura,
+   depende de disciplina humana.
+2. **Pasta escolhida uma vez** (File System Access, Chrome/Edge): o app grava
+   sozinho a cada mudança numa pasta do Drive/iCloud que o professor já
+   sincroniza. Sem servidor, sem conta, e a cópia sai da máquina. **Parece o
+   melhor custo-benefício.**
+3. **Conta de verdade**, com backend — contradiz o desenho, exige manutenção
+   perpétua, e é o que foi recusado desde o começo.
+
+Enquanto não houver decisão, **o app não deve dar a entender que os dados estão
+seguros**.
+
+### 2. O desenho está cheio de texto e não é seamless
+
+As abas `Diagnóstico · Vínculo · Repositório` expõem a arquitetura do programa,
+não a tarefa de quem usa. O usuário não quer saber que existe um repositório.
+Direção pedida: **estilo Apple — só funciona, e não se pensa em nada.**
+
+Consequências práticas para a próxima sessão:
+
+- **Uma rota só, que decide sozinha.** Sem turma cadastrada, a tela é "cole sua
+  turma". Com turma e crachás faltando, é a cerimônia. Com tudo pronto e hora
+  de aula, é a coleta. O estado do dado escolhe a tela.
+- **Diagnóstico deixa de ser aba.** Vira um item discreto, alcançável quando
+  algo falha — e o que ele explica hoje em parágrafo deve virar uma frase, ou
+  sumir.
+- **Menos texto.** As telas de hoje explicam decisões de projeto para o usuário.
+  Isso é documentação, e documentação mora em `docs/`.
 
 ## O que é
 
@@ -56,10 +132,9 @@ Específicas do app:
   passa a ser visível — dica `SIGAA: docente` na linha, e um aviso enquanto
   ninguém estiver marcado. Padrão silencioso continua proibido; o que existe
   agora é padrão **anunciado**.
-- **O firmware é a fonte da verdade dos formatos e do protocolo CDC.** Divergiu,
-  o firmware está certo — é ele que grava o CSV que a planilha consome. Os
-  testes de `nucleo/csv.ts` usam as linhas literais dos documentos do firmware:
-  se o app deixar de conversar com o aparelho, `npm test` quebra.
+- **O formato CSV não muda sem motivo.** Ele veio do firmware antigo e continua
+  servindo: `;`, BOM, e `evento_id` como chave de idempotência. Os testes usam
+  as linhas literais herdadas — mudar o formato é decisão, não descuido.
 - **Leitura de CSV nunca descarta linha em silêncio.** Toda função devolve
   `{ itens, problemas }`, e a tela mostra linha, conteúdo e motivo. É a mesma
   regra da recusa muda: 46 alunos onde deveria haver 48, sem explicação, é bug.

@@ -281,7 +281,7 @@ export function TelaDiagnostico() {
 
       <Painel
         titulo="Leitor de crachá"
-        legenda="Porta LeitorDeCracha. Hoje: simulado. Trocar por WebSerial não muda nada acima desta linha."
+        legenda="De onde vêm os UIDs. Trocar de leitor não muda nada acima desta linha."
         acoes={
           <>
             <button onClick={tentar('Iniciar', () => leitor.iniciar())}>iniciar</button>
@@ -400,7 +400,7 @@ export function TelaDiagnostico() {
 
       <Painel
         titulo="Repositório"
-        legenda="Porta Repositorio. Tudo em IndexedDB, neste aparelho. Nada sai daqui."
+        legenda="Tudo em IndexedDB, neste navegador. Nada sai daqui."
         acoes={
           <>
             <button className="botao--acento" onClick={semear}>

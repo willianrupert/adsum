@@ -130,9 +130,8 @@ export function ComoCopiar() {
       </svg>
 
       <p className="manual__nota">
-        Nada disso sai do seu navegador. A lista da turma fica aqui para a cerimônia e para
-        preencher o login na planilha — o aparelho recebe um nome por vez e nunca conhece a
-        turma inteira.
+        Nada disso sai do seu navegador. A lista fica aqui para a cerimônia e para preencher
+        o login na planilha.
       </p>
     </details>
   )

@@ -307,7 +307,7 @@ export function TelaVinculo() {
 
       <Painel
         titulo="A turma"
-        legenda="Cole a página de participantes do SIGAA. A lista fica só aqui — o aparelho recebe um nome por vez e nunca conhece a turma inteira."
+        legenda="Cole a página de participantes do SIGAA. A lista fica neste navegador."
         acoes={
           fila.length === 0 ? (
             <button className="botao--acento" onClick={() => void interpretar()}>

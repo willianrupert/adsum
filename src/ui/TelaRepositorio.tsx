@@ -225,7 +225,7 @@ export function TelaRepositorio() {
 
       <Painel
         titulo="Grade horária"
-        legenda="Indexada pelo crachá do professor, porque o aparelho circula: quem encosta define de quem é a aula."
+        legenda="Indexada pelo crachá do professor: quem encosta define de quem é a aula."
         acoes={
           <>
             <button onClick={importarGrade}>importar</button>
@@ -364,7 +364,7 @@ export function TelaRepositorio() {
 
       <Painel
         titulo="Registros"
-        legenda="Append-only, como no cartão. Reimportar o mesmo arquivo não duplica linha — o evento_id é a chave."
+        legenda="Nada é reescrito, só acrescentado. Reimportar o mesmo arquivo não duplica linha — o evento_id é a chave."
         acoes={
           <>
             <button onClick={importarRegistros}>importar</button>
@@ -434,13 +434,12 @@ export function TelaRepositorio() {
           </button>
         </div>
         <div className="aviso aviso--alerta">
-          <strong>Este sal é deste navegador.</strong>
+          <strong>Não troque o sal depois de vincular alguém.</strong>
           <p>
-            O Adsum A1 sorteia o dele no primeiro boot, então hoje os dois produzem hashes
-            diferentes para o mesmo crachá e as bases não se juntam. Para compartilhar
-            cadastro, traga o sal do aparelho (<code>SAL</code> no protocolo CDC) e cole
-            aqui. Faça isso <em>antes</em> de vincular alguém: trocar depois invalida os
-            vínculos <em>e</em> a grade, que também é indexada por hash.
+            Todo vínculo e toda a grade são indexados pelo hash, e o hash depende do sal:
+            trocá-lo transforma todos os crachás em desconhecidos de uma vez. Ele existe
+            para que o identificador que vai à planilha não seja o UID disfarçado — e para
+            isso precisa ser secreto e estável.
           </p>
         </div>
       </Painel>
