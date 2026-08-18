@@ -1,92 +1,75 @@
-# Adsum Web
+# Adsum
 
-Frequência em sala por leitura de crachá, no navegador. Companheiro do
-**Adsum A1** (o aparelho) e sucessor de `Adsum/computador/vincular.html`.
+Frequência em sala de aula sem que ninguém precise pensar nela.
 
-Do latim *adsum* — "estou presente".
+Do latim *adsum* — "estou presente". A primeira pessoa é deliberada: quem
+declara presença é o aluno, não o sistema.
 
-## O que ele é
+## O problema
 
-Um PWA que roda no GitHub Pages e guarda **tudo no aparelho de quem abriu**:
-IndexedDB para a base, File System Access para entrar e sair em CSV. Não há
-servidor, conta, login nem envio. É o que dispensa termo de uso, banco de dados
-para manter e conversa com a Gerinfra — e é a razão de ele poder existir sendo
-projeto voluntário.
+Chamada oral custa dez minutos de uma aula de cinquenta. Lista que circula é
+assinada por quem não veio. Aplicativo de presença exige que sessenta pessoas
+instalem algo, criem conta e lembrem a senha.
+
+## A decisão
+
+O crachá que o aluno já carrega, encostado num leitor que já está na mesa.
+
+O professor abre a aula encostando o dele; os alunos encostam o seu; o professor
+fecha encostando de novo. **Zero toques na tela numa aula normal** — e esse
+número é critério, não slogan: se uma aula comum exigir um clique, o desenho
+falhou.
+
+| Situação | Toques |
+|---|---|
+| Aula normal, começo ao fim | **0** |
+| Cadastrar um aluno | 1 — o crachá dele |
+| Primeira configuração | 2 — escolher a pasta, colar a turma |
+
+## Como se sustenta
+
+**Sem servidor, sem conta, sem rede.** É um PWA que roda no navegador do
+professor e guarda tudo numa pasta do computador dele. Não há o que manter no ar
+nem o que quebrar sozinho quando ninguém olha — para um projeto voluntário, essa
+é a única parte que exigiria manutenção perpétua.
+
+**Só o UID público do crachá é lido.** Nunca se autentica setor, nunca se toca
+em chave. Essa fronteira é o que mantém o projeto legítimo dentro da
+universidade.
+
+**O nome não trafega.** O que identifica é `SHA-256(sal ‖ uid)`, oito bytes. Sem
+o sal, um UID de quatro bytes cai por força bruta em segundos — hash sem sal
+seria o UID com outra roupa.
+
+**Nada é reescrito, só acrescentado.** Registro de presença que pode ser
+corrigido em silêncio não é registro.
 
 ## Estado
 
-**Passos 1, 2 e 3 de 6 — feitos**, e metade do 5 adiantada.
-Ver `docs/00_roadmap.md`.
+Em desenvolvimento, e em reavaliação de rumo. Funcionam hoje: leitura da página
+`Turma › Participantes` do SIGAA com nome e login do CIn, a cerimônia de vínculo
+crachá → aluno, a base local e o diagnóstico do navegador.
 
-Três telas:
-
-- **Diagnóstico** — o que este navegador oferece, o leitor (simulado ou WebNFC)
-  e a base local com contagens, espaço e persistência.
-- **Vínculo** — a cerimônia: cola a página `Turma › Participantes` do SIGAA, o
-  app extrai nome e **login do CIn** de todo mundo, guarda por turma, arma um
-  nome por vez, e o aluno confere e encosta o crachá. Tem manual de como copiar,
-  com ilustração.
-- **Repositório** — vínculos e grade horária com edição, importação e exportação
-  em CSV **nos formatos do cartão**, registros e o sal.
-
-**O crachá do CIn é lido pelo Chrome no Android** — medido em 18/08/2026 com
-crachá de verdade. Ainda falta confirmar que esse UID bate byte a byte com o que
-o PN532 entrega.
-
-`npm test` cobre UID, hash, os três CSVs e o encurtamento de nomes — incluindo
-as linhas literais que aparecem nos documentos do firmware.
-
-Publicado em `willianrupert.github.io/adsum/`.
-
-## Rodar
+O desenho de interface e a persistência em pasta estão especificados e não
+implementados — ver `docs/00_roadmap.md` e `docs/01_cofre.md`. O leitor é um
+dongle USB; ler pelo celular Android com NFC funciona e é experimental.
 
 ```bash
-npm install
-npm run dev
-```
-
-```bash
-npm run build && npm run preview
+npm install && npm run dev
 ```
 
 ```bash
 npm test
 ```
 
-## Como está montado
+## Origem
 
-Portas e adaptadores, e não por gosto de arquitetura: o leitor vai mudar. Hoje
-o UID vem de um baralho virtual, amanhã vem do Adsum A1 por WebSerial ou de
-WebNFC no celular. Quem consome uma leitura não sabe a diferença.
-
-```
-src/
-  nucleo/       domínio puro — UID, hash, tipos. Sem React, sem banco.
-  portas/       LeitorDeCracha e Repositorio — os dois contratos
-  adaptadores/  LeitorSimulado, RepositorioDexie
-  ambiente/     o que este navegador sabe fazer
-  ui/           telas; adsum.ts é o único lugar que escolhe adaptadores
-```
-
-Trocar de leitor é editar `src/ui/adsum.ts`, e só.
-
-## Regras herdadas do aparelho
-
-Valem aqui igual, e o código as reflete na forma, não em comentário:
-
-- **Só o UID público é lido.** Nunca autenticar setores, nunca tocar em Crypto1.
-- **UID é campo de tamanho variável** — 4, 7 ou 10 bytes.
-- **Registros são append-only.** A porta `Repositorio` não tem `atualizarEvento`.
-- **`uid_hash` = 8 primeiros bytes de SHA-256(sal ‖ uid).** Sem sal, hash de UID
-  de 4 bytes cai por força bruta em segundos.
-- **Sem hora confiável, a sessão não abre.**
-
-## Relação com o repositório `Adsum`
-
-O firmware é a fonte da verdade dos formatos (`alunos.csv`, `grade.csv`,
-`registros.csv`) e do protocolo CDC. Divergiu? O firmware está certo — é ele que
-grava o que a planilha consome.
+Antes disto houve um aparelho dedicado, com ESP32 e tela — `~/Projetos/Adsum`,
+hoje descontinuado. Ele deixou herança boa (só o UID público, hash com sal, um
+só nome armado por vez) e herança que não se sustenta sem o hardware. O
+inventário dessa separação está em `CLAUDE.md`, e é a primeira coisa a resolver.
 
 ---
 
 Willian Neves Rupert Jones · CIn/UFPE · `wnrj@cin.ufpe.br`
+Parceria com o Prof. Paulo Freitas de Araújo Filho.
