@@ -206,10 +206,20 @@ Portas e adaptadores, porque **o leitor vai mudar**:
 ```
 nucleo/       domínio puro — UID, hash, tipos, CSV. Sem React, sem Dexie.
 portas/       LeitorDeCracha, Repositorio
-adaptadores/  LeitorSimulado, LeitorWebNfc, RepositorioDexie  (falta WebSerial)
+adaptadores/  LeitorTeclado (dongle USB), LeitorSimulado, LeitorWebNfc,
+              RepositorioDexie
 ambiente/     capacidades do navegador, entrada e saída de arquivo
 ui/           telas
 ```
+
+**O dongle é HID de teclado.** Ele "digita" o UID, e por isso o adaptador não
+precisa de permissão, driver nem API experimental — funciona igual em Chrome,
+Safari e Firefox. A separação entre o dongle e quem digita é pelo **ritmo**:
+ver `nucleo/digitacao.ts`. Qual formato ele imprime (hexadecimal ou decimal) só
+se sabe com ele na mão, e o diagnóstico mostra a última rajada crua para
+responder isso no primeiro toque.
+
+**`#/vitrine` mostra todas as telas numa página**, só em desenvolvimento.
 
 `src/ui/adsum.ts` guarda a lista `LEITORES`. Adaptador novo entra ali e aparece
 sozinho na escolha do diagnóstico — nenhuma tela precisa saber que ele existe.

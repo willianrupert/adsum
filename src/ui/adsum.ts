@@ -4,6 +4,7 @@
 
 import { createContext, useContext } from 'react'
 import { LeitorSimulado } from '../adaptadores/leitor/LeitorSimulado.ts'
+import { LeitorTeclado } from '../adaptadores/leitor/LeitorTeclado.ts'
 import { LeitorWebNfc } from '../adaptadores/leitor/LeitorWebNfc.ts'
 import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts'
 import type { Config } from '../nucleo/tipos.ts'
@@ -19,6 +20,12 @@ export interface OpcaoDeLeitor {
 }
 
 export const LEITORES: OpcaoDeLeitor[] = [
+  {
+    id: 'dongle',
+    nome: 'Dongle USB',
+    quando: 'o leitor na mesa, que se apresenta como teclado — funciona em qualquer navegador',
+    criar: () => new LeitorTeclado(),
+  },
   {
     id: 'simulado',
     nome: 'Simulado',

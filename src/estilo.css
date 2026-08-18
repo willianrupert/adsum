@@ -972,3 +972,48 @@ button:disabled:hover {
   color: var(--tinta-tenue);
   min-width: 24ch;
 }
+
+/* Vitrine (só em desenvolvimento) */
+
+.vitrine {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+}
+
+.vitrine__aviso {
+  margin: 0;
+  font-size: var(--t-nota);
+  color: var(--tinta-tenue);
+}
+
+.cena__topo {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.cena__topo h2 {
+  margin: 0;
+  font-size: var(--t-titulo);
+  font-weight: 600;
+}
+
+.cena__topo p {
+  margin: 0;
+  font-size: var(--t-nota);
+  color: var(--tinta-tenue);
+}
+
+.cena__tela {
+  border-radius: var(--raio-grande);
+  padding: 22px;
+  background: var(--fundo);
+  box-shadow: inset 0 0 0 1px var(--separador);
+}
+
+.cena__tela .repouso,
+.cena__tela .coleta {
+  min-height: 0;
+}

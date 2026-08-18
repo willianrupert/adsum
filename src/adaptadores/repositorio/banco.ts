@@ -66,10 +66,18 @@ export function criarBanco(nome: string = NOME_DO_BANCO): BancoAdsum {
     pasta: 'id',
   })
 
-  // v6: some o login do SIGAA e entra a matrícula. O campo `Usuário:` da página
-  // é credencial de acesso de outra pessoa e não tem por que morar numa base de
-  // frequência — quem identifica é a matrícula.
-  banco.version(6).stores({
+  // v6 e v7: some o login do SIGAA e entra a matrícula. O campo `Usuário:` da
+  // página é credencial de acesso de outra pessoa e não tem por que morar numa
+  // base de frequência.
+  //
+  // São duas versões porque a chave primária de `matriculados` muda, e o
+  // IndexedDB não permite trocá-la: é preciso apagar a tabela numa versão e
+  // recriá-la na seguinte. A lista da turma se perde na migração — e é isso
+  // mesmo, porque ela estava indexada pelo login que não deve mais existir.
+  // Recolar a página do SIGAA refaz, e o cofre em pasta traz de volta o resto.
+  banco.version(6).stores({ matriculados: null })
+
+  banco.version(7).stores({
     vinculos: 'uidHash, papel, nome, matricula',
     matriculados: '[turma+chave], turma, chave, nome',
   })
