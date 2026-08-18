@@ -11,7 +11,7 @@ import { calcularUidHash } from '../nucleo/hash.ts'
 import { decidir, eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
-import { acrescentarNoLog, restaurar, sincronizar } from '../ambiente/sincronia.ts'
+import { acrescentarNoLog, repararLog, restaurar, sincronizar } from '../ambiente/sincronia.ts'
 import type { EstadoDaPasta } from '../nucleo/rota.ts'
 import { TelaColeta } from './TelaColeta.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
@@ -36,6 +36,7 @@ export function Fluxo() {
   const [estadoDaPasta, setEstadoDaPasta] = useState<EstadoDaPasta>(
     pastaDisponivel() ? 'sem_pasta' : 'indisponivel',
   )
+  const [falhaNaPasta, setFalhaNaPasta] = useState<string>()
   const [folha, setFolha] = useState<Folha>()
 
   const ambienteQuebrado = levantarCapacidades().some((c) => c.peso === 'essencial' && !c.presente)
@@ -88,8 +89,45 @@ export function Fluxo() {
     })()
   }, [pasta, repositorio, recontar])
 
+  // Gravação que falha em silêncio é o pior defeito possível aqui: a aula segue
+  // parecendo salva e só se descobre depois. O erro vira estado visível, e o
+  // dado continua no cache até o conserto — nada se perde, mas ninguém fica
+  // sabendo por acaso.
   const gravarNaPasta = useCallback(async () => {
-    if (pasta) await sincronizar(repositorio, pasta)
+    if (!pasta) return
+    try {
+      await sincronizar(repositorio, pasta)
+      setFalhaNaPasta(undefined)
+    } catch (erro) {
+      setFalhaNaPasta((erro as Error).message)
+    }
+  }, [pasta, repositorio])
+
+  const gravarLinha = useCallback(
+    async (evento: Parameters<typeof acrescentarNoLog>[1]) => {
+      if (!pasta) return
+      try {
+        await acrescentarNoLog(pasta, evento)
+        setFalhaNaPasta(undefined)
+      } catch (erro) {
+        setFalhaNaPasta((erro as Error).message)
+      }
+    },
+    [pasta],
+  )
+
+  const consertarPasta = useCallback(async () => {
+    if (!pasta) return
+    try {
+      if ((await permissao(pasta, true)) !== 'granted') {
+        return setEstadoDaPasta('sem_permissao')
+      }
+      await sincronizar(repositorio, pasta)
+      await repararLog(repositorio, pasta)
+      setFalhaNaPasta(undefined)
+    } catch (erro) {
+      setFalhaNaPasta((erro as Error).message)
+    }
   }, [pasta, repositorio])
 
   const mudou = useCallback(async () => {
@@ -130,7 +168,7 @@ export function Fluxo() {
         })
         if (evento) {
           await repositorio.acrescentarEvento(evento)
-          if (pasta) await acrescentarNoLog(pasta, evento)
+          await gravarLinha(evento)
         }
         await repositorio.abrirSessao({
           turma: decisao.turma,
@@ -141,7 +179,7 @@ export function Fluxo() {
         await mudou()
       })()
     })
-  }, [leitor, repositorio, config, sessao, turmas1, mudou, pasta])
+  }, [leitor, repositorio, config, sessao, turmas1, mudou, gravarLinha])
 
   const rota = decidirRota({
     ambienteQuebrado,
@@ -177,12 +215,21 @@ export function Fluxo() {
         <TelaColeta
           sessao={sessao}
           aoMudarBase={recontar}
-          aoRegistrar={async (evento) => {
-            if (pasta) await acrescentarNoLog(pasta, evento)
-          }}
+          aoRegistrar={gravarLinha}
         />
       )}
       {rota === 'pronto' && <Repouso turmas={turmas} aoAbrirCerimonia={() => setFolha(undefined)} />}
+
+      {falhaNaPasta && (
+        <div className="aviso aviso--grave">
+          <strong>A pasta não recebeu a última gravação.</strong>
+          <p>
+            {falhaNaPasta}. Nada se perdeu — está tudo aqui no navegador. Conserte e o
+            Adsum regrava.
+          </p>
+          <button onClick={() => void consertarPasta()}>gravar de novo</button>
+        </div>
+      )}
 
       <footer className="selos">
         <button className="selo-status" onClick={() => setFolha('diagnostico')}>
@@ -190,8 +237,16 @@ export function Fluxo() {
           leitor
         </button>
         <button className="selo-status" onClick={() => setFolha('repositorio')}>
-          <span className={pasta ? 'ponto ponto--ok' : 'ponto ponto--alerta'} />
-          {pasta ? 'pasta' : 'só neste navegador'}
+          <span
+            className={
+              falhaNaPasta
+                ? 'ponto ponto--grave'
+                : pasta
+                  ? 'ponto ponto--ok'
+                  : 'ponto ponto--alerta'
+            }
+          />
+          {falhaNaPasta ? 'pasta com erro' : pasta ? 'pasta' : 'só neste navegador'}
         </button>
       </footer>
 

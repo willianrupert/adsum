@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts'
 import { criarPastaFalsa } from '../testes/pastaFalsa.ts'
-import { acrescentarNoLog, restaurar, sincronizar } from './sincronia.ts'
+import { acrescentarNoLog, repararLog, restaurar, sincronizar } from './sincronia.ts'
 
 let n = 0
 let repo: RepositorioDexie
@@ -136,3 +136,47 @@ describe('cofre em pasta', () => {
     expect(problemas).toEqual([])
   })
 })
+
+describe('conserto depois de falha de gravação', () => {
+  // Se a permissão cai no meio da aula, a pasta fica para trás do cache. O
+  // cache tem tudo o que ela tem e mais, então regravar não perde nada — e é
+  // por isso que este caminho existe separado do append.
+  it('regrava o log inteiro a partir do cache', async () => {
+    const { handle, raiz } = criarPastaFalsa()
+    for (const i of [1, 2, 3]) {
+      await repo.acrescentarEvento({
+        ...EVENTO,
+        eventoId: `web-a1b2-20260818-000${i}`,
+        quando: `2026-08-18T10:0${i}:00.000Z`,
+      })
+    }
+    // Nada foi para a pasta: é o estado depois de a gravação falhar.
+    expect(raiz.pastas.get('registros')).toBeUndefined()
+
+    await repararLog(repo, handle)
+    const texto = raiz.pastas.get('registros')!.arquivos.get('IF685-T01.csv')!
+    expect(texto.trim().split('\n')).toHaveLength(4)
+    expect(deCsvTeste(texto)).toEqual([
+      'web-a1b2-20260818-0001',
+      'web-a1b2-20260818-0002',
+      'web-a1b2-20260818-0003',
+    ])
+  })
+
+  it('consertar duas vezes não duplica linha', async () => {
+    const { handle, raiz } = criarPastaFalsa()
+    await repo.acrescentarEvento(EVENTO)
+    await repararLog(repo, handle)
+    await repararLog(repo, handle)
+    const texto = raiz.pastas.get('registros')!.arquivos.get('IF685-T01.csv')!
+    expect(texto.trim().split('\n')).toHaveLength(2)
+  })
+})
+
+function deCsvTeste(texto: string): string[] {
+  return texto
+    .trim()
+    .split('\n')
+    .slice(1)
+    .map((l) => l.split(';')[0])
+}

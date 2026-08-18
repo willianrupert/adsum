@@ -919,3 +919,7 @@ textarea:focus-visible {
   padding: 9px 20px;
   font-size: var(--t15);
 }
+
+.ponto--grave {
+  background: var(--grave);
+}

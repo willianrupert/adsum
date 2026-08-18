@@ -15,7 +15,7 @@ import {
   paraJsonTurma,
   paraJsonVinculos,
 } from '../nucleo/cofre.ts'
-import { cabecalhoCsv, deCsv, linhaCsv, nomeDoArquivo } from '../nucleo/csv.ts'
+import { cabecalhoCsv, deCsv, linhaCsv, nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'
 import type { Evento } from '../nucleo/tipos.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
 import { acrescentar, escrever, ler, listarArquivos } from './pasta.ts'
@@ -46,6 +46,31 @@ export async function acrescentarNoLog(
     linhaCsv(evento) + '\n',
     cabecalhoCsv(),
   )
+}
+
+/**
+ * Reescreve os arquivos de log a partir do cache. **Só para conserto.**
+ *
+ * O caminho normal é append, uma linha por vez. Este existe para quando uma
+ * gravação falhou — permissão revogada, pasta desmontada, disco cheio — e a
+ * pasta ficou para trás do IndexedDB. Como o cache tem tudo o que a pasta tem e
+ * mais, regravar aqui não perde nada.
+ *
+ * Não use no caminho normal: com a pasta sincronizada, regravar apaga o que
+ * outra máquina escreveu.
+ */
+export async function repararLog(
+  repositorio: Repositorio,
+  pasta: FileSystemDirectoryHandle,
+): Promise<Resumo> {
+  const eventos = await repositorio.listarEventos()
+  const arquivos: string[] = []
+  for (const [turma, linhas] of porTurma([...eventos].reverse())) {
+    const caminho = caminhoDosRegistros(turma)
+    await escrever(pasta, caminho, paraCsv(linhas))
+    arquivos.push(caminho)
+  }
+  return { arquivos, problemas: [] }
 }
 
 /**

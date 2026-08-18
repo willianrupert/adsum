@@ -71,6 +71,19 @@ não existiam:
   sistema — pasta sincronizada significa sal na nuvem. É decisão consciente, e
   o alternativo (sal fora da pasta) quebra a troca de máquina, que era o ponto.
 
+## Quando a gravação falha
+
+Permissão revogada, pasta desmontada, disco cheio. O que **não** pode acontecer
+é a aula seguir parecendo salva — gravação que falha em silêncio é o pior
+defeito possível aqui, porque só se descobre depois, quando não dá mais para
+recuperar a chamada.
+
+O desenho: o erro vira estado visível (o selo do rodapé fica vermelho e um aviso
+explica), **o dado continua no cache**, e existe um botão que regrava. O
+conserto usa `repararLog`, que reescreve o log a partir do cache — legítimo aqui
+porque o cache tem tudo o que a pasta tem e mais, e proibido no caminho normal,
+onde regravar apagaria o que outra máquina escreveu.
+
 ## Reconexão
 
 O `FileSystemDirectoryHandle` é guardado no IndexedDB e reusado. Limpar dados
