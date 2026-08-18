@@ -72,9 +72,23 @@ Caminhos, do mais barato ao mais caro, para decidir com o professor:
    num arquivo de backup e avisa quando está velho. Zero infraestrutura,
    depende de disciplina humana.
 2. **Pasta escolhida uma vez** (File System Access, Chrome/Edge): o app grava
-   sozinho a cada mudança numa pasta do Drive/iCloud que o professor já
-   sincroniza. Sem servidor, sem conta, e a cópia sai da máquina. **Parece o
-   melhor custo-benefício.**
+   sozinho a cada mudança numa pasta de verdade do computador. **É o melhor
+   caminho, e resolve mais do que backup.**
+
+   O `FileSystemDirectoryHandle` pode ser guardado no IndexedDB e reusado nas
+   sessões seguintes. O que isso muda: os arquivos são **arquivos no disco**.
+   Limpar dados do site apaga o handle, **não a pasta** — o professor reescolhe
+   a pasta e tudo volta. Nada trafega na rede e não é preciso autenticar: quem
+   tem a máquina e a pasta tem a base.
+
+   Se a pasta ficar dentro do iCloud/Drive que ele já sincroniza, o backup
+   fora da máquina vem de graça, sem servidor nosso.
+
+   **Limite:** só Chrome e Edge. Safari e Firefox não têm seletor de diretório.
+   O OPFS, que o Safari tem, **não serve**: mora dentro do armazenamento do
+   navegador, não aparece no Finder e **some ao limpar dados do site** — é o
+   problema de novo, com outro nome. Nesses navegadores sobra exportar e
+   importar arquivo à mão.
 3. **Conta de verdade**, com backend — contradiz o desenho, exige manutenção
    perpétua, e é o que foi recusado desde o começo.
 
