@@ -5,7 +5,6 @@ import {
   MAX_BYTES,
   bytesLatin1,
   curto,
-  extrairNomes,
   largura,
   prepararLista,
   titulo,
@@ -81,45 +80,13 @@ describe('encurtamento', () => {
   })
 })
 
-describe('extração do SIGAA', () => {
-  // A armadilha que custou um bug: aluno tem "(Perfil)", docente tem
-  // "Departamento:". Quem só procura "(Perfil)" perde o professor em silêncio.
-  const COLADO = [
-    'SIGAA Amanda Nascimento (Perfil)',
-    'SIGAA Paulo Freitas De Araujo Filho',
-    '   Departamento: CENTRO DE INFORMATICA',
-    'SIGAA Willian Neves Rupert Jones (Perfil)',
-  ].join('\n')
-
-  it('acha aluno e docente na mesma colagem', () => {
-    const achados = extrairNomes(COLADO)
-    expect(achados).toHaveLength(3)
-    expect(achados.filter((a) => a.docenteNoSigaa)).toHaveLength(1)
-    expect(achados[1]).toEqual({
-      completo: 'Paulo Freitas de Araujo Filho',
-      docenteNoSigaa: true,
-    })
-  })
-
-  it('aceita também um nome por linha', () => {
-    const achados = extrairNomes('Amanda Nascimento\nJoão Pedro\n')
-    expect(achados).toEqual([
-      { completo: 'Amanda Nascimento', docenteNoSigaa: false },
-      { completo: 'João Pedro', docenteNoSigaa: false },
-    ])
-  })
-
-  it('descarta linha de uma letra só', () => {
-    expect(extrairNomes('Amanda\nX\n')).toHaveLength(1)
-  })
-})
-
 describe('lista pronta para a cerimônia', () => {
+  // A leitura da página do SIGAA tem casa própria em `sigaa.test.ts`. Aqui a
+  // entrada já vem estruturada, que é o que `prepararLista` precisa saber.
   const TURMA = [
-    'SIGAA Amanda Nascimento (Perfil)',
-    'SIGAA Paulo Freitas De Araujo Filho',
-    '   Departamento: CENTRO DE INFORMATICA',
-  ].join('\n')
+    { nomeCompleto: 'AMANDA NASCIMENTO FERREIRA', login: 'amanda.nf', docenteNoSigaa: false, loginProvisorio: false },
+    { nomeCompleto: 'PAULO FREITAS DE ARAUJO FILHO', login: 'paulofreitasaf', docenteNoSigaa: true, loginProvisorio: false },
+  ]
 
   // Todo mundo entra como aluno. Virar professor é um toque de quem opera —
   // decisão registrada, não padrão silencioso.
@@ -131,6 +98,7 @@ describe('lista pronta para a cerimônia', () => {
   it('põe a dica de docente primeiro e marca a linha', () => {
     const lista = prepararLista(TURMA)
     expect(lista[0].completo).toBe('Paulo Freitas de Araujo Filho')
+    expect(lista[0].login).toBe('paulofreitasaf')
     expect(lista[0].docenteNoSigaa).toBe(true)
     expect(lista[1].docenteNoSigaa).toBe(false)
   })

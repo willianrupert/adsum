@@ -8,7 +8,7 @@
 //   aluno pode ter dois crachás, porque segunda via existe.
 
 import Dexie, { type EntityTable } from 'dexie'
-import type { Aula, Config, Evento, Vinculo } from '../../nucleo/tipos.ts'
+import type { Aula, Config, Evento, Matriculado, Vinculo } from '../../nucleo/tipos.ts'
 
 export interface LinhaConfig extends Config {
   id: number
@@ -20,6 +20,7 @@ export const ID_DA_CONFIG = 1
 export type BancoAdsum = Dexie & {
   config: EntityTable<LinhaConfig, 'id'>
   vinculos: EntityTable<Vinculo, 'uidHash'>
+  matriculados: EntityTable<Matriculado, 'login'>
   aulas: EntityTable<Aula, 'id'>
   eventos: EntityTable<Evento, 'eventoId'>
 }
@@ -34,5 +35,15 @@ export function criarBanco(nome: string = NOME_DO_BANCO): BancoAdsum {
     aulas: '++id, uidHashProfessor, dia',
     eventos: 'eventoId, timestamp, sessaoId, uidHash',
   })
+
+  // Versão nova em vez de editar a anterior: quem já abriu o site tem a v1 no
+  // navegador, e mexer na definição existente é como o Dexie descobre que o
+  // esquema mudou sem ninguém dizer — a base não abre. Só as tabelas alteradas
+  // ou novas precisam ser repetidas aqui.
+  banco.version(2).stores({
+    vinculos: 'uidHash, papel, nome, login',
+    matriculados: '[turma+login], turma, login, nome',
+  })
+
   return banco
 }

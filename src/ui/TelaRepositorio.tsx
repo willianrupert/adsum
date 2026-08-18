@@ -371,7 +371,15 @@ export function TelaRepositorio() {
             <button
               onClick={tentar('Exportar registros.csv', async () => {
                 const eventos = await repositorio.listarEventos(Number.MAX_SAFE_INTEGER)
-                const ordenados = [...eventos].reverse()
+                // O login não fica no evento: fica no vínculo, que é onde ele
+                // pertence. A coluna é preenchida na saída, com o vínculo de
+                // hoje — assim corrigir um login corrige as exportações futuras
+                // sem reescrever uma linha sequer do log.
+                const vinculos = await repositorio.listarVinculos()
+                const loginPorHash = new Map(vinculos.map((v) => [v.uidHash, v.login]))
+                const ordenados = [...eventos]
+                  .reverse()
+                  .map((e) => ({ ...e, login: e.login ?? loginPorHash.get(e.uidHash) }))
                 return comoFoi(
                   await salvarTexto('registros.csv', paraCsvEventos(ordenados)),
                   'registros.csv',

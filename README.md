@@ -22,8 +22,10 @@ Três telas:
 
 - **Diagnóstico** — o que este navegador oferece, o leitor (simulado ou WebNFC)
   e a base local com contagens, espaço e persistência.
-- **Vínculo** — a cerimônia: cola a lista do SIGAA, arma um nome por vez, o
-  aluno confere e encosta o crachá.
+- **Vínculo** — a cerimônia: cola a página `Turma › Participantes` do SIGAA, o
+  app extrai nome e **login do CIn** de todo mundo, guarda por turma, arma um
+  nome por vez, e o aluno confere e encosta o crachá. Tem manual de como copiar,
+  com ilustração.
 - **Repositório** — vínculos e grade horária com edição, importação e exportação
   em CSV **nos formatos do cartão**, registros e o sal.
 

@@ -569,3 +569,114 @@ textarea:focus-visible {
   align-items: center;
   gap: 8px;
 }
+
+.armado__login {
+  margin: 0 0 2px;
+  font-family: var(--mono);
+  font-size: var(--t15);
+  color: color-mix(in srgb, var(--acento) 70%, var(--tinta-fraca));
+}
+
+/* Manual de como copiar do SIGAA */
+
+.manual {
+  margin-top: 14px;
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: var(--t12);
+}
+
+.manual summary {
+  cursor: pointer;
+  color: var(--acento);
+}
+
+.manual__passos {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  color: var(--tinta-fraca);
+  line-height: 1.6;
+}
+
+.manual__passos li {
+  margin-bottom: 4px;
+}
+
+.manual__nota {
+  margin: 10px 0 0;
+  color: var(--tinta-fraca);
+  max-width: 72ch;
+}
+
+.manual kbd {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  border: 1px solid var(--linha);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+/* Ilustração da página do SIGAA — desenhada, nunca capturada: um print da tela
+   real levaria nome, matrícula, login, e-mail e foto de quarenta e nove pessoas
+   para um repositório público. */
+
+.ilustracao {
+  display: block;
+  width: 100%;
+  margin: 14px 0 0;
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+}
+
+.ilu-fundo {
+  fill: #0f1417;
+}
+.ilu-menu {
+  fill: #16202a;
+  stroke: #24323d;
+}
+.ilu-selecao {
+  fill: color-mix(in srgb, var(--acento) 12%, transparent);
+  stroke: var(--acento);
+  stroke-dasharray: 4 3;
+}
+.ilu-foto {
+  fill: #24323d;
+}
+.ilu-titulo-menu {
+  fill: #7fa6c4;
+  font: 600 9px system-ui, sans-serif;
+}
+.ilu-menu-item {
+  fill: #6e8496;
+  font: 8px system-ui, sans-serif;
+}
+.ilu-menu-ativo {
+  fill: var(--acento);
+  font: 600 8px system-ui, sans-serif;
+}
+.ilu-secao {
+  fill: #7fa6c4;
+  font: 600 11px system-ui, sans-serif;
+  letter-spacing: 0.04em;
+}
+.ilu-regua {
+  stroke: #2b4a63;
+}
+.ilu-nome {
+  fill: #cfe0ec;
+  font: 600 8px system-ui, sans-serif;
+}
+.ilu-campo {
+  fill: #6e8496;
+  font: 7.5px system-ui, sans-serif;
+}
+.ilu-usuario {
+  fill: var(--acento);
+  font: 600 7.5px ui-monospace, monospace;
+}
+.ilu-marca {
+  fill: var(--acento);
+  font: 8px system-ui, sans-serif;
+}

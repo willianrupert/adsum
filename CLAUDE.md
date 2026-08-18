@@ -32,6 +32,17 @@ Específicas do app:
   a assinatura não existe, o bug não se escreve.
 - **`src/ui/adsum.ts` é o único lugar que escolhe adaptadores.** Tela que
   importa `LeitorSimulado` ou `RepositorioDexie` diretamente é bug de camada.
+- **Dado real de turma nunca entra no repositório.** O repo é público. Lista do
+  SIGAA, print da página de participantes, nome, matrícula, login ou e-mail de
+  aluno: nada disso vira teste, exemplo ou imagem. Os testes usam gente
+  inventada na forma exata da página real, e o manual usa ilustração desenhada —
+  mesma disciplina do `gerar_mockups.py`, que versiona o desenho e não a captura.
+- **O login do CIn é o identificador da pessoa.** Nome muda com correção de
+  cadastro; login não. É por ele que a planilha fecha a chamada, e é ele que vai
+  na coluna `login` de `registros.csv`. O nome continua sendo só apresentação.
+- **Esquema do Dexie ganha versão nova, nunca edição da anterior.** Quem já
+  abriu o site tem a versão antiga no navegador; mexer numa `version(n)` já
+  publicada faz a base não abrir.
 - **O nome exibido é primeiro + segundo nome**, não primeiro + último
   sobrenome. Divergência deliberada do `vincular.html`: é como a pessoa é
   chamada, e é o que o mockup de `Adsum/docs/03` já mostrava — Willian Neves,
@@ -84,8 +95,14 @@ delas de propósito: são ferramentas de diagnóstico, e o acesso passa por um
 
 ## Estado atual
 
-Atualizado em 18/08/2026. **Passos 1, 2 e 3 de 6 feitos**, mais o `LeitorWebNfc`
-adiantado do passo 5 (ver `docs/00_roadmap.md`). `npm test`: 64 testes.
+Atualizado em 18/08/2026. **Passos 1, 2 e 3 de 6 feitos**, com a lista do SIGAA
+lida de verdade — nome completo e login do CIn, guardada por turma. Medido na
+turma real do IF685: **49 de 49**, batendo com `Docentes (2)` e `Discentes (47)`,
+nenhum nome estourando a coluna de 210 px e quatro logins que são só dígitos
+(duas matrículas e dois que têm cara de CPF), sinalizados na tela.
+
+Mais o `LeitorWebNfc` adiantado do passo 5 (ver `docs/00_roadmap.md`).
+`npm test`: 78 testes.
 Publicado em `willianrupert.github.io/adsum/`, com os testes rodando na
 publicação.
 
@@ -138,8 +155,15 @@ conferido pelo texto do DOM, não a olho.
   UID cru. A tela de diagnóstico já mostra os bytes (`04 a2 3b 91`) justamente
   para permitir essa comparação a olho. Enquanto não for feito, tratar vínculo
   do celular e vínculo do aparelho como bases separadas.
-- **A coluna `login` de `registros.csv` sai vazia.** O vínculo guarda só
-  `hash → nome`. Confirmar com o firmware o que ele põe ali.
+- **`alunos.csv` continua com três colunas** (`uid_hash;papel;nome`), que é o
+  que o firmware lê. O login fica na base local e é preenchido **na saída** do
+  `registros.csv`, a partir do vínculo — assim corrigir um login corrige as
+  exportações seguintes sem reescrever uma linha do log. Se um dia o firmware
+  aceitar uma quarta coluna, o login pode viajar no cartão também.
+- **Login que é só dígitos.** O SIGAA cai na matrícula, e às vezes no CPF,
+  quando a pessoa não escolheu login. A tela marca com `só número`, mas a
+  decisão é humana: CPF não deveria virar identificador de presença nem chegar
+  à planilha.
 - **Armazenamento persistente costuma ser recusado** enquanto o app não é
   instalado. Sem ele o navegador pode apagar a base sob pressão de espaço — por
   isso o diagnóstico mostra o estado e oferece o botão de pedir.

@@ -141,3 +141,56 @@ describe('grade', () => {
     expect((await repo.listarAulas()).map((a) => a.dia)).toEqual([1, 3])
   })
 })
+
+describe('listas de turma', () => {
+  const pessoa = (login: string, nome: string, turma = 'IF685 · T01') => ({
+    turma,
+    login,
+    nomeCompleto: `${nome} DA SILVA`,
+    nome,
+    papel: 'aluno' as const,
+  })
+
+  it('guarda e lê por turma', async () => {
+    await repo.salvarTurma('IF685 · T01', [pessoa('ana.m', 'Ana Maria'), pessoa('bia.s', 'Bia Souza')])
+    await repo.salvarTurma('IF669 · T02', [pessoa('caio.l', 'Caio Lima', 'IF669 · T02')])
+    expect(await repo.listarMatriculados('IF685 · T01')).toHaveLength(2)
+    expect(await repo.listarTurmas()).toEqual(['IF669 · T02', 'IF685 · T01'])
+  })
+
+  // Reimportar a página do SIGAA depois de alguém trancar tem que corrigir a
+  // lista, não somar uma cópia dela.
+  it('reimportar substitui a turma inteira', async () => {
+    await repo.salvarTurma('IF685 · T01', [pessoa('ana.m', 'Ana Maria'), pessoa('bia.s', 'Bia Souza')])
+    await repo.salvarTurma('IF685 · T01', [pessoa('ana.m', 'Ana Maria')])
+    expect(await repo.listarMatriculados('IF685 · T01')).toHaveLength(1)
+  })
+
+  it('não deixa uma turma apagar a outra', async () => {
+    await repo.salvarTurma('IF685 · T01', [pessoa('ana.m', 'Ana Maria')])
+    await repo.salvarTurma('IF669 · T02', [pessoa('caio.l', 'Caio Lima', 'IF669 · T02')])
+    await repo.zerarTurma('IF685 · T01')
+    expect(await repo.listarMatriculados()).toHaveLength(1)
+  })
+
+  // A mesma pessoa em duas turmas é uma pessoa, não duas — e o crachá dela é o
+  // mesmo. Por isso a chave é [turma+login], não login.
+  it('aceita a mesma pessoa em duas turmas', async () => {
+    await repo.salvarTurma('IF685 · T01', [pessoa('ana.m', 'Ana Maria')])
+    await repo.salvarTurma('IF669 · T02', [pessoa('ana.m', 'Ana Maria', 'IF669 · T02')])
+    expect(await repo.listarMatriculados()).toHaveLength(2)
+  })
+})
+
+describe('login no vínculo', () => {
+  it('guarda o login junto do crachá', async () => {
+    await repo.gravarVinculo({
+      uidHash: '9bb18ff5da8824b2',
+      papel: 'aluno',
+      nome: 'Willian Neves',
+      login: 'wnrj',
+      criadoEm: '2026-08-18T10:00:00.000Z',
+    })
+    expect((await repo.vinculoPorHash('9bb18ff5da8824b2'))?.login).toBe('wnrj')
+  })
+})

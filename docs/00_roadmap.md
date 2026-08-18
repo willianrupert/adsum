@@ -60,6 +60,20 @@ produto:
   marca na linha em vez de decisão automática, e um aviso fica na tela enquanto
   ninguém estiver marcado — a trava passa de recusa para visibilidade.
 
+A leitura da página `Turma › Participantes` mora em `nucleo/sigaa.ts` e traz
+**nome completo e login do CIn**. Duas coisas que ela faz e um extrator ingênuo
+não faria:
+
+- **confere o total contra o cabeçalho.** A página declara `Docentes (2)` e
+  `Discentes (47)`; se o que foi lido não bater, ela diz. Colar metade da página
+  produz uma lista perfeitamente plausível, e o aluno que ficou de fora só
+  descobriria na hora da chamada.
+- **marca login que é só dígitos.** Quando a pessoa não escolheu login, o SIGAA
+  cai na matrícula — e às vezes no CPF. Vira `só número` na tela, para decisão
+  humana.
+
+A lista é guardada **por turma**, e reabrir uma turma repõe quem já tem crachá.
+
 Medida que ficou registrada no teste: **"Amanda Nascimento" ocupa 209 dos 210
 pixels da coluna.** Nome comum já raspa o limite — é o número que explica por
 que 47 dos 48 nomes reais não cabiam, e por que contar letras nunca resolveria.

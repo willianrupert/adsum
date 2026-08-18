@@ -7,7 +7,7 @@
 // 2. Nada aqui fala de rede. A base é local; sincronizar é assunto de outra
 //    camada, e nunca do caminho da leitura.
 
-import type { Aula, Config, Evento, UidHash, Vinculo } from '../nucleo/tipos.ts'
+import type { Aula, Config, Evento, Matriculado, UidHash, Vinculo } from '../nucleo/tipos.ts'
 
 export interface DiagnosticoRepositorio {
   nome: string
@@ -17,6 +17,8 @@ export interface DiagnosticoRepositorio {
   professores: number
   aulas: number
   eventos: number
+  matriculados: number
+  turmas: number
   /** Bytes estimados pelo navegador, quando ele conta. */
   usoEstimado?: number
   cotaEstimada?: number
@@ -39,6 +41,12 @@ export interface Repositorio {
   gravarVinculo(vinculo: Vinculo): Promise<void>
   removerVinculo(uidHash: UidHash): Promise<void>
   zerarVinculos(): Promise<void>
+
+  /** Substitui a lista da turma inteira — reimportar corrige, não duplica. */
+  salvarTurma(turma: string, pessoas: Matriculado[]): Promise<void>
+  listarMatriculados(turma?: string): Promise<Matriculado[]>
+  listarTurmas(): Promise<string[]>
+  zerarTurma(turma: string): Promise<void>
 
   listarAulas(): Promise<Aula[]>
   gravarAula(aula: Aula): Promise<void>

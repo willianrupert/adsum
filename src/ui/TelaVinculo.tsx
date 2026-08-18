@@ -1,4 +1,4 @@
-// Cerimônia de vínculo: um UID vira um nome, sem chance de trocar aluno.
+// Cerimônia de vínculo: um UID vira uma pessoa, sem chance de trocar aluno.
 //
 // A garantia não vem do meio de transporte. Vem de haver **um só nome armado
 // por vez**: arma-se um nome, ele aparece grande na tela, o aluno confere e
@@ -13,11 +13,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import { MAX_BYTES, prepararLista, remedir, type NomePreparado } from '../nucleo/nomes.ts'
+import { interpretarParticipantes } from '../nucleo/sigaa.ts'
 import { uidLegivel } from '../nucleo/uid.ts'
-import type { Papel } from '../nucleo/tipos.ts'
+import type { Matriculado, Papel } from '../nucleo/tipos.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { useAdsum } from './adsum.ts'
 import { Linha, Painel, Selo } from './componentes/Painel.tsx'
+import { ComoCopiar } from './componentes/ComoCopiar.tsx'
 
 type EstadoDaVez = 'pendente' | 'feito' | 'recusado' | 'pulado'
 
@@ -26,64 +28,135 @@ interface Entrada extends NomePreparado {
   detalhe?: string
 }
 
-const EXEMPLO = `Cole aqui a página do SIGAA inteira, ou um nome por linha.
-
-Aluno vem seguido de "(Perfil)"; docente, de "Departamento:".
-Os dois são reconhecidos, e o professor entra no topo da fila.`
+function comoMatriculado(turma: string, e: Entrada): Matriculado {
+  return { turma, login: e.login, nomeCompleto: e.completo, nome: e.nome, papel: e.papel }
+}
 
 export function TelaVinculo() {
   const { leitor, repositorio, config } = useAdsum()
 
+  const [turma, setTurma] = useState('')
+  const [turmasSalvas, setTurmasSalvas] = useState<string[]>([])
   const [colado, setColado] = useState('')
   const [fila, setFila] = useState<Entrada[]>([])
   const [armado, setArmado] = useState<number>()
+  const [problemas, setProblemas] = useState<string[]>([])
   const [recado, setRecado] = useState<{ tom: 'ok' | 'grave' | 'alerta'; texto: string }>()
   const [estadoLeitor, setEstadoLeitor] = useState(leitor.estado())
 
   useEffect(() => leitor.aoMudarEstado(setEstadoLeitor), [leitor])
   useEffect(() => setEstadoLeitor(leitor.estado()), [leitor])
+  useEffect(() => {
+    void repositorio.listarTurmas().then(setTurmasSalvas)
+  }, [repositorio])
 
-  const carregar = useCallback(async () => {
-    const preparados = prepararLista(colado)
-    if (preparados.length === 0) {
-      setRecado({ tom: 'grave', texto: 'Nenhum nome reconhecido nessa colagem.' })
+  /** Repõe na tela uma turma já guardada, com quem já tem crachá marcado. */
+  const abrirTurma = useCallback(
+    async (nomeDaTurma: string) => {
+      const [pessoas, vinculos] = await Promise.all([
+        repositorio.listarMatriculados(nomeDaTurma),
+        repositorio.listarVinculos(),
+      ])
+      const comCracha = new Set(vinculos.map((v) => v.login).filter(Boolean))
+      const preparados = prepararLista(
+        pessoas.map((p) => ({
+          nomeCompleto: p.nomeCompleto,
+          login: p.login,
+          docenteNoSigaa: p.papel === 'professor',
+          loginProvisorio: /^\d+$/.test(p.login),
+        })),
+      )
+      // Casado por login, nunca por índice: `prepararLista` reordena para pôr a
+      // dica de docente no topo, e casar por posição devolveria o papel de uma
+      // pessoa para outra — em silêncio, que é o pior jeito de errar isso.
+      const porLogin = new Map(pessoas.map((p) => [p.login, p]))
+
+      setTurma(nomeDaTurma)
+      setFila(
+        preparados.map((p) => {
+          const guardado = porLogin.get(p.login)
+          return {
+            ...p,
+            // O que está guardado vence o que o encurtamento supôs: já foi
+            // decidido por quem opera, e edição de nome não se perde.
+            papel: guardado?.papel ?? p.papel,
+            ...(guardado ? remedir({ ...p, papel: guardado.papel }, guardado.nome) : {}),
+            estado: comCracha.has(p.login) ? ('feito' as const) : ('pendente' as const),
+          }
+        }),
+      )
+      setArmado(undefined)
+      setProblemas([])
+    },
+    [repositorio],
+  )
+
+  const interpretar = useCallback(async () => {
+    if (!turma.trim()) {
+      setRecado({ tom: 'grave', texto: 'Dê um nome à turma antes — a lista é guardada por turma.' })
       return
     }
-    // Quem já tem crachá entra como feito: recarregar a lista no meio da
-    // cerimônia não desfaz o que já foi vinculado.
-    const jaVinculados = new Set((await repositorio.listarVinculos()).map((v) => v.nome))
+
+    const leitura = interpretarParticipantes(colado)
+    setProblemas(leitura.problemas)
+
+    if (leitura.pessoas.length === 0) {
+      setRecado({ tom: 'grave', texto: 'Nenhuma pessoa reconhecida nessa colagem.' })
+      return
+    }
+
+    const preparados = prepararLista(leitura.pessoas)
+    const vinculos = await repositorio.listarVinculos()
+    const comCracha = new Set(vinculos.map((v) => v.login).filter(Boolean))
+
     setFila(
       preparados.map((p) => ({
         ...p,
-        estado: jaVinculados.has(p.nome) ? 'feito' : 'pendente',
+        estado: p.login && comCracha.has(p.login) ? 'feito' : 'pendente',
       })),
     )
     setArmado(undefined)
 
     const docentes = preparados.filter((p) => p.docenteNoSigaa).length
+    const semLogin = preparados.filter((p) => !p.login).length
+    const provisorios = preparados.filter((p) => p.loginProvisorio).length
     const largos = preparados.filter((p) => !p.cabeNaLista).length
     const longos = preparados.filter((p) => !p.cabeNoBuffer).length
     const ambiguos = preparados.filter((p) => p.ambiguo).length
+
     const avisos = [
       ambiguos > 0 && `${ambiguos} ficaram com nomes iguais — edite antes de armar`,
-      largos > 0 && `${largos} não cabem na coluna do aparelho e apareceriam cortados`,
-      longos > 0 && `${longos} passam de ${MAX_BYTES} bytes e seriam truncados pelo firmware`,
+      semLogin > 0 && `${semLogin} sem login do CIn`,
+      provisorios > 0 &&
+        `${provisorios} com login que é só número (matrícula ou CPF) — confira antes de gravar`,
+      largos > 0 && `${largos} não cabem na coluna do aparelho`,
+      longos > 0 && `${longos} passam de ${MAX_BYTES} bytes`,
     ].filter(Boolean)
 
     setRecado({
       tom: avisos.length > 0 ? 'alerta' : 'ok',
       texto:
-        `${preparados.length} nomes, todos como aluno.` +
-        (docentes > 0 ? ` O SIGAA marcou ${docentes} como docente, no topo da lista.` : '') +
+        `${preparados.length} pessoas, todas como aluno` +
+        (docentes > 0
+          ? `, ${docentes === 1 ? '1 marcada' : `${docentes} marcadas`} como docente pelo SIGAA`
+          : '') +
+        '.' +
         (avisos.length > 0 ? ` Atenção: ${avisos.join('; ')}.` : ''),
     })
-  }, [colado, repositorio])
+  }, [colado, turma, repositorio])
+
+  const guardarTurma = useCallback(async () => {
+    await repositorio.salvarTurma(
+      turma.trim(),
+      fila.map((e) => comoMatriculado(turma.trim(), e)),
+    )
+    setTurmasSalvas(await repositorio.listarTurmas())
+    setRecado({ tom: 'ok', texto: `Turma ${turma.trim()} guardada com ${fila.length} pessoas.` })
+  }, [repositorio, turma, fila])
 
   const proximoPendente = useCallback(
     (apartirDe: number) => {
-      for (let i = apartirDe; i < fila.length; i++) {
-        if (fila[i].estado === 'pendente') return i
-      }
+      for (let i = apartirDe; i < fila.length; i++) if (fila[i].estado === 'pendente') return i
       return undefined
     },
     [fila],
@@ -126,13 +199,12 @@ export function TelaVinculo() {
           uidHash,
           papel: entrada.papel,
           nome: entrada.nome,
-          criadoEm: new Date().toISOString(),
+          login: entrada.login || undefined,
+          criadoEm: leitura.em.toISOString(),
         })
 
         setFila((antes) =>
-          antes.map((e, i) =>
-            i === armado ? { ...e, estado: 'feito', detalhe: uidHash } : e,
-          ),
+          antes.map((e, i) => (i === armado ? { ...e, estado: 'feito', detalhe: uidHash } : e)),
         )
         setRecado({ tom: 'ok', texto: `${entrada.nome} vinculado.` })
         setArmado(proximoPendente(armado + 1))
@@ -143,6 +215,7 @@ export function TelaVinculo() {
   const feitos = useMemo(() => fila.filter((e) => e.estado === 'feito').length, [fila])
   const pendentes = useMemo(() => fila.filter((e) => e.estado === 'pendente').length, [fila])
   const semProfessor = fila.length > 0 && fila.every((e) => e.papel !== 'professor')
+  const atual = armado !== undefined ? fila[armado] : undefined
 
   function renomear(indice: number, nome: string) {
     setFila((antes) =>
@@ -150,29 +223,33 @@ export function TelaVinculo() {
     )
   }
 
-  function trocarPapel(indice: number, papel: Papel) {
-    setFila((antes) => antes.map((e, i) => (i === indice ? { ...e, papel } : e)))
-  }
-
-  const emCerimonia = armado !== undefined
-  const atual = emCerimonia ? fila[armado] : undefined
-
   return (
     <div className="diagnostico">
       {recado && <div className={`aviso aviso--${recado.tom}`}>{recado.texto}</div>}
+
+      {problemas.length > 0 && (
+        <div className="aviso aviso--alerta">
+          <strong>A leitura da página deixou coisas de fora:</strong>
+          <ul className="manual__passos">
+            {problemas.slice(0, 8).map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {semProfessor && (
         <div className="aviso aviso--alerta">
           <strong>Ninguém está marcado como professor.</strong>
           <p>
             Todo mundo entra como aluno de propósito — mas o crachá que abre a sessão é o
-            do professor, e sem ele a aula não começa. Se o SIGAA sinalizou algum docente,
-            ele está no topo da lista com a dica <code>SIGAA: docente</code>.
+            do professor, e sem ele a aula não começa. Quem o SIGAA listou como docente
+            está no topo, com a dica <code>SIGAA: docente</code>.
           </p>
         </div>
       )}
 
-      {estadoLeitor !== 'lendo' && (
+      {estadoLeitor !== 'lendo' && fila.length > 0 && (
         <div className="aviso aviso--alerta">
           <strong>O leitor está {estadoLeitor}.</strong>
           <p>
@@ -186,6 +263,7 @@ export function TelaVinculo() {
         <section className="armado">
           <p className="armado__rotulo">encoste o crachá de</p>
           <p className="armado__nome">{atual.nome}</p>
+          {atual.login && <p className="armado__login">&lt;{atual.login}&gt;</p>}
           <p className="armado__completo">
             {atual.completo} · {atual.papel}
           </p>
@@ -229,11 +307,15 @@ export function TelaVinculo() {
 
       <Painel
         titulo="A turma"
-        legenda="Cole a lista do SIGAA. Ela fica só aqui — o aparelho recebe um nome por vez e nunca conhece a turma inteira."
+        legenda="Cole a página de participantes do SIGAA. A lista fica só aqui — o aparelho recebe um nome por vez e nunca conhece a turma inteira."
         acoes={
-          <>
-            <button onClick={() => void carregar()}>carregar</button>
-            {fila.length > 0 && !emCerimonia && (
+          fila.length === 0 ? (
+            <button className="botao--acento" onClick={() => void interpretar()}>
+              interpretar
+            </button>
+          ) : (
+            <>
+              <button onClick={() => void guardarTurma()}>guardar turma</button>
               <button
                 className="botao--acento"
                 onClick={() => {
@@ -247,27 +329,50 @@ export function TelaVinculo() {
               >
                 iniciar cerimônia
               </button>
-            )}
-          </>
+            </>
+          )
         }
       >
         {fila.length === 0 ? (
-          <textarea
-            value={colado}
-            onChange={(e) => setColado(e.target.value)}
-            placeholder={EXEMPLO}
-            rows={8}
-            aria-label="lista da turma"
-          />
+          <>
+            <div className="ferramentas ferramentas--topo">
+              <input
+                value={turma}
+                onChange={(e) => setTurma(e.target.value)}
+                placeholder="IF685 · T01"
+                aria-label="turma"
+              />
+              {turmasSalvas.length > 0 && (
+                <>
+                  <span className="ferramentas__ou">ou abra uma já guardada</span>
+                  {turmasSalvas.map((t) => (
+                    <button key={t} onClick={() => void abrirTurma(t)}>
+                      {t}
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
+            <textarea
+              value={colado}
+              onChange={(e) => setColado(e.target.value)}
+              placeholder="Cole aqui a página Turma › Participantes do SIGAA."
+              rows={8}
+              aria-label="lista da turma"
+            />
+            <ComoCopiar />
+          </>
         ) : (
           <>
+            <Linha rotulo="turma">{turma}</Linha>
             <Linha rotulo="progresso">
-              {feitos} de {fila.length} vinculados · {pendentes} pendentes
+              {feitos} de {fila.length} com crachá · {pendentes} pendentes
             </Linha>
             <table className="tabela">
               <thead>
                 <tr>
                   <th>nome no aparelho</th>
+                  <th>login</th>
                   <th>papel</th>
                   <th>px</th>
                   <th>estado</th>
@@ -275,7 +380,7 @@ export function TelaVinculo() {
               </thead>
               <tbody>
                 {fila.map((e, i) => (
-                  <tr key={`${e.completo}-${i}`} className={i === armado ? 'linha--armada' : ''}>
+                  <tr key={`${e.login || e.completo}-${i}`} className={i === armado ? 'linha--armada' : ''}>
                     <td>
                       <input
                         className="entrada--celula"
@@ -285,9 +390,19 @@ export function TelaVinculo() {
                       />
                     </td>
                     <td className="celula--estado">
+                      {e.login ? <code>{e.login}</code> : <Selo tom="alerta">sem login</Selo>}
+                      {e.loginProvisorio && <Selo tom="alerta">só número</Selo>}
+                    </td>
+                    <td className="celula--estado">
                       <select
                         value={e.papel}
-                        onChange={(evento) => trocarPapel(i, evento.target.value as Papel)}
+                        onChange={(evento) =>
+                          setFila((antes) =>
+                            antes.map((x, j) =>
+                              j === i ? { ...x, papel: evento.target.value as Papel } : x,
+                            ),
+                          )
+                        }
                         aria-label={`papel de ${e.completo}`}
                       >
                         <option value="aluno">aluno</option>
@@ -331,9 +446,10 @@ export function TelaVinculo() {
                   setFila([])
                   setArmado(undefined)
                   setRecado(undefined)
+                  setProblemas([])
                 }}
               >
-                trocar de lista
+                trocar de turma
               </button>
               <span className="ferramentas__ou">
                 Um aluno com dois crachás é permitido — segunda via existe. Basta armar o

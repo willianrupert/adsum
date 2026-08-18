@@ -7,7 +7,7 @@
 // são indistinguíveis até o dia em que somem.
 
 import { sortearSal } from '../../nucleo/hash.ts'
-import type { Aula, Config, Evento, UidHash, Vinculo } from '../../nucleo/tipos.ts'
+import type { Aula, Config, Evento, Matriculado, UidHash, Vinculo } from '../../nucleo/tipos.ts'
 import type { DiagnosticoRepositorio, Repositorio } from '../../portas/Repositorio.ts'
 import { criarBanco, ID_DA_CONFIG, NOME_DO_BANCO, type BancoAdsum } from './banco.ts'
 
@@ -70,6 +70,30 @@ export class RepositorioDexie implements Repositorio {
     await this.#banco.vinculos.clear()
   }
 
+  async salvarTurma(turma: string, pessoas: Matriculado[]): Promise<void> {
+    await this.#banco.transaction('rw', this.#banco.matriculados, async () => {
+      await this.#banco.matriculados.where('turma').equals(turma).delete()
+      await this.#banco.matriculados.bulkPut(pessoas)
+    })
+  }
+
+  async listarMatriculados(turma?: string): Promise<Matriculado[]> {
+    const tabela = this.#banco.matriculados
+    const lista = turma
+      ? await tabela.where('turma').equals(turma).toArray()
+      : await tabela.toArray()
+    return lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+  }
+
+  async listarTurmas(): Promise<string[]> {
+    const turmas = await this.#banco.matriculados.orderBy('turma').uniqueKeys()
+    return turmas.map(String)
+  }
+
+  async zerarTurma(turma: string): Promise<void> {
+    await this.#banco.matriculados.where('turma').equals(turma).delete()
+  }
+
   async listarAulas(): Promise<Aula[]> {
     return await this.#banco.aulas.orderBy('dia').toArray()
   }
@@ -104,11 +128,13 @@ export class RepositorioDexie implements Repositorio {
   }
 
   async diagnostico(): Promise<DiagnosticoRepositorio> {
-    const [vinculos, professores, aulas, eventos] = await Promise.all([
+    const [vinculos, professores, aulas, eventos, matriculados, turmas] = await Promise.all([
       this.#banco.vinculos.count(),
       this.#banco.vinculos.where('papel').equals('professor').count(),
       this.#banco.aulas.count(),
       this.#banco.eventos.count(),
+      this.#banco.matriculados.count(),
+      this.listarTurmas(),
     ])
     const estimativa = await this.#estimar()
     return {
@@ -119,6 +145,8 @@ export class RepositorioDexie implements Repositorio {
       professores,
       aulas,
       eventos,
+      matriculados,
+      turmas: turmas.length,
       usoEstimado: estimativa?.usage,
       cotaEstimada: estimativa?.quota,
       persistente: this.#persistente,

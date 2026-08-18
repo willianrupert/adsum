@@ -13,6 +13,7 @@
 // Trocar a versão das fontes do firmware invalida estas tabelas.
 
 import type { Papel } from './tipos.ts'
+import { interpretarParticipantes, type PessoaSigaa } from './sigaa.ts'
 
 /** Avanços da fonte de 20 px — a coluna de nomes da lista. */
 export const A20 =
@@ -93,49 +94,15 @@ export function curto(completo: string, comParticula = true): string {
   return [partes[0], ...seguintes].join(' ')
 }
 
-export interface NomeCru {
-  completo: string
-  /**
-   * O SIGAA disse que é docente. **Não** define o papel — é dica, e a dica não
-   * grava nada sozinha. Ver `prepararLista`.
-   */
-  docenteNoSigaa: boolean
-}
-
-/**
- * Aceita a página crua do SIGAA ou um nome por linha.
- *
- * A armadilha que custou um bug: **aluno vem seguido de `(Perfil)`, docente vem
- * seguido de `Departamento:`**. Um extrator que só procura `(Perfil)` descarta
- * os professores em silêncio — a lista vem com 48 nomes, nada indica que faltam
- * dois, e o crachá que abre a sessão nunca é vinculado.
- */
-export function extrairNomes(texto: string): NomeCru[] {
-  if (texto.includes('SIGAA')) {
-    const achados: NomeCru[] = []
-    const padrao = /SIGAA\s+([^\n(]+?)\s*(\(Perfil\)|\n\s*Departamento:)/g
-    let casou: RegExpExecArray | null
-    while ((casou = padrao.exec(texto)) !== null) {
-      achados.push({
-        completo: titulo(casou[1].trim()),
-        docenteNoSigaa: !casou[2].startsWith('('),
-      })
-    }
-    return achados
-  }
-
-  return texto
-    .split('\n')
-    .map((linha) => linha.trim())
-    .filter((linha) => linha.length > 1)
-    .map((nome) => ({ completo: titulo(nome), docenteNoSigaa: false }))
-}
-
 export interface NomePreparado {
   /** Como veio do SIGAA, em caixa de título. */
   completo: string
   /** Como vai aparecer no aparelho. É este que o aluno confere. */
   nome: string
+  /** O login do CIn. Vazio quando a lista não veio do SIGAA. */
+  login: string
+  /** O login é só dígitos — matrícula ou CPF no lugar de login escolhido. */
+  loginProvisorio: boolean
   /**
    * Sempre `aluno` aqui. Quem decide o contrário é quem opera, num toque — e o
    * toque é registro de decisão, não padrão silencioso.
@@ -182,11 +149,13 @@ function medir(
  * a cerimônia existe para evitar — o aluno conferiria um nome que também é de
  * outro.
  */
-export function prepararLista(texto: string): NomePreparado[] {
-  const achados = [...extrairNomes(texto)].sort((a, b) =>
+export function prepararLista(entrada: string | PessoaSigaa[]): NomePreparado[] {
+  const pessoas =
+    typeof entrada === 'string' ? interpretarParticipantes(entrada).pessoas : entrada
+  const achados = [...pessoas].sort((a, b) =>
     a.docenteNoSigaa === b.docenteNoSigaa ? 0 : a.docenteNoSigaa ? -1 : 1,
   )
-  const completos = achados.map((a) => a.completo)
+  const completos = achados.map((a) => titulo(a.nomeCompleto))
 
   // Encurta; se não couber na coluna, larga a partícula do meio.
   let base = completos.map((completo) => {
@@ -218,6 +187,8 @@ export function prepararLista(texto: string): NomePreparado[] {
     medir({
       completo: completos[i],
       nome,
+      login: achados[i].login,
+      loginProvisorio: achados[i].loginProvisorio,
       papel: 'aluno',
       docenteNoSigaa: achados[i].docenteNoSigaa,
       ambiguo: (depois.get(nome) ?? 0) > 1,

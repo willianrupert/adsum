@@ -19,7 +19,32 @@ export interface Vinculo {
   papel: Papel
   /** Nome exibido, já encurtado para caber na tela. Não é o nome de registro. */
   nome: string
+  /**
+   * Login do CIn. É o identificador estável da pessoa — nome muda com casamento
+   * e correção de cadastro, login não — e é por ele que a planilha fecha a
+   * chamada. Fica vazio quando a lista não veio do SIGAA.
+   */
+  login?: string
+  /** Quando o crachá foi encostado. É o timestamp do vínculo. */
   criadoEm: string
+}
+
+/**
+ * Uma pessoa na lista de uma turma, como o SIGAA entregou.
+ *
+ * Existe separado de `Vinculo` porque são coisas diferentes: matrícula diz
+ * **quem está na turma**, vínculo diz **qual crachá é de quem**. Uma pessoa
+ * pode estar em duas turmas com um crachá só, e pode ter dois crachás numa
+ * turma só. Misturar os dois obrigaria a escolher qual dessas verdades perder.
+ */
+export interface Matriculado {
+  /** Como o professor chama a turma. `IF685 · T01`. */
+  turma: string
+  login: string
+  nomeCompleto: string
+  /** Já encurtado e medido contra a coluna do aparelho. */
+  nome: string
+  papel: Papel
 }
 
 /** Uma linha da grade horária. Indexada pelo professor, porque o aparelho circula. */
