@@ -486,3 +486,84 @@ select:focus-visible {
 .tabela td button {
   padding: 3px 9px;
 }
+
+/* Cerimônia de vínculo.
+   O nome grande é o mecanismo, não enfeite: é o que o aluno lê antes de
+   encostar, e é o que permite dizer "não sou eu". Corpo 46, como no aparelho. */
+
+.armado {
+  border: 1px solid color-mix(in srgb, var(--acento) 40%, transparent);
+  background: color-mix(in srgb, var(--acento) 6%, var(--fundo-painel));
+  border-radius: 10px;
+  padding: 24px 18px 18px;
+  text-align: center;
+}
+
+.armado__rotulo {
+  margin: 0;
+  font-size: var(--t12);
+  color: var(--tinta-fraca);
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+}
+
+.armado__nome {
+  margin: 6px 0 2px;
+  font-size: 46px;
+  line-height: 1.15;
+  font-weight: 600;
+  color: var(--acento);
+  overflow-wrap: anywhere;
+}
+
+.armado__completo {
+  margin: 0;
+  font-size: var(--t12);
+  color: var(--tinta-fraca);
+}
+
+.armado__acoes {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.armado__nota {
+  margin: 14px auto 0;
+  max-width: 56ch;
+  font-size: var(--t12);
+  color: var(--tinta-fraca);
+}
+
+.linha--armada {
+  background: color-mix(in srgb, var(--acento) 8%, transparent);
+}
+
+textarea {
+  font: inherit;
+  font-size: var(--t12);
+  font-family: var(--mono);
+  width: 100%;
+  color: var(--tinta);
+  background: var(--fundo);
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+textarea:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+}
+
+.aviso a {
+  color: var(--acento);
+}
+
+.celula--estado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

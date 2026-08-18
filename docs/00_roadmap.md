@@ -33,7 +33,7 @@ com aviso de que trocar invalida vínculo e grade. Toda leitura de CSV tem teste
 contra as linhas literais dos documentos do firmware — se o app deixar de
 conversar com o aparelho, quebra no `npm test`, não na aula.
 
-## 3 · Cerimônia de vínculo
+## 3 · Cerimônia de vínculo — **feito**
 
 O `vincular.html` reescrito: lista colada do SIGAA, encurtamento de nome com
 medida em pixel, **um nome armado por vez**. A garantia contra trocar aluno não
@@ -42,6 +42,17 @@ vem do meio de transporte; vem de não haver segundo candidato.
 Cuidados que já custaram bug e não podem se perder: aluno vem seguido de
 `(Perfil)` e docente de `Departamento:`; professor primeiro na ordem, para que
 cerimônia interrompida no meio já tenha o essencial feito.
+
+Feito: `nucleo/nomes.ts` é porte direto do `vincular.html`, **com as tabelas de
+avanço das fontes do firmware**, e tem teste para cada regra — sufixo de
+linhagem preservado, partícula descartada, colisão desempatada, e os dois
+limites (210 px na coluna, 31 bytes no buffer). A tela arma um nome por vez,
+recusa crachá já vinculado dizendo de quem é, e permite armar de novo um nome
+já feito, porque segunda via existe.
+
+Medida que ficou registrada no teste: **"Amanda Nascimento" ocupa 209 dos 210
+pixels da coluna.** Nome comum já raspa o limite — é o número que explica por
+que 47 dos 48 nomes reais não cabiam, e por que contar letras nunca resolveria.
 
 ## 4 · Sessão e coleta
 
@@ -58,11 +69,19 @@ Adaptador `LeitorWebSerial`, falando o protocolo CDC linha a linha
 (`PING`, `HORA`, `ARMAR`, `SIMULAR`, `LISTAR`…) com o Adsum A1. **Falta.**
 
 O `LeitorWebNfc` foi escrito antes da hora, porque a pergunta que ele responde é
-grande: *um professor com Android registra presença sem aparelho nenhum?* Ele
-está pronto e escolhível na tela de diagnóstico, e **ainda não foi medido com
-crachá de verdade** — o Web NFC cobre tags NFC Forum tipo 1–5, e Mifare Classic
-não é nenhum desses. Ele conta `tags sem UID legível` separado das leituras
-justamente para que "encostou e não veio nada" seja um número, não um silêncio.
+grande: *um professor com Android registra presença sem aparelho nenhum?*
+
+**Medido em 18/08/2026 e a resposta é sim.** Chrome no Android, permissão
+concedida, quatro leituras com UID a partir do crachá do CIn. O Web NFC cobre
+tags NFC Forum tipo 1–5 e o Mifare Classic não é nenhum desses, mas o Chromium
+entrega o `serialNumber` mesmo assim. Isso põe a demo sem hardware (etapa 3 do
+roteiro com o professor) ao alcance de hoje.
+
+**O que ainda não está provado:** que esse UID é o mesmo byte a byte que o PN532
+vai entregar. Ordem e comprimento podem divergir entre pilhas NFC, e se
+divergirem, vínculo feito pelo celular não é reconhecido pelo aparelho nem com
+sal compartilhado. O teste é direto e só depende da peça chegar — ver a
+pendência em `CLAUDE.md`.
 
 Escrever esses dois adaptadores não tocou em tela nenhuma além da escolha do
 leitor — que é a prova de que a porta do passo 1 estava no lugar certo.

@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 
 export const ROTAS = [
   { id: 'diagnostico', titulo: 'Diagnóstico' },
+  { id: 'vinculo', titulo: 'Vínculo' },
   { id: 'repositorio', titulo: 'Repositório' },
 ] as const
 

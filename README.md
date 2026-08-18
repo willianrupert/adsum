@@ -15,17 +15,24 @@ projeto voluntário.
 
 ## Estado
 
-**Passos 1 e 2 de 6 — feitos**, e metade do 5 adiantada. Ver `docs/00_roadmap.md`.
+**Passos 1, 2 e 3 de 6 — feitos**, e metade do 5 adiantada.
+Ver `docs/00_roadmap.md`.
 
-Duas telas:
+Três telas:
 
 - **Diagnóstico** — o que este navegador oferece, o leitor (simulado ou WebNFC)
   e a base local com contagens, espaço e persistência.
+- **Vínculo** — a cerimônia: cola a lista do SIGAA, arma um nome por vez, o
+  aluno confere e encosta o crachá.
 - **Repositório** — vínculos e grade horária com edição, importação e exportação
   em CSV **nos formatos do cartão**, registros e o sal.
 
-`npm test` cobre UID, hash e os três CSVs, incluindo as linhas literais que
-aparecem nos documentos do firmware.
+**O crachá do CIn é lido pelo Chrome no Android** — medido em 18/08/2026 com
+crachá de verdade. Ainda falta confirmar que esse UID bate byte a byte com o que
+o PN532 entrega.
+
+`npm test` cobre UID, hash, os três CSVs e o encurtamento de nomes — incluindo
+as linhas literais que aparecem nos documentos do firmware.
 
 Publicado em `willianrupert.github.io/adsum/`.
 

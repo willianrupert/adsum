@@ -71,8 +71,15 @@ delas de propósito: são ferramentas de diagnóstico, e o acesso passa por um
 
 ## Estado atual
 
-Atualizado em 18/08/2026. **Passos 1 e 2 de 6 feitos**, mais o `LeitorWebNfc`
-adiantado do passo 5 (ver `docs/00_roadmap.md`). `npm test`: 41 testes.
+Atualizado em 18/08/2026. **Passos 1, 2 e 3 de 6 feitos**, mais o `LeitorWebNfc`
+adiantado do passo 5 (ver `docs/00_roadmap.md`). `npm test`: 64 testes.
+Publicado em `willianrupert.github.io/adsum/`, com os testes rodando na
+publicação.
+
+**O crachá do CIn é lido pelo Chrome no Android.** Medido em 18/08/2026 com
+crachá de verdade: permissão concedida, quatro leituras com UID. O Web NFC é
+especificado para tags NFC Forum tipo 1–5 e o Mifare Classic não é nenhum
+desses — o Chromium entrega o `serialNumber` assim mesmo.
 
 Verificado no navegador:
 
@@ -88,6 +95,11 @@ Verificado no navegador:
   respondendo;
 - vínculo renomeado na tela sobrevive ao recarregamento — gravou no banco, não
   só no React;
+- a cerimônia inteira, com leitor simulado: professor primeiro, avanço
+  automático, `Luiz M. Silva` / `Luiz P. Silva` desempatados, `Breno Oliveira
+  Filho` com o sufixo preservado, quatro crachás para o mesmo aluno aceitos, e
+  crachá já vinculado **recusado dizendo de quem é**, com o nome armado
+  permanecendo armado;
 - trocar para o `LeitorWebNfc` no desktop falha **dizendo o motivo** ("só o
   Chrome no Android tem"), e voltar para o simulado recupera o estado `lendo`;
 - `semear` duas vezes não cria aula duplicada nem evento duplicado.
@@ -100,12 +112,17 @@ conferido pelo texto do DOM, não a olho.
 - **Sal de frota.** O campo de importar já existe no Repositório, mas ninguém
   copiou o sal de um A1 real ainda — o comando `SAL` do protocolo CDC é do
   passo 5.
-- **`LeitorWebNfc` não foi medido com crachá.** Web NFC cobre NFC Forum tipo
-  1–5; o crachá é Mifare Classic. Se o Chrome no Android entregar o
-  `serialNumber` mesmo assim, um professor registra presença sem aparelho — e
-  isso resolve a etapa 3 do roteiro (demo sem hardware). Se não entregar, o
-  contador `tags sem UID legível` sobe e a resposta é não. Precisa de: publicar,
-  abrir no Android, encostar o crachá.
+- **O UID do celular pode não ser o UID do PN532.** O Web NFC funciona, mas
+  nada prova ainda que os bytes que o Chromium entrega são os mesmos, **na mesma
+  ordem e no mesmo comprimento**, que o PN532 vai ler do mesmo crachá. Pilhas
+  NFC divergem nisso — cascade tag em UID de 7 bytes, ordem invertida. Se
+  divergirem, vínculo feito pelo celular **não é reconhecido pelo aparelho**
+  nem com sal compartilhado, e o problema aparece na frente da turma.
+
+  O teste, quando a peça chegar: encostar o mesmo crachá nos dois e comparar o
+  UID cru. A tela de diagnóstico já mostra os bytes (`04 a2 3b 91`) justamente
+  para permitir essa comparação a olho. Enquanto não for feito, tratar vínculo
+  do celular e vínculo do aparelho como bases separadas.
 - **A coluna `login` de `registros.csv` sai vazia.** O vínculo guarda só
   `hash → nome`. Confirmar com o firmware o que ele põe ali.
 - **Armazenamento persistente costuma ser recusado** enquanto o app não é

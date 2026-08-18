@@ -1,6 +1,7 @@
 import { ProvedorAdsum } from './ui/ProvedorAdsum.tsx'
 import { TelaDiagnostico } from './ui/TelaDiagnostico.tsx'
 import { TelaRepositorio } from './ui/TelaRepositorio.tsx'
+import { TelaVinculo } from './ui/TelaVinculo.tsx'
 import { ROTAS, useRota } from './ui/rotas.ts'
 
 export default function App() {
@@ -36,7 +37,9 @@ export default function App() {
 
       <main>
         <ProvedorAdsum>
-          {rota === 'repositorio' ? <TelaRepositorio /> : <TelaDiagnostico />}
+          {rota === 'repositorio' && <TelaRepositorio />}
+          {rota === 'vinculo' && <TelaVinculo />}
+          {rota === 'diagnostico' && <TelaDiagnostico />}
         </ProvedorAdsum>
       </main>
 
