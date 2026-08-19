@@ -53,6 +53,7 @@ describe('cofre em pasta', () => {
 
     const { arquivos } = await sincronizar(repo, handle)
     expect(arquivos).toEqual([
+      'LEIA-ME.txt',
       'config.json',
       'vinculos.json',
       'grade.json',

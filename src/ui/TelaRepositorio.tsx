@@ -88,9 +88,12 @@ function comoFoi(salvou: ComoSalvou, nome: string): string {
 export function TelaRepositorio({
   pasta,
   aoTrocarPasta,
+  aoRelerPasta,
 }: {
   pasta?: FileSystemDirectoryHandle
   aoTrocarPasta?: () => void
+  /** Puxa da pasta para o cache. Ver o botão abaixo. */
+  aoRelerPasta?: () => Promise<{ arquivos: string[]; problemas: string[] }>
 } = {}) {
   const { repositorio, config, recarregarConfig } = useAdsum()
 
@@ -195,9 +198,28 @@ export function TelaRepositorio({
           // navegador não pode executar é pior que não oferecer nada.
           aoTrocarPasta &&
           pastaDisponivel() && (
-            <button className={pasta ? undefined : 'botao--acento'} onClick={aoTrocarPasta}>
-              {pasta ? 'Trocar de pasta' : 'Escolher pasta'}
-            </button>
+            <>
+              {/* O único caminho manual de **puxar** da pasta. O outro conserto
+                  empurra cache → pasta, e o automático só dispara com a base
+                  vazia — então uma pasta no iCloud atualizada por outra máquina
+                  nunca entrava, apesar de "a pasta é a dona". Não apaga nada:
+                  vínculos entram por chave e eventos por `evento_id`, então
+                  reler duas vezes dá no mesmo. */}
+              {pasta && aoRelerPasta && (
+                <button
+                  onClick={tentar('Reler a pasta', async () => {
+                    const { arquivos, problemas } = await aoRelerPasta()
+                    if (problemas.length > 0) throw new Error(problemas[0])
+                    return `${arquivos.length} arquivos.`
+                  })}
+                >
+                  Reler a pasta
+                </button>
+              )}
+              <button className={pasta ? undefined : 'botao--acento'} onClick={aoTrocarPasta}>
+                {pasta ? 'Trocar de pasta' : 'Escolher pasta'}
+              </button>
+            </>
           )
         }
       >
@@ -211,7 +233,13 @@ export function TelaRepositorio({
             </Linha>
             <p className="ferramentas__nota">
               Gravado a cada mudança. O navegador não revela o caminho completo — procure a
-              pasta pelo nome, onde você a escolheu.
+              pasta pelo nome, onde você a escolheu. O <code>LEIA-ME.txt</code> lá dentro
+              explica cada arquivo e como recuperar tudo.
+            </p>
+            <p className="ferramentas__nota">
+              <strong>Reler a pasta</strong> traz de volta o que estiver lá e não estiver
+              aqui — útil se a pasta fica no iCloud e outra máquina gravou nela. Não apaga
+              nada.
             </p>
           </>
         ) : pastaDisponivel() ? (

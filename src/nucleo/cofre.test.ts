@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  NOMES,
   VERSAO,
   deJsonCompartilhado,
   deJsonVinculos,
   paraJsonCompartilhado,
   paraJsonVinculos,
+  paraLeiaMe,
 } from './cofre.ts'
 import type { Vinculo } from './tipos.ts'
 
@@ -64,5 +66,36 @@ describe('arquivo para outro professor', () => {
   it('recusa arquivo de versão mais nova, como os outros do cofre', () => {
     const futuro = JSON.stringify({ versao: 99, conteudo: {} })
     expect(deJsonCompartilhado(futuro).problemas[0].motivo).toMatch(/versão mais nova/)
+  })
+})
+
+// Documentação que descreve arquivos que não existem mais é pior que nenhuma:
+// quem a lê num apuro segue instrução errada. O teste amarra o texto aos nomes
+// de verdade, então renomear um arquivo quebra aqui antes de quebrar lá.
+describe('o LEIA-ME da pasta', () => {
+  it('nomeia os arquivos que o Adsum de fato grava', () => {
+    const texto = paraLeiaMe()
+    for (const nome of [NOMES.config, NOMES.vinculos, NOMES.grade]) {
+      expect(texto).toContain(nome)
+    }
+    expect(texto).toContain('turmas/')
+    expect(texto).toContain('registros/')
+  })
+
+  it('diz a versão do formato, que é a mesma dos arquivos ao lado', () => {
+    expect(paraLeiaMe()).toContain(`versão ${VERSAO}`)
+  })
+
+  // A pasta tem nome e matrícula de dezenas de pessoas. Quem a recebe precisa
+  // saber disso sem precisar abrir os arquivos para descobrir.
+  it('avisa que ali dentro há dado pessoal', () => {
+    expect(paraLeiaMe()).toMatch(/dado pessoal/i)
+    expect(paraLeiaMe()).toMatch(/matrícula/i)
+  })
+
+  it('ensina o caminho de volta nos dois navegadores', () => {
+    const texto = paraLeiaMe()
+    expect(texto).toMatch(/COMO RECUPERAR/)
+    expect(texto).toContain('Já tenho uma pasta do Adsum')
   })
 })

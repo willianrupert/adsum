@@ -13,6 +13,7 @@ import {
   deJsonVinculos,
   paraJsonConfig,
   paraJsonGrade,
+  paraLeiaMe,
   paraJsonTurma,
   paraJsonVinculos,
 } from '../nucleo/cofre.ts'
@@ -98,6 +99,8 @@ export async function sincronizar(
     arquivos.push(caminho)
   }
 
+  // Primeiro, porque é o que orienta quem abrir a pasta sem o app na frente.
+  await gravar(NOMES.leiaMe, paraLeiaMe())
   await gravar(NOMES.config, paraJsonConfig(config))
   await gravar(NOMES.vinculos, paraJsonVinculos(vinculos))
   await gravar(NOMES.grade, paraJsonGrade(aulas))
@@ -209,6 +212,10 @@ export async function restaurarDeArquivos(
   }
 
   for (const [nome, texto] of conteudo) {
+    // O LEIA-ME é documentação gerada: ignorar em silêncio é o certo, mas ele
+    // não conta como "arquivo do Adsum lido" — quem escolher só ele deve ouvir
+    // que não veio nada.
+    if (nome === NOMES.leiaMe) continue
     if (nome === 'vinculos.json' || nome === 'grade.json' || nome === 'config.json') continue
 
     if (nome.endsWith('.json')) {

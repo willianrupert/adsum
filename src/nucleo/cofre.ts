@@ -75,7 +75,106 @@ export const NOMES = {
   vinculos: 'vinculos.json',
   grade: 'grade.json',
   turma: (turma: string) => `turmas/${nomeSeguroDeTurma(turma)}.json`,
+  leiaMe: 'LEIA-ME.txt',
 } as const
+
+/**
+ * A pasta se explica sozinha.
+ *
+ * O cofre só é um cofre porque os arquivos são **arquivos de verdade**: o
+ * professor pode abrir a pasta no Finder, copiar num pendrive, botar no iCloud.
+ * O que faltava era a pasta dizer o que ela é. Sem isso, quem a encontra daqui
+ * a um ano — ou quem a recebe de um colega — vê seis JSONs sem contexto, e a
+ * chance de apagar "esse arquivo estranho" é real.
+ *
+ * `.txt` e não `.md`: abre limpo com dois cliques em qualquer sistema, sem
+ * sintaxe no meio do caminho. Largura de 72 colunas pelo mesmo motivo.
+ *
+ * Reescrito a cada sincronização de propósito — é documentação gerada, e a
+ * versão do formato tem de bater com a dos arquivos ao lado.
+ */
+export function paraLeiaMe(): string {
+  return `Adsum — o cofre da sua turma
+============================
+
+Esta pasta é a dona dos seus dados. O site guarda uma cópia no
+navegador para funcionar rápido, mas é aqui que as coisas existem
+de verdade: se o navegador for limpo, trocado ou apagado, é desta
+pasta que tudo volta.
+
+Formato versão ${VERSAO}. Gerado pelo Adsum — não precisa editar nada.
+
+
+O QUE TEM AQUI
+--------------
+
+  ${NOMES.config}
+      O segredo desta instalação. É ele que liga cada crachá ao seu
+      dono. Sem este arquivo os outros voltam pela metade: os nomes
+      aparecem, mas nenhum crachá é reconhecido.
+
+  ${NOMES.vinculos}
+      Qual crachá é de quem. Guarda o código do crachá, não o
+      número gravado nele.
+
+  ${NOMES.grade}
+      Seus horários de aula, usados para saber qual turma abrir.
+
+  turmas/
+      A lista de cada turma, como veio do SIGAA: nome completo e
+      matrícula.
+
+  registros/
+      A chamada, uma linha por presença, em CSV para abrir no Excel.
+      Estes arquivos só crescem — nada aqui é reescrito ou apagado.
+
+
+COMO RECUPERAR TUDO
+-------------------
+
+  Computador novo, ou navegador limpo:
+
+    1. Abra o Adsum.
+    2. Escolha esta pasta quando ele pedir.
+
+    Pronto. Ele lê a pasta e reconstrói a base inteira.
+
+  Se o seu navegador não pedir pasta (Safari, Firefox):
+
+    Na tela de colar a turma, use "Já tenho uma pasta do Adsum" e
+    escolha esta pasta. Ele lê todos os arquivos de uma vez.
+
+  Perdeu só a chamada de um dia:
+
+    Os CSVs de registros/ abrem direto no Excel. Não é preciso o
+    Adsum para ler uma chamada.
+
+
+CUIDADO — ISTO É DADO PESSOAL
+-----------------------------
+
+  Esta pasta tem nome e matrícula dos seus alunos, e o segredo que
+  liga crachás a pessoas. Trate-a como trataria a lista de chamada
+  impressa: não publique, não mande por grupo, não deixe em pasta
+  compartilhada com quem não precisa.
+
+  Guardá-la no iCloud ou no Drive é uma boa ideia — é a cópia fora
+  da máquina. Compartilhar o link dela com outras pessoas, não.
+
+
+O QUE NÃO FAZER
+---------------
+
+  Não apague o ${NOMES.config}. É o único arquivo que não dá para
+  refazer, e sem ele os crachás já cadastrados param de ser
+  reconhecidos.
+
+  Não renomeie a pasta enquanto o Adsum estiver aberto.
+
+  Não edite os JSONs à mão. Se precisar corrigir algo, corrija
+  pelo Adsum — ele reescreve estes arquivos sozinho.
+`
+}
 
 export const paraJsonConfig = (config: Config) => embrulhar(config)
 export const deJsonConfig = (texto: string) => desembrulhar<Config>(texto, NOMES.config)

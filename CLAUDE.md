@@ -372,6 +372,16 @@ restaurações e adota **só o sal**: o `instalacaoId` tem de continuar diferent
 por navegador, senão duas instalações cunham o mesmo `evento_id`. Não troca por
 cima de vínculos locais — aí a decisão é humana. Ver `docs/01_cofre.md`.
 
+**A pasta se explica em 19/08/2026:** `LEIA-ME.txt` é gravado a cada
+sincronização (`paraLeiaMe` em `nucleo/cofre.ts`) e diz o que é cada arquivo,
+como recuperar tudo nos dois caminhos, que ali há dado pessoal e o que não
+apagar. `.txt` e não `.md` porque abre limpo com dois cliques. Teste amarra o
+texto aos nomes reais — documentação que descreve arquivo inexistente é pior que
+nenhuma. Junto veio **"Reler a pasta"** nos Ajustes: era o único caminho de
+**puxar** que faltava — `consertarPasta` empurra cache → pasta e a restauração
+automática só dispara com a base vazia, então pasta no iCloud atualizada por
+outra máquina nunca entrava, apesar de "a pasta é a dona".
+
 **Pendências feitas em 19/08/2026:** nada registrava o que já tinha sido
 exportado, então "concluir sem salvar" apagava a pendência da tela e da memória
 do app ao mesmo tempo. `nucleo/pendencias.ts` tem a regra pura e

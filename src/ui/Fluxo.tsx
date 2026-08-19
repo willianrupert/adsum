@@ -499,7 +499,15 @@ export function Fluxo() {
 
       {folha && (
         <Sheet titulo="Ajustes" aoFechar={() => setFolha(undefined)}>
-          <TelaRepositorio pasta={pasta} aoTrocarPasta={() => void ligarPasta(true)} />
+          <TelaRepositorio
+            pasta={pasta}
+            aoTrocarPasta={() => void ligarPasta(true)}
+            aoRelerPasta={async () => {
+              const resumo = await restaurar(repositorio, pasta!)
+              await recontar()
+              return resumo
+            }}
+          />
           <TelaDiagnostico />
         </Sheet>
       )}

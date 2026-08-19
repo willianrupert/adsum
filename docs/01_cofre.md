@@ -310,3 +310,33 @@ Safari". A isenção decorre disso (o contador é por contexto, e o web app não
 Safari), mas não achei documento da Apple dizendo isso do macOS com todas as
 letras. Por isso o texto da tela afirma só o que é certo: **o app instalado
 guarda por fora do Safari.**
+
+## A pasta se explica sozinha
+
+Pedido em 19/08/2026. O cofre só é um cofre porque os arquivos são **arquivos
+de verdade** — abríveis no Finder, copiáveis para um pendrive. O que faltava era
+a pasta dizer o que ela é: quem a encontra daqui a um ano, ou quem a recebe de
+um colega, via seis JSONs sem contexto, e a chance de apagar "esse arquivo
+estranho" era real — inclusive o `config.json`, o único que não dá para refazer.
+
+`LEIA-ME.txt` é gravado a cada sincronização, em quatro seções: o que tem aqui,
+como recuperar tudo, cuidado com dado pessoal, o que não fazer. `.txt` e não
+`.md` porque abre limpo com dois cliques em qualquer sistema. Há teste amarrando
+o texto aos nomes reais dos arquivos: documentação que descreve arquivo que não
+existe mais é pior que nenhuma, porque quem a lê num apuro segue instrução
+errada.
+
+## Reler a pasta — o caminho de volta que faltava
+
+"A pasta é a dona" era verdade só na ida. Os caminhos existentes:
+
+- **`sincronizar` / `consertarPasta`** — empurram cache → pasta;
+- **restauração automática** — puxa, mas só quando não há vínculo nenhum.
+
+Faltava puxar com a base cheia. O caso concreto é o que a própria documentação
+recomenda: pasta no iCloud, uma máquina em casa e outra na universidade. A
+segunda tem cache velho, a pasta tem o novo, e não havia gesto que trouxesse.
+
+O botão nos Ajustes chama `restaurar`, e ele **não apaga nada**: vínculos entram
+por chave e eventos por `evento_id`, então reler duas vezes dá no mesmo. É a
+mesma propriedade que já sustentava a idempotência do log.
