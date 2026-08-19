@@ -7,7 +7,7 @@ const BASE: EstadoDoApp = {
   lendo: true,
   turmas: 1,
   pendentes: 0,
-  aulaAberta: false,
+  chamadaAberta: false,
   professorSemCracha: false,
   conselharNavegador: false,
 }
@@ -69,13 +69,13 @@ describe('a rota decorre do estado', () => {
   })
 
   it('com aula aberta, a tela é a aula', () => {
-    expect(decidirRota({ ...BASE, aulaAberta: true })).toBe('aula')
+    expect(decidirRota({ ...BASE, chamadaAberta: true })).toBe('chamada')
   })
 
   // Cadastro acontece dentro da aula: a fila na porta não espera ninguém.
   it('a aula vence tudo o que não seja falha', () => {
-    expect(decidirRota({ ...BASE, aulaAberta: true, pendentes: 9, professorSemCracha: true })).toBe(
-      'aula',
+    expect(decidirRota({ ...BASE, chamadaAberta: true, pendentes: 9, professorSemCracha: true })).toBe(
+      'chamada',
     )
   })
 

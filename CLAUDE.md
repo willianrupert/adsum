@@ -245,7 +245,11 @@ ver `nucleo/digitacao.ts`. Qual formato ele imprime (hexadecimal ou decimal) só
 se sabe com ele na mão, e o diagnóstico mostra a última rajada crua para
 responder isso no primeiro toque.
 
-**`#/vitrine` mostra todas as telas numa página**, só em desenvolvimento.
+**`#/vitrine` mostra todas as telas numa página**, e **vai ao ar**: é como um
+professor conhece o Adsum inteiro sem cadastrar turma nenhuma, e como opina
+sobre uma tela que de outro modo só encontraria no meio de uma aula. As duas
+que montam com o contexto de verdade — Base e Diagnóstico — ficam de fora da
+versão publicada: seus botões zeram grade e apagam tudo, na base de quem abrir.
 
 `src/ui/adsum.ts` guarda a lista `LEITORES`. Adaptador novo entra ali e aparece
 sozinho na escolha do diagnóstico — nenhuma tela precisa saber que ele existe.

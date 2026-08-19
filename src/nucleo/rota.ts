@@ -21,8 +21,8 @@ export type Rota =
   | 'turma'
   /** Há gente sem crachá: a tela é a cerimônia. */
   | 'cerimonia'
-  /** Aula aberta: a tela é a aula — chamada e cadastro na mesma coisa. */
-  | 'aula'
+  /** Chamada aberta: a tela é a coleta — presença e cadastro na mesma coisa. */
+  | 'chamada'
   /** Tudo vinculado: a tela é a espera do próximo crachá. */
   | 'pronto'
 
@@ -35,7 +35,7 @@ export interface EstadoDoApp {
   lendo: boolean
   turmas: number
   pendentes: number
-  aulaAberta: boolean
+  chamadaAberta: boolean
   /**
    * Navegador sem seletor de pasta, e o professor ainda não dispensou o
    * conselho. Ver `ambiente/instalacao.ts` — o que dizer muda por navegador.
@@ -61,7 +61,7 @@ export function decidirRota(estado: EstadoDoApp): Rota {
 
   if (estado.turmas === 0) return 'turma'
   if (!estado.lendo) return 'problema'
-  if (estado.aulaAberta) return 'aula'
+  if (estado.chamadaAberta) return 'chamada'
 
   // A cerimônia sobrou para uma coisa só: dar o primeiro crachá ao professor.
   // Sem ele a aula não abre, e é dentro da aula que todo o resto se cadastra —

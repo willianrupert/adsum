@@ -399,7 +399,7 @@ export function TelaAula({
           <span className="coleta__recado">{recado}</span>
         ) : (
           <button className="coleta__encerrar" onClick={() => aoEncerrarAgora()}>
-            Encerrar a aula
+            Encerrar a chamada
           </button>
         )}
         {ensaio && ehSimulavel(leitor) && (

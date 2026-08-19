@@ -247,7 +247,7 @@ export function Fluxo() {
     await gravarNaPasta()
   }, [recontar, gravarNaPasta])
 
-  const abrirAula = useCallback(
+  const abrirChamada = useCallback(
     async (turma: string, uidHash: string, em: Date) => {
       const total = await repositorio.contarEventos()
       const evento = eventoDe(
@@ -289,9 +289,9 @@ export function Fluxo() {
       if (escolha.tipo === 'perguntar') {
         return setEscolhendo({ opcoes: escolha.opcoes, motivo: escolha.motivo, uidHash, em })
       }
-      await abrirAula(escolha.turma, uidHash, em)
+      await abrirChamada(escolha.turma, uidHash, em)
     },
-    [repositorio, abrirAula],
+    [repositorio, abrirChamada],
   )
 
   /**
@@ -303,7 +303,7 @@ export function Fluxo() {
    *
    * O crachá continua valendo, para quem está longe do teclado.
    */
-  const iniciarAula = useCallback(async () => {
+  const iniciarChamada = useCallback(async () => {
     const professor = (await repositorio.listarVinculos()).find((v) => v.papel === 'professor')
     if (!professor) return
     await abrirComProfessor(professor.uidHash, new Date())
@@ -383,7 +383,7 @@ export function Fluxo() {
     lendo,
     turmas,
     pendentes,
-    aulaAberta: !!sessao,
+    chamadaAberta: !!sessao,
     professorSemCracha,
     conselharNavegador: !!conselhoDoNavegador,
   })
@@ -415,13 +415,13 @@ export function Fluxo() {
 
       const agora = new Date()
       const turma = abrirSozinho(aulas, professor.uidHash, agora, encerradas())
-      if (turma) await abrirAula(turma, professor.uidHash, agora)
+      if (turma) await abrirChamada(turma, professor.uidHash, agora)
     }
 
     void olhar()
     const relogio = setInterval(() => void olhar(), 30_000)
     return () => clearInterval(relogio)
-  }, [sessao, rota, repositorio, abrirAula])
+  }, [sessao, rota, repositorio, abrirChamada])
 
   const ligarPasta = async (escolhendo: boolean) => {
     const handle = escolhendo ? await escolherPasta() : await repositorio.lerPasta()
@@ -453,7 +453,7 @@ export function Fluxo() {
       )}
       {rota === 'turma' && <TelaVinculo aoMudarBase={mudou} />}
       {rota === 'cerimonia' && <TelaVinculo turmaInicial={turmaPendente} aoMudarBase={mudou} />}
-      {rota === 'aula' && sessao && (
+      {rota === 'chamada' && sessao && (
         <TelaAula
           sessao={sessao}
           pendentes={pendentesDaTurma.filter((p) => p.turma === sessao.turma)}
@@ -477,7 +477,7 @@ export function Fluxo() {
           aoEscolher={(turma) => {
             const pedido = escolhendo
             setEscolhendo(undefined)
-            void abrirAula(turma, pedido.uidHash, pedido.em)
+            void abrirChamada(turma, pedido.uidHash, pedido.em)
           }}
         />
       )}
@@ -497,7 +497,7 @@ export function Fluxo() {
           turmas={turmas}
           pendencias={pasta ? [] : pendencias}
           proxima={proxima}
-          aoIniciar={() => void iniciarAula()}
+          aoIniciar={() => void iniciarChamada()}
           aoSalvar={(turma) => void salvarCopia(turma)}
           aoAbrirCerimonia={() => setCadastrando(true)}
         />
@@ -669,10 +669,13 @@ export function Repouso({
         </>
       ) : (
         <>
-          <p className="repouso__turma">
-            {turmas === 1 ? 'Sua turma está pronta' : `${turmas} turmas prontas`}
+          {/* Título é estado, botão é ação. Antes o título dizia "Começar a
+              chamada" e o botão dizia "Iniciar a aula": duas tentativas de
+              nomear o mesmo gesto, uma em cima da outra. */}
+          <p className="repouso__turma">Tudo pronto</p>
+          <p className="repouso__acao">
+            {turmas === 1 ? 'Sua turma está cadastrada' : `${turmas} turmas cadastradas`}
           </p>
-          <p className="repouso__acao">Começar a chamada</p>
         </>
       )}
 
@@ -682,7 +685,7 @@ export function Repouso({
         className={proxima ? 'repouso__link botao--quieto' : 'botao--acento pasta__botao'}
         onClick={aoIniciar}
       >
-        {proxima ? 'Começar agora, fora do horário' : 'Iniciar a aula'}
+        {proxima ? 'Começar a chamada agora' : 'Começar a chamada'}
       </button>
       {/* O crachá continua abrindo, e a tela **não** diz isso. Anunciar dois
           caminhos para a mesma coisa é a decisão que se queria evitar: quem lê

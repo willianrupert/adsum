@@ -94,7 +94,7 @@ describe('a rota decide a tela', () => {
 // crachá continua valendo, mas não é anunciado, porque anunciar dois caminhos
 // para a mesma coisa é a decisão que se queria evitar.
 describe('abrir e encerrar sem crachá', () => {
-  it('o botão abre a aula, e a tela não oferece outro caminho', async () => {
+  it('o botão abre a chamada, e a tela não oferece outro caminho', async () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
@@ -102,8 +102,8 @@ describe('abrir e encerrar sem crachá', () => {
 
     expect(screen.queryByText(/encoste/i)).not.toBeInTheDocument()
 
-    await usuario.click(screen.getByRole('button', { name: 'Iniciar a aula' }))
-    expect(await screen.findByRole('button', { name: 'Encerrar a aula' })).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Começar a chamada' }))
+    expect(await screen.findByRole('button', { name: 'Encerrar a chamada' })).toBeInTheDocument()
     expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: 'IF685 · T01' })
   })
 
@@ -115,8 +115,8 @@ describe('abrir e encerrar sem crachá', () => {
     renderizarCom(bancada, <Fluxo />)
     await screen.findByText('Começar a chamada')
 
-    await usuario.click(screen.getByRole('button', { name: 'Iniciar a aula' }))
-    await usuario.click(await screen.findByRole('button', { name: 'Encerrar a aula' }))
+    await usuario.click(screen.getByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Encerrar a chamada' }))
 
     await waitFor(async () =>
       expect(await bancada.repositorio.sessaoAberta()).toBeUndefined(),
@@ -130,7 +130,7 @@ describe('abrir e encerrar sem crachá', () => {
 
 // O fim da linha do "menos decisões": com o horário cadastrado, o professor
 // entra na sala e a chamada já está aberta. Nem clique, nem crachá.
-describe('a grade abre a aula sozinha', () => {
+describe('a grade abre a chamada sozinha', () => {
   const aulaAgora = async () => {
     const agora = new Date()
     const hhmm = (delta: number) => {
@@ -151,19 +151,19 @@ describe('a grade abre a aula sozinha', () => {
     await aulaAgora()
     renderizarCom(bancada, <Fluxo />)
 
-    expect(await screen.findByRole('button', { name: 'Encerrar a aula' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Encerrar a chamada' })).toBeInTheDocument()
     expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: 'IF685 · T01' })
   })
 
   // Fechar às 9h30 uma aula que vai até as 10h não pode ser desfeito pelo
   // relógio no segundo seguinte.
-  it('não reabre a aula que o professor acabou de encerrar', async () => {
+  it('não reabre a chamada que o professor acabou de encerrar', async () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     await aulaAgora()
     renderizarCom(bancada, <Fluxo />)
 
-    await usuario.click(await screen.findByRole('button', { name: 'Encerrar a aula' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Encerrar a chamada' }))
     // Sem pasta o acento é salvar, e concluir vira "concluir sem salvar".
     await usuario.click(await screen.findByRole('button', { name: 'Concluir sem salvar' }))
 
@@ -175,7 +175,7 @@ describe('a grade abre a aula sozinha', () => {
   // O caso que faltava provar. Abrir na montagem é o professor que chega e abre
   // o app; este é o app **já aberto na mesa** quando a aula começa — e é o que
   // dá sentido à frase "abre sozinha". Sem o relógio, ele esperaria para sempre.
-  it('o relógio abre a aula que começa com o app já na tela', async () => {
+  it('o relógio abre a chamada quando a aula começa com o app na tela', async () => {
     // Só o intervalo é falso. Fingir o relógio inteiro derruba o Dexie —
     // "Transaction committed too early" —, porque o IndexedDB depende de timers
     // de verdade para fechar transação.

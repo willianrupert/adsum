@@ -44,7 +44,7 @@ export function TelaResumo({
 
   return (
     <section className="resumo">
-      <p className="resumo__rotulo">Aula encerrada · {sessao.turma}</p>
+      <p className="resumo__rotulo">Chamada encerrada · {sessao.turma}</p>
 
       <p className="resumo__numero">
         <Contador valor={presentes} />

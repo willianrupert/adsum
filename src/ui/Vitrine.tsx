@@ -68,11 +68,14 @@ function BuscaDeMentira() {
   )
 }
 
+const ehDesenvolvimento = import.meta.env.DEV
+
 export function Vitrine() {
   return (
     <div className="vitrine">
       <p className="vitrine__aviso">
-        Vitrine de desenvolvimento. Dados inventados; nada aqui grava.
+        Todas as telas do Adsum numa página só. <strong>Ninguém desta lista existe</strong> —
+        os nomes são inventados, e nada aqui grava nem altera a sua base.
       </p>
 
       <Cena titulo="Escolha onde guardar" quando="primeira vez, antes de tudo">
@@ -184,9 +187,15 @@ export function Vitrine() {
         </div>
       </Cena>
 
-      <Cena titulo="Base" quando="folha, atrás da engrenagem">
-        <TelaRepositorio />
-      </Cena>
+      {/* Estas duas montam com o contexto **de verdade**: seus botões importam,
+          zeram grade e apagam tudo — na sua base, não numa de mentira. Numa
+          vitrine publicada, apresentar isso como "olhe à vontade" seria uma
+          armadilha, então elas ficam só em desenvolvimento. */}
+      {ehDesenvolvimento && (
+        <Cena titulo="Base" quando="folha, atrás da engrenagem">
+          <TelaRepositorio />
+        </Cena>
+      )}
 
       <Cena titulo="Qual turma" quando="duas aulas no mesmo horário">
         <EscolherTurma
@@ -197,9 +206,17 @@ export function Vitrine() {
         />
       </Cena>
 
-      <Cena titulo="Diagnóstico" quando="folha, quando algo falha">
-        <TelaDiagnostico />
-      </Cena>
+      {ehDesenvolvimento ? (
+        <Cena titulo="Diagnóstico" quando="folha, quando algo falha">
+          <TelaDiagnostico />
+        </Cena>
+      ) : (
+        <p className="vitrine__aviso">
+          Faltam duas: <strong>Ajustes</strong> e <strong>Diagnóstico</strong>. Elas não
+          aparecem aqui porque mexem na base de verdade de quem abrir — no Adsum, você as
+          encontra pela engrenagem no canto.
+        </p>
+      )}
     </div>
   )
 }

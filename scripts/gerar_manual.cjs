@@ -168,6 +168,15 @@ const doc = new Document({
       h1('2. Como se usa'),
       p('Não há menus. A tela decorre do que existe na base: sem turma cadastrada, a tela é cadastrar a turma; na hora da aula, a tela é a chamada. O professor nunca escolhe onde está.'),
 
+      destaque([
+        p([t('Todas as telas, numa página só. ', { bold: true }),
+           t('Antes de cadastrar qualquer turma, dá para conhecer o Adsum inteiro em '),
+           mono('willianrupert.github.io/adsum/#/vitrine'),
+           t('. Os nomes ali são inventados e nada é gravado — é a maneira de ver, de uma vez, telas que de outro modo só apareceriam no meio de uma aula. Se alguma delas parecer confusa, é o melhor momento para dizer.')],
+          { spacing: { after: 0 } }),
+      ]),
+      p(''),
+
       h2('2.1 Antes do primeiro dia'),
       p([t('Escolher onde guardar. ', { bold: true }), t('Na primeira abertura, o programa pede uma pasta do computador. É onde tudo vai viver. Se essa pasta estiver dentro do iCloud Drive ou do Google Drive que o professor já usa, a cópia fora da máquina passa a existir sozinha, sem que o Adsum fale com servidor nenhum.')]),
       p([t('Colar a turma. ', { bold: true }), t('No SIGAA, abrir '), mono('Turma › Participantes'), t(' e copiar a página inteira (Ctrl+A, Ctrl+C). No Adsum, colar. Ele lê os nomes e as matrículas, separa docentes de discentes pelas seções da própria página, e confere o total contra os números que a página declara — se a página diz '), mono('Discentes (47)'), t(' e ele encontrou 46, ele avisa qual linha não entendeu, em vez de seguir calado.')]),
@@ -183,7 +192,7 @@ const doc = new Document({
       p('A tela responde na hora, e o bipe vem depois de o registro estar salvo. Os dois sinais significam coisas diferentes de propósito: o olho precisa de resposta imediata para a fila não parecer travada, e o som significa está gravado — não eu ouvi.'),
 
       h2('2.4 O fim da aula'),
-      p('O professor encerra pelo botão ou encostando o crachá. A tela mostra quantas presenças foram registradas, em quanto tempo, e onde o arquivo está.'),
+      p('O professor encerra a chamada pelo botão ou encostando o crachá. A tela mostra quantas presenças foram registradas, em quanto tempo, e onde o arquivo está.'),
       p('Com pasta escolhida, não há passo nenhum: cada presença já foi gravada no disco no momento em que aconteceu. Sem pasta, salvar é a ação da tela — e enquanto houver aula por salvar, o programa cobra, na tela de espera e ao fechar a aba.'),
 
       // ── 3 ─────────────────────────────────────────────────────────────

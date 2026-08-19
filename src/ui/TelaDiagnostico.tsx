@@ -503,7 +503,7 @@ export function TelaDiagnostico() {
           <Selo tom={ensaio ? 'alerta' : 'ok'}>{ensaio ? 'ligado' : 'desligado'}</Selo>
         </Linha>
         <p className="ferramentas__nota">
-          Desligado, o Adsum é o app de dar aula: só leitores de verdade, nenhuma tecla
+          Desligado, o Adsum é só a chamada: leitores de verdade, nenhuma tecla
           que marque presença sem crachá, e nada que invente dado. Ligado, aparecem o
           leitor simulado, <kbd>espaço</kbd> e <kbd>P</kbd> para ensaiar, e os botões de
           semear e apagar.
