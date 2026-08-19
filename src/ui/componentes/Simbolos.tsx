@@ -63,7 +63,9 @@ export function Cadeado({ tamanho = 12 }: { tamanho?: number }) {
  */
 export function Ondas({ tamanho = 64, animado = false }: { tamanho?: number; animado?: boolean }) {
   const abertura = (55 * Math.PI) / 180
-  const arcos = [9, 16.5, 24, 31.5]
+  // Vão de 9 entre raios com traço de 4,6: o espaço entre os arcos fica quase
+  // do tamanho do próprio traço, que é a proporção do símbolo real.
+  const arcos = [8, 17, 26, 35]
   return (
     <svg
       viewBox="0 0 64 64"
@@ -75,7 +77,7 @@ export function Ondas({ tamanho = 64, animado = false }: { tamanho?: number; ani
       <g
         fill="none"
         stroke="currentColor"
-        strokeWidth="5"
+        strokeWidth="4.6"
         strokeLinecap="round"
         transform="translate(16 32)"
       >
