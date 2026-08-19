@@ -26,7 +26,7 @@ const DESTINO = path.join(RAIZ, 'Adsum-manual-e-LGPD.docx')
 const {
   Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, PageBreak,
   Table, TableRow, TableCell, WidthType, ShadingType, BorderStyle, ImageRun,
-  TableOfContents, LevelFormat, convertInchesToTwip,
+  TableOfContents, LevelFormat,
 } = require('docx')
 
 const LARGURA = 9026 // A4 menos as margens padrão, em DXA
