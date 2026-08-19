@@ -43,6 +43,19 @@ export class RepositorioDexie implements Repositorio {
     return await this.#garantirConfig()
   }
 
+  /**
+   * Campo novo dentro do registro de config, e não tabela nova: `version(n)` do
+   * Dexie descreve índices, e a marca nunca é consultada por índice. Quem já
+   * abriu o site tem config sem o campo, e espalhar `undefined` não acrescenta
+   * nada — sem migração e sem risco de a base não abrir.
+   */
+  async marcarExportado(turma: string, ate: string): Promise<void> {
+    const atual = await this.lerConfig()
+    await this.#banco.config.update(ID_DA_CONFIG, {
+      exportado: { ...atual.exportado, [turma]: ate },
+    })
+  }
+
   async definirSal(salHex: string): Promise<void> {
     await this.#banco.config.update(ID_DA_CONFIG, { salHex: salHex.trim().toLowerCase() })
   }

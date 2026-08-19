@@ -6,6 +6,7 @@
 // a lado, com dados inventados.
 
 import { useState } from 'react'
+import { Repouso } from './Fluxo.tsx'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
 import { TelaInstalar } from './TelaInstalar.tsx'
@@ -15,7 +16,6 @@ import { TelaVinculo } from './TelaVinculo.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
 import { Busca } from './componentes/Busca.tsx'
-import { Ondas } from './componentes/Simbolos.tsx'
 import type { Matriculado } from '../nucleo/tipos.ts'
 
 const TURMA = 'IF685 · T01'
@@ -136,12 +136,19 @@ export function Vitrine() {
       </Cena>
 
       <Cena titulo="Repouso" quando="tudo pronto, fora de aula">
-        <section className="repouso">
-          <Ondas tamanho={72} animado />
-          <p className="repouso__turma">Sua turma está pronta</p>
-          <p className="repouso__acao">Encoste o seu crachá</p>
-          <button className="repouso__link">Cadastrar mais um crachá</button>
-        </section>
+        <Repouso turmas={1} pendencias={[]} aoSalvar={() => {}} aoAbrirCerimonia={() => {}} />
+      </Cena>
+
+      <Cena titulo="Repouso com aula por salvar" quando="sem pasta: a chamada só existe aqui">
+        <Repouso
+          turmas={2}
+          pendencias={[
+            { turma: TURMA, quantos: 41, desde: '2026-08-19T10:04:00.000Z' },
+            { turma: 'IF969 · T02', quantos: 28, desde: '2026-08-18T14:02:00.000Z' },
+          ]}
+          aoSalvar={() => {}}
+          aoAbrirCerimonia={() => {}}
+        />
       </Cena>
 
       <Cena titulo="Falha na pasta" quando="permissão caiu no meio da aula">

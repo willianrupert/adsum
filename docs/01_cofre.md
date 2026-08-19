@@ -196,3 +196,55 @@ navegadores são.
   com `evento_id` idempotente e junta sozinho, mas `sincronizar` reescreve
   `vinculos.json`, `grade.json` e `turmas/` por inteiro — o último a gravar
   ganha. Alternar tudo bem; usar os dois na mesma aula, não.
+
+## "Fica lá até ser exportada" não era seguro
+
+Perguntado em 19/08/2026. A resposta honesta era **não**, e o defeito não estava
+no armazenamento — estava na **memória do app**.
+
+Nada registrava o que já tinha sido exportado. Consequência: `TelaResumo` dizia
+"salve o arquivo", o professor clicava em *concluir sem salvar*, e a pendência
+sumia da tela e da memória do programa ao mesmo tempo. Depois disso **nada**
+distinguia uma base inteira salva de uma aula inteira por salvar. O aviso do
+canto falava do navegador ("sem pasta", "apaga em 7 dias"), nunca do trabalho.
+
+### A marca
+
+`Config.exportado` é `turma → quando do último evento exportado`. Data e não
+contagem: se um dia o log receber eventos antigos — restauração vinda de outra
+máquina —, contagem passaria a mentir **para menos**, e errar para menos aqui é
+dizer "está tudo salvo" quando não está.
+
+A marca sai do **conteúdo do arquivo** (`marcarAte`), não de `Date.now()`: se a
+exportação levou 40 registros, é o quadragésimo que ficou salvo. Com o relógio,
+uma leitura chegando durante a gravação ficaria marcada como salva sem estar.
+E **cancelar o diálogo não marca nada**.
+
+Campo novo dentro do registro de config, não tabela nova: `version(n)` do Dexie
+descreve índices, e a marca nunca é consultada por índice.
+
+### Três lugares, porque um só não basta
+
+1. **O selo do canto** passa a contar registros por salvar, em tom grave, e
+   vence os outros avisos: os outros descrevem o navegador, este descreve uma
+   aula em risco.
+2. **O repouso cobra**, com turma, quantidade e desde quando — é onde o
+   professor cai depois de encerrar, e a única tela que pode lembrá-lo. A
+   pendência empurra o "encoste o crachá" para baixo: enquanto houver aula só
+   no navegador, ela é a tarefa da tela.
+3. **`beforeunload`**, só quando há o que perder. Fechar a aba é um gesto de um
+   segundo e era a forma mais fácil de perder a chamada. Um aviso sempre ligado
+   viraria ruído e seria ignorado justamente quando importasse.
+
+### O que continua sem garantia, e é preciso dizer
+
+- **O arquivo salvo cai no mesmo disco.** Downloads é uma pasta local; se a
+  máquina se perder, as duas cópias se perdem juntas. A cópia fora da máquina só
+  existe se o professor apontar a pasta de downloads do Safari para o iCloud
+  Drive — aí cada exportação sai da máquina sozinha.
+- **O app avisa, não obriga.** `beforeunload` é descartável com um clique.
+- **Se ele nunca mais abrir o app**, o prazo do WebKit corre e leva a pendência
+  junto com a base. Instalar é o que tira esse prazo do caminho.
+
+Com pasta nada disso existe: cada evento é gravado no ato, e `porSalvar` é zero
+por construção.

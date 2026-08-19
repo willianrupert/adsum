@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { screen, waitFor } from '@testing-library/react'
+import { cleanup, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { Fluxo } from './Fluxo.tsx'
@@ -80,6 +80,77 @@ describe('a rota decide a tela', () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
     expect(await screen.findByText(/Sem pasta neste navegador/)).toBeInTheDocument()
+  })
+})
+
+// O caminho que perde trabalho de verdade: aula dada sem pasta, professor
+// conclui sem salvar, e a chamada fica só no navegador. Antes disto o app
+// esquecia junto com ele — nada na tela, nada na base, e a única memória de que
+// havia algo em risco era a do professor.
+describe('aula que só existe neste navegador', () => {
+  const EVENTO = {
+    eventoId: 'web-aaaa-20260819-0001',
+    quando: '2026-08-19T10:00:00.000Z',
+    turma: 'IF685 · T01',
+    matricula: '1',
+    nome: 'Ana Paula',
+    origem: 'cracha' as const,
+    resultado: 'ok' as const,
+    uidHash: 'aaaa000000000000',
+  }
+
+  it('o repouso cobra a aula por salvar, com turma e quantidade', async () => {
+    await turmaInteiraComCracha()
+    await bancada.repositorio.acrescentarEvento(EVENTO)
+    renderizarCom(bancada, <Fluxo />)
+
+    expect(await screen.findByText('Uma aula existe só neste navegador')).toBeInTheDocument()
+    expect(screen.getByText(/1 registro desde 19 de agosto/)).toBeInTheDocument()
+    expect(await screen.findByText(/1 registro ainda não salvo/)).toBeInTheDocument()
+  })
+
+  it('salvar limpa a cobrança, e a marca sobrevive ao recarregamento', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    await bancada.repositorio.acrescentarEvento(EVENTO)
+    const { unmount } = renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Uma aula existe só neste navegador')
+
+    await usuario.click(screen.getByRole('button', { name: 'Salvar' }))
+    await waitFor(() =>
+      expect(screen.queryByText('Uma aula existe só neste navegador')).not.toBeInTheDocument(),
+    )
+
+    // Gravou no banco, e não só no React: sem isto a cobrança voltaria a cada
+    // recarregamento e o professor salvaria a mesma aula todo dia.
+    unmount()
+    renderizarCom(bancada, <Fluxo />)
+    expect(await screen.findByText('Encoste o seu crachá')).toBeInTheDocument()
+    expect(screen.queryByText('Uma aula existe só neste navegador')).not.toBeInTheDocument()
+  })
+
+  // Cancelar o diálogo não pode limpar a pendência: seria o app esquecendo
+  // trabalho que continua só aqui.
+  it('um registro novo depois de salvar volta a cobrar', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    await bancada.repositorio.acrescentarEvento(EVENTO)
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Uma aula existe só neste navegador')
+
+    await usuario.click(screen.getByRole('button', { name: 'Salvar' }))
+    await waitFor(() =>
+      expect(screen.queryByText('Uma aula existe só neste navegador')).not.toBeInTheDocument(),
+    )
+
+    await bancada.repositorio.acrescentarEvento({
+      ...EVENTO,
+      eventoId: 'web-aaaa-20260819-0002',
+      quando: '2026-08-19T10:05:00.000Z',
+    })
+    cleanup()
+    renderizarCom(bancada, <Fluxo />)
+    expect(await screen.findByText('Uma aula existe só neste navegador')).toBeInTheDocument()
   })
 })
 

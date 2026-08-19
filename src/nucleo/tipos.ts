@@ -89,4 +89,10 @@ export interface Config {
   /** Distingue esta instalação de outra. Entra no `eventoId`. */
   instalacaoId: string
   criadoEm: string
+  /**
+   * Turma → `quando` do último evento já exportado. Só faz sentido onde não há
+   * pasta: com pasta, cada evento é gravado no ato e nada fica pendente.
+   * Ver `nucleo/pendencias.ts`.
+   */
+  exportado?: Record<string, string>
 }

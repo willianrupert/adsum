@@ -370,6 +370,14 @@ restaurações e adota **só o sal**: o `instalacaoId` tem de continuar diferent
 por navegador, senão duas instalações cunham o mesmo `evento_id`. Não troca por
 cima de vínculos locais — aí a decisão é humana. Ver `docs/01_cofre.md`.
 
+**Pendências feitas em 19/08/2026:** nada registrava o que já tinha sido
+exportado, então "concluir sem salvar" apagava a pendência da tela e da memória
+do app ao mesmo tempo. `nucleo/pendencias.ts` tem a regra pura e
+`Config.exportado` guarda `turma → quando do último evento exportado` — data e
+não contagem, porque contagem mentiria para menos se o log recebesse eventos
+antigos. Cobrado em três lugares: selo do canto, bloco no repouso e
+`beforeunload` (só quando há o que perder). Com pasta é zero por construção.
+
 **Safari feito:** `ambiente/instalacao.ts` separa quem tem prazo (WebKit) de
 quem só não tem pasta (Firefox), `ui/TelaInstalar.tsx` ensina o caminho do menu
 — não há botão, `beforeinstallprompt` é do Chromium — e `TelaResumo` inverte a

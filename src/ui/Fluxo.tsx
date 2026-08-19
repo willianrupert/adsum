@@ -38,6 +38,7 @@ import { TelaResumo } from './TelaResumo.tsx'
 import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { Cadeado, Engrenagem, Ondas } from './componentes/Simbolos.tsx'
 import { levantarCapacidades } from '../ambiente/capacidades.ts'
+import { marcarAte, naoSalvos, totalNaoSalvo, type Pendencia } from '../nucleo/pendencias.ts'
 import { useAdsum } from './adsum.ts'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
@@ -68,6 +69,8 @@ export function Fluxo() {
     convidarAInstalar() ? comoInstalar() : undefined,
   )
   const [falhaNaPasta, setFalhaNaPasta] = useState<string>()
+  // Sem pasta, isto é a única memória de que existe trabalho fora do disco.
+  const [pendencias, setPendencias] = useState<Pendencia[]>([])
   const [folha, setFolha] = useState<Folha>()
   // A rota decide sozinha, mas "quero cadastrar mais um crachá" é uma intenção
   // que nenhum dado expressa — sem isto, o botão do repouso não tinha o que
@@ -82,17 +85,38 @@ export function Fluxo() {
   }>()
 
   const ambienteQuebrado = levantarCapacidades().some((c) => c.peso === 'essencial' && !c.presente)
+  // Com pasta nada fica pendente: cada evento é gravado no ato.
+  const porSalvar = pasta ? 0 : totalNaoSalvo(pendencias)
 
   useEffect(() => leitor.aoMudarEstado((e) => setLendo(e === 'lendo')), [leitor])
 
+  // Fechar a aba com aula por salvar é a forma mais fácil de perder trabalho:
+  // um gesto de um segundo, sem confirmação, e a chamada some no prazo do
+  // navegador. O `beforeunload` só é registrado quando há algo a perder — um
+  // que estivesse sempre ligado viraria ruído e seria ignorado quando importa.
+  useEffect(() => {
+    if (pasta || pendencias.length === 0) return
+    // `preventDefault` é o contrato atual; `returnValue` é o que o WebKit ainda
+    // exige, e este aviso existe justamente por causa do Safari.
+    const avisar = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', avisar)
+    return () => window.removeEventListener('beforeunload', avisar)
+  }, [pasta, pendencias.length])
+
   const recontar = useCallback(async () => {
-    const [listaDeTurmas, matriculados, vinculos, aberta] = await Promise.all([
+    const [listaDeTurmas, matriculados, vinculos, aberta, eventos, atual] = await Promise.all([
       repositorio.listarTurmas(),
       repositorio.listarMatriculados(),
       repositorio.listarVinculos(),
       repositorio.sessaoAberta(),
+      repositorio.listarEventos(),
+      repositorio.lerConfig(),
     ])
     setSessao(aberta)
+    setPendencias(naoSalvos(eventos, atual.exportado))
     // Quem já tem crachá é reconhecido pela matrícula — e, para quem não tem
     // matrícula na página (docente), pelo nome. Sem esta segunda via o
     // professor contava como pendente para sempre: `!m.matricula` era verdade
@@ -179,9 +203,18 @@ export function Fluxo() {
     async (turma: string) => {
       const eventos = await repositorio.listarEventos()
       const daTurma = porTurma([...eventos].reverse()).get(turma) ?? []
-      return await salvarTexto(nomeDoArquivo(turma), paraCsv(daTurma))
+      const como = await salvarTexto(nomeDoArquivo(turma), paraCsv(daTurma))
+
+      // Só marca o que de fato saiu. Cancelar o diálogo não pode limpar a
+      // pendência — seria o app esquecendo trabalho que continua só aqui.
+      const ate = marcarAte(daTurma)
+      if (como !== 'cancelado' && ate) {
+        await repositorio.marcarExportado(turma, ate)
+        await recontar()
+      }
+      return como
     },
-    [repositorio],
+    [repositorio, recontar],
   )
 
 
@@ -390,7 +423,12 @@ export function Fluxo() {
       )}
 
       {!resumo && rota === 'pronto' && !cadastrando && (
-        <Repouso turmas={turmas} aoAbrirCerimonia={() => setCadastrando(true)} />
+        <Repouso
+          turmas={turmas}
+          pendencias={pasta ? [] : pendencias}
+          aoSalvar={(turma) => void salvarCopia(turma)}
+          aoAbrirCerimonia={() => setCadastrando(true)}
+        />
       )}
       {!resumo && rota === 'pronto' && cadastrando && (
         <TelaVinculo
@@ -420,22 +458,34 @@ export function Fluxo() {
           dois caminhos para o mesmo lugar só fazem duvidar de qual é o certo.
           Ele informa; ela abre. */}
       <div className="canto">
-        {(falhaNaPasta || !lendo || !pasta) && (
-          <span className={falhaNaPasta ? 'selo-status selo-status--grave' : 'selo-status'}>
-            {pasta || falhaNaPasta ? (
-              <span className={falhaNaPasta ? 'ponto ponto--grave' : 'ponto ponto--alerta'} />
+        {(falhaNaPasta || porSalvar > 0 || !lendo || !pasta) && (
+          <span
+            className={
+              falhaNaPasta || porSalvar > 0 ? 'selo-status selo-status--grave' : 'selo-status'
+            }
+          >
+            {pasta || falhaNaPasta || porSalvar > 0 ? (
+              <span
+                className={
+                  falhaNaPasta || porSalvar > 0 ? 'ponto ponto--grave' : 'ponto ponto--alerta'
+                }
+              />
             ) : (
               <Cadeado />
             )}
             {falhaNaPasta
               ? 'A pasta não recebeu a gravação'
-              : !lendo
-                ? 'Nenhum leitor ativo'
-                : estadoDaPasta === 'indisponivel'
-                  ? riscoDeApagar()
-                    ? 'Sem pasta — este navegador apaga a base em 7 dias'
-                    : 'Sem pasta neste navegador — exporte uma cópia'
-                  : 'Os dados só existem neste navegador'}
+              : // Trabalho que só existe aqui vence os avisos de condição: os
+                // outros descrevem o navegador, este descreve uma aula em risco.
+                porSalvar > 0
+                ? `${porSalvar} ${porSalvar === 1 ? 'registro ainda não salvo' : 'registros ainda não salvos'}`
+                : !lendo
+                  ? 'Nenhum leitor ativo'
+                  : estadoDaPasta === 'indisponivel'
+                    ? riscoDeApagar()
+                      ? 'Sem pasta — este navegador apaga a base em 7 dias'
+                      : 'Sem pasta neste navegador — exporte uma cópia'
+                    : 'Os dados só existem neste navegador'}
           </span>
         )}
 
@@ -465,9 +515,53 @@ export function Fluxo() {
   )
 }
 
-function Repouso({ turmas, aoAbrirCerimonia }: { turmas: number; aoAbrirCerimonia: () => void }) {
+/**
+ * O repouso é onde o professor cai depois de encerrar — e por isso é o único
+ * lugar onde uma aula esquecida pode ser lembrada. Antes daqui, "concluir sem
+ * salvar" fazia a pendência sumir da tela e da memória do app ao mesmo tempo.
+ *
+ * A pendência empurra o "encoste o crachá" para baixo de propósito: enquanto
+ * houver aula só neste navegador, ela é a tarefa da tela, e não um rodapé.
+ */
+export function Repouso({
+  turmas,
+  pendencias,
+  aoSalvar,
+  aoAbrirCerimonia,
+}: {
+  turmas: number
+  pendencias: Pendencia[]
+  aoSalvar: (turma: string) => void
+  aoAbrirCerimonia: () => void
+}) {
+  const dia = (iso: string) =>
+    new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
+
   return (
     <section className="repouso">
+      {pendencias.length > 0 && (
+        <div className="porsalvar">
+          <p className="porsalvar__titulo">
+            {pendencias.length === 1
+              ? 'Uma aula existe só neste navegador'
+              : `${pendencias.length} aulas existem só neste navegador`}
+          </p>
+          {pendencias.map((p) => (
+            <div className="porsalvar__linha" key={p.turma}>
+              <span className="porsalvar__turma">
+                <strong>{p.turma}</strong>
+                <span className="porsalvar__apoio">
+                  {p.quantos} {p.quantos === 1 ? 'registro' : 'registros'} desde {dia(p.desde)}
+                </span>
+              </span>
+              <button className="botao--acento" onClick={() => aoSalvar(p.turma)}>
+                Salvar
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <Ondas tamanho={72} animado />
       <p className="repouso__turma">
         {turmas === 1 ? 'Sua turma está pronta' : `${turmas} turmas prontas`}

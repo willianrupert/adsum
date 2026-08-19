@@ -36,6 +36,11 @@ export interface Repositorio {
   lerConfig(): Promise<Config>
   definirSal(salHex: string): Promise<void>
   definirInstalacaoId(id: string): Promise<void>
+  /**
+   * Marca até onde a turma já foi exportada. Sem isto o app não distingue uma
+   * base inteira salva de uma aula inteira por salvar, e não tem como cobrar.
+   */
+  marcarExportado(turma: string, ate: string): Promise<void>
 
   vinculoPorHash(uidHash: UidHash): Promise<Vinculo | undefined>
   listarVinculos(): Promise<Vinculo[]>
