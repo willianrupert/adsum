@@ -61,7 +61,7 @@ produto:
   ninguém estiver marcado — a trava passa de recusa para visibilidade.
 
 A leitura da página `Turma › Participantes` mora em `nucleo/sigaa.ts` e traz
-**nome completo e login do CIn**. Duas coisas que ela faz e um extrator ingênuo
+**nome completo e matrícula**. Duas coisas que ela faz e um extrator ingênuo
 não faria:
 
 - **confere o total contra o cabeçalho.** A página declara `Docentes (2)` e

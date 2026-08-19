@@ -21,9 +21,9 @@ aconteceu de fato.
 ```
 Adsum/
   config.json        sal, preferências, versão do formato
-  vinculos.json      uid_hash → { login, nome, papel, criadoEm }
+  vinculos.json      uid_hash → { matricula, nome, papel, criadoEm }
   turmas/
-    IF685-T01.json   lista da turma: login, nome completo, nome curto, papel
+    IF685-T01.json   lista da turma: matrícula, nome completo, nome curto, papel
   registros.csv      append-only, é o que a planilha consome
 ```
 

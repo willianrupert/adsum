@@ -8,7 +8,7 @@ Sem aparelho, sobraram três consumidores, e só um deles não é o app:
 
 | Consumidor | Precisa de |
 |---|---|
-| A planilha do professor | uma linha por presença, com o login |
+| A planilha do professor | uma linha por presença, com a matrícula |
 | O dongle USB | nada — ele só produz UID, não lê arquivo |
 | O próprio app | o cofre inteiro, para reabrir onde parou |
 
@@ -31,7 +31,7 @@ Um por turma, e não um mestre: cada turma vira uma planilha, e turma nova não
 mexe em arquivo de turma antiga.
 
 ```
-evento_id;quando;turma;login;nome;origem;resultado;uid_hash
+evento_id;quando;turma;matricula;nome;origem;resultado;uid_hash
 ```
 
 Cada coluna se justifica sozinha:
@@ -43,8 +43,14 @@ Cada coluna se justifica sozinha:
   se perde uma turma inteira em fevereiro.
 - **`turma`** — redundante com o nome do arquivo, e fica: arquivo renomeado ou
   colado noutro lugar continua sabendo de onde veio.
-- **`login`** — é o que fecha a chamada. Nome muda com correção de cadastro,
-  login não.
+- **`matricula`** — é o que fecha a chamada. Nome muda com correção de
+  cadastro, matrícula não.
+
+  Aqui esteve escrito `login`, e por um tempo o código também. **O login do
+  SIGAA é credencial de acesso**, e credencial de acesso não entra em arquivo de
+  frequência nem viaja em planilha — a página de participantes mostra o campo, e
+  o parser passa por ele de propósito, sem ler. A matrícula identifica sem
+  destravar nada.
 - **`nome`** — só para quem abrir o arquivo e querer entender o que está vendo.
   Nenhum cálculo depende dele.
 - **`origem`** — `cracha`, `professor`, `manual`.

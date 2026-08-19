@@ -181,9 +181,12 @@ Específicas do app:
   aluno: nada disso vira teste, exemplo ou imagem. Os testes usam gente
   inventada na forma exata da página real, e o manual usa ilustração desenhada —
   mesma disciplina do `gerar_mockups.py`, que versiona o desenho e não a captura.
-- **O login do CIn é o identificador da pessoa.** Nome muda com correção de
-  cadastro; login não. É por ele que a planilha fecha a chamada, e é ele que vai
-  na coluna `login` de `registros.csv`. O nome continua sendo só apresentação.
+- **A matrícula é o identificador da pessoa.** Nome muda com correção de
+  cadastro; matrícula não. É por ela que a planilha fecha a chamada, e é ela que
+  vai na coluna `matricula` de `registros/<turma>.csv`. O nome continua sendo só
+  apresentação. **O login do SIGAA não é lido nem guardado**: é credencial de
+  acesso, e credencial não entra em arquivo de frequência. O parser vê o campo
+  na página de participantes e passa por ele de propósito.
 - **Esquema do Dexie ganha versão nova, nunca edição da anterior.** Quem já
   abriu o site tem a versão antiga no navegador; mexer numa `version(n)` já
   publicada faz a base não abrir.
@@ -254,7 +257,7 @@ delas de propósito: são ferramentas de diagnóstico, e o acesso passa por um
 ## Estado atual
 
 Atualizado em 18/08/2026. **Passos 1, 2 e 3 de 6 feitos**, com a lista do SIGAA
-lida de verdade — nome completo e login do CIn, guardada por turma. Medido na
+lida de verdade — nome completo e matrícula, guardados por turma. Medido na
 turma real do IF685: **49 de 49**, batendo com `Docentes (2)` e `Discentes (47)`,
 nenhum nome estourando a coluna de 210 px e quatro logins que são só dígitos
 (duas matrículas e dois que têm cara de CPF), sinalizados na tela.
@@ -314,10 +317,9 @@ conferido pelo texto do DOM, não a olho.
   para permitir essa comparação a olho. Enquanto não for feito, tratar vínculo
   do celular e vínculo do aparelho como bases separadas.
 - **`alunos.csv` continua com três colunas** (`uid_hash;papel;nome`), que é o
-  que o firmware lê. O login fica na base local e é preenchido **na saída** do
-  `registros.csv`, a partir do vínculo — assim corrigir um login corrige as
-  exportações seguintes sem reescrever uma linha do log. Se um dia o firmware
-  aceitar uma quarta coluna, o login pode viajar no cartão também.
+  que o firmware lê. A matrícula fica na base local e é preenchida **na saída**
+  do `registros/<turma>.csv`, a partir do vínculo — assim corrigir uma matrícula
+  corrige as exportações seguintes sem reescrever uma linha do log.
 - **Login que é só dígitos.** O SIGAA cai na matrícula, e às vezes no CPF,
   quando a pessoa não escolheu login. A tela marca com `só número`, mas a
   decisão é humana: CPF não deveria virar identificador de presença nem chegar
@@ -418,7 +420,7 @@ Mushroom cards) e o corte de texto das telas de vínculo e base.
 - hash com sal — é privacidade
 - registro append-only
 - um só nome armado por vez na cerimônia — é a garantia contra trocar aluno
-- leitura da página do SIGAA: nome, login, conferência do total
+- leitura da página do SIGAA: nome, matrícula, conferência do total
 - encurtar nome por legibilidade (o conceito, não os números)
 
 **Nascido aqui:** rota é o estado, orçamento de toques, o cofre em `docs/01`.
