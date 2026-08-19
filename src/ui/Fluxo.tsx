@@ -11,12 +11,17 @@ import { calcularUidHash } from '../nucleo/hash.ts'
 import { hexParaUid } from '../nucleo/uid.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
-import { escolherTurma } from '../nucleo/grade.ts'
+import { abrirSozinho, escolherTurma } from '../nucleo/grade.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
 import { conselho, riscoDeApagar } from '../ambiente/instalacao.ts'
-import { dispensarConselho, modoDev } from '../ambiente/preferencias.ts'
+import {
+  dispensarConselho,
+  encerradas,
+  marcarEncerrada,
+  modoDev,
+} from '../ambiente/preferencias.ts'
 import {
   acrescentarNoLog,
   caminhoDosRegistros,
@@ -374,6 +379,41 @@ export function Fluxo() {
     conselharNavegador: !!conselhoDoNavegador,
   })
 
+  /**
+   * A grade abre a aula sozinha.
+   *
+   * É o fim da linha do "menos decisões": com o horário cadastrado, o professor
+   * entra na sala e a chamada já está aberta — nem clique, nem crachá. As
+   * recusas que tornam isso seguro estão em `abrirSozinho`.
+   *
+   * Um relógio de 30 s, e não só na montagem: a aula que começa com o app
+   * aberto na mesa precisa abrir sem ninguém tocar em nada, que é o ponto.
+   *
+   * **Encerrar continua sendo do professor.** Abrir cedo demais não custa nada
+   * — ninguém está encostando crachá —, mas fechar cedo demais custa um aluno.
+   * Automatizar só o lado barato do erro.
+   */
+  useEffect(() => {
+    if (sessao || rota !== 'pronto') return
+
+    const olhar = async () => {
+      const [aulas, vinculos] = await Promise.all([
+        repositorio.listarAulas(),
+        repositorio.listarVinculos(),
+      ])
+      const professor = vinculos.find((v) => v.papel === 'professor')
+      if (!professor) return
+
+      const agora = new Date()
+      const turma = abrirSozinho(aulas, professor.uidHash, agora, encerradas())
+      if (turma) await abrirAula(turma, professor.uidHash, agora)
+    }
+
+    void olhar()
+    const relogio = setInterval(() => void olhar(), 30_000)
+    return () => clearInterval(relogio)
+  }, [sessao, rota, repositorio, abrirAula])
+
   const ligarPasta = async (escolhendo: boolean) => {
     const handle = escolhendo ? await escolherPasta() : await repositorio.lerPasta()
     if (!handle) return
@@ -413,7 +453,11 @@ export function Fluxo() {
           }
           aoMudarBase={mudou}
           aoRegistrar={gravarLinha}
-          aoEncerrar={(presentes) => setResumo({ sessao, presentes })}
+          aoEncerrar={(presentes) => {
+            // Sem esta marca o relógio reabriria a aula que acabou de fechar.
+            marcarEncerrada(sessao.turma, new Date().toISOString())
+            setResumo({ sessao, presentes })
+          }}
         />
       )}
       {escolhendo && (

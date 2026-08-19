@@ -12,6 +12,7 @@ const CHAVES = {
   modoDev: 'adsum.modoDev',
   leitor: 'adsum.leitor',
   conselhoDispensado: 'adsum.instalacao.dispensada',
+  encerradas: 'adsum.encerradas',
 } as const
 
 function ler(chave: string): string | undefined {
@@ -69,4 +70,27 @@ export function conselhoDispensado(): boolean {
 
 export function dispensarConselho(): void {
   gravar(CHAVES.conselhoDispensado, 'sim')
+}
+
+/**
+ * Turma → quando o professor encerrou por último.
+ *
+ * Existe para a abertura automática não desfazer um encerramento: quem fecha às
+ * 9h30 uma aula que vai até as 10h não quer o relógio reabrindo no segundo
+ * seguinte. Não sai do log porque **o log não distingue abrir de encerrar** —
+ * as duas linhas são idênticas (ver `eventoDe`) —, e mudar o formato do CSV por
+ * causa disto seria caro demais para o que se ganha.
+ *
+ * Local e não do cofre: é sobre este navegador ter aberto esta aula hoje.
+ */
+export function encerradas(): Record<string, string> {
+  try {
+    return JSON.parse(ler(CHAVES.encerradas) ?? '{}') as Record<string, string>
+  } catch {
+    return {}
+  }
+}
+
+export function marcarEncerrada(turma: string, quando: string): void {
+  gravar(CHAVES.encerradas, JSON.stringify({ ...encerradas(), [turma]: quando }))
 }

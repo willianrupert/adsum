@@ -128,6 +128,59 @@ describe('abrir e encerrar sem crachá', () => {
   })
 })
 
+// O fim da linha do "menos decisões": com o horário cadastrado, o professor
+// entra na sala e a chamada já está aberta. Nem clique, nem crachá.
+describe('a grade abre a aula sozinha', () => {
+  const aulaAgora = async () => {
+    const agora = new Date()
+    const hhmm = (delta: number) => {
+      const d = new Date(agora.getTime() + delta * 60_000)
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    }
+    await bancada.repositorio.gravarAula({
+      uidHashProfessor: 'aaaa000000000000',
+      dia: agora.getDay(),
+      inicio: hhmm(-30),
+      fim: hhmm(30),
+      turma: 'IF685 · T01',
+    })
+  }
+
+  it('abre sem ninguém tocar em nada', async () => {
+    await turmaInteiraComCracha()
+    await aulaAgora()
+    renderizarCom(bancada, <Fluxo />)
+
+    expect(await screen.findByRole('button', { name: 'Encerrar a aula' })).toBeInTheDocument()
+    expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: 'IF685 · T01' })
+  })
+
+  // Fechar às 9h30 uma aula que vai até as 10h não pode ser desfeito pelo
+  // relógio no segundo seguinte.
+  it('não reabre a aula que o professor acabou de encerrar', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    await aulaAgora()
+    renderizarCom(bancada, <Fluxo />)
+
+    await usuario.click(await screen.findByRole('button', { name: 'Encerrar a aula' }))
+    // Sem pasta o acento é salvar, e concluir vira "concluir sem salvar".
+    await usuario.click(await screen.findByRole('button', { name: 'Concluir sem salvar' }))
+
+    expect(await screen.findByText('Começar a chamada')).toBeInTheDocument()
+    expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
+  })
+
+  // Sem grade, "só existe uma turma, abre essa" valeria no domingo à noite.
+  it('sem aula na grade, espera o professor', async () => {
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+
+    expect(await screen.findByText('Começar a chamada')).toBeInTheDocument()
+    expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
+  })
+})
+
 // O modo de ensaio vem desligado, e é o que separa o app publicado do banco de
 // testes. A propriedade que mais importa não é a tag sumir: é a tecla morrer.
 // Espaço é a tecla que mais se aperta sem querer, e viva ela marcaria presença

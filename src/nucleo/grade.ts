@@ -79,3 +79,49 @@ export function escolherTurma(
   if (turmas.length === 0) return { tipo: 'sem_turma' }
   return { tipo: 'perguntar', opcoes: turmas, motivo: 'nenhuma' }
 }
+
+/** Início da janela de hoje, já com a folga. É o marco de "esta aula". */
+export function inicioDaJanela(aula: Aula, agora: Date): Date {
+  const marco = new Date(agora)
+  marco.setHours(0, emMinutos(aula.inicio) - FOLGA_MIN, 0, 0)
+  return marco
+}
+
+/**
+ * A aula que deve abrir sem ninguém pedir.
+ *
+ * A melhor tela é a que não pergunta nada, e a grade já sabe a hora. Com o
+ * horário cadastrado, o professor entra na sala e a chamada está aberta — nem
+ * clique, nem crachá.
+ *
+ * Três recusas, e cada uma existe por um motivo:
+ *
+ * 1. **Só com aula na grade.** `escolherTurma` tem a degradação de "só existe
+ *    uma turma, abre essa" — boa para um gesto deliberado, péssima aqui: sem
+ *    grade, ela abriria a chamada a qualquer hora que o app estivesse na tela,
+ *    e presença passaria a valer no domingo à noite.
+ * 2. **Só quando não há dúvida.** Duas aulas ao mesmo tempo viram pergunta no
+ *    caminho do clique. Sozinho, o app não adivinha.
+ * 3. **Não reabre o que foi encerrado.** Encerrar às 9h30 uma aula que vai até
+ *    as 10h não pode ser desfeito pelo relógio no segundo seguinte.
+ *
+ * `encerradas` é turma → quando do último encerramento. Fica fora do log porque
+ * o log não distingue abrir de encerrar (as duas linhas são iguais, ver
+ * `eventoDe`), e mudar o formato do CSV por causa disto seria caro demais.
+ */
+export function abrirSozinho(
+  aulas: Aula[],
+  uidHashProfessor: string,
+  agora: Date,
+  encerradas: Record<string, string> = {},
+): string | undefined {
+  const agora_ = aulasAgora(aulas, uidHashProfessor, agora)
+  if (agora_.length !== 1) return undefined
+
+  const aula = agora_[0]
+  const encerrada = encerradas[aula.turma]
+  if (encerrada && Date.parse(encerrada) >= inicioDaJanela(aula, agora).getTime()) {
+    return undefined
+  }
+  return aula.turma
+}

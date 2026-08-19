@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FOLGA_MIN, aulasAgora, emMinutos, escolherTurma, horaValida } from './grade.ts'
+import { abrirSozinho, FOLGA_MIN, aulasAgora, emMinutos, escolherTurma, horaValida } from './grade.ts'
 
 const PROF = 'aaaa000000000000'
 const OUTRO = 'bbbb000000000000'
@@ -88,5 +88,49 @@ describe('que turma abrir', () => {
   // nada e a tela não dizia por quê.
   it('duas turmas sem grade não deixa o crachá sem resposta', () => {
     expect(escolherTurma([], TURMAS, PROF, quarta('09:00')).tipo).toBe('perguntar')
+  })
+})
+
+describe('a aula que abre sozinha', () => {
+  const AULA = {
+    uidHashProfessor: 'prof',
+    dia: 3,
+    inicio: '08:00',
+    fim: '10:00',
+    turma: 'IF685 · T01',
+  }
+  // Quarta-feira, 19/08/2026.
+  const em = (hhmm: string) => new Date(`2026-08-19T${hhmm}:00`)
+
+  it('abre na hora da aula, sem ninguém pedir', () => {
+    expect(abrirSozinho([AULA], 'prof', em('08:05'))).toBe('IF685 · T01')
+  })
+
+  it('a folga vale aqui também — o professor chega antes', () => {
+    expect(abrirSozinho([AULA], 'prof', em('07:45'))).toBe('IF685 · T01')
+    expect(abrirSozinho([AULA], 'prof', em('07:30'))).toBeUndefined()
+  })
+
+  // A degradação "só existe uma turma, abre essa" é boa para um gesto
+  // deliberado e péssima aqui: sem grade, a chamada valeria no domingo à noite.
+  it('sem aula na grade não abre nada, mesmo com uma turma só', () => {
+    expect(abrirSozinho([], 'prof', em('08:05'))).toBeUndefined()
+  })
+
+  it('duas ao mesmo tempo não são adivinhadas', () => {
+    const outra = { ...AULA, turma: 'IF969 · T02' }
+    expect(abrirSozinho([AULA, outra], 'prof', em('08:05'))).toBeUndefined()
+  })
+
+  // Encerrar às 9h30 uma aula que vai até as 10h não pode ser desfeito pelo
+  // relógio no segundo seguinte.
+  it('não reabre o que o professor encerrou dentro da janela', () => {
+    const encerradas = { 'IF685 · T01': '2026-08-19T09:30:00' }
+    expect(abrirSozinho([AULA], 'prof', em('09:31'), encerradas)).toBeUndefined()
+  })
+
+  it('mas o encerramento da semana passada não impede a aula de hoje', () => {
+    const encerradas = { 'IF685 · T01': '2026-08-12T09:30:00' }
+    expect(abrirSozinho([AULA], 'prof', em('08:05'), encerradas)).toBe('IF685 · T01')
   })
 })
