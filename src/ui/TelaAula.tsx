@@ -17,6 +17,7 @@ import type { Evento, Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { useAdsum } from './adsum.ts'
+import { Busca } from './componentes/Busca.tsx'
 
 interface Linha {
   chave: string
@@ -32,12 +33,15 @@ function hhmm(d: Date) {
 export function TelaAula({
   sessao,
   pendentes,
+  totalDaTurma,
   aoMudarBase,
   aoRegistrar,
 }: {
   sessao: Sessao
   /** Quem está na turma e ainda não tem crachá. Vira a fila de cadastro. */
   pendentes: Matriculado[]
+  /** Quantas pessoas a turma tem ao todo. Diz se hoje é o primeiro dia. */
+  totalDaTurma: number
   aoMudarBase: () => void
   /** Grava a linha na pasta. Acontece antes do bipe: som é "está salvo". */
   aoRegistrar?: (evento: Evento) => Promise<void>
@@ -47,12 +51,21 @@ export function TelaAula({
   const [presentes, setPresentes] = useState<Set<string>>(new Set())
   const [linhas, setLinhas] = useState<Linha[]>([])
   const [recado, setRecado] = useState<string>()
-  const [destaque, setDestaque] = useState<{ nome: string; tom: Linha['tom'] }>()
   const [armado, setArmado] = useState(0)
+  const [procurando, setProcurando] = useState<string>()
   const sequencia = useRef(0)
-  const relogioDoDestaque = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  const aCadastrar = pendentes[Math.min(armado, Math.max(0, pendentes.length - 1))]
+  /**
+   * A faixa de cadastro só aparece **no primeiro dia** — quando ninguém da
+   * turma tem crachá ainda e a cerimônia é a própria chamada. Depois disso ela
+   * some: ficar avisando que faltam três crachás é cobrança sobre gente que
+   * pode ter trancado, e o caso se resolve sozinho quando a pessoa aparece e
+   * encosta o crachá.
+   */
+  const primeiroDia = pendentes.length > 0 && pendentes.length === totalDaTurma
+  const aCadastrar = primeiroDia
+    ? pendentes[Math.min(armado, Math.max(0, pendentes.length - 1))]
+    : undefined
 
   // Setas andam pela fila de cadastro. Quem opera está com a mão no teclado e
   // um aluno na frente.
@@ -108,6 +121,16 @@ export function TelaAula({
           agora: leitura.em,
         })
 
+        // Crachá que ninguém reconhece, com gente da turma ainda sem cadastro:
+        // é o aluno que faltou no primeiro dia. Em vez de recusar e cobrar
+        // depois, o app pergunta de quem é — ali, na hora, com a pessoa na
+        // frente. Nada é gravado enquanto ele não responder.
+        if (decisao.tipo === 'desconhecido' && pendentes.length > 0) {
+          setProcurando(uidHash)
+          tocar('desconhecido')
+          return
+        }
+
         // Cadastro grava o vínculo antes do evento: se algo falhar no meio,
         // sobra um crachá vinculado sem presença — que se resolve encostando de
         // novo — e não uma presença de alguém que o sistema não reconhece.
@@ -150,37 +173,16 @@ export function TelaAula({
   }, [leitor, repositorio, config, sessao, presentes, recarregar, aoMudarBase, aoRegistrar, aCadastrar])
 
   /**
-   * O nome ocupa o lugar do contador por um instante e volta.
+   * Antes de gravar: só pixels, para a fila nunca esperar o disco.
    *
-   * Não é um cartão que entra e sai: com um crachá a cada 1 ou 2 segundos,
-   * qualquer coisa que precise **terminar** de sumir chega atrasada — ou trunca,
-   * e o aluno não viu, ou enfileira, e a tela fica atrás da fila. Trocar o
-   * conteúdo do mesmo lugar aguenta o ritmo porque nada termina: o próximo
-   * simplesmente substitui, e o relógio recomeça.
+   * O nome **não** pisca no lugar do contador. Celebrar cada leitura cansa
+   * depois da quinta, e com um crachá a cada 1,5 s vira ruído — o feedback é a
+   * linha que chega no topo da lista e o número que sobe. Calmo aguenta a aula
+   * inteira; festivo não.
    */
-  function destacar(nome: string, tom: Linha['tom']) {
-    clearTimeout(relogioDoDestaque.current)
-    setDestaque({ nome, tom })
-    relogioDoDestaque.current = setTimeout(() => setDestaque(undefined), 1600)
-  }
-
-  useEffect(() => () => clearTimeout(relogioDoDestaque.current), [])
-
-  /** Antes de gravar: só pixels, para a fila nunca esperar o disco. */
   function mostrar(decisao: Decisao) {
-    switch (decisao.tipo) {
-      case 'presenca':
-        return destacar(decisao.vinculo.nome, 'ok')
-      case 'cadastro':
-        return destacar(decisao.pessoa.nome, 'ok')
-      case 'repetido':
-        return destacar(decisao.vinculo.nome, 'repetido')
-      case 'desconhecido':
-        return destacar('Crachá não cadastrado', 'desconhecido')
-      case 'cedo_demais':
-        return setRecado(
-          `Para encerrar, encoste de novo em ${Math.ceil(decisao.faltamMs / 1000)} s.`,
-        )
+    if (decisao.tipo === 'cedo_demais') {
+      setRecado(`Para encerrar, encoste de novo em ${Math.ceil(decisao.faltamMs / 1000)} s.`)
     }
   }
 
@@ -195,7 +197,6 @@ export function TelaAula({
         setRecado(undefined)
         return tocar('repetido')
       case 'desconhecido':
-        setRecado(undefined)
         return tocar('desconhecido')
       case 'cedo_demais':
         return tocar('desconhecido')
@@ -216,27 +217,8 @@ export function TelaAula({
 
       <div className="coleta__corpo">
         <div className="coleta__contador">
-          {destaque ? (
-            <>
-              <p className={`coleta__destaque coleta__destaque--${destaque.tom}`}>
-                {destaque.nome}
-              </p>
-              <p className="coleta__rotulo">
-                {destaque.tom === 'ok'
-                  ? 'presente'
-                  : destaque.tom === 'repetido'
-                    ? 'já estava'
-                    : 'não cadastrado'}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="coleta__numero">{presentes.size}</p>
-              <p className="coleta__rotulo">
-                {presentes.size === 1 ? 'presente' : 'presentes'}
-              </p>
-            </>
-          )}
+          <p className="coleta__numero">{presentes.size}</p>
+          <p className="coleta__rotulo">{presentes.size === 1 ? 'presente' : 'presentes'}</p>
         </div>
 
         <ol className="coleta__lista">
@@ -277,6 +259,63 @@ export function TelaAula({
             ›
           </button>
         </section>
+      )}
+
+      {procurando && (
+        <Busca
+          pessoas={pendentes}
+          aoDesistir={() => {
+            void (async () => {
+              const uidHash = procurando
+              setProcurando(undefined)
+              const evento = eventoDe(
+                { tipo: 'desconhecido' },
+                {
+                  eventoId: proximoEventoId(config.instalacaoId, new Date(), ++sequencia.current),
+                  quando: new Date(),
+                  turma: sessao.turma,
+                  uidHash,
+                },
+              )
+              if (evento) {
+                await repositorio.acrescentarEvento(evento)
+                await aoRegistrar?.(evento)
+              }
+              await recarregar()
+              aoMudarBase()
+            })()
+          }}
+          aoEscolher={(pessoa) => {
+            void (async () => {
+              const uidHash = procurando
+              const quando = new Date()
+              setProcurando(undefined)
+              await repositorio.gravarVinculo({
+                uidHash,
+                papel: pessoa.papel,
+                nome: pessoa.nome,
+                matricula: pessoa.matricula || undefined,
+                criadoEm: quando.toISOString(),
+              })
+              const evento = eventoDe(
+                { tipo: 'cadastro', pessoa },
+                {
+                  eventoId: proximoEventoId(config.instalacaoId, quando, ++sequencia.current),
+                  quando,
+                  turma: sessao.turma,
+                  uidHash,
+                },
+              )
+              if (evento) {
+                await repositorio.acrescentarEvento(evento)
+                await aoRegistrar?.(evento)
+              }
+              tocar('ok')
+              await recarregar()
+              aoMudarBase()
+            })()
+          }}
+        />
       )}
 
       <footer className="coleta__rodape">

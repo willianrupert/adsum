@@ -32,6 +32,7 @@ export function Fluxo() {
   const [pendentes, setPendentes] = useState(0)
   const [turmaPendente, setTurmaPendente] = useState<string>()
   const [pendentesDaTurma, setPendentesDaTurma] = useState<Matriculado[]>([])
+  const [matriculadosTodos, setMatriculadosTodos] = useState<Matriculado[]>([])
   const [professorSemCracha, setProfessorSemCracha] = useState(false)
   const [sessao, setSessao] = useState<Sessao>()
   const [turmas1, setTurmas1] = useState<string>()
@@ -60,6 +61,7 @@ export function Fluxo() {
     setTurmas(listaDeTurmas.length)
     setPendentes(faltando.length)
     setPendentesDaTurma(faltando)
+    setMatriculadosTodos(matriculados)
     setTurmaPendente(faltando[0]?.turma)
     setProfessorSemCracha(!vinculos.some((v) => v.papel === 'professor'))
   }, [repositorio])
@@ -221,6 +223,7 @@ export function Fluxo() {
         <TelaAula
           sessao={sessao}
           pendentes={pendentesDaTurma.filter((p) => p.turma === sessao.turma)}
+          totalDaTurma={matriculadosTodos.filter((p) => p.turma === sessao.turma).length}
           aoMudarBase={mudou}
           aoRegistrar={gravarLinha}
         />

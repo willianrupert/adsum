@@ -1121,3 +1121,88 @@ button:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Busca de aluno — aparece quando um crachá novo encosta.
+   Digitar é a ação: não há botão de buscar, e o escopo encolhe a cada tecla. */
+
+.busca {
+  width: min(560px, 100%);
+  max-height: 82dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fundo);
+  border-radius: var(--raio) var(--raio) 0 0;
+  padding: 30px 26px 22px;
+  animation: subir 420ms var(--curva-folha);
+}
+
+.busca__titulo {
+  margin: 0;
+  font-size: var(--t-secao);
+  font-weight: 600;
+  letter-spacing: -0.019em;
+  text-align: center;
+}
+
+.busca__nota {
+  margin: 4px 0 22px;
+  font-size: var(--t-corpo);
+  color: var(--tinta-fraca);
+  text-align: center;
+}
+
+.busca__campo {
+  width: 100%;
+  background: var(--fundo-alt);
+  border: none;
+  border-radius: var(--raio-pequeno);
+  padding: 13px 16px;
+  font-size: var(--t-corpo);
+}
+
+.busca__lista {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.busca__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--raio-pequeno);
+  text-align: left;
+  color: var(--tinta);
+}
+
+.busca__item:hover {
+  background: var(--fundo-alt);
+  opacity: 1;
+}
+
+.busca__nome {
+  font-size: var(--t-corpo);
+  font-weight: 600;
+  letter-spacing: -0.022em;
+}
+
+.busca__completo {
+  font-size: var(--t-nota);
+  color: var(--tinta-tenue);
+}
+
+.busca__vazio {
+  padding: 16px 14px;
+  font-size: var(--t-menor);
+  color: var(--tinta-fraca);
+}
+
+.busca__desistir {
+  align-self: center;
+  margin-top: 12px;
+}

@@ -10,6 +10,7 @@ import { TelaPasta } from './TelaPasta.tsx'
 import { TelaVinculo } from './TelaVinculo.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
+import { Busca } from './componentes/Busca.tsx'
 import type { Matriculado } from '../nucleo/tipos.ts'
 
 const TURMA = 'IF685 · T01'
@@ -58,12 +59,26 @@ export function Vitrine() {
         <TelaVinculo />
       </Cena>
 
-      <Cena titulo="A aula" quando="aula aberta, com fila de cadastro">
+      <Cena titulo="A aula" quando="dia comum: sem cobrança de crachá">
         <TelaAula
           sessao={{ turma: TURMA, abertaEm: new Date(Date.now() - 22 * 60000).toISOString(), uidHashProfessor: 'x' }}
           pendentes={PENDENTES}
+          totalDaTurma={47}
           aoMudarBase={() => {}}
         />
+      </Cena>
+
+      <Cena titulo="A aula, primeiro dia" quando="ninguém tem crachá: a cerimônia é a chamada">
+        <TelaAula
+          sessao={{ turma: TURMA, abertaEm: new Date(Date.now() - 4 * 60000).toISOString(), uidHashProfessor: 'x' }}
+          pendentes={PENDENTES}
+          totalDaTurma={PENDENTES.length}
+          aoMudarBase={() => {}}
+        />
+      </Cena>
+
+      <Cena titulo="Crachá novo" quando="alguém que faltou no primeiro dia chega">
+        <Busca pessoas={PENDENTES} aoEscolher={() => {}} aoDesistir={() => {}} />
       </Cena>
 
       <Cena titulo="Repouso" quando="tudo pronto, fora de aula">

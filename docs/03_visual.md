@@ -23,11 +23,13 @@ elimina sozinho a maior parte das ideias boas em telas paradas:
 pequeno, imediato e igual toda vez — a lista cresce, o número muda. Comemoração
 por leitura é desenho de aplicativo de banco, não de fila.
 
-**Implementado assim:** em vez de pop-up, o **nome ocupa por um instante o
-lugar do contador** e volta. Sem caixa, sem sombra, sem entrada e saída — só
-troca de conteúdo, e o relógio de 1,6 s recomeça a cada leitura. Aguenta ritmo
-porque nada precisa terminar: o próximo crachá simplesmente substitui o
-anterior, em vez de esperar a vez.
+**Tentado e descartado:** o nome ocupando por um instante o lugar do contador.
+Funcionava tecnicamente e ainda assim estava errado — **celebrar cada leitura
+cansa depois da quinta**, e com um crachá a cada 1,5 s vira ruído. É o que a
+Apple não faz.
+
+**Como ficou:** o contador não se mexe além de subir, e o feedback é a linha
+que chega no topo da lista. Calmo aguenta a aula inteira; festivo não.
 
 ## Feito na passada de 18/08/2026
 
@@ -96,6 +98,18 @@ sente.
 - **Claro e escuro**, seguindo o sistema.
 - **Mushroom cards** onde houver estado a mostrar de relance — ícone à esquerda,
   uma linha principal, uma de apoio. O lugar natural é a folha da base.
+
+## Cobrança de cadastro: só no primeiro dia
+
+A faixa "faltam 3 crachás" só aparece quando **ninguém da turma tem crachá
+ainda** — o primeiro dia, em que a cerimônia é a própria chamada. Depois disso
+ela some: manter um aviso permanente é cobrança sobre gente que pode ter
+trancado, e o caso se resolve sozinho.
+
+Quando alguém que faltou no primeiro dia finalmente aparece e encosta o crachá,
+o app **pergunta de quem é** — uma folha com busca que filtra a turma a cada
+tecla, sem botão de buscar e sem confirmação. Digitar é a ação; Enter resolve
+quando sobra um só. Nada é gravado enquanto ninguém responder.
 
 ## Safari
 
