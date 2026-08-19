@@ -1,8 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" rx="96" fill="#0B0B0A"/>
-  <rect x="96" y="150" width="320" height="212" rx="20" fill="none" stroke="#2A2A28" stroke-width="10"/>
-  <path d="M256 316 L212 210 h24 l20 52 20 -52 h24 z" fill="#5DCAA5"/>
-  <circle cx="256" cy="256" r="6" fill="#0B0B0A"/>
-  <path d="M330 214 a56 56 0 0 1 0 84" fill="none" stroke="#5DCAA5" stroke-width="12" stroke-linecap="round" opacity="0.55"/>
-  <path d="M360 194 a92 92 0 0 1 0 124" fill="none" stroke="#5DCAA5" stroke-width="12" stroke-linecap="round" opacity="0.28"/>
+  <!-- Gerado por scripts/gerar_icone.py — a geometria é a de Ondas, medida. -->
+  <defs>
+    <linearGradient id="ceu" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="rgb(10, 132, 255)"/>
+      <stop offset="1" stop-color="rgb(0, 98, 200)"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="115" fill="url(#ceu)"/>
+  <g transform="translate(96.0 256.0)" fill="none" stroke="rgb(255, 255, 255)"
+     stroke-width="27.2" stroke-linecap="round">
+    <path d="M 55.6 -56.1 A 79.0 79.0 0 0 1 55.6 56.1"/>
+    <path d="M 109.4 -85.0 A 138.6 138.6 0 0 1 109.4 85.0"/>
+    <path d="M 165.4 -115.0 A 201.4 201.4 0 0 1 165.4 115.0"/>
+    <path d="M 220.9 -145.1 A 264.3 264.3 0 0 1 220.9 145.1"/>
+  </g>
 </svg>

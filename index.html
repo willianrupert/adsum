@@ -3,14 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0B0B0A" />
+    <!-- Duas: a barra do app instalado segue o tema do sistema, e uma cor fixa
+         escura sobre uma tela branca daria uma faixa que não é de lugar nenhum.
+         Os valores são os de `--fundo` em estilo.css. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
     <meta
       name="description"
       content="Adsum — registro de frequência em sala por leitura de crachá. Os dados ficam no seu aparelho."
     />
     <link rel="icon" type="image/svg+xml" href="./icone.svg" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
-    <title>Adsum · diagnóstico</title>
+    <title>Adsum</title>
   </head>
   <body>
     <div id="root"></div>

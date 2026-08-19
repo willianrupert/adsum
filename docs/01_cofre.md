@@ -150,3 +150,49 @@ professor clica de novo achando que falhou.
 
 **O saldo honesto:** o Safari fica **um clique atrás** do Chrome, por aula. Esse
 clique é decisão da Apple, não do projeto.
+
+## Trocar de navegador na mesma máquina
+
+Perguntado em 19/08/2026, e a expectativa do autor era a certa: **deve ser
+normal**. Não era — havia uma falha calada, e ela derrubava a promessa central
+do cofre.
+
+O `uid_hash` é `SHA-256(sal ‖ uid)`, e **cada navegador sorteia o sal dele ao
+abrir**. O `sincronizar` escrevia `config.json` na pasta, mas nem `restaurar`
+nem `restaurarDeArquivos` liam esse arquivo de volta — o `config.json` estava
+explicitamente na lista de pulados. Consequência: restaurar devolvia os nomes e
+**perdia as pessoas**. O mesmo crachá passava a dar outro hash, a turma inteira
+virava gente desconhecida, e o professor recadastraria os quarenta e nove por
+cima, criando vínculos em dois sais para as mesmas pessoas. Sem erro nenhum.
+
+Isso não era só sobre trocar de navegador. **"Limpar dados do site apaga o
+handle, não a pasta"** só é verdade se o sal voltar junto — e ele não voltava.
+Navegador de verdade apaga a config junto com o resto.
+
+Por que os testes não pegaram: eles usavam `esvaziarCache()`, que preserva a
+config **de propósito**, e portanto nunca exercitaram a perda do sal. O teste
+que faltava é o que usa **dois repositórios diferentes** — que é o que dois
+navegadores são.
+
+### O que ficou
+
+`adotarSal` roda antes de tudo nas duas restaurações, e:
+
+- **só o sal.** O `instalacaoId` prefixa o `evento_id` e tem de continuar
+  diferente em cada navegador: é ele que garante que duas instalações nunca
+  cunhem o mesmo id, e é o que deixa dois logs coexistirem na mesma pasta sem
+  que a idempotência engula registro de verdade;
+- **não troca por cima de vínculos locais.** Trocar o sal com base própria no
+  lugar torna irreconhecíveis os crachás daqui. A recusa é dita, e o caminho
+  humano já existe: "Passar os crachás a outro professor" pergunta antes.
+
+### O que continua sendo diferente entre navegadores, e é esperado
+
+- **Só o Chrome e o Edge escrevem na pasta.** Uma aula dada no Safari fica no
+  IndexedDB dele até ser exportada — a pasta não recebe sozinha.
+- **A sessão aberta é local.** Trocar de navegador no meio de uma aula não leva
+  a aula junto; a chamada se reconstrói do log, mas dentro do mesmo navegador.
+- **Chrome e Edge apontando para a mesma pasta ao mesmo tempo:** o log é append
+  com `evento_id` idempotente e junta sozinho, mas `sincronizar` reescreve
+  `vinculos.json`, `grade.json` e `turmas/` por inteiro — o último a gravar
+  ganha. Alternar tudo bem; usar os dois na mesma aula, não.

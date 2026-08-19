@@ -7,6 +7,7 @@
 
 import {
   NOMES,
+  deJsonConfig,
   deJsonGrade,
   deJsonTurma,
   deJsonVinculos,
@@ -16,6 +17,7 @@ import {
   paraJsonVinculos,
 } from '../nucleo/cofre.ts'
 import { cabecalhoCsv, deCsv, linhaCsv, nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'
+import { salValido } from '../nucleo/hash.ts'
 import type { Evento } from '../nucleo/tipos.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
 import { acrescentar, escrever, ler, listarArquivos } from './pasta.ts'
@@ -112,6 +114,59 @@ export async function sincronizar(
 }
 
 /**
+ * Adota o sal do cofre. **É o primeiro passo de qualquer restauração.**
+ *
+ * O sal é o que liga UID a `uid_hash`. Sem ele, restaurar devolve os nomes e
+ * perde as pessoas: cada navegador sorteia o seu ao abrir, e com sal diferente
+ * o mesmo crachá dá outro hash — a turma inteira vira gente desconhecida, sem
+ * uma linha de erro. O professor recadastraria todo mundo por cima, criando
+ * vínculos em dois sais para as mesmas pessoas.
+ *
+ * Era a promessa central do cofre falhando calada: "limpar dados do site apaga
+ * o handle, não a pasta" só é verdade se o sal voltar junto. Os testes usavam
+ * `esvaziarCache`, que preserva a config de propósito, e por isso nunca
+ * exercitaram esse caminho — navegador de verdade perde a config junto.
+ *
+ * **Só o sal, e não o resto da config.** O `instalacaoId` prefixa o `evento_id`
+ * e precisa continuar **diferente** em cada navegador: é ele que garante que
+ * duas instalações nunca cunhem o mesmo id, e é o que deixa dois logs serem
+ * concatenados na mesma pasta sem que a idempotência engula registro de
+ * verdade. Restaurar o `instalacaoId` junto seria trocar um bug silencioso por
+ * outro.
+ *
+ * **Não adota por cima de vínculos locais.** Trocar o sal com base própria no
+ * lugar torna irreconhecíveis os crachás daqui. Essa decisão é humana, e já tem
+ * caminho: "Passar os crachás a outro professor" pergunta antes de trocar.
+ */
+async function adotarSal(
+  repositorio: Repositorio,
+  texto: string,
+  problemas: string[],
+): Promise<void> {
+  const { conteudo, problemas: falhas } = deJsonConfig(texto)
+  if (!conteudo || !salValido(conteudo.salHex)) {
+    problemas.push(...falhas.map((f) => f.motivo))
+    if (conteudo && !salValido(conteudo.salHex)) {
+      problemas.push(`${NOMES.config}: o segredo do cofre não tem a forma esperada.`)
+    }
+    return
+  }
+
+  const local = await repositorio.lerConfig()
+  if (conteudo.salHex === local.salHex) return
+
+  if ((await repositorio.listarVinculos()).length > 0) {
+    problemas.push(
+      'Este cofre usa outro segredo, e já há crachás cadastrados aqui. ' +
+        'Nada foi trocado: use "Passar os crachás a outro professor" para decidir qual fica.',
+    )
+    return
+  }
+
+  await repositorio.definirSal(conteudo.salHex)
+}
+
+/**
  * Reconstrói o cache a partir de **arquivos soltos**, escolhidos à mão.
  *
  * Safari e Firefox não têm seletor de diretório, então lá a pasta do cofre não
@@ -129,6 +184,13 @@ export async function restaurarDeArquivos(
 
   const conteudo = new Map<string, string>()
   for (const arquivo of arquivos) conteudo.set(arquivo.name, await arquivo.text())
+
+  // O sal antes de tudo: ver `adotarSal`.
+  const configCru = conteudo.get(NOMES.config)
+  if (configCru) {
+    await adotarSal(repositorio, configCru, problemas)
+    lidos.push(NOMES.config)
+  }
 
   const vinculosCru = conteudo.get('vinculos.json')
   if (vinculosCru) {
@@ -179,6 +241,12 @@ export async function restaurar(
 ): Promise<Resumo> {
   const problemas: string[] = []
   const arquivos: string[] = []
+
+  const configCru = await ler(pasta, NOMES.config)
+  if (configCru) {
+    await adotarSal(repositorio, configCru, problemas)
+    arquivos.push(NOMES.config)
+  }
 
   const vinculosCru = await ler(pasta, NOMES.vinculos)
   if (vinculosCru) {

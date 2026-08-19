@@ -25,3 +25,8 @@ dist-ssr
 
 # saída do vite-plugin-pwa em desenvolvimento
 dev-dist
+
+# Ferramentas locais
+.venv-icone/
+__pycache__/
+prova-*.png

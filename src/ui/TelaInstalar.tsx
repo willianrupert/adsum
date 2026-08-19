@@ -41,12 +41,13 @@ export function TelaInstalar({
         armazenamento próprios, e essa contagem não corre mais.
       </p>
       <p className="pasta__nota">
-        Faça isso <strong>antes</strong> de cadastrar a turma: como o armazenamento é
-        separado, o app instalado começa em branco.
+        Ao adicionar, o Adsum abre sozinho numa janela própria — é lá que você trabalha, e
+        esta aba pode fechar. Faça isso <strong>antes</strong> de cadastrar a turma: o
+        armazenamento é separado, e o app instalado começa em branco.
       </p>
 
       <button className="repouso__link" onClick={aoDispensar}>
-        Continuar na aba
+        Continuar sem instalar
       </button>
     </section>
   )

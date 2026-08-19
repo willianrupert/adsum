@@ -113,13 +113,13 @@ describe('no Safari, instalar vem antes da turma', () => {
 
   // Instalar é gesto de menu, e o app não tem como saber se aconteceu. Ficar
   // preso aqui seria pior do que o prazo de sete dias.
-  it('"Continuar na aba" segue para a turma e não volta a perguntar', async () => {
+  it('"Continuar sem instalar" segue para a turma e não volta a perguntar', async () => {
     const usuario = userEvent.setup()
     fingirSer(SAFARI)
     const { unmount } = renderizarCom(bancada, <Fluxo />)
     await screen.findByText('Instale o Adsum')
 
-    await usuario.click(screen.getByRole('button', { name: 'Continuar na aba' }))
+    await usuario.click(screen.getByRole('button', { name: 'Continuar sem instalar' }))
     expect(await screen.findByText('Cole sua turma')).toBeInTheDocument()
 
     unmount()

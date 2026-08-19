@@ -1,7 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts'
 import { criarPastaFalsa } from '../testes/pastaFalsa.ts'
-import { acrescentarNoLog, repararLog, restaurar, sincronizar } from './sincronia.ts'
+import {
+  acrescentarNoLog,
+  repararLog,
+  restaurar,
+  restaurarDeArquivos,
+  sincronizar,
+} from './sincronia.ts'
+import { calcularUidHash } from '../nucleo/hash.ts'
+import { hexParaUid } from '../nucleo/uid.ts'
 
 let n = 0
 let repo: RepositorioDexie
@@ -117,6 +125,86 @@ describe('cofre em pasta', () => {
     expect(await repo.listarMatriculados('IF685 · T01')).toEqual([PESSOA])
     expect(await repo.listarAulas()).toHaveLength(1)
     expect(await repo.contarEventos()).toBe(1)
+  })
+
+  // O caso que estava faltando, e o mais comum de todos: **outro navegador na
+  // mesma máquina**. Os testes de restauração usavam `esvaziarCache`, que
+  // preserva a config de propósito — e por isso nunca exercitaram a perda do
+  // sal. Um navegador novo sorteia o dele ao abrir; se a restauração não
+  // adotar o do cofre, cada crachá passa a dar outro `uid_hash` e a turma
+  // inteira vira gente desconhecida, sem uma linha de erro.
+  it('outro navegador adota o sal do cofre ao restaurar', async () => {
+    const { handle } = criarPastaFalsa()
+    await repo.gravarVinculo(VINCULO)
+    await sincronizar(repo, handle)
+    const doCofre = (await repo.lerConfig()).salHex
+
+    const outroNavegador = new RepositorioDexie(`adsum-cofre-${n++}`)
+    await outroNavegador.abrir()
+    expect((await outroNavegador.lerConfig()).salHex).not.toBe(doCofre)
+
+    await restaurar(outroNavegador, handle)
+    expect((await outroNavegador.lerConfig()).salHex).toBe(doCofre)
+  })
+
+  // O que o sal significa na prática, e é isto que o professor sente: o mesmo
+  // crachá, na mesma máquina, em outro navegador. Sem adotar o sal do cofre a
+  // conta abaixo dá outro hash e a pessoa some da base sem erro nenhum.
+  it('o mesmo crachá é reconhecido depois de trocar de navegador', async () => {
+    const { handle } = criarPastaFalsa()
+    const CRACHA = hexParaUid('04a23b91')
+
+    const meuHash = await calcularUidHash((await repo.lerConfig()).salHex, CRACHA)
+    await repo.gravarVinculo({ ...VINCULO, uidHash: meuHash })
+    await sincronizar(repo, handle)
+
+    const outroNavegador = new RepositorioDexie(`adsum-cofre-${n++}`)
+    await outroNavegador.abrir()
+    await restaurar(outroNavegador, handle)
+
+    const hashLa = await calcularUidHash((await outroNavegador.lerConfig()).salHex, CRACHA)
+    expect(await outroNavegador.vinculoPorHash(hashLa)).toMatchObject({ nome: 'Willian Neves' })
+  })
+
+  // O Safari não tem seletor de diretório: lá a volta é por arquivos soltos, e
+  // o sal precisa vir por esse caminho também — senão trocar Chrome por Safari
+  // na mesma máquina quebra do mesmo jeito.
+  it('o sal também volta pelo caminho dos arquivos soltos', async () => {
+    const { handle, raiz } = criarPastaFalsa()
+    await repo.gravarVinculo(VINCULO)
+    await sincronizar(repo, handle)
+    const doCofre = (await repo.lerConfig()).salHex
+
+    const soltos = [...raiz.arquivos].map(
+      ([nome, texto]) => ({ name: nome, text: async () => texto }) as File,
+    )
+
+    const safari = new RepositorioDexie(`adsum-cofre-${n++}`)
+    await safari.abrir()
+    const { arquivos, problemas } = await restaurarDeArquivos(safari, soltos)
+
+    expect(problemas).toEqual([])
+    expect(arquivos).toContain('config.json')
+    expect((await safari.lerConfig()).salHex).toBe(doCofre)
+  })
+
+  // Trocar o sal com base própria no lugar torna irreconhecíveis os crachás
+  // daqui. Recusar e dizer por quê é o único desfecho aceitável: adotar em
+  // silêncio apagaria a turma de quem está usando.
+  it('não troca o sal por cima de crachás já cadastrados', async () => {
+    const { handle } = criarPastaFalsa()
+    await repo.gravarVinculo(VINCULO)
+    await sincronizar(repo, handle)
+
+    const ocupado = new RepositorioDexie(`adsum-cofre-${n++}`)
+    await ocupado.abrir()
+    const salDele = (await ocupado.lerConfig()).salHex
+    await ocupado.gravarVinculo({ ...VINCULO, uidHash: 'ffffffffffffffff' })
+
+    const { problemas } = await restaurar(ocupado, handle)
+
+    expect((await ocupado.lerConfig()).salHex).toBe(salDele)
+    expect(problemas.join(' ')).toMatch(/outro segredo/)
   })
 
   it('restaurar duas vezes não duplica evento', async () => {

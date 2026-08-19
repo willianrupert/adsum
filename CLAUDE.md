@@ -361,6 +361,15 @@ reconstrói a base inteira lendo a pasta, e há teste que apaga o cache e prova
 isso — é o que separa "cofre" de "mais um backup". O handle fica guardado, e
 limpar dados do site apaga o handle, **não** a pasta.
 
+**Sal do cofre, corrigido em 19/08/2026:** `restaurar` e `restaurarDeArquivos`
+não liam `config.json`, e o sal não voltava. Como cada navegador sorteia o dele
+ao abrir, restaurar devolvia os nomes e **perdia as pessoas** — mesmo crachá,
+outro hash, turma inteira desconhecida, sem erro. Derrubava a promessa de que
+limpar dados do site não perde nada. `adotarSal` roda antes de tudo nas duas
+restaurações e adota **só o sal**: o `instalacaoId` tem de continuar diferente
+por navegador, senão duas instalações cunham o mesmo `evento_id`. Não troca por
+cima de vínculos locais — aí a decisão é humana. Ver `docs/01_cofre.md`.
+
 **Safari feito:** `ambiente/instalacao.ts` separa quem tem prazo (WebKit) de
 quem só não tem pasta (Firefox), `ui/TelaInstalar.tsx` ensina o caminho do menu
 — não há botão, `beforeinstallprompt` é do Chromium — e `TelaResumo` inverte a
