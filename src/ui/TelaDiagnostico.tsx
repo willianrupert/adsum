@@ -319,7 +319,6 @@ export function TelaDiagnostico() {
         {ehSimulavel(leitor) && (
           <div className="ferramentas">
             <button
-              className="botao--acento"
               onClick={tentar('Encostar crachá', () => {
                 leitor.encostarProximo()
               })}
@@ -397,7 +396,7 @@ export function TelaDiagnostico() {
         legenda="Tudo em IndexedDB, neste navegador. Nada sai daqui."
         acoes={
           <>
-            <button className="botao--acento" onClick={semear}>
+            <button onClick={semear}>
               Semear
             </button>
             {podeApagar(repositorio) && (

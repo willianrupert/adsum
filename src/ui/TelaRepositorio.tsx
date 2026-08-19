@@ -369,7 +369,6 @@ export function TelaRepositorio() {
             aria-label="turma"
           />
           <button
-            className="botao--acento"
             onClick={tentar('Acrescentar aula', async () => {
               if (!nova.uidHashProfessor) throw new Error('escolha o professor — a grade é indexada por ele')
               if (!horaValida(nova.inicio) || !horaValida(nova.fim)) {
@@ -436,41 +435,53 @@ export function TelaRepositorio() {
 
       </Painel>
 
-      <Painel
-        titulo="Sal"
-        legenda="O segredo que protege os crachás."
-      >
-        <div className="ferramentas ferramentas--topo">
-          <input
-            value={sal}
-            onChange={(e) => setSal(e.target.value)}
-            spellCheck={false}
-            aria-label="sal em hexadecimal"
-            className="entrada--larga"
-          />
-          <button onClick={() => setSal(sortearSal())}>Sortear</button>
-          <button
-            onClick={tentar('Gravar sal', async () => {
-              if (!salValido(sal)) throw new Error('precisa de 32 dígitos hexadecimais')
-              if (
-                vinculos.length > 0 &&
-                !confirm(
-                  `Trocar o sal invalida os ${vinculos.length} vínculos e a grade — os hashes deixam de bater com os crachás. Continuar?`,
-                )
-              ) {
-                throw new Error('cancelado')
-              }
-              await repositorio.definirSal(sal)
-              await recarregarConfig()
-            })}
-          >
-            Gravar
-          </button>
+      {/* O sal fica atrás de um clique a mais de propósito.
+          Gravar um sal novo transforma todos os crachás em desconhecidos — é a
+          ação mais destrutiva do app, e estava exposta ao lado de "Exportar".
+          Ninguém precisa dela no uso normal; quem precisa sabe procurar. */}
+      <details className="avancado">
+        <summary>Avançado</summary>
+
+        <div className="avancado__corpo">
+          <p className="avancado__titulo">Sal</p>
+          <p className="avancado__nota">
+            É o segredo que impede o identificador do crachá de ser reconstruído. Trocá-lo
+            transforma todos os crachás em desconhecidos de uma vez, e não há como voltar
+            atrás.
+          </p>
+
+          <div className="ferramentas">
+            <input
+              value={sal}
+              onChange={(e) => setSal(e.target.value)}
+              spellCheck={false}
+              aria-label="Sal em hexadecimal"
+              className="entrada--larga"
+            />
+            <button onClick={() => setSal(sortearSal())}>Sortear</button>
+            <button
+              className="botao--grave"
+              onClick={tentar('Gravar sal', async () => {
+                if (!salValido(sal)) throw new Error('precisa de 32 dígitos hexadecimais')
+                const quantos = vinculos.length
+                if (
+                  !confirm(
+                    quantos > 0
+                      ? `Trocar o sal desfaz os ${quantos} crachás já vinculados. Eles terão de ser cadastrados de novo. Continuar?`
+                      : 'Trocar o sal? Só faz sentido antes de vincular alguém.',
+                  )
+                ) {
+                  throw new Error('cancelado')
+                }
+                await repositorio.definirSal(sal)
+                await recarregarConfig()
+              })}
+            >
+              Trocar o sal
+            </button>
+          </div>
         </div>
-        <p className="ferramentas__nota">
-          Trocar o sal transforma todos os crachás em desconhecidos de uma vez.
-        </p>
-      </Painel>
+      </details>
     </div>
   )
 }

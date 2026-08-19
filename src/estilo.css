@@ -1213,3 +1213,68 @@ button:focus-visible {
   align-self: center;
   margin-top: 12px;
 }
+
+/* Engrenagem — a porta única para diagnóstico e base.
+   Discreta porque não é ferramenta de dar aula: quem precisa dela está
+   consertando alguma coisa. */
+
+.engrenagem {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--tinta-tenue);
+}
+
+.engrenagem:hover {
+  background: var(--fundo-alt);
+  color: var(--tinta-fraca);
+  opacity: 1;
+}
+
+/* Bloco avançado: um clique a mais antes do que não tem volta. */
+
+.avancado {
+  border-radius: var(--raio);
+  background: var(--fundo-alt);
+  padding: 18px 22px;
+}
+
+.avancado summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--t-menor);
+  color: var(--tinta-fraca);
+}
+
+.avancado summary::-webkit-details-marker {
+  display: none;
+}
+
+.avancado summary::after {
+  content: ' ›';
+}
+
+.avancado[open] summary::after {
+  content: ' ⌄';
+}
+
+.avancado__corpo {
+  padding-top: 18px;
+}
+
+.avancado__titulo {
+  margin: 0;
+  font-size: var(--t-titulo);
+  font-weight: 600;
+  letter-spacing: -0.019em;
+}
+
+.avancado__nota {
+  margin: 4px 0 0;
+  font-size: var(--t-menor);
+  color: var(--tinta-fraca);
+  max-width: 66ch;
+}

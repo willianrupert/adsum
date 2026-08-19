@@ -68,6 +68,18 @@ Três regras que vêm junto e mudam mais que a paleta:
 3. **Campo de texto não usa monoespaçada.** Só hash e caminho de arquivo, onde o
    alinhamento por caractere é a razão de ela existir.
 
+**Um botão preenchido por tela, e é a ação pela qual a tela existe.** Todo o
+resto é botão de texto azul; destrutivo é texto vermelho. Dois preenchidos na
+mesma tela competem, e a resposta para "qual eu clico?" deixa de ser óbvia. Em
+folha de ajustes não há nenhum: ajuste não é tarefa.
+
+**Diagnóstico e base ficam atrás de uma engrenagem.** São ferramentas de quem
+conserta, não de quem dá aula — e uma delas troca o sal, que desfaz todos os
+vínculos. O que fica visível no rodapé é um aviso, e só quando há o que avisar.
+
+**O que não tem volta pede um clique a mais.** O sal mora atrás de "Avançado", e
+o botão diz quantos crachás serão desfeitos antes de perguntar.
+
 E duas de forma: **rótulo de interface começa com maiúscula** ("Encostar próximo
 crachá", não "encostar"), e **poucas opções exclusivas viram controle
 segmentado**, não uma lista de botões.
