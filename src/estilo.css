@@ -1320,17 +1320,21 @@ button:focus-visible {
   margin-bottom: 22px;
 }
 
+.ondas path {
+  opacity: 0.85;
+}
+
 .ondas--animadas path {
-  animation: pulsar 2.6s var(--curva) infinite;
+  animation: pulsar 2.8s var(--curva) infinite;
 }
 
 @keyframes pulsar {
   0%,
-  55%,
+  60%,
   100% {
-    opacity: inherit;
+    opacity: 0.55;
   }
-  25% {
+  22% {
     opacity: 1;
   }
 }

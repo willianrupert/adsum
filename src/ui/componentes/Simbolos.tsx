@@ -53,20 +53,17 @@ export function Cadeado({ tamanho = 12 }: { tamanho?: number }) {
 /**
  * Ondas de aproximação — o sinal de "encoste aqui".
  *
- * São só os arcos, de propósito. O símbolo com a mão e a elipse é o Contactless
- * Indicator da EMVCo, marca licenciada que não se redesenha por conta; os arcos
- * sozinhos são o sinal universal, e é o que a Apple usa nas telas de pagamento.
+ * São só os arcos, de propósito: o símbolo com a mão e a elipse é o Contactless
+ * Indicator da EMVCo, marca licenciada. Os arcos sozinhos são o sinal universal.
  *
- * Quatro arcos com raios em progressão e opacidade decrescente: o mais próximo
- * é o mais forte, como onda que se afasta.
+ * O que separa isto de um ícone de AirDrop ou de wi-fi é **a abertura**: meia
+ * circunferência lê como sinal irradiando; arco curto de ~110°, todos do mesmo
+ * tom e com a mesma espessura, lê como onda de aproximação. A primeira versão
+ * errou nos dois pontos.
  */
 export function Ondas({ tamanho = 64, animado = false }: { tamanho?: number; animado?: boolean }) {
-  const arcos = [
-    { r: 7, opacidade: 1 },
-    { r: 14, opacidade: 0.72 },
-    { r: 21, opacidade: 0.46 },
-    { r: 28, opacidade: 0.24 },
-  ]
+  const abertura = (55 * Math.PI) / 180
+  const arcos = [9, 16.5, 24, 31.5]
   return (
     <svg
       viewBox="0 0 64 64"
@@ -78,18 +75,21 @@ export function Ondas({ tamanho = 64, animado = false }: { tamanho?: number; ani
       <g
         fill="none"
         stroke="currentColor"
-        strokeWidth="4.2"
+        strokeWidth="5"
         strokeLinecap="round"
-        transform="translate(14 32)"
+        transform="translate(16 32)"
       >
-        {arcos.map(({ r, opacidade }, i) => (
-          <path
-            key={r}
-            d={`M 0 ${-r} A ${r} ${r} 0 0 1 0 ${r}`}
-            opacity={opacidade}
-            style={{ animationDelay: `${i * 0.18}s` }}
-          />
-        ))}
+        {arcos.map((r, i) => {
+          const x = (r * Math.cos(abertura)).toFixed(2)
+          const y = (r * Math.sin(abertura)).toFixed(2)
+          return (
+            <path
+              key={r}
+              d={`M ${x} -${y} A ${r} ${r} 0 0 1 ${x} ${y}`}
+              style={{ animationDelay: `${i * 0.16}s` }}
+            />
+          )
+        })}
       </g>
     </svg>
   )
