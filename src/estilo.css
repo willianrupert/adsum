@@ -1278,7 +1278,8 @@ button:focus-visible {
   color: var(--tinta);
 }
 
-.busca__item:hover {
+.busca__item:hover,
+.busca__item--destacado {
   background: var(--fundo-alt);
   opacity: 1;
 }
@@ -1303,6 +1304,20 @@ button:focus-visible {
 .busca__desistir {
   align-self: center;
   margin-top: 12px;
+}
+
+.busca__atalhos {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: var(--t-nota);
+  color: var(--tinta-tenue);
+}
+
+.busca__atalhos kbd {
+  font-family: var(--fonte);
+  background: color-mix(in srgb, var(--tinta) 8%, transparent);
+  border-radius: 5px;
+  padding: 1px 6px;
 }
 
 /* Engrenagem — a porta única para diagnóstico e base.

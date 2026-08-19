@@ -13,6 +13,10 @@ afterEach(cleanup)
 // toda tela de teste cairia no aviso de ambiente quebrado.
 Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true })
 
+// O jsdom não implementa rolagem — não há viewport para rolar. Sem isto,
+// qualquer `scrollIntoView` derruba o teste por um motivo que não é do app.
+Element.prototype.scrollIntoView = () => {}
+
 // Web Audio não existe no jsdom, e o som nunca deve derrubar uma leitura.
 class ContextoDeAudioFalso {
   state = 'running'
