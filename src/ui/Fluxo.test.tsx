@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { cleanup, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, cleanup, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { Fluxo } from './Fluxo.tsx'
@@ -170,6 +170,37 @@ describe('a grade abre a aula sozinha', () => {
     // Com grade, o repouso não pede clique nenhum: diz qual aula vem.
     expect(await screen.findByText('Sua próxima aula')).toBeInTheDocument()
     expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
+  })
+
+  // O caso que faltava provar. Abrir na montagem é o professor que chega e abre
+  // o app; este é o app **já aberto na mesa** quando a aula começa — e é o que
+  // dá sentido à frase "abre sozinha". Sem o relógio, ele esperaria para sempre.
+  it('o relógio abre a aula que começa com o app já na tela', async () => {
+    // Só o intervalo é falso. Fingir o relógio inteiro derruba o Dexie —
+    // "Transaction committed too early" —, porque o IndexedDB depende de timers
+    // de verdade para fechar transação.
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    try {
+      await turmaInteiraComCracha()
+      renderizarCom(bancada, <Fluxo />)
+      await screen.findByText('Começar a chamada')
+
+      // A aula entra na grade **depois** de a tela já estar montada.
+      await aulaAgora()
+      expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(31_000)
+      })
+
+      await waitFor(async () =>
+        expect(await bancada.repositorio.sessaoAberta()).toMatchObject({
+          turma: 'IF685 · T01',
+        }),
+      )
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   // Sem grade, "só existe uma turma, abre essa" valeria no domingo à noite.
