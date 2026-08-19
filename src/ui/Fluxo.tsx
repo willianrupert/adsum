@@ -679,7 +679,7 @@ export function Repouso({
       {/* Com grade, o botão é a exceção — aula fora do horário, reposição — e
           por isso perde o acento. Sem grade, é a única ação da tela. */}
       <button
-        className={proxima ? 'repouso__link' : 'botao--acento pasta__botao'}
+        className={proxima ? 'repouso__link botao--quieto' : 'botao--acento pasta__botao'}
         onClick={aoIniciar}
       >
         {proxima ? 'Começar agora, fora do horário' : 'Iniciar a aula'}
@@ -689,7 +689,10 @@ export function Repouso({
           "ou encoste o crachá" para para escolher, e escolher é o custo. Quem
           precisa do atalho descobre encostando. */}
 
-      <button className="repouso__link" onClick={aoAbrirCerimonia}>
+      {/* Terciário, e por isso quieto. A regra do repouso: o único acento é
+          "Iniciar a aula", e só quando não há grade. Com grade a tela é espera —
+          e tela de espera com dois azuis embaixo pede para ser clicada. */}
+      <button className="repouso__link botao--quieto" onClick={aoAbrirCerimonia}>
         Cadastrar mais um crachá
       </button>
     </section>

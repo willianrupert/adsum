@@ -92,7 +92,13 @@ export function TelaResumo({
             <button className="botao--acento pasta__botao" onClick={guardar}>
               Salvar o arquivo
             </button>
-            <button onClick={aoConcluir}>Concluir sem salvar</button>
+            {/* Quieto: é a saída da única coisa que preserva a chamada. Azul
+                aqui era o acento convidando a sair sem salvar, ao lado do
+                acento que manda salvar — dois azuis, um deles apontando para a
+                perda. */}
+            <button className="botao--quieto" onClick={aoConcluir}>
+              Concluir sem salvar
+            </button>
           </>
         )}
       </div>
