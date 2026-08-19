@@ -49,3 +49,33 @@ class ContextoDeAudioFalso {
   resume() {}
 }
 Object.defineProperty(globalThis, 'AudioContext', { value: ContextoDeAudioFalso, writable: true })
+
+// O `localStorage` do vitest não é o do jsdom: o Node traz um próprio, e ele
+// ganha do global — sem `setItem`, e avisando por conta de `--localstorage-file`
+// sem caminho. Nada disso é do app. Um armazenamento de mentira, em memória,
+// devolve o comportamento que qualquer navegador tem.
+class ArmazenamentoEmMemoria {
+  private itens = new Map<string, string>()
+  get length() {
+    return this.itens.size
+  }
+  getItem(chave: string) {
+    return this.itens.get(chave) ?? null
+  }
+  setItem(chave: string, valor: string) {
+    this.itens.set(chave, String(valor))
+  }
+  removeItem(chave: string) {
+    this.itens.delete(chave)
+  }
+  clear() {
+    this.itens.clear()
+  }
+  key(i: number) {
+    return [...this.itens.keys()][i] ?? null
+  }
+}
+Object.defineProperty(window, 'localStorage', {
+  value: new ArmazenamentoEmMemoria(),
+  configurable: true,
+})

@@ -16,6 +16,12 @@ import type { Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
 import {
+  comoInstalar,
+  convidarAInstalar,
+  dispensarInstalacao,
+  riscoDeApagar,
+} from '../ambiente/instalacao.ts'
+import {
   acrescentarNoLog,
   caminhoDosRegistros,
   repararLog,
@@ -27,6 +33,7 @@ import { salvarTexto } from '../ambiente/arquivos.ts'
 import type { EstadoDaPasta } from '../nucleo/rota.ts'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
+import { TelaInstalar } from './TelaInstalar.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
 import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { Cadeado, Engrenagem, Ondas } from './componentes/Simbolos.tsx'
@@ -53,6 +60,12 @@ export function Fluxo() {
   const [pasta, setPasta] = useState<FileSystemDirectoryHandle>()
   const [estadoDaPasta, setEstadoDaPasta] = useState<EstadoDaPasta>(
     pastaDisponivel() ? 'sem_pasta' : 'indisponivel',
+  )
+  // O convite de instalar é decidido uma vez: reavaliar a cada render faria a
+  // tela sumir no meio de um clique. Dispensar troca o estado, não a leitura —
+  // e guardar o caminho do menu junto evita a tela existir sem ter o que dizer.
+  const [convite, setConvite] = useState(() =>
+    convidarAInstalar() ? comoInstalar() : undefined,
   )
   const [falhaNaPasta, setFalhaNaPasta] = useState<string>()
   const [folha, setFolha] = useState<Folha>()
@@ -159,11 +172,14 @@ export function Fluxo() {
   )
 
   /** Uma cópia do log da turma, para onde o professor quiser. */
+  // Devolve como salvou porque a tela do fim precisa disso: o download do
+  // Safari acontece sem diálogo nenhum, e sem uma linha na tela o clique não
+  // produz sinal algum.
   const salvarCopia = useCallback(
     async (turma: string) => {
       const eventos = await repositorio.listarEventos()
       const daTurma = porTurma([...eventos].reverse()).get(turma) ?? []
-      await salvarTexto(nomeDoArquivo(turma), paraCsv(daTurma))
+      return await salvarTexto(nomeDoArquivo(turma), paraCsv(daTurma))
     },
     [repositorio],
   )
@@ -305,6 +321,7 @@ export function Fluxo() {
     pendentes,
     aulaAberta: !!sessao,
     professorSemCracha,
+    convidarAInstalar: !!convite,
   })
 
   const ligarPasta = async (escolhendo: boolean) => {
@@ -324,6 +341,15 @@ export function Fluxo() {
           precisaDePermissao={estadoDaPasta === 'sem_permissao'}
           aoEscolher={() => void ligarPasta(true)}
           aoLiberar={() => void ligarPasta(false)}
+        />
+      )}
+      {rota === 'instalar' && convite && (
+        <TelaInstalar
+          como={convite}
+          aoDispensar={() => {
+            dispensarInstalacao()
+            setConvite(undefined)
+          }}
         />
       )}
       {rota === 'turma' && <TelaVinculo aoMudarBase={mudou} />}
@@ -358,7 +384,7 @@ export function Fluxo() {
           sessao={resumo.sessao}
           presentes={resumo.presentes}
           arquivo={pasta ? `${pasta.name} ▸ ${caminhoDosRegistros(resumo.sessao.turma)}` : undefined}
-          aoSalvarCopia={() => void salvarCopia(resumo.sessao.turma)}
+          aoSalvarCopia={() => salvarCopia(resumo.sessao.turma)}
           aoConcluir={() => setResumo(undefined)}
         />
       )}
@@ -406,7 +432,9 @@ export function Fluxo() {
               : !lendo
                 ? 'Nenhum leitor ativo'
                 : estadoDaPasta === 'indisponivel'
-                  ? 'Sem pasta neste navegador — exporte uma cópia'
+                  ? riscoDeApagar()
+                    ? 'Sem pasta — este navegador apaga a base em 7 dias'
+                    : 'Sem pasta neste navegador — exporte uma cópia'
                   : 'Os dados só existem neste navegador'}
           </span>
         )}

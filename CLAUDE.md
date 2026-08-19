@@ -88,6 +88,17 @@ Caminhos, do mais barato ao mais caro, para decidir com o professor:
    navegador, não aparece no Finder e **some ao limpar dados do site** — é o
    problema de novo, com outro nome. Nesses navegadores sobra exportar e
    importar arquivo à mão.
+
+   **No Safari é pior, e foi medido em 19/08/2026:** o ITP apaga IndexedDB,
+   localStorage e o registro do service worker depois de **sete dias de uso do
+   Safari sem visitar o site**. Não é despejo sob pressão de espaço — é rotina.
+   A saída é do próprio WebKit: app adicionado ao Dock (macOS) ou à tela de
+   início (iOS) sai do Safari, ganha container próprio e é **pulado** no
+   algoritmo de remoção. Como o armazenamento é separado, **instalar tem de vir
+   antes de cadastrar a turma** — daí a rota `'instalar'`, no mesmo lugar em que
+   o Chrome pede a pasta. O Firefox não tem pasta mas **não apaga**: os dois
+   casos têm textos diferentes, senão o aviso mente para metade dos
+   navegadores. Ver `docs/01_cofre.md`.
 3. **Conta de verdade**, com backend — contradiz o desenho, exige manutenção
    perpétua, e é o que foi recusado desde o começo.
 
@@ -349,6 +360,13 @@ chamada.
 reconstrói a base inteira lendo a pasta, e há teste que apaga o cache e prova
 isso — é o que separa "cofre" de "mais um backup". O handle fica guardado, e
 limpar dados do site apaga o handle, **não** a pasta.
+
+**Safari feito:** `ambiente/instalacao.ts` separa quem tem prazo (WebKit) de
+quem só não tem pasta (Firefox), `ui/TelaInstalar.tsx` ensina o caminho do menu
+— não há botão, `beforeinstallprompt` é do Chromium — e `TelaResumo` inverte a
+hierarquia sem pasta: salvar é a ação de acento, concluir vira "concluir sem
+salvar". Ler a pasta já era um clique no Safari via `webkitdirectory`; o que
+falta lá é só escrever de volta sozinho.
 
 **Ainda a fazer:** a passada visual (tipografia, espaço, claro/escuro,
 Mushroom cards) e o corte de texto das telas de vínculo e base.

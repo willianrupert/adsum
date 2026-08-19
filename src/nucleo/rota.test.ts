@@ -9,6 +9,7 @@ const BASE: EstadoDoApp = {
   pendentes: 0,
   aulaAberta: false,
   professorSemCracha: false,
+  convidarAInstalar: false,
 }
 
 describe('a rota decorre do estado', () => {
@@ -34,6 +35,18 @@ describe('a rota decorre do estado', () => {
   // Tela bonita sobre leitor desligado é mentira: nenhum crachá vai chegar.
   it('sem leitor lendo, a tela é o problema', () => {
     expect(decidirRota({ ...BASE, lendo: false })).toBe('problema')
+  })
+
+  // Instalar vem antes de cadastrar porque o app instalado tem armazenamento
+  // próprio: quem colar a turma na aba e instalar depois recomeça do zero.
+  it('o convite de instalar vem antes da turma', () => {
+    expect(decidirRota({ ...BASE, convidarAInstalar: true, turmas: 0 })).toBe('instalar')
+  })
+
+  it('mas não passa na frente de ambiente quebrado', () => {
+    expect(decidirRota({ ...BASE, convidarAInstalar: true, ambienteQuebrado: true })).toBe(
+      'problema',
+    )
   })
 
   it('ambiente quebrado vence tudo, inclusive não ter turma', () => {

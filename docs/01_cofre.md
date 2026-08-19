@@ -98,3 +98,55 @@ dentro do armazenamento do navegador, não aparece no Finder e some ao limpar
 dados do site — é o problema original com outro nome. Em Safari e Firefox,
 degrada para exportar e importar arquivo à mão, e o app deve dizer isso em vez
 de fingir que está guardado.
+
+## O Safari tem prazo, e isso muda o desenho
+
+Medido em 19/08/2026, ao rever o texto que dizia só "os dados ficam no
+navegador". Está errado por omissão: no WebKit **não é inconveniência, é
+prazo**. O ITP apaga toda a escrita de script — IndexedDB, localStorage e até o
+registro do service worker — depois de **sete dias de uso do Safari sem visitar
+o site**. Não é despejo sob pressão de espaço, que é raro e imprevisível: é
+rotina. Um recesso e o cadastro da turma some sem uma palavra.
+
+O Firefox também não tem seletor de pasta, mas **não apaga nada sozinho**. São
+dois casos diferentes e o aviso tem de distinguir — senão mente para metade dos
+navegadores. É o que `ambiente/instalacao.ts` separa: `ehWebKit()` marca quem
+tem prazo, e o Firefox fica de fora de propósito.
+
+### A saída é do próprio WebKit
+
+App adicionado ao Dock (macOS) ou à tela de início (iOS) **sai do Safari**:
+ganha container de armazenamento próprio, e o ITP pula esse domínio no
+algoritmo de remoção. O contador passa a ser de uso do app.
+
+Duas consequências que mudaram o desenho, e não são detalhe de texto:
+
+1. **O convite vem antes de cadastrar a turma.** Armazenamento próprio quer
+   dizer separado: o app instalado **não enxerga** o que ficou na aba. Instalar
+   depois faria o professor recomeçar. Por isso `rota.ts` ganhou `'instalar'`,
+   no mesmo lugar onde o Chrome pede a pasta — nos dois a primeira pergunta é
+   "onde isto vai viver", e só muda a resposta que cada navegador sabe dar.
+2. **Não há botão.** `beforeinstallprompt` é do Chromium; o Safari não expõe
+   nada para clicar. A tela só pode ensinar o caminho do menu, e o peso vem do
+   tamanho e do espaço em vez de uma pílula azul que convidaria ao clique
+   inútil.
+
+### O que já era seamless, e ninguém tinha dito
+
+**Ler já é um clique.** `abrirVarios()` usa `webkitdirectory`, e com ele o
+Safari oferece a **pasta inteira** — restaurar o cofre lá é tão bom quanto no
+Chrome. O que falta é só escrever de volta sozinho.
+
+**Escrever é um clique também, só que manual.** O Safari baixa **sem diálogo**,
+na pasta configurada nas preferências. Se o professor apontar os downloads para
+uma pasta no iCloud Drive, cada exportação cai fora da máquina sozinha. O que
+não dá é *append*: cada gravação é arquivo novo, e os nomes acumulam.
+
+Daí a inversão em `TelaResumo`: sem pasta, **salvar é a ação de acento** e
+concluir vira "concluir sem salvar". Botão secundário para a única coisa que
+preserva a aula é mentira de desenho. E como o download não abre diálogo, a
+tela precisa dizer que baixou — sem isso o clique não produz sinal nenhum e o
+professor clica de novo achando que falhou.
+
+**O saldo honesto:** o Safari fica **um clique atrás** do Chrome, por aula. Esse
+clique é decisão da Apple, não do projeto.

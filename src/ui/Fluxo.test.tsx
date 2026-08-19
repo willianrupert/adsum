@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
@@ -80,5 +80,75 @@ describe('a rota decide a tela', () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
     expect(await screen.findByText(/Sem pasta neste navegador/)).toBeInTheDocument()
+  })
+})
+
+// O jsdom se apresenta como um navegador que não é nenhum: para exercitar a
+// regra do WebKit é preciso dizer qual navegador é. Trocar o `userAgent` é o
+// único jeito, e por isso `ehWebKit` aceita a string por parâmetro — o teste
+// mexe no ambiente uma vez, e a lógica em si é testada pura em
+// `ambiente/instalacao.test.ts`.
+describe('no Safari, instalar vem antes da turma', () => {
+  const original = navigator.userAgent
+
+  const fingirSer = (ua: string) =>
+    Object.defineProperty(navigator, 'userAgent', { value: ua, configurable: true })
+
+  afterEach(() => {
+    fingirSer(original)
+    window.localStorage.clear()
+  })
+
+  const SAFARI =
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15'
+
+  it('ensina o caminho do menu em vez de pedir a turma', async () => {
+    fingirSer(SAFARI)
+    renderizarCom(bancada, <Fluxo />)
+
+    expect(await screen.findByText('Instale o Adsum')).toBeInTheDocument()
+    expect(screen.getByText('Adicionar ao Dock')).toBeInTheDocument()
+    expect(screen.queryByText('Cole sua turma')).not.toBeInTheDocument()
+  })
+
+  // Instalar é gesto de menu, e o app não tem como saber se aconteceu. Ficar
+  // preso aqui seria pior do que o prazo de sete dias.
+  it('"Continuar na aba" segue para a turma e não volta a perguntar', async () => {
+    const usuario = userEvent.setup()
+    fingirSer(SAFARI)
+    const { unmount } = renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Instale o Adsum')
+
+    await usuario.click(screen.getByRole('button', { name: 'Continuar na aba' }))
+    expect(await screen.findByText('Cole sua turma')).toBeInTheDocument()
+
+    unmount()
+    renderizarCom(bancada, <Fluxo />)
+    expect(await screen.findByText('Cole sua turma')).toBeInTheDocument()
+  })
+
+  it('o aviso do canto passa a falar do prazo, não só da falta de pasta', async () => {
+    fingirSer(SAFARI)
+    window.localStorage.setItem('adsum.instalacao.dispensada', 'sim')
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+
+    expect(await screen.findByText(/apaga a base em 7 dias/)).toBeInTheDocument()
+  })
+
+  // A tela da base dizia só "os dados ficam no navegador", como se fosse
+  // inconveniência. Tranquilizar onde se deveria avisar é o pior defeito que
+  // uma tela dessas pode ter.
+  it('os ajustes explicam o prazo e o caminho do menu', async () => {
+    const usuario = userEvent.setup()
+    fingirSer(SAFARI)
+    window.localStorage.setItem('adsum.instalacao.dispensada', 'sim')
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Encoste o seu crachá')
+
+    await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
+    expect(await screen.findByText(/sete dias/)).toBeInTheDocument()
+    expect(screen.getByText(/Arquivo › Adicionar ao Dock/)).toBeInTheDocument()
   })
 })

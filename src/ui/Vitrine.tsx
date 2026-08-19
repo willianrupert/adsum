@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
+import { TelaInstalar } from './TelaInstalar.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
 import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { TelaVinculo } from './TelaVinculo.tsx'
@@ -82,6 +83,13 @@ export function Vitrine() {
         <TelaPasta precisaDePermissao aoEscolher={() => {}} aoLiberar={() => {}} />
       </Cena>
 
+      <Cena titulo="Instale o Adsum" quando="Safari: a base tem sete dias na aba">
+        <TelaInstalar
+          como={{ onde: 'no Safari', passos: ['Arquivo', 'Adicionar ao Dock'] }}
+          aoDispensar={() => {}}
+        />
+      </Cena>
+
       <Cena titulo="A turma" quando="nenhuma turma cadastrada">
         <TelaVinculo />
       </Cena>
@@ -113,7 +121,16 @@ export function Vitrine() {
           sessao={{ turma: TURMA, abertaEm: new Date(Date.now() - 47 * 60000).toISOString(), uidHashProfessor: 'x' }}
           presentes={41}
           arquivo="Adsum ▸ registros/IF685-T01.csv"
-          aoSalvarCopia={() => {}}
+          aoSalvarCopia={async () => 'gravado'}
+          aoConcluir={() => {}}
+        />
+      </Cena>
+
+      <Cena titulo="Fim da aula, sem pasta" quando="Safari: salvar é a ação, não o adorno">
+        <TelaResumo
+          sessao={{ turma: TURMA, abertaEm: new Date(Date.now() - 47 * 60000).toISOString(), uidHashProfessor: 'x' }}
+          presentes={41}
+          aoSalvarCopia={async () => 'baixado'}
           aoConcluir={() => {}}
         />
       </Cena>

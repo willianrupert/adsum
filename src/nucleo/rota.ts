@@ -15,6 +15,8 @@ export type Rota =
   | 'problema'
   /** Falta escolher onde guardar. Enquanto isso, a base pode ser perdida. */
   | 'pasta'
+  /** Navegador sem pasta e com prazo: instalar é o que tira a base do Safari. */
+  | 'instalar'
   /** Nenhuma turma cadastrada: a tela é colar a lista do SIGAA. */
   | 'turma'
   /** Há gente sem crachá: a tela é a cerimônia. */
@@ -34,6 +36,11 @@ export interface EstadoDoApp {
   turmas: number
   pendentes: number
   aulaAberta: boolean
+  /**
+   * Só no WebKit fora da aba instalada. Ver `ambiente/instalacao.ts`: lá a base
+   * tem sete dias, e instalar é o que a salva.
+   */
+  convidarAInstalar: boolean
   /** Nenhum professor tem crachá ainda. É o único caso que exige cerimônia. */
   professorSemCracha: boolean
 }
@@ -45,6 +52,11 @@ export function decidirRota(estado: EstadoDoApp): Rota {
   // oferece seletor, seguir é a única opção — e aí a tela da base é que precisa
   // dizer que os dados não estão seguros, em vez de fingir que estão.
   if (estado.pasta === 'sem_pasta' || estado.pasta === 'sem_permissao') return 'pasta'
+
+  // Mesmo lugar da pasta, e pelo mesmo motivo: é a pergunta "onde isto vive",
+  // e ela vem antes de existir base. Depois seria tarde — o app instalado tem
+  // armazenamento próprio e não enxerga a turma que ficou na aba.
+  if (estado.convidarAInstalar) return 'instalar'
 
   if (estado.turmas === 0) return 'turma'
   if (!estado.lendo) return 'problema'

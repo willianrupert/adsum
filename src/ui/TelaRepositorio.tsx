@@ -17,10 +17,61 @@ import { DIAS, horaValida } from '../nucleo/grade.ts'
 import type { Aula, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.ts'
 import { pastaDisponivel } from '../ambiente/pasta.ts'
+import { comoInstalar, ehWebKit, instalado } from '../ambiente/instalacao.ts'
 import { useAdsum } from './adsum.ts'
 import { Linha, Painel, Selo } from './componentes/Painel.tsx'
 import { Cartao } from './componentes/Cartao.tsx'
 import { Importacao, type Resultado } from './componentes/Importacao.tsx'
+
+/**
+ * O que dizer onde não há seletor de pasta — e são dois casos diferentes.
+ *
+ * O texto antigo dizia só "os dados ficam no navegador", como se fosse
+ * inconveniência. No WebKit é prazo: sete dias de uso do navegador sem visitar
+ * o site e ele apaga IndexedDB, localStorage e o registro do service worker.
+ * Tranquilizar onde se deveria avisar é o pior defeito que uma tela dessas
+ * pode ter. O Firefox não tem pasta e também não apaga — merece o texto calmo.
+ */
+function SemPasta() {
+  const caminho = comoInstalar()
+  const prazo = ehWebKit() && !instalado()
+
+  return (
+    <>
+      <p className="ferramentas__nota">
+        Este navegador não tem seletor de pasta — só Chrome e Edge têm. Aqui a cópia é
+        por sua conta: exporte os arquivos abaixo e guarde-os onde quiser.
+      </p>
+
+      {prazo && (
+        <p className="ferramentas__nota ferramentas__nota--forte">
+          E há prazo: este navegador apaga os dados de sites depois de <strong>sete dias
+          sem visita</strong>, levando a turma junto.
+          {caminho && (
+            <>
+              {' '}
+              Instalar o Adsum ({caminho.passos.join(' › ')}) tira o app do Safari e para
+              essa contagem — mas o app instalado começa em branco, então exporte antes e
+              importe lá.
+            </>
+          )}
+        </p>
+      )}
+
+      {ehWebKit() && instalado() && (
+        <p className="ferramentas__nota">
+          Instalado, fora do Safari: a base não tem mais prazo de sete dias.
+        </p>
+      )}
+
+      <p className="ferramentas__nota">
+        Para trazer uma base já existente, use <strong>Já tenho uma pasta do Adsum</strong>{' '}
+        na tela de colar a turma — aqui o seletor abre a pasta inteira de uma vez, e ler
+        já é um clique só. O que falta é escrever de volta sozinho.
+      </p>
+    </>
+  )
+}
 
 const AULA_VAZIA = { uidHashProfessor: '', dia: 1, inicio: '08:00', fim: '10:00', turma: '' }
 
@@ -169,12 +220,7 @@ export function TelaRepositorio({
             limpar os dados do site.
           </p>
         ) : (
-          <p className="ferramentas__nota">
-            Este navegador não tem seletor de pasta — só Chrome e Edge têm. Aqui os dados
-            ficam no navegador, e a cópia é por sua conta: exporte os arquivos abaixo e
-            guarde-os onde quiser. Para trazer uma base já existente, use{' '}
-            <strong>Já tenho uma pasta do Adsum</strong> na tela de colar a turma.
-          </p>
+          <SemPasta />
         )}
       </Painel>
 

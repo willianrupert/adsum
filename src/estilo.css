@@ -318,6 +318,14 @@ button:focus-visible {
   max-width: 66ch;
 }
 
+/* Prazo de apagamento não é nota de rodapé, e o destaque aqui é **tinta cheia**
+   em volta de notas cinza — não cor. `--alerta` sobre branco dá 4,1:1, abaixo
+   do mínimo de 4,5:1 para 14px, e isto pode acabar num projetor visto de longe.
+   Contraste é requisito; laranja seria gosto. */
+.ferramentas__nota--forte {
+  color: var(--tinta);
+}
+
 /* ── Selos ───────────────────────────────────────────────────────────────── */
 
 .selo {
@@ -522,6 +530,39 @@ button:focus-visible {
   margin-top: 28px;
   padding: 13px 26px;
   font-size: var(--t-corpo);
+}
+
+/* O caminho do menu, no lugar onde as outras telas põem o botão. Não é botão —
+   o Safari não expõe nada para clicar — então o peso vem do tamanho e do
+   espaço, e não de uma pílula azul que convidaria ao clique inútil. */
+.instalar__caminho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px;
+  margin: 30px 0 6px;
+  font-size: var(--t-secao);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+/* "no Safari" fica em corpo e tinta fraca: é a moldura da frase, não a frase.
+   Alinhado pela linha de base para não flutuar ao lado de um texto 11px maior. */
+.instalar__onde {
+  font-size: var(--t-corpo);
+  font-weight: 400;
+  color: var(--tinta-fraca);
+}
+
+.instalar__seta {
+  margin-right: 12px;
+  color: var(--tinta-tenue);
+  font-weight: 300;
+}
+
+.instalar__passo {
+  white-space: nowrap;
 }
 
 /* ── Cerimônia ───────────────────────────────────────────────────────────── */
