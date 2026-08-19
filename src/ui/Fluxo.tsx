@@ -80,8 +80,18 @@ export function Fluxo() {
       repositorio.sessaoAberta(),
     ])
     setSessao(aberta)
-    const comCracha = new Set(vinculos.map((v) => v.matricula).filter(Boolean))
-    const faltando = matriculados.filter((m) => !m.matricula || !comCracha.has(m.matricula))
+    // Quem já tem crachá é reconhecido pela matrícula — e, para quem não tem
+    // matrícula na página (docente), pelo nome. Sem esta segunda via o
+    // professor contava como pendente para sempre: `!m.matricula` era verdade
+    // toda vez, e isso quebrava a conta do primeiro dia.
+    const porMatricula = new Set(vinculos.map((v) => v.matricula).filter(Boolean))
+    const porNome = new Set(vinculos.map((v) => v.nome))
+    const faltando = matriculados.filter(
+      (m) =>
+        // A fila de cadastro é de aluno: o crachá do professor vem da cerimônia.
+        m.papel === 'aluno' &&
+        (m.matricula ? !porMatricula.has(m.matricula) : !porNome.has(m.nome)),
+    )
     setTurmas(listaDeTurmas.length)
     setPendentes(faltando.length)
     setPendentesDaTurma(faltando)

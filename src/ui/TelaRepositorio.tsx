@@ -138,7 +138,15 @@ export function TelaRepositorio({
           proteção, não uma limitação a contornar. */}
       <Painel
         titulo="Onde os dados ficam"
-        acoes={aoTrocarPasta && <button onClick={aoTrocarPasta}>Trocar de pasta</button>}
+        acoes={
+          aoTrocarPasta && (
+            // O rótulo diz o que vai acontecer, não o nome da função: sem pasta
+            // não há o que trocar.
+            <button className={pasta ? undefined : 'botao--acento'} onClick={aoTrocarPasta}>
+              {pasta ? 'Trocar de pasta' : 'Escolher pasta'}
+            </button>
+          )
+        }
       >
         {pasta ? (
           <>
