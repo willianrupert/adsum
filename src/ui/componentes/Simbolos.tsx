@@ -53,19 +53,43 @@ export function Cadeado({ tamanho = 12 }: { tamanho?: number }) {
 /**
  * Ondas de aproximação — o sinal de "encoste aqui".
  *
- * São só os arcos, de propósito: o símbolo com a mão e a elipse é o Contactless
- * Indicator da EMVCo, marca licenciada. Os arcos sozinhos são o sinal universal.
+ * A geometria foi **medida no símbolo de referência**, não estimada: o PNG foi
+ * decodificado, os quatro arcos separados por componente conexa e ajustados a
+ * um centro comum por mínimos quadrados. O que saiu de lá:
  *
- * O que separa isto de um ícone de AirDrop ou de wi-fi é **a abertura**: meia
- * circunferência lê como sinal irradiando; arco curto de ~110°, todos do mesmo
- * tom e com a mesma espessura, lê como onda de aproximação. A primeira versão
- * errou nos dois pontos.
+ *   raios      58,7 · 102,9 · 149,6 · 196,3 px  (passo ~46, o primeiro menor)
+ *   aberturas  90,5° · 75,7° · 69,6° · 66,6°
+ *   traço      20,2 px, o mesmo nos quatro
+ *
+ * **A abertura diminui conforme o raio cresce**, e é isso que eu vinha errando:
+ * com abertura igual o desenho vira leque, e com 180° vira wi-fi. As pontas dos
+ * quatro caem sobre uma reta — passo constante de ~22 px em y e ~41 em x —, ou
+ * seja, os arcos são cortados por duas diagonais, e não por um cone que sai do
+ * centro. É esse corte que dá a leitura de onda.
+ *
+ * Os números abaixo são os medidos, reescalados para o `viewBox`.
  */
+const ARCOS = [
+  { raio: 58.7, meiaAbertura: 45.25 },
+  { raio: 102.9, meiaAbertura: 37.85 },
+  { raio: 149.6, meiaAbertura: 34.8 },
+  { raio: 196.3, meiaAbertura: 33.3 },
+]
+const TRACO = 20.2
+
 export function Ondas({ tamanho = 64, animado = false }: { tamanho?: number; animado?: boolean }) {
-  const abertura = (55 * Math.PI) / 180
-  // Vão de 9 entre raios com traço de 4,6: o espaço entre os arcos fica quase
-  // do tamanho do próprio traço, que é a proporção do símbolo real.
-  const arcos = [8, 17, 26, 35]
+  const rad = (graus: number) => (graus * Math.PI) / 180
+
+  // A marca é mais alta que larga; a escala vem da altura.
+  const maior = ARCOS[ARCOS.length - 1]
+  const meiaAltura = maior.raio * Math.sin(rad(maior.meiaAbertura)) + TRACO / 2
+  const escala = 31 / meiaAltura
+
+  const menor = ARCOS[0]
+  const esquerda = menor.raio * Math.cos(rad(menor.meiaAbertura)) - TRACO / 2
+  const direita = maior.raio + TRACO / 2
+  const deslocamento = 32 - ((esquerda + direita) / 2) * escala
+
   return (
     <svg
       viewBox="0 0 64 64"
@@ -77,17 +101,18 @@ export function Ondas({ tamanho = 64, animado = false }: { tamanho?: number; ani
       <g
         fill="none"
         stroke="currentColor"
-        strokeWidth="4.6"
+        strokeWidth={(TRACO * escala).toFixed(2)}
         strokeLinecap="round"
-        transform="translate(16 32)"
+        transform={`translate(${deslocamento.toFixed(2)} 32)`}
       >
-        {arcos.map((r, i) => {
-          const x = (r * Math.cos(abertura)).toFixed(2)
-          const y = (r * Math.sin(abertura)).toFixed(2)
+        {ARCOS.map(({ raio, meiaAbertura }, i) => {
+          const r = raio * escala
+          const x = (r * Math.cos(rad(meiaAbertura))).toFixed(2)
+          const y = (r * Math.sin(rad(meiaAbertura))).toFixed(2)
           return (
             <path
-              key={r}
-              d={`M ${x} -${y} A ${r} ${r} 0 0 1 ${x} ${y}`}
+              key={raio}
+              d={`M ${x} -${y} A ${r.toFixed(2)} ${r.toFixed(2)} 0 0 1 ${x} ${y}`}
               style={{ animationDelay: `${i * 0.16}s` }}
             />
           )

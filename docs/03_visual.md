@@ -95,6 +95,31 @@ cobra ação.
 mesmo lugar só fazem duvidar de qual é o certo: o aviso informa, a engrenagem
 abre.
 
+### As ondas de aproximação
+
+Medidas no símbolo de referência, não estimadas: o PNG foi decodificado, os
+quatro arcos separados por componente conexa e ajustados a um centro comum por
+mínimos quadrados.
+
+| Arco | Raio | Abertura |
+|---|---|---|
+| 1 | 58,7 px | 90,5° |
+| 2 | 102,9 px | 75,7° |
+| 3 | 149,6 px | 69,6° |
+| 4 | 196,3 px | 66,6° |
+
+Traço de 20,2 px, igual nos quatro.
+
+**A abertura diminui conforme o raio cresce** — é o que eu errei três vezes
+tentando de olho. Com abertura igual o desenho vira leque; com 180° vira wi-fi.
+As pontas dos quatro caem sobre uma reta (passo constante de ~22 px em y e ~41
+em x), ou seja, os arcos são cortados por duas diagonais e não por um cone que
+sai do centro. É esse corte que dá a leitura de onda.
+
+Lição que vale além deste ícone: **quando existe uma referência, medir custa
+menos que iterar.** Três tentativas no olho contra uma decodificação de PNG que
+levou dois minutos.
+
 ## Som
 
 Cinquenta repetições em um minuto é o número que manda. A primeira versão errava
