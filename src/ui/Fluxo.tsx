@@ -234,14 +234,14 @@ export function Fluxo() {
             {falhaNaPasta}. Nada se perdeu — está tudo aqui no navegador. Conserte e o
             Adsum regrava.
           </p>
-          <button onClick={() => void consertarPasta()}>gravar de novo</button>
+          <button onClick={() => void consertarPasta()}>Gravar de novo</button>
         </div>
       )}
 
       <footer className="selos">
         <button className="selo-status" onClick={() => setFolha('diagnostico')}>
           <span className={lendo ? 'ponto ponto--ok' : 'ponto ponto--alerta'} />
-          leitor
+          Leitor
         </button>
         <button className="selo-status" onClick={() => setFolha('repositorio')}>
           <span
@@ -274,7 +274,7 @@ function Repouso({ turmas, aoAbrirCerimonia }: { turmas: number; aoAbrirCerimoni
       </p>
       <p className="repouso__acao">Encoste seu crachá</p>
       <button className="repouso__link" onClick={aoAbrirCerimonia}>
-        cadastrar mais um crachá
+        Cadastrar mais um crachá
       </button>
     </section>
   )
@@ -300,7 +300,7 @@ function Sheet({
       <div className="folha" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={titulo}>
         <header className="folha__topo">
           <h2>{titulo}</h2>
-          <button onClick={aoFechar}>fechar</button>
+          <button onClick={aoFechar}>Fechar</button>
         </header>
         <div className="folha__corpo">{children}</div>
       </div>

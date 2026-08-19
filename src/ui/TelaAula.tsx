@@ -128,14 +128,21 @@ export function TelaAula({
           uidHash,
         })
 
-        // Grava primeiro. O bipe significa "está salvo", não "eu ouvi".
+        // A tela responde na hora; o som espera a gravação.
+        //
+        // São duas promessas diferentes e vale separá-las: o olho precisa de
+        // resposta imediata para a fila não parecer travada, e o bipe significa
+        // **está salvo** — não "eu ouvi". Gravar antes de mostrar somava a
+        // latência do disco a cada crachá, e numa fila isso se sente.
+        mostrar(decisao)
+
         if (evento) {
           await repositorio.acrescentarEvento(evento)
           await aoRegistrar?.(evento)
         }
         if (decisao.tipo === 'encerrar') await repositorio.encerrarSessao()
 
-        anunciar(decisao, evento)
+        confirmar(decisao, evento)
         await recarregar()
         aoMudarBase()
       })()
@@ -159,37 +166,41 @@ export function TelaAula({
 
   useEffect(() => () => clearTimeout(relogioDoDestaque.current), [])
 
-  function anunciar(decisao: Decisao, evento?: Evento) {
+  /** Antes de gravar: só pixels, para a fila nunca esperar o disco. */
+  function mostrar(decisao: Decisao) {
     switch (decisao.tipo) {
       case 'presenca':
-        tocar('ok')
-        destacar(decisao.vinculo.nome, 'ok')
-        setRecado(undefined)
-        break
+        return destacar(decisao.vinculo.nome, 'ok')
       case 'cadastro':
-        tocar('ok')
-        destacar(decisao.pessoa.nome, 'ok')
-        setRecado(undefined)
-        break
+        return destacar(decisao.pessoa.nome, 'ok')
       case 'repetido':
-        tocar('repetido')
-        destacar(decisao.vinculo.nome, 'repetido')
-        setRecado(undefined)
-        break
+        return destacar(decisao.vinculo.nome, 'repetido')
       case 'desconhecido':
-        tocar('desconhecido')
-        destacar('Crachá não cadastrado', 'desconhecido')
-        setRecado(undefined)
-        break
+        return destacar('Crachá não cadastrado', 'desconhecido')
       case 'cedo_demais':
-        tocar('desconhecido')
-        setRecado(
-          `Para encerrar, encoste de novo em ${Math.ceil(decisao.faltamMs / 1000)} s — a aula acabou de abrir.`,
+        return setRecado(
+          `Para encerrar, encoste de novo em ${Math.ceil(decisao.faltamMs / 1000)} s.`,
         )
-        break
+    }
+  }
+
+  /** Depois de gravar: o som. Bipe significa "está salvo". */
+  function confirmar(decisao: Decisao, evento?: Evento) {
+    switch (decisao.tipo) {
+      case 'presenca':
+      case 'cadastro':
+        setRecado(undefined)
+        return tocar('ok')
+      case 'repetido':
+        setRecado(undefined)
+        return tocar('repetido')
+      case 'desconhecido':
+        setRecado(undefined)
+        return tocar('desconhecido')
+      case 'cedo_demais':
+        return tocar('desconhecido')
       case 'encerrar':
-        tocar('sessao')
-        break
+        return tocar('sessao')
       default:
         if (evento) tocar('ok')
     }
@@ -241,24 +252,30 @@ export function TelaAula({
 
       {aCadastrar && (
         <section className="fila">
-          <p className="fila__rotulo">
-            {pendentes.length === 1
-              ? 'falta o crachá de'
-              : `faltam ${pendentes.length} crachás · agora é o de`}
-          </p>
-          <p className="fila__nome">{aCadastrar.nome}</p>
-          <div className="fila__acoes">
-            <button onClick={() => setArmado((i) => Math.max(0, i - 1))} aria-label="anterior">
-              ←
-            </button>
-            <span className="fila__completo">{aCadastrar.nomeCompleto}</span>
-            <button
-              onClick={() => setArmado((i) => Math.min(pendentes.length - 1, i + 1))}
-              aria-label="próximo"
-            >
-              →
-            </button>
+          <button
+            className="fila__seta"
+            onClick={() => setArmado((i) => Math.max(0, i - 1))}
+            aria-label="Anterior"
+            disabled={armado === 0}
+          >
+            ‹
+          </button>
+
+          <div className="fila__centro">
+            <p className="fila__rotulo">
+              {pendentes.length === 1 ? 'Falta um crachá' : `Faltam ${pendentes.length} crachás`}
+            </p>
+            <p className="fila__nome">{aCadastrar.nome}</p>
           </div>
+
+          <button
+            className="fila__seta"
+            onClick={() => setArmado((i) => Math.min(pendentes.length - 1, i + 1))}
+            aria-label="Próximo"
+            disabled={armado >= pendentes.length - 1}
+          >
+            ›
+          </button>
         </section>
       )}
 
@@ -275,7 +292,7 @@ export function TelaAula({
               }
             }}
           >
-            simular
+            Simular
           </button>
         )}
       </footer>

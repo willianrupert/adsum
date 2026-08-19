@@ -251,7 +251,7 @@ export function TelaDiagnostico() {
       <Painel
         titulo="Ambiente"
         legenda="O que este navegador oferece, e o que se perde sem cada peça."
-        acoes={<button onClick={() => location.reload()}>recarregar</button>}
+        acoes={<button onClick={() => location.reload()}>Recarregar</button>}
       >
         <ul className="capacidades">
           {capacidades.map((c) => (
@@ -278,24 +278,23 @@ export function TelaDiagnostico() {
 
       <Painel
         titulo="Leitor de crachá"
-        legenda="De onde vêm os UIDs. Trocar de leitor não muda nada acima desta linha."
+        legenda="De onde vêm os UIDs."
         acoes={
           <>
-            <button onClick={tentar('Iniciar', () => leitor.iniciar())}>iniciar</button>
-            <button onClick={tentar('Parar', () => leitor.parar())}>parar</button>
+            <button onClick={tentar('Iniciar', () => leitor.iniciar())}>Iniciar</button>
+            <button onClick={tentar('Parar', () => leitor.parar())}>Parar</button>
           </>
         }
       >
         <Linha rotulo="adaptador">
-          <div className="escolhas">
+          <div className="segmentado" role="group">
             {LEITORES.map((opcao) => (
               <button
                 key={opcao.id}
-                className={opcao.id === leitorId ? 'escolha escolha--ativa' : 'escolha'}
+                className={opcao.id === leitorId ? 'segmento segmento--ativo' : 'segmento'}
                 onClick={tentar(`Trocar para ${opcao.nome}`, () => trocarLeitor(opcao.id))}
               >
-                <span className="escolha__nome">{opcao.nome}</span>
-                <span className="escolha__quando">{opcao.quando}</span>
+                {opcao.nome}
               </button>
             ))}
           </div>
@@ -325,9 +324,9 @@ export function TelaDiagnostico() {
                 leitor.encostarProximo()
               })}
             >
-              encostar próximo crachá
+              Encostar próximo crachá
             </button>
-            <span className="ferramentas__ou">ou um UID específico</span>
+            <span className="ferramentas__ou">ou</span>
             <input
               value={uidManual}
               onChange={(e) => setUidManual(e.target.value)}
@@ -339,12 +338,10 @@ export function TelaDiagnostico() {
                 leitor.simular(uidManual)
               })}
             >
-              simular
+              Simular
             </button>
             <p className="ferramentas__nota">
-              Baralho em rodízio: <code>{leitor.baralho().join('  ')}</code>. Dar a volta
-              reencontra um UID já visto — é assim que se exercita duplicata sem ter dois
-              crachás na mão.
+              O baralho gira: dar a volta reencontra um crachá já visto.
             </p>
           </div>
         )}
@@ -401,7 +398,7 @@ export function TelaDiagnostico() {
         acoes={
           <>
             <button className="botao--acento" onClick={semear}>
-              semear
+              Semear
             </button>
             {podeApagar(repositorio) && (
               <button
@@ -414,7 +411,7 @@ export function TelaDiagnostico() {
                   setLeituras([])
                 })}
               >
-                apagar tudo
+                Apagar tudo
               </button>
             )}
           </>
@@ -443,7 +440,7 @@ export function TelaDiagnostico() {
                   }
                 })}
               >
-                pedir
+                Pedir
               </button>
             </>
           )}

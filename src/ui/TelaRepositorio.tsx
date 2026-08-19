@@ -154,7 +154,7 @@ export function TelaRepositorio() {
         legenda="Quais crachás são de quem."
         acoes={
           <>
-            <button onClick={importarVinculos}>importar</button>
+            <button onClick={importarVinculos}>Importar</button>
             <button
               onClick={tentar(`Exportar ${NOMES.vinculos}`, async () =>
                 comoFoi(
@@ -163,7 +163,7 @@ export function TelaRepositorio() {
                 ),
               )}
             >
-              exportar
+              Exportar
             </button>
             <button
               className="botao--grave"
@@ -174,7 +174,7 @@ export function TelaRepositorio() {
                 await repositorio.zerarVinculos()
               })}
             >
-              zerar
+              Zerar
             </button>
           </>
         }
@@ -245,7 +245,7 @@ export function TelaRepositorio() {
                       className="botao--grave"
                       onClick={tentar('Remover', () => repositorio.removerVinculo(v.uidHash))}
                     >
-                      remover
+                      Remover
                     </button>
                   </td>
                 </tr>
@@ -260,13 +260,13 @@ export function TelaRepositorio() {
         legenda="Quando cada turma tem aula."
         acoes={
           <>
-            <button onClick={importarGrade}>importar</button>
+            <button onClick={importarGrade}>Importar</button>
             <button
               onClick={tentar(`Exportar ${NOMES.grade}`, async () =>
                 comoFoi(await salvarTexto(NOMES.grade, paraJsonGrade(aulas)), NOMES.grade),
               )}
             >
-              exportar
+              Exportar
             </button>
             <button
               className="botao--grave"
@@ -275,7 +275,7 @@ export function TelaRepositorio() {
                 await repositorio.zerarAulas()
               })}
             >
-              zerar
+              Zerar
             </button>
           </>
         }
@@ -317,7 +317,7 @@ export function TelaRepositorio() {
                         }
                       })}
                     >
-                      remover
+                      Remover
                     </button>
                   </td>
                 </tr>
@@ -380,7 +380,7 @@ export function TelaRepositorio() {
               setNova({ ...AULA_VAZIA, uidHashProfessor: nova.uidHashProfessor })
             })}
           >
-            acrescentar
+            Acrescentar
           </button>
           {professores.length === 0 && (
             <p className="ferramentas__nota">
@@ -396,7 +396,7 @@ export function TelaRepositorio() {
         legenda="O que a planilha consome."
         acoes={
           <>
-            <button onClick={importarRegistros}>importar</button>
+            <button onClick={importarRegistros}>Importar</button>
             <button
               onClick={tentar('Exportar registros', async () => {
                 const eventos = await repositorio.listarEventos()
@@ -424,7 +424,7 @@ export function TelaRepositorio() {
                 return nomes.length > 0 ? `${nomes.join(', ')}.` : 'cancelado.'
               })}
             >
-              exportar
+              Exportar
             </button>
           </>
         }
@@ -448,7 +448,7 @@ export function TelaRepositorio() {
             aria-label="sal em hexadecimal"
             className="entrada--larga"
           />
-          <button onClick={() => setSal(sortearSal())}>sortear</button>
+          <button onClick={() => setSal(sortearSal())}>Sortear</button>
           <button
             onClick={tentar('Gravar sal', async () => {
               if (!salValido(sal)) throw new Error('precisa de 32 dígitos hexadecimais')
@@ -464,7 +464,7 @@ export function TelaRepositorio() {
               await recarregarConfig()
             })}
           >
-            gravar
+            Gravar
           </button>
         </div>
         <p className="ferramentas__nota">

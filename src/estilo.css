@@ -49,6 +49,13 @@
   --t-grande: clamp(32px, 5.2vw, 48px);
   --t-enorme: clamp(64px, 12vw, 112px);
 
+  /* Curvas da Apple. `--saida` é a que eles usam em quase tudo; `--folha` é a
+     de painel que sobe. Duração curta: movimento aqui é resposta, não enfeite. */
+  --curva: cubic-bezier(0.28, 0.11, 0.32, 1);
+  --curva-folha: cubic-bezier(0.32, 0.72, 0, 1);
+  --rapido: 180ms;
+  --medio: 320ms;
+
   --raio: 18px;
   --raio-pequeno: 12px;
   --pilula: 980px;
@@ -186,11 +193,21 @@ button {
   border-radius: var(--pilula);
   padding: 8px 16px;
   cursor: pointer;
-  transition: opacity 120ms ease, background 120ms ease;
+  transition:
+    opacity var(--rapido) var(--curva),
+    background var(--rapido) var(--curva),
+    transform var(--rapido) var(--curva);
 }
 
 button:hover {
-  opacity: 0.7;
+  opacity: 0.72;
+}
+
+/* Resposta ao toque antes de qualquer lógica rodar: o dedo sai da tela sabendo
+   que o clique pegou. */
+button:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 60ms;
 }
 
 .botao--acento {
@@ -550,22 +567,33 @@ button:focus-visible {
   font-weight: 600;
 }
 
+/* Duas colunas iguais em torno de um eixo: o contador termina na calha, a lista
+   começa nela. Sem isso, um lado alto e outro baixo davam a impressão de tela
+   montada às pressas. */
 .coleta__corpo {
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
-  gap: 48px;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
   align-items: center;
-  padding: 40px 0;
+  padding: 44px 0;
 }
 
 .coleta__contador {
-  min-height: 8.5rem;
+  justify-self: end;
+  text-align: right;
+}
+
+.coleta__lista {
+  justify-self: start;
+  min-width: 0;
+  width: 100%;
+  max-width: 34ch;
 }
 
 .coleta__numero {
   margin: 0;
-  font-size: var(--t-enorme);
+  font-size: clamp(56px, 9vw, 92px);
   line-height: 0.9;
   font-weight: 600;
   letter-spacing: -0.025em;
@@ -574,11 +602,19 @@ button:focus-visible {
 
 .coleta__destaque {
   margin: 0;
+  animation: trocar 220ms var(--curva);
   font-size: var(--t-grande);
   line-height: 1.05;
   font-weight: 600;
   letter-spacing: -0.015em;
   overflow-wrap: anywhere;
+}
+
+@keyframes trocar {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
 }
 
 .coleta__destaque--repetido {
@@ -605,9 +641,17 @@ button:focus-visible {
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  padding: 10px 0;
+  padding: 9px 0;
   font-size: var(--t-titulo);
   letter-spacing: -0.019em;
+  animation: chegar var(--medio) var(--curva);
+}
+
+@keyframes chegar {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
 }
 
 .coleta__linha time {
@@ -646,41 +690,76 @@ button:focus-visible {
   }
 }
 
-/* Fila de cadastro dentro da aula */
+/* Fila de cadastro: uma faixa, não um bloco. Setas nas pontas, nome no centro —
+   cresce para os lados em vez de empurrar a tela para baixo. */
 
 .fila {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 12px;
   background: var(--fundo-alt);
   border-radius: var(--raio);
-  padding: 20px 24px 18px;
+  padding: 14px 16px;
   margin-bottom: 20px;
+}
+
+.fila__centro {
   text-align: center;
+  min-width: 0;
 }
 
 .fila__rotulo {
   margin: 0;
-  font-size: var(--t-menor);
+  font-size: var(--t-nota);
   color: var(--tinta-fraca);
 }
 
 .fila__nome {
-  margin: 4px 0 0;
-  font-size: var(--t-secao);
+  margin: 2px 0 0;
+  font-size: var(--t-titulo);
   font-weight: 600;
   letter-spacing: -0.019em;
+  transition: opacity var(--rapido) var(--curva);
 }
 
-.fila__acoes {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  margin-top: 12px;
+.fila__seta {
+  font-size: 24px;
+  line-height: 1;
+  padding: 4px 0;
+  color: var(--acao);
 }
 
-.fila__completo {
-  font-size: var(--t-nota);
-  color: var(--tinta-tenue);
-  min-width: 22ch;
+/* Controle segmentado — a forma que a Apple usa quando são poucas opções
+   exclusivas: uma faixa, e a escolhida ganha a pastilha. */
+
+.segmentado {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: color-mix(in srgb, var(--tinta) 7%, transparent);
+  border-radius: 10px;
+}
+
+.segmento {
+  padding: 6px 14px;
+  border-radius: 8px;
+  color: var(--tinta-fraca);
+  font-size: var(--t-menor);
+  transition:
+    background var(--rapido) var(--curva),
+    color var(--rapido) var(--curva);
+}
+
+.segmento:hover {
+  opacity: 1;
+  color: var(--tinta);
+}
+
+.segmento--ativo,
+.segmento--ativo:hover {
+  background: var(--fundo);
+  color: var(--tinta);
 }
 
 /* ── Cartões de estado ───────────────────────────────────────────────────── */
@@ -798,12 +877,21 @@ button:focus-visible {
   flex-direction: column;
   background: var(--fundo);
   border-radius: var(--raio) var(--raio) 0 0;
-  animation: subir 400ms cubic-bezier(0.32, 0.72, 0, 1);
+  animation: subir 420ms var(--curva-folha);
 }
 
 @keyframes subir {
   from {
-    transform: translateY(32px);
+    transform: translateY(40px);
+  }
+}
+
+.folha__fundo {
+  animation: aparecer var(--medio) var(--curva);
+}
+
+@keyframes aparecer {
+  from {
     opacity: 0;
   }
 }

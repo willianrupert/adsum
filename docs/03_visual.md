@@ -46,6 +46,45 @@ saiu era documentação, e documentação mora aqui.
 Falta: a mesma dieta na tela de diagnóstico, e um passe de revisão nas telas com
 a régua "isto ajuda quem quer fazer a chamada?".
 
+## Valores medidos em apple.com
+
+Não são aproximações de memória — foram lidos dos elementos da página.
+
+| | Valor |
+|---|---|
+| Texto | `#1d1d1f` · secundário `#6e6e73` · terciário `#86868b` |
+| Fundo | `#ffffff` e `#f5f5f7` |
+| Ação | `#0071e3` no claro, `#2997ff` no escuro |
+| Botão | pílula de `980px`, **peso 400**, `8px 16px` |
+| Corpo | 17px, entrelinha 1,47, tracking −0,374px |
+| Título | 21/28px, peso 600, tracking −0,019em |
+
+Três regras que vêm junto e mudam mais que a paleta:
+
+1. **Seção se separa por tom, não por sombra.** Nenhum `box-shadow` no app.
+2. **Conteúdo se separa por espaço, não por borda de 1px.**
+3. **Campo de texto não usa monoespaçada.** Só hash e caminho de arquivo, onde o
+   alinhamento por caractere é a razão de ela existir.
+
+E duas de forma: **rótulo de interface começa com maiúscula** ("Encostar próximo
+crachá", não "encostar"), e **poucas opções exclusivas viram controle
+segmentado**, não uma lista de botões.
+
+## Movimento
+
+| | |
+|---|---|
+| Curva geral | `cubic-bezier(0.28, 0.11, 0.32, 1)` |
+| Folha que sobe | `cubic-bezier(0.32, 0.72, 0, 1)` |
+| Duração | 180 ms para resposta, 320–420 ms para superfície |
+| Toque | `scale(0.97)` em 60 ms — o dedo sai da tela sabendo que pegou |
+
+**Latência zero na fila.** A tela responde ao crachá **antes** de gravar; o som
+vem depois. São duas promessas diferentes: o olho precisa de resposta imediata
+para a fila não parecer travada, e o bipe significa *está salvo*. Gravar antes
+de mostrar somava a latência do disco a cada leitura — e numa fila isso se
+sente.
+
 ## Menos é mais
 
 - **Pouco texto.** Se uma frase explica uma decisão de projeto, ela é

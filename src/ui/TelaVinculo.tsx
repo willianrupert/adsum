@@ -301,7 +301,7 @@ export function TelaVinculo({
                 setArmado(proximoPendente(armado + 1))
               }}
             >
-              pular
+              Pular
             </button>
             <button
               onClick={() => setArmado(Math.min(fila.length - 1, armado + 1))}
@@ -310,7 +310,7 @@ export function TelaVinculo({
             >
               →
             </button>
-            <button onClick={() => setArmado(undefined)}>encerrar</button>
+            <button onClick={() => setArmado(undefined)}>Encerrar</button>
           </div>
           <p className="armado__atalho">use ← e → para andar pela turma</p>
 
@@ -327,7 +327,7 @@ export function TelaVinculo({
                   }
                 }}
               >
-                simular um crachá
+                Simular um crachá
               </button>
             </div>
           )}
@@ -357,7 +357,7 @@ export function TelaVinculo({
               aria-label="turma"
             />
             <button className="botao--acento pasta__botao" onClick={() => void interpretar()}>
-              continuar
+              Continuar
             </button>
           </div>
 
@@ -365,7 +365,7 @@ export function TelaVinculo({
             <div className="colagem__acoes">
               {turmasSalvas.map((t) => (
                 <button key={t} onClick={() => void abrirTurma(t)}>
-                  abrir {t}
+                  Abrir {t}
                 </button>
               ))}
             </div>
@@ -379,7 +379,7 @@ export function TelaVinculo({
           legenda={`${feitos} de ${fila.length} com crachá`}
           acoes={
             <>
-              <button onClick={() => void guardarTurma()}>guardar</button>
+              <button onClick={() => void guardarTurma()}>Guardar</button>
               <button
                 className="botao--acento"
                 onClick={() => {
@@ -391,7 +391,7 @@ export function TelaVinculo({
                   setArmado(primeiro)
                 }}
               >
-                começar
+                Começar
               </button>
             </>
           }
@@ -470,7 +470,7 @@ export function TelaVinculo({
                   setProblemas([])
                 }}
               >
-                trocar de turma
+                Trocar de turma
               </button>
               <span className="ferramentas__ou">
                 Segunda via: arme o nome de novo.

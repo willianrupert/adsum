@@ -70,7 +70,7 @@ export function Vitrine() {
         <section className="repouso">
           <p className="repouso__turma">Sua turma está pronta</p>
           <p className="repouso__acao">Encoste seu crachá</p>
-          <button className="repouso__link">cadastrar mais um crachá</button>
+          <button className="repouso__link">Cadastrar mais um crachá</button>
         </section>
       </Cena>
 
@@ -81,7 +81,7 @@ export function Vitrine() {
             Permissão negada. Nada se perdeu — está tudo aqui no navegador. Conserte e o
             Adsum regrava.
           </p>
-          <button>gravar de novo</button>
+          <button>Gravar de novo</button>
         </div>
       </Cena>
 

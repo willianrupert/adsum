@@ -23,19 +23,19 @@ export const LEITORES: OpcaoDeLeitor[] = [
   {
     id: 'dongle',
     nome: 'Dongle USB',
-    quando: 'o leitor na mesa, que se apresenta como teclado — funciona em qualquer navegador',
+    quando: 'o leitor na mesa',
     criar: () => new LeitorTeclado(),
   },
   {
     id: 'simulado',
     nome: 'Simulado',
-    quando: 'baralho virtual de seis crachás, sem hardware nenhum',
+    quando: 'ensaio sem hardware',
     criar: () => new LeitorSimulado(),
   },
   {
     id: 'webnfc',
     nome: 'WebNFC',
-    quando: 'crachá encostado no próprio celular — Chrome no Android, experimental',
+    quando: 'celular Android',
     criar: () => new LeitorWebNfc(),
   },
 ]
