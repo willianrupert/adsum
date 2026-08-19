@@ -600,10 +600,15 @@ button:focus-visible {
 .coleta__corpo {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr auto;
   gap: 56px;
   align-items: center;
   padding: 44px 0;
+}
+
+.coleta__corpo > .ondas {
+  margin: 0;
+  color: var(--tinta-tenue);
 }
 
 .coleta__contador {
@@ -707,6 +712,12 @@ button:focus-visible {
   gap: 16px;
   font-size: var(--t-menor);
   color: var(--tinta-fraca);
+}
+
+@media (max-width: 860px) {
+  .coleta__corpo > .ondas {
+    display: none;
+  }
 }
 
 @media (max-width: 700px) {

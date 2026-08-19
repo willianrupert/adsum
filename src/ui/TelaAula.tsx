@@ -18,6 +18,7 @@ import { tocar } from '../ambiente/som.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { useAdsum } from './adsum.ts'
 import { Busca } from './componentes/Busca.tsx'
+import { Ondas } from './componentes/Simbolos.tsx'
 
 interface Linha {
   chave: string
@@ -230,6 +231,11 @@ export function TelaAula({
             </li>
           ))}
         </ol>
+
+        {/* O símbolo fica a aula inteira, pulsando devagar: é a única instrução
+            que a tela precisa dar, e dizê-la em palavra o tempo todo seria
+            texto repetido. Movimento lento não compete com a linha que chega. */}
+        <Ondas tamanho={52} animado />
       </div>
 
       {aCadastrar && (
