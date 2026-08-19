@@ -190,6 +190,11 @@ Específicas do app:
 - **O formato CSV não muda sem motivo.** Ele veio do firmware antigo e continua
   servindo: `;`, BOM, e `evento_id` como chave de idempotência. Os testes usam
   as linhas literais herdadas — mudar o formato é decisão, não descuido.
+- **Tela também se testa.** As telas rodam em jsdom contra o `RepositorioDexie`
+  de verdade e o `LeitorSimulado` — sem dublê. Dublê que concorda com tudo é
+  como se descobre tarde que a tela e o adaptador discordavam, e os defeitos
+  achados até aqui (botão morto, `<td>` com `display:flex`, corrida de
+  presença) eram todos desse tipo.
 - **Leitura de CSV nunca descarta linha em silêncio.** Toda função devolve
   `{ itens, problemas }`, e a tela mostra linha, conteúdo e motivo. É a mesma
   regra da recusa muda: 46 alunos onde deveria haver 48, sem explicação, é bug.
@@ -242,7 +247,7 @@ nenhum nome estourando a coluna de 210 px e quatro logins que são só dígitos
 (duas matrículas e dois que têm cara de CPF), sinalizados na tela.
 
 Mais o `LeitorWebNfc` adiantado do passo 5 (ver `docs/00_roadmap.md`).
-`npm test`: 78 testes.
+`npm test`: 147 testes, incluindo as telas.
 Publicado em `willianrupert.github.io/adsum/`, com os testes rodando na
 publicação.
 

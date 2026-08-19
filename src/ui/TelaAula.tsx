@@ -50,6 +50,16 @@ export function TelaAula({
   const { leitor, repositorio, config } = useAdsum()
 
   const [presentes, setPresentes] = useState<Set<string>>(new Set())
+  /**
+   * A mesma informação, atualizada na hora.
+   *
+   * O estado do React só chega no render seguinte, e entre um crachá e o
+   * próximo pode não haver render nenhum: numa fila rápida, duas leituras do
+   * mesmo crachá liam `presentes` desatualizado e a segunda virava presença
+   * nova em vez de duplicata. O contador não mudava — é um conjunto —, mas o
+   * log ganhava duas linhas `ok` para a mesma pessoa.
+   */
+  const jaPresentes = useRef<Set<string>>(new Set())
   const [linhas, setLinhas] = useState<Linha[]>([])
   const [recado, setRecado] = useState<string>()
   const [armado, setArmado] = useState(0)
@@ -89,9 +99,11 @@ export function TelaAula({
       (e) => e.turma === sessao.turma && e.quando >= sessao.abertaEm,
     )
     sequencia.current = eventos.length
-    setPresentes(
-      new Set(daAula.filter((e) => e.origem === 'cracha' && e.resultado === 'ok').map((e) => e.uidHash)),
+    const conjunto = new Set(
+      daAula.filter((e) => e.origem === 'cracha' && e.resultado === 'ok').map((e) => e.uidHash),
     )
+    jaPresentes.current = conjunto
+    setPresentes(conjunto)
     setLinhas(
       daAula
         .filter((e) => e.origem === 'cracha')
@@ -118,9 +130,15 @@ export function TelaAula({
           sessao,
           vinculo,
           armado: aCadastrar,
-          jaPresentes: presentes,
+          jaPresentes: jaPresentes.current,
           agora: leitura.em,
         })
+
+        // Entra no conjunto antes de qualquer `await`: é isso que faz a leitura
+        // seguinte já saber que esta pessoa passou.
+        if (decisao.tipo === 'presenca' || decisao.tipo === 'cadastro') {
+          jaPresentes.current.add(uidHash)
+        }
 
         // Crachá que ninguém reconhece, com gente da turma ainda sem cadastro:
         // é o aluno que faltou no primeiro dia. Em vez de recusar e cobrar
@@ -171,7 +189,7 @@ export function TelaAula({
         aoMudarBase()
       })()
     })
-  }, [leitor, repositorio, config, sessao, presentes, recarregar, aoMudarBase, aoRegistrar, aCadastrar])
+  }, [leitor, repositorio, config, sessao, recarregar, aoMudarBase, aoRegistrar, aCadastrar])
 
   /**
    * Antes de gravar: só pixels, para a fila nunca esperar o disco.
