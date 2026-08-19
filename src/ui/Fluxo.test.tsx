@@ -74,10 +74,11 @@ describe('a rota decide a tela', () => {
   })
 
   // Sem pasta, os dados existem num navegador — e o app precisa dizer isso em
-  // vez de deixar entender que estão guardados.
-  it('avisa quando os dados só existem no navegador', async () => {
+  // vez de deixar entender que estão guardados. No jsdom não há seletor de
+  // diretório, então o aviso é o específico desse caso.
+  it('avisa quando não há pasta', async () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    expect(await screen.findByText(/só existem neste navegador/)).toBeInTheDocument()
+    expect(await screen.findByText(/Sem pasta neste navegador/)).toBeInTheDocument()
   })
 })
