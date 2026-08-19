@@ -25,10 +25,10 @@ export function TelaPasta({
       <p className="pasta__nota">
         {precisaDePermissao
           ? 'O navegador pede confirmação a cada vez que o Adsum volta. Um clique e a base é reencontrada.'
-          : 'Os dados ficam numa pasta do seu computador, em arquivos que você pode abrir. Se ela estiver no iCloud ou no Drive, viram cópia fora da máquina de graça.'}
+          : 'Os dados ficam numa pasta do seu computador, em arquivos que você pode abrir. Se ela estiver no iCloud ou no Drive, a cópia fora da máquina vem de graça.'}
       </p>
       <button className="botao--acento pasta__botao" onClick={precisaDePermissao ? aoLiberar : aoEscolher}>
-        {precisaDePermissao ? 'liberar' : 'escolher pasta'}
+        {precisaDePermissao ? 'Liberar' : 'Escolher pasta'}
       </button>
     </section>
   )

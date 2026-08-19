@@ -478,6 +478,7 @@ button:focus-visible {
   font-weight: 600;
   line-height: 1.05;
   letter-spacing: -0.015em;
+  text-wrap: balance;
 }
 
 .repouso__link {
@@ -486,9 +487,13 @@ button:focus-visible {
 
 .pasta__nota {
   margin: 18px auto 0;
-  max-width: 42ch;
+  /* 42ch empilhava sete linhas e dava aspecto de coluna de jornal. A faixa
+     confortável de leitura é 60–75 caracteres, e é onde a Apple fica nos
+     parágrafos de apoio. */
+  max-width: 66ch;
   font-size: var(--t-corpo);
   color: var(--tinta-fraca);
+  text-wrap: pretty;
 }
 
 .pasta__botao {
@@ -928,6 +933,7 @@ button:focus-visible {
 
 .colagem__titulo {
   margin: 0 0 8px;
+  text-wrap: balance;
   font-size: var(--t-grande);
   font-weight: 600;
   line-height: 1.05;
@@ -938,7 +944,8 @@ button:focus-visible {
   margin: 0 0 28px;
   font-size: var(--t-corpo);
   color: var(--tinta-fraca);
-  max-width: 46ch;
+  max-width: 62ch;
+  text-wrap: pretty;
 }
 
 .colagem__campo {
