@@ -46,7 +46,7 @@ describe('a rota decide a tela', () => {
   it('com tudo pronto, espera o crachá', async () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    expect(await screen.findByText('Encoste o seu crachá')).toBeInTheDocument()
+    expect(await screen.findByText('Começar a chamada')).toBeInTheDocument()
   })
 
   // Regressão: este botão existia e não fazia nada — a rota decide pelo estado,
@@ -55,20 +55,20 @@ describe('a rota decide a tela', () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Encoste o seu crachá')
+    await screen.findByText('Começar a chamada')
 
     await usuario.click(screen.getByRole('button', { name: 'Cadastrar mais um crachá' }))
     expect(await screen.findByRole('button', { name: 'Concluir' })).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Concluir' }))
-    expect(await screen.findByText('Encoste o seu crachá')).toBeInTheDocument()
+    expect(await screen.findByText('Começar a chamada')).toBeInTheDocument()
   })
 
   it('a engrenagem abre os ajustes e clicar fora fecha', async () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Encoste o seu crachá')
+    await screen.findByText('Começar a chamada')
 
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
     expect(await screen.findByRole('dialog', { name: 'Ajustes' })).toBeInTheDocument()
@@ -89,6 +89,45 @@ describe('a rota decide a tela', () => {
   })
 })
 
+// O gesto do crachá é herança do aparelho, que não tinha teclado nem mouse. Num
+// computador o clique é mais simples, e a tela passou a ter uma ação só — o
+// crachá continua valendo, mas não é anunciado, porque anunciar dois caminhos
+// para a mesma coisa é a decisão que se queria evitar.
+describe('abrir e encerrar sem crachá', () => {
+  it('o botão abre a aula, e a tela não oferece outro caminho', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Começar a chamada')
+
+    expect(screen.queryByText(/encoste/i)).not.toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Iniciar a aula' }))
+    expect(await screen.findByRole('button', { name: 'Encerrar a aula' })).toBeInTheDocument()
+    expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: 'IF685 · T01' })
+  })
+
+  // A linha do log tem de continuar dizendo quem encerrou, mesmo sem toque: o
+  // uidHash sai da sessão, que guarda quem abriu.
+  it('o botão encerra, e o log registra quem foi', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Começar a chamada')
+
+    await usuario.click(screen.getByRole('button', { name: 'Iniciar a aula' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Encerrar a aula' }))
+
+    await waitFor(async () =>
+      expect(await bancada.repositorio.sessaoAberta()).toBeUndefined(),
+    )
+    const eventos = await bancada.repositorio.listarEventos()
+    const doProfessor = eventos.filter((e) => e.origem === 'professor')
+    expect(doProfessor).toHaveLength(2)
+    expect(doProfessor.every((e) => e.uidHash === 'aaaa000000000000')).toBe(true)
+  })
+})
+
 // O modo de ensaio vem desligado, e é o que separa o app publicado do banco de
 // testes. A propriedade que mais importa não é a tag sumir: é a tecla morrer.
 // Espaço é a tecla que mais se aperta sem querer, e viva ela marcaria presença
@@ -97,7 +136,7 @@ describe('sem modo de ensaio', () => {
   it('não mostra as teclas de ensaio, mesmo com leitor simulado', async () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Encoste o seu crachá')
+    await screen.findByText('Começar a chamada')
 
     expect(screen.queryByText('crachá')).not.toBeInTheDocument()
     expect(document.querySelector('kbd')).toBeNull()
@@ -108,13 +147,13 @@ describe('sem modo de ensaio', () => {
     await turmaInteiraComCracha()
     const antes = await bancada.repositorio.contarEventos()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Encoste o seu crachá')
+    await screen.findByText('Começar a chamada')
 
     await usuario.keyboard(' ')
     await usuario.keyboard('p')
 
     expect(await bancada.repositorio.contarEventos()).toBe(antes)
-    expect(screen.getByText('Encoste o seu crachá')).toBeInTheDocument()
+    expect(screen.getByText('Começar a chamada')).toBeInTheDocument()
   })
 })
 
@@ -160,7 +199,7 @@ describe('aula que só existe neste navegador', () => {
     // recarregamento e o professor salvaria a mesma aula todo dia.
     unmount()
     renderizarCom(bancada, <Fluxo />)
-    expect(await screen.findByText('Encoste o seu crachá')).toBeInTheDocument()
+    expect(await screen.findByText('Começar a chamada')).toBeInTheDocument()
     expect(screen.queryByText('Uma aula existe só neste navegador')).not.toBeInTheDocument()
   })
 
@@ -273,7 +312,7 @@ describe('o conselho de navegador vem antes da turma', () => {
     window.localStorage.setItem('adsum.instalacao.dispensada', 'sim')
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Encoste o seu crachá')
+    await screen.findByText('Começar a chamada')
 
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
     expect(await screen.findByText(/sete dias de/)).toBeInTheDocument()

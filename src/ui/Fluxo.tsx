@@ -256,6 +256,45 @@ export function Fluxo() {
     [repositorio, config.instalacaoId, gravarLinha, mudou],
   )
 
+  /**
+   * O relógio e a grade escolhem a turma; só o caso ambíguo vira pergunta.
+   *
+   * Compartilhado entre os dois jeitos de abrir — o botão e o crachá — porque a
+   * regra é a mesma e duplicá-la seria a forma de os dois divergirem sem
+   * ninguém notar.
+   */
+  const abrirComProfessor = useCallback(
+    async (uidHash: string, em: Date) => {
+      const [aulas, listaDeTurmas] = await Promise.all([
+        repositorio.listarAulas(),
+        repositorio.listarTurmas(),
+      ])
+      const escolha = escolherTurma(aulas, listaDeTurmas, uidHash, em)
+
+      if (escolha.tipo === 'sem_turma') return
+      if (escolha.tipo === 'perguntar') {
+        return setEscolhendo({ opcoes: escolha.opcoes, motivo: escolha.motivo, uidHash, em })
+      }
+      await abrirAula(escolha.turma, uidHash, em)
+    },
+    [repositorio, abrirAula],
+  )
+
+  /**
+   * Abrir sem crachá.
+   *
+   * O gesto do crachá é herança do aparelho, que não tinha teclado nem mouse —
+   * ali era o único jeito de dizer qualquer coisa. Num computador, o clique é
+   * mais simples e continua sendo o professor quem clica: a máquina é dele.
+   *
+   * O crachá continua valendo, para quem está longe do teclado.
+   */
+  const iniciarAula = useCallback(async () => {
+    const professor = (await repositorio.listarVinculos()).find((v) => v.papel === 'professor')
+    if (!professor) return
+    await abrirComProfessor(professor.uidHash, new Date())
+  }, [repositorio, abrirComProfessor])
+
   // Não se reconta ao ouvir o crachá: a gravação acontece depois, e contar
   // antes dela devolveria a pendência que acabou de deixar de existir. Quem
   // grava avisa, e é isso que faz a tela sair sozinha da cerimônia para o
@@ -271,30 +310,10 @@ export function Fluxo() {
         const uidHash = await calcularUidHash(config.salHex, leitura.uid)
         const vinculo = await repositorio.vinculoPorHash(uidHash)
         if (vinculo?.papel !== 'professor') return
-
-        // O relógio e a grade escolhem a turma. Só o caso ambíguo vira
-        // pergunta — e antes disto, com duas turmas cadastradas, o crachá do
-        // professor não fazia nada e a tela não dizia por quê.
-        const [aulas, listaDeTurmas] = await Promise.all([
-          repositorio.listarAulas(),
-          repositorio.listarTurmas(),
-        ])
-        const escolha = escolherTurma(aulas, listaDeTurmas, uidHash, leitura.em)
-
-        if (escolha.tipo === 'sem_turma') return
-        if (escolha.tipo === 'perguntar') {
-          return setEscolhendo({
-            opcoes: escolha.opcoes,
-            motivo: escolha.motivo,
-            uidHash,
-            em: leitura.em,
-          })
-        }
-
-        await abrirAula(escolha.turma, uidHash, leitura.em)
+        await abrirComProfessor(uidHash, leitura.em)
       })()
     })
-  }, [leitor, repositorio, config, sessao, mudou, abrirAula])
+  }, [leitor, repositorio, config, sessao, abrirComProfessor])
 
   // Ensaio sem hardware: espaço encosta o próximo crachá do baralho, e P
   // encosta o do professor — que é o que abre e fecha a aula. Sem isso, testar
@@ -424,6 +443,7 @@ export function Fluxo() {
         <Repouso
           turmas={turmas}
           pendencias={pasta ? [] : pendencias}
+          aoIniciar={() => void iniciarAula()}
           aoSalvar={(turma) => void salvarCopia(turma)}
           aoAbrirCerimonia={() => setCadastrando(true)}
         />
@@ -532,11 +552,13 @@ export function Fluxo() {
 export function Repouso({
   turmas,
   pendencias,
+  aoIniciar,
   aoSalvar,
   aoAbrirCerimonia,
 }: {
   turmas: number
   pendencias: Pendencia[]
+  aoIniciar: () => void
   aoSalvar: (turma: string) => void
   aoAbrirCerimonia: () => void
 }) {
@@ -572,7 +594,16 @@ export function Repouso({
       <p className="repouso__turma">
         {turmas === 1 ? 'Sua turma está pronta' : `${turmas} turmas prontas`}
       </p>
-      <p className="repouso__acao">Encoste o seu crachá</p>
+      <p className="repouso__acao">Começar a chamada</p>
+
+      <button className="botao--acento pasta__botao" onClick={aoIniciar}>
+        Iniciar a aula
+      </button>
+      {/* O crachá continua abrindo, e a tela **não** diz isso. Anunciar dois
+          caminhos para a mesma coisa é a decisão que se queria evitar: quem lê
+          "ou encoste o crachá" para para escolher, e escolher é o custo. Quem
+          precisa do atalho descobre encostando. */}
+
       <button className="repouso__link" onClick={aoAbrirCerimonia}>
         Cadastrar mais um crachá
       </button>

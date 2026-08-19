@@ -844,6 +844,17 @@ button:focus-visible {
   color: var(--tinta-fraca);
 }
 
+/* Discreto: durante a aula a tela é da fila, e encerrar é o que se faz uma vez
+   no fim. Botão de acento aqui competiria com o contador a cada crachá. */
+.coleta__encerrar {
+  padding: 7px 16px;
+  font-size: var(--t-menor);
+}
+
+.coleta__recado {
+  color: var(--tinta);
+}
+
 @media (max-width: 860px) {
   .coleta__corpo > .ondas {
     display: none;

@@ -140,7 +140,13 @@ export function Vitrine() {
       </Cena>
 
       <Cena titulo="Repouso" quando="tudo pronto, fora de aula">
-        <Repouso turmas={1} pendencias={[]} aoSalvar={() => {}} aoAbrirCerimonia={() => {}} />
+        <Repouso
+          turmas={1}
+          pendencias={[]}
+          aoIniciar={() => {}}
+          aoSalvar={() => {}}
+          aoAbrirCerimonia={() => {}}
+        />
       </Cena>
 
       <Cena titulo="Repouso com aula por salvar" quando="sem pasta: a chamada só existe aqui">
@@ -150,6 +156,7 @@ export function Vitrine() {
             { turma: TURMA, quantos: 41, desde: '2026-08-19T10:04:00.000Z' },
             { turma: 'IF969 · T02', quantos: 28, desde: '2026-08-18T14:02:00.000Z' },
           ]}
+          aoIniciar={() => {}}
           aoSalvar={() => {}}
           aoAbrirCerimonia={() => {}}
         />

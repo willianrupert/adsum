@@ -17,6 +17,7 @@ import type { Evento, Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { useAdsum } from './adsum.ts'
+import { modoDev } from '../ambiente/preferencias.ts'
 import { Busca } from './componentes/Busca.tsx'
 import { Ondas } from './componentes/Simbolos.tsx'
 import { Contador } from './componentes/Contador.tsx'
@@ -52,6 +53,8 @@ export function TelaAula({
   aoEncerrar?: (presentes: number) => void
 }) {
   const { leitor, repositorio, config } = useAdsum()
+
+  const ensaio = modoDev()
 
   const [presentes, setPresentes] = useState<Set<string>>(new Set())
   /**
@@ -200,6 +203,39 @@ export function TelaAula({
       })()
     })
   }, [leitor, repositorio, config, sessao, recarregar, aoMudarBase, aoRegistrar, aoEncerrar, aCadastrar])
+
+  /**
+   * Encerrar sem crachá.
+   *
+   * Mesma gravação do caminho do crachá — evento `encerrar` no log, sessão
+   * fechada, resumo na tela —, e por isso o `uidHash` é o do professor que
+   * abriu: a linha do log continua dizendo quem encerrou, mesmo sem toque.
+   *
+   * Sem janela de 10 s: ela existe porque abrir e fechar são o mesmo gesto de
+   * crachá, e um clique não tem esse problema.
+   */
+  const aoEncerrarAgora = useCallback(() => {
+    void (async () => {
+      const agora = new Date()
+      const evento = eventoDe(
+        { tipo: 'encerrar' },
+        {
+          eventoId: proximoEventoId(config.instalacaoId, agora, ++sequencia.current),
+          quando: agora,
+          turma: sessao.turma,
+          uidHash: sessao.uidHashProfessor,
+        },
+      )
+      if (evento) {
+        await repositorio.acrescentarEvento(evento)
+        await aoRegistrar?.(evento)
+      }
+      await repositorio.encerrarSessao()
+      tocar('encerramento')
+      aoEncerrar?.(jaPresentes.current.size)
+      aoMudarBase()
+    })()
+  }, [config.instalacaoId, sessao, repositorio, aoRegistrar, aoEncerrar, aoMudarBase])
 
   /**
    * Antes de gravar: só pixels, para a fila nunca esperar o disco.
@@ -354,9 +390,19 @@ export function TelaAula({
         />
       )}
 
+      {/* Uma ação, e o rodapé é dela. O crachá do professor continua encerrando
+          — e a tela não diz isso, pelo mesmo motivo do repouso: anunciar dois
+          caminhos para a mesma coisa faz parar para escolher. O recado, quando
+          existe, fala mais alto que o botão porque é resposta a um toque. */}
       <footer className="coleta__rodape">
-        {recado ?? 'Encoste o seu crachá para encerrar'}
-        {ehSimulavel(leitor) && (
+        {recado ? (
+          <span className="coleta__recado">{recado}</span>
+        ) : (
+          <button className="coleta__encerrar" onClick={() => aoEncerrarAgora()}>
+            Encerrar a aula
+          </button>
+        )}
+        {ensaio && ehSimulavel(leitor) && (
           <button
             className="coleta__simular"
             onClick={() => {
