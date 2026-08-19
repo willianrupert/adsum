@@ -47,10 +47,10 @@ async function comCrachaDaAna() {
   })
 }
 
-function montar(pendentes: Matriculado[], total = 2) {
+function montar(pendentes: Matriculado[], alunos = 2) {
   return renderizarCom(
     bancada,
-    <TelaAula sessao={SESSAO} pendentes={pendentes} totalDaTurma={total} aoMudarBase={() => {}} />,
+    <TelaAula sessao={SESSAO} pendentes={pendentes} alunosDaTurma={alunos} aoMudarBase={() => {}} />,
   )
 }
 
@@ -164,5 +164,20 @@ describe('crachá novo num dia comum', () => {
 
     await waitFor(async () => expect(await bancada.repositorio.contarEventos()).toBe(1))
     expect((await bancada.repositorio.listarEventos())[0].resultado).toBe('desconhecido')
+  })
+})
+
+describe('a fila do primeiro dia não some no meio', () => {
+  // Recalcular "é o primeiro dia?" a cada leitura fazia a faixa desaparecer
+  // assim que o primeiro aluno se cadastrava — o momento em que ela mais serve.
+  it('continua depois do primeiro cadastro', async () => {
+    montar([ANA, BRENO], 2)
+    expect(screen.getByText(/Faltam 2 crachás/)).toBeInTheDocument()
+
+    await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await waitFor(async () => expect(await bancada.repositorio.listarVinculos()).toHaveLength(1))
+
+    // A turma segue no primeiro dia mesmo com um aluno já cadastrado.
+    expect(screen.getByText(/Falta/)).toBeInTheDocument()
   })
 })

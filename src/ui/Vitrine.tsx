@@ -88,7 +88,7 @@ export function Vitrine() {
         <TelaAula
           sessao={{ turma: TURMA, abertaEm: new Date(Date.now() - 22 * 60000).toISOString(), uidHashProfessor: 'x' }}
           pendentes={PENDENTES}
-          totalDaTurma={47}
+          alunosDaTurma={47}
           aoMudarBase={() => {}}
         />
       </Cena>
@@ -97,7 +97,7 @@ export function Vitrine() {
         <TelaAula
           sessao={{ turma: TURMA, abertaEm: new Date(Date.now() - 4 * 60000).toISOString(), uidHashProfessor: 'x' }}
           pendentes={PENDENTES}
-          totalDaTurma={PENDENTES.length}
+          alunosDaTurma={PENDENTES.length}
           aoMudarBase={() => {}}
         />
       </Cena>

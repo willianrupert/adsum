@@ -34,15 +34,15 @@ function hhmm(d: Date) {
 export function TelaAula({
   sessao,
   pendentes,
-  totalDaTurma,
+  alunosDaTurma,
   aoMudarBase,
   aoRegistrar,
 }: {
   sessao: Sessao
   /** Quem está na turma e ainda não tem crachá. Vira a fila de cadastro. */
   pendentes: Matriculado[]
-  /** Quantas pessoas a turma tem ao todo. Diz se hoje é o primeiro dia. */
-  totalDaTurma: number
+  /** Quantos alunos a turma tem. Diz se hoje é o primeiro dia. */
+  alunosDaTurma: number
   aoMudarBase: () => void
   /** Grava a linha na pasta. Acontece antes do bipe: som é "está salvo". */
   aoRegistrar?: (evento: Evento) => Promise<void>
@@ -67,13 +67,16 @@ export function TelaAula({
   const sequencia = useRef(0)
 
   /**
-   * A faixa de cadastro só aparece **no primeiro dia** — quando ninguém da
+   * A faixa de cadastro só aparece **no primeiro dia** — quando nenhum aluno da
    * turma tem crachá ainda e a cerimônia é a própria chamada. Depois disso ela
    * some: ficar avisando que faltam três crachás é cobrança sobre gente que
-   * pode ter trancado, e o caso se resolve sozinho quando a pessoa aparece e
-   * encosta o crachá.
+   * pode ter trancado, e o caso se resolve sozinho quando a pessoa aparece.
+   *
+   * Decidido **uma vez, quando a aula abre**, e não a cada leitura: recalcular
+   * fazia a faixa desaparecer no primeiro aluno cadastrado — que é exatamente o
+   * momento em que ela mais serve.
    */
-  const primeiroDia = pendentes.length > 0 && pendentes.length === totalDaTurma
+  const primeiroDia = useRef(pendentes.length > 0 && pendentes.length === alunosDaTurma).current
   const aCadastrar = primeiroDia
     ? pendentes[Math.min(armado, Math.max(0, pendentes.length - 1))]
     : undefined
