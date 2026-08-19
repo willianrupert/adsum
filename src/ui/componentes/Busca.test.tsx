@@ -71,10 +71,18 @@ describe('busca pelo teclado', () => {
     expect(aoEscolher).toHaveBeenCalledWith(TURMA[1])
   })
 
-  it('Esc desiste', async () => {
+  // Esc não serve: no Safari em tela cheia ele sai da tela cheia. Sair é
+  // clicar fora, que funciona em todo navegador e em todo modo.
+  it('clicar fora desiste', async () => {
     const { usuario, aoDesistir } = montar()
-    await usuario.keyboard('{Escape}')
+    await usuario.click(document.querySelector('.folha__fundo')!)
     expect(aoDesistir).toHaveBeenCalled()
+  })
+
+  it('clicar dentro da folha não desiste', async () => {
+    const { usuario, aoDesistir } = montar()
+    await usuario.click(screen.getByText('Crachá novo'))
+    expect(aoDesistir).not.toHaveBeenCalled()
   })
 
   it('Enter sem resultado nenhum não escolhe ninguém', async () => {

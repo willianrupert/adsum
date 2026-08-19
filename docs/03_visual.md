@@ -120,6 +120,16 @@ Lição que vale além deste ícone: **quando existe uma referência, medir cust
 menos que iterar.** Três tentativas no olho contra uma decodificação de PNG que
 levou dois minutos.
 
+### Esc não serve
+
+No Safari em tela cheia, `Esc` sai da tela cheia — e a aula acontece justamente
+em tela cheia. Um atalho anunciado que faz outra coisa é pior que atalho nenhum.
+
+**Sair de qualquer folha é clicar fora**, que funciona em todo navegador e em
+todo modo, e é o gesto que a própria folha já sugere ao escurecer o fundo. Cada
+folha também tem um botão explícito — "Fechar" nos ajustes, "Não está na lista"
+na busca.
+
 ## Som
 
 Cinquenta repetições em um minuto é o número que manda. A primeira versão errava

@@ -36,14 +36,6 @@ export function Busca({
   // clicar no campo antes seria um passo que o app pode dar por conta.
   useEffect(() => campo.current?.focus(), [])
 
-  useEffect(() => {
-    const aoTeclar = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') aoDesistir()
-    }
-    window.addEventListener('keydown', aoTeclar)
-    return () => window.removeEventListener('keydown', aoTeclar)
-  }, [aoDesistir])
-
   // Filtrar move o destaque de volta ao topo: depois de digitar, o primeiro
   // resultado é o que se quer, e Enter resolve sem tirar a mão do teclado.
   useEffect(() => setDestacado(0), [termo])
@@ -106,9 +98,11 @@ export function Busca({
           {achados.length === 0 && <li className="busca__vazio">Ninguém com esse nome na turma.</li>}
         </ul>
 
+        {/* Nada de Esc: no Safari em tela cheia ele sai da tela cheia, e um
+            atalho anunciado que faz outra coisa é pior que atalho nenhum. Para
+            sair, clique fora — que é o gesto que a folha já sugere. */}
         <p className="busca__atalhos">
-          <kbd>↑</kbd> <kbd>↓</kbd> andam · <kbd>enter</kbd> confirma ·{' '}
-          <kbd>esc</kbd> sai
+          <kbd>↑</kbd> <kbd>↓</kbd> andam · <kbd>enter</kbd> confirma
         </p>
 
         <button className="busca__desistir" onClick={aoDesistir}>

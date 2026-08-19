@@ -58,7 +58,7 @@ describe('a rota decide a tela', () => {
     expect(await screen.findByText('Encoste o seu crachá')).toBeInTheDocument()
   })
 
-  it('a engrenagem abre os ajustes e o Esc fecha', async () => {
+  it('a engrenagem abre os ajustes e clicar fora fecha', async () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
@@ -67,7 +67,7 @@ describe('a rota decide a tela', () => {
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
     expect(await screen.findByRole('dialog', { name: 'Ajustes' })).toBeInTheDocument()
 
-    await usuario.keyboard('{Escape}')
+    await usuario.click(document.querySelector('.folha__fundo')!)
     await waitFor(() =>
       expect(screen.queryByRole('dialog', { name: 'Ajustes' })).not.toBeInTheDocument(),
     )

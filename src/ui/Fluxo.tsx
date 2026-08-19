@@ -381,11 +381,8 @@ function Sheet({
   aoFechar: () => void
   children: ReactNode
 }) {
-  useEffect(() => {
-    const escutar = (e: KeyboardEvent) => e.key === 'Escape' && aoFechar()
-    window.addEventListener('keydown', escutar)
-    return () => window.removeEventListener('keydown', escutar)
-  }, [aoFechar])
+  // Sem Esc: no Safari em tela cheia ele sai da tela cheia. Sair daqui é
+  // clicar fora ou no botão — dois gestos que funcionam em todo lugar.
 
   return (
     <div className="folha__fundo" onClick={aoFechar}>
