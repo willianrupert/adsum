@@ -19,6 +19,7 @@ import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { useAdsum } from './adsum.ts'
 import { Busca } from './componentes/Busca.tsx'
 import { Ondas } from './componentes/Simbolos.tsx'
+import { Contador } from './componentes/Contador.tsx'
 
 interface Linha {
   chave: string
@@ -239,7 +240,9 @@ export function TelaAula({
 
       <div className="coleta__corpo">
         <div className="coleta__contador">
-          <p className="coleta__numero">{presentes.size}</p>
+          <p className="coleta__numero">
+            <Contador valor={presentes.size} />
+          </p>
           <p className="coleta__rotulo">{presentes.size === 1 ? 'presente' : 'presentes'}</p>
         </div>
 

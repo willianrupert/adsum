@@ -633,10 +633,42 @@ button:focus-visible {
 .coleta__numero {
   margin: 0;
   font-size: clamp(56px, 9vw, 92px);
-  line-height: 0.9;
+  line-height: 1;
   font-weight: 600;
   letter-spacing: -0.025em;
+}
+
+/* Odômetro: cada casa é uma janela de uma linha, e a coluna de dez algarismos
+   desliza atrás dela. */
+
+.contador {
+  display: inline-flex;
   font-variant-numeric: tabular-nums;
+}
+
+.contador__casa {
+  display: block;
+  height: 1em;
+  overflow: hidden;
+}
+
+.contador__coluna {
+  display: flex;
+  flex-direction: column;
+  transition: transform 460ms var(--curva);
+  will-change: transform;
+}
+
+.contador__algarismo {
+  display: block;
+  height: 1em;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contador__coluna {
+    transition: none;
+  }
 }
 
 .coleta__destaque {
