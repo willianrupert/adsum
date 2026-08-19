@@ -38,6 +38,7 @@ export function TelaAula({
   alunosDaTurma,
   aoMudarBase,
   aoRegistrar,
+  aoEncerrar,
 }: {
   sessao: Sessao
   /** Quem está na turma e ainda não tem crachá. Vira a fila de cadastro. */
@@ -47,6 +48,8 @@ export function TelaAula({
   aoMudarBase: () => void
   /** Grava a linha na pasta. Acontece antes do bipe: som é "está salvo". */
   aoRegistrar?: (evento: Evento) => Promise<void>
+  /** Chamado quando o crachá do professor encerra, com o que houve na aula. */
+  aoEncerrar?: (presentes: number) => void
 }) {
   const { leitor, repositorio, config } = useAdsum()
 
@@ -186,14 +189,17 @@ export function TelaAula({
           await repositorio.acrescentarEvento(evento)
           await aoRegistrar?.(evento)
         }
-        if (decisao.tipo === 'encerrar') await repositorio.encerrarSessao()
+        if (decisao.tipo === 'encerrar') {
+          await repositorio.encerrarSessao()
+          aoEncerrar?.(jaPresentes.current.size)
+        }
 
         confirmar(decisao, evento)
         await recarregar()
         aoMudarBase()
       })()
     })
-  }, [leitor, repositorio, config, sessao, recarregar, aoMudarBase, aoRegistrar, aCadastrar])
+  }, [leitor, repositorio, config, sessao, recarregar, aoMudarBase, aoRegistrar, aoEncerrar, aCadastrar])
 
   /**
    * Antes de gravar: só pixels, para a fila nunca esperar o disco.

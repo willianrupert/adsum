@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
@@ -179,5 +179,40 @@ describe('a fila do primeiro dia não some no meio', () => {
 
     // A turma segue no primeiro dia mesmo com um aluno já cadastrado.
     expect(screen.getByText(/Falta/)).toBeInTheDocument()
+  })
+})
+
+describe('o fim da aula', () => {
+  // Encerrar devolvia direto ao repouso, e a chamada que acabou de ser feita
+  // desaparecia sem uma palavra.
+  it('avisa quem encerrou, com quantos ficaram registrados', async () => {
+    await comCrachaDaAna()
+    const aoEncerrar = vi.fn()
+    renderizarCom(
+      bancada,
+      <TelaAula
+        sessao={SESSAO}
+        pendentes={[BRENO]}
+        alunosDaTurma={2}
+        aoMudarBase={() => {}}
+        aoEncerrar={aoEncerrar}
+      />,
+    )
+
+    await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await waitFor(() => expect(screen.getByText('1')).toBeInTheDocument())
+
+    // O crachá do professor, com a aula aberta há mais de dez segundos.
+    const uidProfessor = await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_NOVO))
+    await bancada.repositorio.gravarVinculo({
+      uidHash: uidProfessor,
+      papel: 'professor',
+      nome: 'Paulo Freitas',
+      criadoEm: new Date().toISOString(),
+    })
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+
+    await waitFor(() => expect(aoEncerrar).toHaveBeenCalledWith(1))
+    expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
   })
 })

@@ -1423,3 +1423,52 @@ button:focus-visible {
     animation: none;
   }
 }
+
+/* Fim da aula — uma tela, três informações e uma saída. */
+
+.resumo {
+  min-height: 62vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.resumo__rotulo {
+  margin: 0 0 18px;
+  font-size: var(--t-corpo);
+  color: var(--tinta-fraca);
+}
+
+.resumo__numero {
+  margin: 0;
+  font-size: clamp(64px, 11vw, 108px);
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.resumo__unidade {
+  margin: 10px 0 0;
+  font-size: var(--t-corpo);
+  color: var(--tinta-fraca);
+}
+
+.resumo__arquivo {
+  margin: 26px 0 0;
+  font-size: var(--t-menor);
+  color: var(--tinta-tenue);
+  max-width: 60ch;
+}
+
+.resumo__arquivo--sem {
+  color: var(--alerta);
+}
+
+.resumo__acoes {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 28px;
+}

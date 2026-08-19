@@ -14,10 +14,19 @@ import { decidir, eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessa
 import type { Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
-import { acrescentarNoLog, repararLog, restaurar, sincronizar } from '../ambiente/sincronia.ts'
+import {
+  acrescentarNoLog,
+  caminhoDosRegistros,
+  repararLog,
+  restaurar,
+  sincronizar,
+} from '../ambiente/sincronia.ts'
+import { nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'
+import { salvarTexto } from '../ambiente/arquivos.ts'
 import type { EstadoDaPasta } from '../nucleo/rota.ts'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
+import { TelaResumo } from './TelaResumo.tsx'
 import { Cadeado, Engrenagem, Ondas } from './componentes/Simbolos.tsx'
 import { levantarCapacidades } from '../ambiente/capacidades.ts'
 import { useAdsum } from './adsum.ts'
@@ -50,6 +59,7 @@ export function Fluxo() {
   // que nenhum dado expressa — sem isto, o botão do repouso não tinha o que
   // fazer e não fazia nada.
   const [cadastrando, setCadastrando] = useState(false)
+  const [resumo, setResumo] = useState<{ sessao: Sessao; presentes: number }>()
 
   const ambienteQuebrado = levantarCapacidades().some((c) => c.peso === 'essencial' && !c.presente)
 
@@ -130,6 +140,16 @@ export function Fluxo() {
       }
     },
     [pasta],
+  )
+
+  /** Uma cópia do log da turma, para onde o professor quiser. */
+  const salvarCopia = useCallback(
+    async (turma: string) => {
+      const eventos = await repositorio.listarEventos()
+      const daTurma = porTurma([...eventos].reverse()).get(turma) ?? []
+      await salvarTexto(nomeDoArquivo(turma), paraCsv(daTurma))
+    },
+    [repositorio],
   )
 
   const consertarPasta = useCallback(async () => {
@@ -283,12 +303,23 @@ export function Fluxo() {
           }
           aoMudarBase={mudou}
           aoRegistrar={gravarLinha}
+          aoEncerrar={(presentes) => setResumo({ sessao, presentes })}
         />
       )}
-      {rota === 'pronto' && !cadastrando && (
+      {resumo && (
+        <TelaResumo
+          sessao={resumo.sessao}
+          presentes={resumo.presentes}
+          arquivo={pasta ? `${pasta.name} ▸ ${caminhoDosRegistros(resumo.sessao.turma)}` : undefined}
+          aoSalvarCopia={() => void salvarCopia(resumo.sessao.turma)}
+          aoConcluir={() => setResumo(undefined)}
+        />
+      )}
+
+      {!resumo && rota === 'pronto' && !cadastrando && (
         <Repouso turmas={turmas} aoAbrirCerimonia={() => setCadastrando(true)} />
       )}
-      {rota === 'pronto' && cadastrando && (
+      {!resumo && rota === 'pronto' && cadastrando && (
         <TelaVinculo
           turmaInicial={turmasAbertas[0]}
           aoMudarBase={mudou}

@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
+import { TelaResumo } from './TelaResumo.tsx'
 import { TelaVinculo } from './TelaVinculo.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
@@ -104,6 +105,16 @@ export function Vitrine() {
 
       <Cena titulo="Crachá novo" quando="alguém que faltou no primeiro dia chega">
         <BuscaDeMentira />
+      </Cena>
+
+      <Cena titulo="Fim da aula" quando="o professor encerrou">
+        <TelaResumo
+          sessao={{ turma: TURMA, abertaEm: new Date(Date.now() - 47 * 60000).toISOString(), uidHashProfessor: 'x' }}
+          presentes={41}
+          arquivo="Adsum ▸ registros/IF685-T01.csv"
+          aoSalvarCopia={() => {}}
+          aoConcluir={() => {}}
+        />
       </Cena>
 
       <Cena titulo="Repouso" quando="tudo pronto, fora de aula">
