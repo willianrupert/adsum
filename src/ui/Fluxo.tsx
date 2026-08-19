@@ -16,6 +16,7 @@ import { acrescentarNoLog, repararLog, restaurar, sincronizar } from '../ambient
 import type { EstadoDaPasta } from '../nucleo/rota.ts'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
+import { Cadeado, Engrenagem } from './componentes/Simbolos.tsx'
 import { levantarCapacidades } from '../ambiente/capacidades.ts'
 import { useAdsum } from './adsum.ts'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
@@ -241,23 +242,28 @@ export function Fluxo() {
         </div>
       )}
 
-      {/* Uma engrenagem, no canto superior direito, sempre no mesmo lugar.
+      {/* Engrenagem no canto superior direito, fixa, sempre no mesmo lugar.
           Diagnóstico e base são ferramentas de quem conserta, não de quem dá
-          aula — como botões visíveis, convidavam ao clique sem querer, e uma
+          aula — como botões visíveis convidavam ao clique sem querer, e uma
           delas trocava o sal.
 
-          O aviso ao lado só aparece quando algo está errado: quieto quando
-          está tudo bem, e impossível de ignorar quando não está. */}
+          O aviso ao lado **não é botão**: com a engrenagem a oito pixels dele,
+          dois caminhos para o mesmo lugar só fazem duvidar de qual é o certo.
+          Ele informa; ela abre. */}
       <div className="canto">
         {(falhaNaPasta || !lendo || !pasta) && (
-          <button className="selo-status" onClick={() => setFolha('ajustes')}>
-            <span className={falhaNaPasta ? 'ponto ponto--grave' : 'ponto ponto--alerta'} />
+          <span className={falhaNaPasta ? 'selo-status selo-status--grave' : 'selo-status'}>
+            {pasta || falhaNaPasta ? (
+              <span className={falhaNaPasta ? 'ponto ponto--grave' : 'ponto ponto--alerta'} />
+            ) : (
+              <Cadeado />
+            )}
             {falhaNaPasta
               ? 'A pasta não recebeu a gravação'
               : !lendo
                 ? 'Nenhum leitor ativo'
                 : 'Os dados só existem neste navegador'}
-          </button>
+          </span>
         )}
 
         <button
@@ -266,17 +272,7 @@ export function Fluxo() {
           aria-label="Ajustes"
           title="Ajustes"
         >
-          <svg viewBox="0 0 22 22" width="19" height="19" aria-hidden="true">
-            <path
-              fill="currentColor"
-              d="M11 7.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2Zm0 1.7a1.9 1.9 0 1 1 0 3.8 1.9 1.9 0 0 1 0-3.8Z"
-            />
-            <path
-              fill="currentColor"
-              d="M9.4 1h3.2l.4 2.3c.7.2 1.4.5 2 .9l2.1-1 1.6 2.8-1.7 1.5a7.4 7.4 0 0 1 0 2.2l1.7 1.5-1.6 2.8-2.1-1c-.6.4-1.3.7-2 .9L12.6 21H9.4L9 18.7c-.7-.2-1.4-.5-2-.9l-2.1 1-1.6-2.8 1.7-1.5a7.4 7.4 0 0 1 0-2.2L3.3 10.8 4.9 8l2.1 1c.6-.4 1.3-.7 2-.9L9.4 1Z"
-              opacity=".3"
-            />
-          </svg>
+          <Engrenagem />
         </button>
       </div>
 

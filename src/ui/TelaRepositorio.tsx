@@ -125,6 +125,10 @@ export function TelaRepositorio() {
 
   return (
     <div className="diagnostico">
+      {/* Sem pasta escolhida, os dados existem **num navegador**, não num
+          computador: o mesmo Mac com Chrome e Safari tem duas bases separadas,
+          e cada uma some se aquele navegador limpar os dados do site. Dizer
+          "neste computador" seria promessa maior do que a verdade. */}
       <div className="cartoes">
         <Cartao
           icone="◎"

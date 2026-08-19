@@ -81,6 +81,20 @@ E duas de forma: **rótulo de interface começa com maiúscula** ("Encostar pró
 crachá", não "encostar"), e **poucas opções exclusivas viram controle
 segmentado**, não uma lista de botões.
 
+## Símbolos
+
+Redesenhados na gramática do SF Symbols — traço de peso uniforme, pontas
+arredondadas, forma resolvida em grade quadrada — e não copiados dos arquivos da
+Apple, que não podem ser redistribuídos. Ficam em `ui/componentes/Simbolos.tsx`.
+
+O cadeado aparece no aviso de que os dados só existem no navegador. Ele diz a
+metade boa da frase — **nada sai daqui** — enquanto o texto diz a metade que
+cobra ação.
+
+**Aviso não é botão.** Com a engrenagem a oito pixels dele, dois caminhos para o
+mesmo lugar só fazem duvidar de qual é o certo: o aviso informa, a engrenagem
+abre.
+
 ## Som
 
 Cinquenta repetições em um minuto é o número que manda. A primeira versão errava

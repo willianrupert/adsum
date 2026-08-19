@@ -853,9 +853,9 @@ button:focus-visible {
   padding: 6px 14px;
 }
 
-.selo-status:hover {
-  color: var(--tinta-fraca);
-  opacity: 1;
+.selo-status--grave {
+  color: var(--grave);
+  background: var(--grave-fraca);
 }
 
 .ponto {
