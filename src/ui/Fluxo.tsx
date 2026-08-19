@@ -15,12 +15,7 @@ import { escolherTurma } from '../nucleo/grade.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
-import {
-  comoInstalar,
-  convidarAInstalar,
-  dispensarInstalacao,
-  riscoDeApagar,
-} from '../ambiente/instalacao.ts'
+import { conselho, dispensarInstalacao, riscoDeApagar } from '../ambiente/instalacao.ts'
 import {
   acrescentarNoLog,
   caminhoDosRegistros,
@@ -33,7 +28,7 @@ import { salvarTexto } from '../ambiente/arquivos.ts'
 import type { EstadoDaPasta } from '../nucleo/rota.ts'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
-import { TelaInstalar } from './TelaInstalar.tsx'
+import { TelaNavegador } from './TelaNavegador.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
 import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { Cadeado, Engrenagem, Ondas } from './componentes/Simbolos.tsx'
@@ -62,12 +57,9 @@ export function Fluxo() {
   const [estadoDaPasta, setEstadoDaPasta] = useState<EstadoDaPasta>(
     pastaDisponivel() ? 'sem_pasta' : 'indisponivel',
   )
-  // O convite de instalar é decidido uma vez: reavaliar a cada render faria a
-  // tela sumir no meio de um clique. Dispensar troca o estado, não a leitura —
-  // e guardar o caminho do menu junto evita a tela existir sem ter o que dizer.
-  const [convite, setConvite] = useState(() =>
-    convidarAInstalar() ? comoInstalar() : undefined,
-  )
+  // Decidido uma vez: reavaliar a cada render faria a tela sumir no meio de um
+  // clique. Dispensar troca o estado, não a leitura.
+  const [conselhoDoNavegador, setConselho] = useState(conselho)
   const [falhaNaPasta, setFalhaNaPasta] = useState<string>()
   // Sem pasta, isto é a única memória de que existe trabalho fora do disco.
   const [pendencias, setPendencias] = useState<Pendencia[]>([])
@@ -354,7 +346,7 @@ export function Fluxo() {
     pendentes,
     aulaAberta: !!sessao,
     professorSemCracha,
-    convidarAInstalar: !!convite,
+    conselharNavegador: !!conselhoDoNavegador,
   })
 
   const ligarPasta = async (escolhendo: boolean) => {
@@ -376,12 +368,12 @@ export function Fluxo() {
           aoLiberar={() => void ligarPasta(false)}
         />
       )}
-      {rota === 'instalar' && convite && (
-        <TelaInstalar
-          como={convite}
+      {rota === 'navegador' && conselhoDoNavegador && (
+        <TelaNavegador
+          conselho={conselhoDoNavegador}
           aoDispensar={() => {
             dispensarInstalacao()
-            setConvite(undefined)
+            setConselho(undefined)
           }}
         />
       )}

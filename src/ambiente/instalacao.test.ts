@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { comoInstalar, ehWebKit, plataforma } from './instalacao.ts'
+import { comoInstalar, conselho, ehWebKit, plataforma } from './instalacao.ts'
 
 // Strings reais, e não inventadas: é a única forma de o teste falhar quando um
 // navegador muda de identidade. `Safari/` aparece em quase todas — o Chrome
@@ -63,5 +63,18 @@ describe('comoInstalar', () => {
 
   it('não inventa caminho onde não sabe qual é', () => {
     expect(comoInstalar('outra')).toBeUndefined()
+  })
+})
+
+// O conselho é por navegador porque o que cada um pode fazer é diferente.
+// `conselho` lê o ambiente para saber se é WebKit; aqui só se prova a regra que
+// não depende dele — quem tem pasta não é aconselhado a nada.
+describe('conselho de navegador', () => {
+  it('quem tem seletor de pasta não recebe conselho nenhum', () => {
+    expect(conselho(true)).toBeUndefined()
+  })
+
+  it('sem pasta, sempre há o que dizer', () => {
+    expect(conselho(false)).toBeDefined()
   })
 })

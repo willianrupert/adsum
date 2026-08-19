@@ -248,3 +248,33 @@ descreve índices, e a marca nunca é consultada por índice.
 
 Com pasta nada disso existe: cada evento é gravado no ato, e `porSalvar` é zero
 por construção.
+
+## A recomendação de navegador, e por que ela é por navegador
+
+Pedida em 19/08/2026, concisa. A ironia foi notada pelo autor: um app desenhado
+à Apple recomendando Chrome. A saída foi não fazer piada — **o motivo faz o
+trabalho**, e ele cabe numa frase.
+
+A rota `'navegador'` ocupa o mesmo lugar em que o Chrome pede a pasta, porque é
+a mesma pergunta: onde isto vai viver. O que muda é a resposta que cada
+navegador sabe dar, e daí as duas caras:
+
+- **WebKit na aba** — existe conserto no lugar. A ação é instalar, com o caminho
+  do menu ali mesmo, e a recomendação de Chrome/Edge vem **depois**. Mandar
+  trocar de navegador como primeira frase presume que a pessoa tem outro.
+- **Firefox** — não tem pasta, não apaga sozinho, e instalar não muda nada. O
+  único ganho real é trocar, então trocar **é** a ação da tela. Oferecer outra
+  coisa como se resolvesse seria mentira. Antes disto o Firefox não recebia
+  aviso nenhum: caía direto em "cole sua turma".
+- **Chrome e Edge** — nenhuma tela. Já estão no melhor arranjo que existe, e uma
+  tela a mais seria só um toque a mais.
+
+O motivo é sempre o mesmo, mas a frase não pode ser: numa tela ele vem depois de
+nomear o Chrome ("lá cada presença…"), na outra ele **é** a abertura. A primeira
+versão compartilhava o texto e deixava um "lá" sem antecedente — abstrair prosa
+só porque ela se repete é como se escreve frase que não fecha.
+
+**Efeito colateral nos testes:** o jsdom não tem seletor de pasta, então o
+conselho passou a valer nele e virou a primeira tela de toda a suíte. Quem não
+está testando o conselho dispensa no `beforeEach` — é o equivalente ao professor
+que já decidiu.

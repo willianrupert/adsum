@@ -16,9 +16,15 @@ const pessoa = (matricula: string, nome: string): Matriculado => ({
   papel: 'aluno',
 })
 
+// O jsdom não tem seletor de pasta, então o conselho de navegador vale nele e
+// seria a primeira tela de todo teste. Quem não está testando o conselho começa
+// depois dele — dispensar aqui é o equivalente ao professor que já decidiu.
 beforeEach(async () => {
   bancada = await montarBancada()
+  window.localStorage.setItem('adsum.instalacao.dispensada', 'sim')
 })
+
+afterEach(() => window.localStorage.clear())
 
 async function turmaInteiraComCracha() {
   await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('1', 'Ana Paula')])
@@ -159,16 +165,14 @@ describe('aula que só existe neste navegador', () => {
 // único jeito, e por isso `ehWebKit` aceita a string por parâmetro — o teste
 // mexe no ambiente uma vez, e a lógica em si é testada pura em
 // `ambiente/instalacao.test.ts`.
-describe('no Safari, instalar vem antes da turma', () => {
+describe('o conselho de navegador vem antes da turma', () => {
   const original = navigator.userAgent
 
   const fingirSer = (ua: string) =>
     Object.defineProperty(navigator, 'userAgent', { value: ua, configurable: true })
 
-  afterEach(() => {
-    fingirSer(original)
-    window.localStorage.clear()
-  })
+  beforeEach(() => window.localStorage.clear())
+  afterEach(() => fingirSer(original))
 
   const SAFARI =
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15'
@@ -188,8 +192,22 @@ describe('no Safari, instalar vem antes da turma', () => {
     fingirSer(SAFARI)
     renderizarCom(bancada, <Fluxo />)
 
-    expect(await screen.findByText(/Tem Chrome ou Edge nesta máquina/)).toBeInTheDocument()
-    expect(screen.getByText(/no momento em que ela acontece/)).toBeInTheDocument()
+    expect(await screen.findByText(/Mais seguro ainda/)).toBeInTheDocument()
+    expect(screen.getByText(/gravada no seu computador/)).toBeInTheDocument()
+  })
+
+  // O Firefox não tem pasta, não apaga sozinho e não tem o que instalar: o
+  // único ganho real é trocar de navegador, e por isso ele é a ação da tela.
+  // Antes disto o Firefox caía direto em "cole sua turma", sem aviso nenhum.
+  it('no Firefox a ação é trocar, porque não há conserto no lugar', async () => {
+    fingirSer(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
+    )
+    renderizarCom(bancada, <Fluxo />)
+
+    expect(await screen.findByText('Use o Chrome ou o Edge')).toBeInTheDocument()
+    expect(screen.queryByText('Instale o Adsum')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Continuar assim' })).toBeInTheDocument()
   })
 
   // Instalar é gesto de menu, e o app não tem como saber se aconteceu. Ficar

@@ -20,6 +20,8 @@
 //
 // Onde há seletor de pasta, nada disso é urgente — lá os arquivos são arquivos.
 
+import { pastaDisponivel } from './pasta.ts'
+
 export type Plataforma = 'mac' | 'ios' | 'outra'
 
 const CHAVE_DISPENSA = 'adsum.instalacao.dispensada'
@@ -110,7 +112,24 @@ export function dispensarInstalacao(): void {
   }
 }
 
-/** O convite só faz sentido onde a base tem prazo e ninguém dispensou ainda. */
-export function convidarAInstalar(): boolean {
-  return riscoDeApagar() && comoInstalar() !== undefined && !instalacaoDispensada()
+/**
+ * O que dizer sobre o navegador — e a resposta muda por navegador, porque o que
+ * cada um pode fazer muda.
+ *
+ * `instalar` onde há prazo e a instalação o remove: a ação está ao alcance da
+ * mão, ali mesmo. `trocar` onde não há nada a consertar no lugar — Firefox não
+ * tem pasta, não apaga sozinho, e instalar não muda nada; o único ganho real é
+ * mudar de navegador, e é desonesto oferecer outra coisa como se resolvesse.
+ *
+ * Onde há seletor de pasta não há conselho nenhum: o app já está no melhor
+ * arranjo que existe, e uma tela a mais seria só um toque a mais.
+ */
+export type Conselho =
+  | { tipo: 'instalar'; onde: string; passos: string[] }
+  | { tipo: 'trocar' }
+
+export function conselho(temPasta: boolean = pastaDisponivel()): Conselho | undefined {
+  if (temPasta || instalacaoDispensada()) return undefined
+  const caminho = riscoDeApagar() ? comoInstalar() : undefined
+  return caminho ? { tipo: 'instalar', ...caminho } : { tipo: 'trocar' }
 }

@@ -379,11 +379,14 @@ antigos. Cobrado em três lugares: selo do canto, bloco no repouso e
 `beforeunload` (só quando há o que perder). Com pasta é zero por construção.
 
 **Safari feito:** `ambiente/instalacao.ts` separa quem tem prazo (WebKit) de
-quem só não tem pasta (Firefox), `ui/TelaInstalar.tsx` ensina o caminho do menu
-— não há botão, `beforeinstallprompt` é do Chromium — e `TelaResumo` inverte a
-hierarquia sem pasta: salvar é a ação de acento, concluir vira "concluir sem
-salvar". Ler a pasta já era um clique no Safari via `webkitdirectory`; o que
-falta lá é só escrever de volta sozinho.
+quem só não tem pasta (Firefox), e `ui/TelaNavegador.tsx` tem duas caras na rota
+`'navegador'`: no WebKit ensina o caminho do menu (não há botão,
+`beforeinstallprompt` é do Chromium) e recomenda Chrome/Edge **depois**; no
+Firefox trocar de navegador **é** a ação, porque lá não há conserto no lugar.
+Onde há seletor de pasta não há tela nenhuma — o app já está no melhor arranjo.
+`TelaResumo` inverte a hierarquia sem pasta: salvar é a ação de acento, concluir
+vira "concluir sem salvar". Ler a pasta já era um clique no Safari via
+`webkitdirectory`; o que falta lá é só escrever de volta sozinho.
 
 **Ainda a fazer:** a passada visual (tipografia, espaço, claro/escuro,
 Mushroom cards) e o corte de texto das telas de vínculo e base.

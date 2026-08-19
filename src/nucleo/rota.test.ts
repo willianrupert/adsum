@@ -9,7 +9,7 @@ const BASE: EstadoDoApp = {
   pendentes: 0,
   aulaAberta: false,
   professorSemCracha: false,
-  convidarAInstalar: false,
+  conselharNavegador: false,
 }
 
 describe('a rota decorre do estado', () => {
@@ -37,14 +37,14 @@ describe('a rota decorre do estado', () => {
     expect(decidirRota({ ...BASE, lendo: false })).toBe('problema')
   })
 
-  // Instalar vem antes de cadastrar porque o app instalado tem armazenamento
-  // próprio: quem colar a turma na aba e instalar depois recomeça do zero.
-  it('o convite de instalar vem antes da turma', () => {
-    expect(decidirRota({ ...BASE, convidarAInstalar: true, turmas: 0 })).toBe('instalar')
+  // Vem antes de cadastrar porque mudar de lugar depois faz recomeçar: o app
+  // instalado tem armazenamento próprio, e outro navegador tem outra base.
+  it('o conselho de navegador vem antes da turma', () => {
+    expect(decidirRota({ ...BASE, conselharNavegador: true, turmas: 0 })).toBe('navegador')
   })
 
   it('mas não passa na frente de ambiente quebrado', () => {
-    expect(decidirRota({ ...BASE, convidarAInstalar: true, ambienteQuebrado: true })).toBe(
+    expect(decidirRota({ ...BASE, conselharNavegador: true, ambienteQuebrado: true })).toBe(
       'problema',
     )
   })

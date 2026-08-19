@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { Repouso } from './Fluxo.tsx'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
-import { TelaInstalar } from './TelaInstalar.tsx'
+import { TelaNavegador } from './TelaNavegador.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
 import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { TelaVinculo } from './TelaVinculo.tsx'
@@ -84,10 +84,14 @@ export function Vitrine() {
       </Cena>
 
       <Cena titulo="Instale o Adsum" quando="Safari: a base tem sete dias na aba">
-        <TelaInstalar
-          como={{ onde: 'no Safari', passos: ['Arquivo', 'Adicionar ao Dock'] }}
+        <TelaNavegador
+          conselho={{ tipo: 'instalar', onde: 'no Safari', passos: ['Arquivo', 'Adicionar ao Dock'] }}
           aoDispensar={() => {}}
         />
+      </Cena>
+
+      <Cena titulo="Use o Chrome" quando="Firefox: sem pasta e sem o que instalar">
+        <TelaNavegador conselho={{ tipo: 'trocar' }} aoDispensar={() => {}} />
       </Cena>
 
       <Cena titulo="A turma" quando="nenhuma turma cadastrada">
