@@ -72,14 +72,14 @@ export class RepositorioDexie implements Repositorio {
   }
 
   async salvarTurma(turma: string, pessoas: Matriculado[]): Promise<void> {
-    await this.#banco.transaction('rw', this.#banco.matriculados, async () => {
-      await this.#banco.matriculados.where('turma').equals(turma).delete()
-      await this.#banco.matriculados.bulkPut(pessoas)
+    await this.#banco.transaction('rw', this.#banco.participantes, async () => {
+      await this.#banco.participantes.where('turma').equals(turma).delete()
+      await this.#banco.participantes.bulkPut(pessoas)
     })
   }
 
   async listarMatriculados(turma?: string): Promise<Matriculado[]> {
-    const tabela = this.#banco.matriculados
+    const tabela = this.#banco.participantes
     const lista = turma
       ? await tabela.where('turma').equals(turma).toArray()
       : await tabela.toArray()
@@ -87,12 +87,12 @@ export class RepositorioDexie implements Repositorio {
   }
 
   async listarTurmas(): Promise<string[]> {
-    const turmas = await this.#banco.matriculados.orderBy('turma').uniqueKeys()
+    const turmas = await this.#banco.participantes.orderBy('turma').uniqueKeys()
     return turmas.map(String)
   }
 
   async zerarTurma(turma: string): Promise<void> {
-    await this.#banco.matriculados.where('turma').equals(turma).delete()
+    await this.#banco.participantes.where('turma').equals(turma).delete()
   }
 
   async listarAulas(): Promise<Aula[]> {
@@ -159,7 +159,7 @@ export class RepositorioDexie implements Repositorio {
   async esvaziarCache(): Promise<void> {
     await Promise.all([
       this.#banco.vinculos.clear(),
-      this.#banco.matriculados.clear(),
+      this.#banco.participantes.clear(),
       this.#banco.aulas.clear(),
       this.#banco.eventos.clear(),
       this.#banco.sessao.clear(),
@@ -172,7 +172,7 @@ export class RepositorioDexie implements Repositorio {
       this.#banco.vinculos.where('papel').equals('professor').count(),
       this.#banco.aulas.count(),
       this.#banco.eventos.count(),
-      this.#banco.matriculados.count(),
+      this.#banco.participantes.count(),
       this.listarTurmas(),
     ])
     const estimativa = await this.#estimar()

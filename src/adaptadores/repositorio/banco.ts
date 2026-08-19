@@ -21,7 +21,7 @@ export const ID_DA_CONFIG = 1
 export type BancoAdsum = Dexie & {
   config: EntityTable<LinhaConfig, 'id'>
   vinculos: EntityTable<Vinculo, 'uidHash'>
-  matriculados: EntityTable<Matriculado, 'chave'>
+  participantes: EntityTable<Matriculado, 'chave'>
   sessao: EntityTable<Sessao & { id: number }, 'id'>
   pasta: EntityTable<{ id: number; handle: FileSystemDirectoryHandle }, 'id'>
   aulas: EntityTable<Aula, 'id'>
@@ -70,16 +70,20 @@ export function criarBanco(nome: string = NOME_DO_BANCO): BancoAdsum {
   // página é credencial de acesso de outra pessoa e não tem por que morar numa
   // base de frequência.
   //
-  // São duas versões porque a chave primária de `matriculados` muda, e o
-  // IndexedDB não permite trocá-la: é preciso apagar a tabela numa versão e
-  // recriá-la na seguinte. A lista da turma se perde na migração — e é isso
-  // mesmo, porque ela estava indexada pelo login que não deve mais existir.
-  // Recolar a página do SIGAA refaz, e o cofre em pasta traz de volta o resto.
+  // A lista da turma muda de identidade junto — era indexada pelo login. Chave
+  // primária **não se altera**: apagar e recriar com o mesmo nome funciona em
+  // alguns navegadores e falha em outros (o Safari recusa com "not yet support
+  // for changing primary key", e a base inteira deixa de abrir). Tabela nova com
+  // nome novo nunca colide com nada.
+  //
+  // A lista se perde na migração, e é isso mesmo: ela estava presa a um dado que
+  // não deve mais existir. Recolar a página do SIGAA refaz em dez segundos, e o
+  // cofre em pasta traz o resto de volta.
   banco.version(6).stores({ matriculados: null })
 
   banco.version(7).stores({
     vinculos: 'uidHash, papel, nome, matricula',
-    matriculados: '[turma+chave], turma, chave, nome',
+    participantes: '[turma+chave], turma, chave, nome',
   })
 
   // v8: `aparelhoId` era o identificador de um aparelho que não existe mais.

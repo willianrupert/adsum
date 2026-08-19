@@ -241,13 +241,14 @@ export function Fluxo() {
         </div>
       )}
 
-      {/* Uma engrenagem, e só. Diagnóstico e base são ferramentas de quem
-          conserta, não de quem dá aula — como botões visíveis, convidavam ao
-          clique sem querer, e uma delas trocava o sal.
+      {/* Uma engrenagem, no canto superior direito, sempre no mesmo lugar.
+          Diagnóstico e base são ferramentas de quem conserta, não de quem dá
+          aula — como botões visíveis, convidavam ao clique sem querer, e uma
+          delas trocava o sal.
 
           O aviso ao lado só aparece quando algo está errado: quieto quando
           está tudo bem, e impossível de ignorar quando não está. */}
-      <footer className="selos">
+      <div className="canto">
         {(falhaNaPasta || !lendo || !pasta) && (
           <button className="selo-status" onClick={() => setFolha('ajustes')}>
             <span className={falhaNaPasta ? 'ponto ponto--grave' : 'ponto ponto--alerta'} />
@@ -277,7 +278,7 @@ export function Fluxo() {
             />
           </svg>
         </button>
-      </footer>
+      </div>
 
       {folha && (
         <Sheet titulo="Ajustes" aoFechar={() => setFolha(undefined)}>

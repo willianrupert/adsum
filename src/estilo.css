@@ -105,7 +105,8 @@ code {
 .app {
   max-width: 980px;
   margin: 0 auto;
-  padding: 32px 22px 44px;
+  /* espaço à direita para a engrenagem fixa não encostar no conteúdo */
+  padding: 60px 22px 44px;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -827,19 +828,29 @@ button:focus-visible {
 
 /* ── Selos de estado e folhas ────────────────────────────────────────────── */
 
-.selos {
+/* O canto: engrenagem sempre no mesmo lugar, e o aviso só quando existe.
+   Fixo porque a posição das ferramentas não deve depender do tamanho do
+   conteúdo — procurar onde ficou é exatamente o que não se quer. */
+
+.canto {
+  position: fixed;
+  top: 16px;
+  right: 18px;
   display: flex;
-  gap: 6px;
-  justify-content: center;
-  padding-top: 32px;
+  align-items: center;
+  gap: 8px;
+  z-index: 5;
 }
 
 .selo-status {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  color: var(--tinta-tenue);
+  color: var(--tinta-fraca);
   font-size: var(--t-nota);
+  background: var(--fundo-alt);
+  border-radius: var(--pilula);
+  padding: 6px 14px;
 }
 
 .selo-status:hover {
