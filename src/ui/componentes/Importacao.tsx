@@ -23,9 +23,9 @@ export function Importacao({ resultado }: { resultado: Resultado }) {
         <table className="tabela">
           <thead>
             <tr>
-              <th>linha</th>
-              <th>conteúdo</th>
-              <th>por que ficou de fora</th>
+              <th>Linha</th>
+              <th>Conteúdo</th>
+              <th>Por que ficou de fora</th>
             </tr>
           </thead>
           <tbody>

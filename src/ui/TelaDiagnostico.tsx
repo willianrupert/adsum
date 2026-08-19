@@ -357,10 +357,10 @@ export function TelaDiagnostico() {
           <table className="tabela">
             <thead>
               <tr>
-                <th>hora</th>
+                <th>Hora</th>
                 <th>UID</th>
                 <th>uid_hash</th>
-                <th>quem</th>
+                <th>Quem</th>
               </tr>
             </thead>
             <tbody>
@@ -382,7 +382,7 @@ export function TelaDiagnostico() {
                         </Selo>
                       </>
                     ) : (
-                      <Selo tom="grave">crachá não cadastrado</Selo>
+                      <Selo tom="grave">Crachá não cadastrado</Selo>
                     )}
                   </td>
                 </tr>
@@ -463,9 +463,9 @@ export function TelaDiagnostico() {
             <thead>
               <tr>
                 <th>evento_id</th>
-                <th>quando</th>
-                <th>quem</th>
-                <th>origem</th>
+                <th>Quando</th>
+                <th>Quem</th>
+                <th>Origem</th>
               </tr>
             </thead>
             <tbody>

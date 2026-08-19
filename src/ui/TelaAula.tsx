@@ -319,7 +319,7 @@ export function TelaAula({
       )}
 
       <footer className="coleta__rodape">
-        {recado ?? 'Encoste seu crachá para encerrar'}
+        {recado ?? 'Encoste o seu crachá para encerrar'}
         {ehSimulavel(leitor) && (
           <button
             className="coleta__simular"

@@ -280,7 +280,7 @@ export function TelaVinculo({
 
       {armado !== undefined && atual && (
         <section className="armado">
-          <p className="armado__rotulo">encoste o crachá de</p>
+          <p className="armado__rotulo">Encoste o crachá de</p>
           <p className="armado__nome">{atual.nome}</p>
           <p className="armado__completo">
             {atual.completo} · {atual.papel}
@@ -401,9 +401,9 @@ export function TelaVinculo({
             <table className="tabela">
               <thead>
                 <tr>
-                  <th>nome exibido</th>
-                  <th>papel</th>
-                  <th>estado</th>
+                  <th>Nome exibido</th>
+                  <th>Papel</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -430,27 +430,27 @@ export function TelaVinculo({
                         }
                         aria-label={`papel de ${e.completo}`}
                       >
-                        <option value="aluno">aluno</option>
-                        <option value="professor">professor</option>
+                        <option value="aluno">Aluno</option>
+                        <option value="professor">Professor</option>
                       </select>
                       {e.docenteNoSigaa && e.papel === 'aluno' && (
                         <Selo tom="alerta">SIGAA: docente</Selo>
                       )}
                     </td>
                     <td className="celula--estado">
-                      {e.ambiguo && <Selo tom="grave">nome repetido</Selo>}
+                      {e.ambiguo && <Selo tom="grave">Nome repetido</Selo>}
                     </td>
                     {/* Armar continua disponível depois de vinculado: um aluno com
                         dois crachás é permitido de propósito, porque segunda via
                         existe. A relação é muitos-para-um. */}
                     <td className="celula--estado">
                       {i === armado ? (
-                        <Selo tom="ok">armado</Selo>
+                        <Selo tom="ok">Armado</Selo>
                       ) : (
                         <>
-                          {e.estado === 'feito' && <Selo tom="ok">vinculado</Selo>}
+                          {e.estado === 'feito' && <Selo tom="ok">Vinculado</Selo>}
                           {e.estado === 'recusado' && <Selo tom="grave">{e.detalhe}</Selo>}
-                          {e.estado === 'pulado' && <Selo tom="neutro">pulado</Selo>}
+                          {e.estado === 'pulado' && <Selo tom="neutro">Pulado</Selo>}
                           <button onClick={() => setArmado(i)}>
                             {e.estado === 'feito' ? 'outro crachá' : 'armar'}
                           </button>

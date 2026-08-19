@@ -275,7 +275,7 @@ function Repouso({ turmas, aoAbrirCerimonia }: { turmas: number; aoAbrirCerimoni
       <p className="repouso__turma">
         {turmas === 1 ? 'Sua turma está pronta' : `${turmas} turmas prontas`}
       </p>
-      <p className="repouso__acao">Encoste seu crachá</p>
+      <p className="repouso__acao">Encoste o seu crachá</p>
       <button className="repouso__link" onClick={aoAbrirCerimonia}>
         Cadastrar mais um crachá
       </button>

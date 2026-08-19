@@ -198,8 +198,8 @@ export function TelaRepositorio() {
           <table className="tabela">
             <thead>
               <tr>
-                <th>nome</th>
-                <th>papel</th>
+                <th>Nome</th>
+                <th>Papel</th>
                 <th>uid_hash</th>
                 <th />
               </tr>
@@ -233,8 +233,8 @@ export function TelaRepositorio() {
                       }}
                       aria-label={`papel de ${v.uidHash}`}
                     >
-                      <option value="aluno">aluno</option>
-                      <option value="professor">professor</option>
+                      <option value="aluno">Aluno</option>
+                      <option value="professor">Professor</option>
                     </select>
                   </td>
                   <td>
@@ -286,11 +286,11 @@ export function TelaRepositorio() {
           <table className="tabela">
             <thead>
               <tr>
-                <th>dia</th>
-                <th>início</th>
-                <th>fim</th>
-                <th>turma</th>
-                <th>professor</th>
+                <th>Dia</th>
+                <th>Início</th>
+                <th>Fim</th>
+                <th>Turma</th>
+                <th>Professor</th>
                 <th />
               </tr>
             </thead>
@@ -303,7 +303,7 @@ export function TelaRepositorio() {
                   <td>{a.turma}</td>
                   <td>
                     {nomePorHash.get(a.uidHashProfessor) ?? (
-                      <Selo tom="grave">crachá sem vínculo</Selo>
+                      <Selo tom="grave">Crachá sem vínculo</Selo>
                     )}
                   </td>
                   <td>

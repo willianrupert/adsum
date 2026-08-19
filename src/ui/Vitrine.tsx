@@ -5,6 +5,7 @@
 // de falha da pasta exigiria quebrar a pasta de propósito. Aqui elas ficam lado
 // a lado, com dados inventados.
 
+import { useState } from 'react'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
 import { TelaVinculo } from './TelaVinculo.tsx'
@@ -37,6 +38,29 @@ function Cena({ titulo, quando, children }: { titulo: string; quando: string; ch
       </header>
       <div className="cena__tela">{children}</div>
     </section>
+  )
+}
+
+/**
+ * A busca cobre a tela inteira, como deve. Na vitrine isso a tornava uma
+ * armadilha: sem `aoDesistir` de verdade, não havia como sair dela. Aqui ela
+ * abre e fecha por conta.
+ */
+function BuscaDeMentira() {
+  const [aberta, setAberta] = useState(false)
+  return (
+    <>
+      <button className="botao--acento pasta__botao" onClick={() => setAberta(true)}>
+        Abrir a busca
+      </button>
+      {aberta && (
+        <Busca
+          pessoas={PENDENTES}
+          aoEscolher={() => setAberta(false)}
+          aoDesistir={() => setAberta(false)}
+        />
+      )}
+    </>
   )
 }
 
@@ -78,13 +102,13 @@ export function Vitrine() {
       </Cena>
 
       <Cena titulo="Crachá novo" quando="alguém que faltou no primeiro dia chega">
-        <Busca pessoas={PENDENTES} aoEscolher={() => {}} aoDesistir={() => {}} />
+        <BuscaDeMentira />
       </Cena>
 
       <Cena titulo="Repouso" quando="tudo pronto, fora de aula">
         <section className="repouso">
           <p className="repouso__turma">Sua turma está pronta</p>
-          <p className="repouso__acao">Encoste seu crachá</p>
+          <p className="repouso__acao">Encoste o seu crachá</p>
           <button className="repouso__link">Cadastrar mais um crachá</button>
         </section>
       </Cena>
