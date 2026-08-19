@@ -1310,3 +1310,38 @@ button:focus-visible {
   color: var(--tinta-fraca);
   max-width: 66ch;
 }
+
+/* Ondas de aproximação.
+   A pulsação só existe no repouso, onde nada está acontecendo — durante a
+   chamada ela competiria com a lista, e movimento que compete é ruído. */
+
+.ondas {
+  color: var(--tinta-tenue);
+  margin-bottom: 22px;
+}
+
+.ondas--animadas path {
+  animation: pulsar 2.6s var(--curva) infinite;
+}
+
+@keyframes pulsar {
+  0%,
+  55%,
+  100% {
+    opacity: inherit;
+  }
+  25% {
+    opacity: 1;
+  }
+}
+
+.armado .ondas {
+  color: var(--acao);
+  margin-bottom: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ondas--animadas path {
+    animation: none;
+  }
+}

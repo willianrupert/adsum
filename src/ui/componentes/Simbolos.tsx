@@ -49,3 +49,48 @@ export function Cadeado({ tamanho = 12 }: { tamanho?: number }) {
     </svg>
   )
 }
+
+/**
+ * Ondas de aproximação — o sinal de "encoste aqui".
+ *
+ * São só os arcos, de propósito. O símbolo com a mão e a elipse é o Contactless
+ * Indicator da EMVCo, marca licenciada que não se redesenha por conta; os arcos
+ * sozinhos são o sinal universal, e é o que a Apple usa nas telas de pagamento.
+ *
+ * Quatro arcos com raios em progressão e opacidade decrescente: o mais próximo
+ * é o mais forte, como onda que se afasta.
+ */
+export function Ondas({ tamanho = 64, animado = false }: { tamanho?: number; animado?: boolean }) {
+  const arcos = [
+    { r: 7, opacidade: 1 },
+    { r: 14, opacidade: 0.72 },
+    { r: 21, opacidade: 0.46 },
+    { r: 28, opacidade: 0.24 },
+  ]
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      width={tamanho}
+      height={tamanho}
+      className={animado ? 'ondas ondas--animadas' : 'ondas'}
+      aria-hidden="true"
+    >
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="4.2"
+        strokeLinecap="round"
+        transform="translate(14 32)"
+      >
+        {arcos.map(({ r, opacidade }, i) => (
+          <path
+            key={r}
+            d={`M 0 ${-r} A ${r} ${r} 0 0 1 0 ${r}`}
+            opacity={opacidade}
+            style={{ animationDelay: `${i * 0.18}s` }}
+          />
+        ))}
+      </g>
+    </svg>
+  )
+}

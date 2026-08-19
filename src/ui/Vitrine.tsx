@@ -12,6 +12,7 @@ import { TelaVinculo } from './TelaVinculo.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
 import { Busca } from './componentes/Busca.tsx'
+import { Ondas } from './componentes/Simbolos.tsx'
 import type { Matriculado } from '../nucleo/tipos.ts'
 
 const TURMA = 'IF685 · T01'
@@ -107,6 +108,7 @@ export function Vitrine() {
 
       <Cena titulo="Repouso" quando="tudo pronto, fora de aula">
         <section className="repouso">
+          <Ondas tamanho={72} animado />
           <p className="repouso__turma">Sua turma está pronta</p>
           <p className="repouso__acao">Encoste o seu crachá</p>
           <button className="repouso__link">Cadastrar mais um crachá</button>

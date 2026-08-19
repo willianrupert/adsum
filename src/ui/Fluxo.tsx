@@ -16,7 +16,7 @@ import { acrescentarNoLog, repararLog, restaurar, sincronizar } from '../ambient
 import type { EstadoDaPasta } from '../nucleo/rota.ts'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
-import { Cadeado, Engrenagem } from './componentes/Simbolos.tsx'
+import { Cadeado, Engrenagem, Ondas } from './componentes/Simbolos.tsx'
 import { levantarCapacidades } from '../ambiente/capacidades.ts'
 import { useAdsum } from './adsum.ts'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
@@ -304,6 +304,7 @@ export function Fluxo() {
 function Repouso({ turmas, aoAbrirCerimonia }: { turmas: number; aoAbrirCerimonia: () => void }) {
   return (
     <section className="repouso">
+      <Ondas tamanho={72} animado />
       <p className="repouso__turma">
         {turmas === 1 ? 'Sua turma está pronta' : `${turmas} turmas prontas`}
       </p>

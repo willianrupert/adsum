@@ -23,6 +23,7 @@ import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { useAdsum } from './adsum.ts'
 import { Painel, Selo } from './componentes/Painel.tsx'
 import { ComoCopiar } from './componentes/ComoCopiar.tsx'
+import { Ondas } from './componentes/Simbolos.tsx'
 
 type EstadoDaVez = 'pendente' | 'feito' | 'recusado' | 'pulado'
 
@@ -298,6 +299,7 @@ export function TelaVinculo({
 
       {armado !== undefined && atual && (
         <section className="armado">
+          <Ondas tamanho={54} />
           <p className="armado__rotulo">Encoste o crachá de</p>
           <p className="armado__nome">{atual.nome}</p>
           <p className="armado__completo">
