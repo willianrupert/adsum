@@ -10,7 +10,8 @@ import { decidirRota } from '../nucleo/rota.ts'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import { hexParaUid } from '../nucleo/uid.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
-import { decidir, eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
+import { eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
+import { escolherTurma } from '../nucleo/grade.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
@@ -27,6 +28,7 @@ import type { EstadoDaPasta } from '../nucleo/rota.ts'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
+import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { Cadeado, Engrenagem, Ondas } from './componentes/Simbolos.tsx'
 import { levantarCapacidades } from '../ambiente/capacidades.ts'
 import { useAdsum } from './adsum.ts'
@@ -48,7 +50,6 @@ export function Fluxo() {
   const [turmasAbertas, setTurmasAbertas] = useState<string[]>([])
   const [professorSemCracha, setProfessorSemCracha] = useState(false)
   const [sessao, setSessao] = useState<Sessao>()
-  const [turmas1, setTurmas1] = useState<string>()
   const [pasta, setPasta] = useState<FileSystemDirectoryHandle>()
   const [estadoDaPasta, setEstadoDaPasta] = useState<EstadoDaPasta>(
     pastaDisponivel() ? 'sem_pasta' : 'indisponivel',
@@ -60,6 +61,12 @@ export function Fluxo() {
   // fazer e não fazia nada.
   const [cadastrando, setCadastrando] = useState(false)
   const [resumo, setResumo] = useState<{ sessao: Sessao; presentes: number }>()
+  const [escolhendo, setEscolhendo] = useState<{
+    opcoes: string[]
+    motivo: 'nenhuma' | 'varias'
+    uidHash: string
+    em: Date
+  }>()
 
   const ambienteQuebrado = levantarCapacidades().some((c) => c.peso === 'essencial' && !c.presente)
 
@@ -73,7 +80,6 @@ export function Fluxo() {
       repositorio.sessaoAberta(),
     ])
     setSessao(aberta)
-    setTurmas1(listaDeTurmas.length === 1 ? listaDeTurmas[0] : undefined)
     const comCracha = new Set(vinculos.map((v) => v.matricula).filter(Boolean))
     const faltando = matriculados.filter((m) => !m.matricula || !comCracha.has(m.matricula))
     setTurmas(listaDeTurmas.length)
@@ -152,6 +158,7 @@ export function Fluxo() {
     [repositorio],
   )
 
+
   const consertarPasta = useCallback(async () => {
     if (!pasta) return
     try {
@@ -171,6 +178,29 @@ export function Fluxo() {
     await gravarNaPasta()
   }, [recontar, gravarNaPasta])
 
+  const abrirAula = useCallback(
+    async (turma: string, uidHash: string, em: Date) => {
+      const total = await repositorio.contarEventos()
+      const evento = eventoDe(
+        { tipo: 'abrir', turma },
+        {
+          eventoId: proximoEventoId(config.instalacaoId, em, total + 1),
+          quando: em,
+          turma,
+          uidHash,
+        },
+      )
+      if (evento) {
+        await repositorio.acrescentarEvento(evento)
+        await gravarLinha(evento)
+      }
+      await repositorio.abrirSessao({ turma, abertaEm: em.toISOString(), uidHashProfessor: uidHash })
+      tocar('abertura')
+      await mudou()
+    },
+    [repositorio, config.instalacaoId, gravarLinha, mudou],
+  )
+
   // Não se reconta ao ouvir o crachá: a gravação acontece depois, e contar
   // antes dela devolveria a pendência que acabou de deixar de existir. Quem
   // grava avisa, e é isso que faz a tela sair sozinha da cerimônia para o
@@ -187,35 +217,29 @@ export function Fluxo() {
         const vinculo = await repositorio.vinculoPorHash(uidHash)
         if (vinculo?.papel !== 'professor') return
 
-        const decisao = decidir(uidHash, {
-          vinculo,
-          jaPresentes: new Set(),
-          agora: leitura.em,
-          turmaSugerida: turmas1,
-        })
-        if (decisao.tipo !== 'abrir') return
+        // O relógio e a grade escolhem a turma. Só o caso ambíguo vira
+        // pergunta — e antes disto, com duas turmas cadastradas, o crachá do
+        // professor não fazia nada e a tela não dizia por quê.
+        const [aulas, listaDeTurmas] = await Promise.all([
+          repositorio.listarAulas(),
+          repositorio.listarTurmas(),
+        ])
+        const escolha = escolherTurma(aulas, listaDeTurmas, uidHash, leitura.em)
 
-        const total = await repositorio.contarEventos()
-        const evento = eventoDe(decisao, {
-          eventoId: proximoEventoId(config.instalacaoId, leitura.em, total + 1),
-          quando: leitura.em,
-          turma: decisao.turma,
-          uidHash,
-        })
-        if (evento) {
-          await repositorio.acrescentarEvento(evento)
-          await gravarLinha(evento)
+        if (escolha.tipo === 'sem_turma') return
+        if (escolha.tipo === 'perguntar') {
+          return setEscolhendo({
+            opcoes: escolha.opcoes,
+            motivo: escolha.motivo,
+            uidHash,
+            em: leitura.em,
+          })
         }
-        await repositorio.abrirSessao({
-          turma: decisao.turma,
-          abertaEm: leitura.em.toISOString(),
-          uidHashProfessor: uidHash,
-        })
-        tocar('abertura')
-        await mudou()
+
+        await abrirAula(escolha.turma, uidHash, leitura.em)
       })()
     })
-  }, [leitor, repositorio, config, sessao, turmas1, mudou, gravarLinha])
+  }, [leitor, repositorio, config, sessao, mudou, abrirAula])
 
   // Ensaio sem hardware: espaço encosta o próximo crachá do baralho, e P
   // encosta o do professor — que é o que abre e fecha a aula. Sem isso, testar
@@ -306,6 +330,19 @@ export function Fluxo() {
           aoEncerrar={(presentes) => setResumo({ sessao, presentes })}
         />
       )}
+      {escolhendo && (
+        <EscolherTurma
+          opcoes={escolhendo.opcoes}
+          motivo={escolhendo.motivo}
+          aoDesistir={() => setEscolhendo(undefined)}
+          aoEscolher={(turma) => {
+            const pedido = escolhendo
+            setEscolhendo(undefined)
+            void abrirAula(turma, pedido.uidHash, pedido.em)
+          }}
+        />
+      )}
+
       {resumo && (
         <TelaResumo
           sessao={resumo.sessao}
@@ -380,7 +417,7 @@ export function Fluxo() {
 
       {folha && (
         <Sheet titulo="Ajustes" aoFechar={() => setFolha(undefined)}>
-          <TelaRepositorio />
+          <TelaRepositorio pasta={pasta} aoTrocarPasta={() => void ligarPasta(true)} />
           <TelaDiagnostico />
         </Sheet>
       )}

@@ -208,3 +208,17 @@ Consequências a desenhar:
 Isso reduz a rota: `cerimonia` e `coleta` deixam de ser dois estados e viram um
 só, com o cadastro sendo o que acontece quando o crachá é desconhecido **e** a
 pessoa está na lista da turma.
+
+
+## A grade escolhe a turma — feito
+
+O relógio e a grade respondem "qual turma?" sozinhos, com folga de 20 minutos
+antes e depois: o professor chega às 7h52 para a aula das 8h, e isso é o caso
+normal, não a exceção.
+
+Só o ambíguo vira pergunta — duas aulas no mesmo horário, ou nenhuma na grade
+(feriado, reposição, grade não cadastrada). Com uma turma só, nem isso.
+
+Antes disto, **com duas turmas cadastradas o crachá do professor não fazia nada
+e a tela não dizia por quê** — recusa muda, que é o defeito que este projeto
+mais persegue.

@@ -33,7 +33,13 @@ function comoFoi(salvou: ComoSalvou, nome: string): string {
   return `${nome} foi para a pasta de downloads — este navegador não tem File System Access.`
 }
 
-export function TelaRepositorio() {
+export function TelaRepositorio({
+  pasta,
+  aoTrocarPasta,
+}: {
+  pasta?: FileSystemDirectoryHandle
+  aoTrocarPasta?: () => void
+} = {}) {
   const { repositorio, config, recarregarConfig } = useAdsum()
 
   const [vinculos, setVinculos] = useState<Vinculo[]>([])
@@ -127,6 +133,34 @@ export function TelaRepositorio() {
           computador: o mesmo Mac com Chrome e Safari tem duas bases separadas,
           e cada uma some se aquele navegador limpar os dados do site. Dizer
           "neste computador" seria promessa maior do que a verdade. */}
+      {/* Onde os dados estão. O navegador entrega só o **nome** da pasta — o
+          caminho completo fica fora do alcance da página de propósito, e é uma
+          proteção, não uma limitação a contornar. */}
+      <Painel
+        titulo="Onde os dados ficam"
+        acoes={aoTrocarPasta && <button onClick={aoTrocarPasta}>Trocar de pasta</button>}
+      >
+        {pasta ? (
+          <>
+            <Linha rotulo="pasta">
+              <strong>{pasta.name}</strong>
+            </Linha>
+            <Linha rotulo="dentro dela">
+              <code>config.json · vinculos.json · turmas/ · registros/</code>
+            </Linha>
+            <p className="ferramentas__nota">
+              Gravado a cada mudança. O navegador não revela o caminho completo — procure a
+              pasta pelo nome, onde você a escolheu.
+            </p>
+          </>
+        ) : (
+          <p className="ferramentas__nota">
+            Nenhuma pasta escolhida: os dados existem só neste navegador, e somem se você
+            limpar os dados do site.
+          </p>
+        )}
+      </Painel>
+
       <div className="cartoes">
         <Cartao
           icone="◎"

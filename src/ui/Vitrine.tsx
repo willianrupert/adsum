@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
+import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { TelaVinculo } from './TelaVinculo.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
@@ -137,8 +138,17 @@ export function Vitrine() {
         </div>
       </Cena>
 
-      <Cena titulo="Base" quando="folha, atrás do selo do rodapé">
+      <Cena titulo="Base" quando="folha, atrás da engrenagem">
         <TelaRepositorio />
+      </Cena>
+
+      <Cena titulo="Qual turma" quando="duas aulas no mesmo horário">
+        <EscolherTurma
+          opcoes={['IF685 · T01', 'IF669 · T02']}
+          motivo="varias"
+          aoEscolher={() => {}}
+          aoDesistir={() => {}}
+        />
       </Cena>
 
       <Cena titulo="Diagnóstico" quando="folha, quando algo falha">
