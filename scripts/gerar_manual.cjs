@@ -30,7 +30,6 @@ const {
 } = require('docx')
 
 const LARGURA = 9026 // A4 menos as margens padrão, em DXA
-const AZUL = '0071E3'
 const TINTA = '1D1D1F'
 const FRACA = '6E6E73'
 const CINZA = 'F5F5F7'
