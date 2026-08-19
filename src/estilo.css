@@ -879,11 +879,18 @@ button:focus-visible {
   color: var(--tinta-fraca);
 }
 
-/* Discreto: durante a aula a tela é da fila, e encerrar é o que se faz uma vez
-   no fim. Botão de acento aqui competiria com o contador a cada crachá. */
+/* Discreto **de verdade**: o padrão dos botões é o azul da ação, e sem tirá-lo
+   daqui a única coisa colorida na tela de aula era o botão de encerrar — o
+   acento apontando para a saída, numa tela cujo assunto é a fila. Encerrar é o
+   que se faz uma vez, no fim; a cor pertence ao que muda a cada crachá. */
 .coleta__encerrar {
   padding: 7px 16px;
   font-size: var(--t-menor);
+  color: var(--tinta-fraca);
+}
+
+.coleta__encerrar:hover {
+  color: var(--tinta);
 }
 
 .coleta__recado {
