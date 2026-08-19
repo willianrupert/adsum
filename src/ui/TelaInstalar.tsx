@@ -46,6 +46,18 @@ export function TelaInstalar({
         armazenamento é separado, e o app instalado começa em branco.
       </p>
 
+      {/* A alternativa mais forte, e ela precisa estar dita. Instalar tira o
+          prazo de sete dias, mas continua exigindo que alguém clique em salvar
+          ao fim de cada aula; a pasta grava no ato e não depende de memória
+          humana. Vem depois do passo do menu de propósito: quem abriu no Safari
+          merece primeiro a solução que funciona onde ele está — mandar trocar
+          de navegador como primeira frase presume que ele tem outro. */}
+      <p className="pasta__nota instalar__alternativa">
+        Tem Chrome ou Edge nesta máquina? Lá é mais seguro ainda: o Adsum grava
+        cada presença numa pasta do seu computador <strong>no momento em que ela
+        acontece</strong>, sem depender de você lembrar de salvar.
+      </p>
+
       <button className="repouso__link" onClick={aoDispensar}>
         Continuar sem instalar
       </button>

@@ -565,6 +565,12 @@ button:focus-visible {
   white-space: nowrap;
 }
 
+/* Separada das notas do passo principal por espaço, não por linha nem caixa:
+   é outra ideia, e não outro parágrafo da mesma. */
+.instalar__alternativa {
+  margin-top: 26px;
+}
+
 /* Aula que só existe neste navegador. Fundo sólido e não translúcido: isto
    aparece numa sala clara e num projetor, e contraste aqui é requisito.
    Vermelho no ponto, não no bloco inteiro — pintar tudo de alarme faz a pessoa

@@ -182,6 +182,16 @@ describe('no Safari, instalar vem antes da turma', () => {
     expect(screen.queryByText('Cole sua turma')).not.toBeInTheDocument()
   })
 
+  // A pasta grava no ato; instalar só tira o prazo de sete dias e continua
+  // exigindo um clique por aula. A opção mais segura precisa estar dita.
+  it('diz que Chrome e Edge são mais seguros, e por quê', async () => {
+    fingirSer(SAFARI)
+    renderizarCom(bancada, <Fluxo />)
+
+    expect(await screen.findByText(/Tem Chrome ou Edge nesta máquina/)).toBeInTheDocument()
+    expect(screen.getByText(/no momento em que ela acontece/)).toBeInTheDocument()
+  })
+
   // Instalar é gesto de menu, e o app não tem como saber se aconteceu. Ficar
   // preso aqui seria pior do que o prazo de sete dias.
   it('"Continuar sem instalar" segue para a turma e não volta a perguntar', async () => {
