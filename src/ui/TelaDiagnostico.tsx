@@ -14,7 +14,8 @@ import {
 } from '../portas/LeitorDeCracha.ts'
 import { podeApagar, type DiagnosticoRepositorio } from '../portas/Repositorio.ts'
 import { descreverAmbiente, levantarCapacidades } from '../ambiente/capacidades.ts'
-import { LEITORES, useAdsum } from './adsum.ts'
+import { leitoresVisiveis, useAdsum } from './adsum.ts'
+import { definirModoDev, modoDev } from '../ambiente/preferencias.ts'
 import { Linha, Painel, Selo } from './componentes/Painel.tsx'
 
 interface LeituraNaTela {
@@ -58,6 +59,7 @@ function hhmm(d: Date): string {
 export function TelaDiagnostico() {
   const { leitor, leitorId, trocarLeitor, repositorio, config } = useAdsum()
 
+  const ensaio = useMemo(modoDev, [])
   const capacidades = useMemo(levantarCapacidades, [])
   const ambiente = useMemo(descreverAmbiente, [])
 
@@ -291,7 +293,7 @@ export function TelaDiagnostico() {
       >
         <Linha rotulo="adaptador">
           <div className="segmentado" role="group">
-            {LEITORES.map((opcao) => (
+            {leitoresVisiveis().map((opcao) => (
               <button
                 key={opcao.id}
                 className={opcao.id === leitorId ? 'segmento segmento--ativo' : 'segmento'}
@@ -319,7 +321,7 @@ export function TelaDiagnostico() {
             </Linha>
           ))}
 
-        {ehSimulavel(leitor) && (
+        {ensaio && ehSimulavel(leitor) && (
           <div className="ferramentas">
             <button
               onClick={tentar('Encostar crachá', () => {
@@ -397,10 +399,10 @@ export function TelaDiagnostico() {
         legenda="O que está guardado."
         acoes={
           <>
-            <button onClick={semear}>
-              Semear
-            </button>
-            {podeApagar(repositorio) && (
+            {/* Semear inventa gente e presença. No app publicado seria um botão
+                que suja a chamada de verdade com dados de mentira. */}
+            {ensaio && <button onClick={semear}>Semear</button>}
+            {ensaio && podeApagar(repositorio) && (
               <button
                 className="botao--grave"
                 onClick={tentar('Apagar tudo', async () => {
@@ -477,6 +479,36 @@ export function TelaDiagnostico() {
         )}
       </Painel>
 
+      {/* Por último, e discreto: quem chega aqui está consertando algo, e este
+          é o interruptor que muda o que o resto da tela oferece. Recarrega
+          porque a lista de leitores e o padrão são lidos na montagem — tentar
+          propagar isso por estado seria mais código para um gesto que acontece
+          duas vezes na vida. */}
+      <Painel
+        titulo="Modo de ensaio"
+        legenda="Leitor simulado, teclas de ensaio, semear e apagar."
+        acoes={
+          <button
+            className={ensaio ? 'botao--grave' : undefined}
+            onClick={() => {
+              definirModoDev(!ensaio)
+              location.reload()
+            }}
+          >
+            {ensaio ? 'Desligar' : 'Ligar'}
+          </button>
+        }
+      >
+        <Linha rotulo="estado">
+          <Selo tom={ensaio ? 'alerta' : 'ok'}>{ensaio ? 'ligado' : 'desligado'}</Selo>
+        </Linha>
+        <p className="ferramentas__nota">
+          Desligado, o Adsum é o app de dar aula: só leitores de verdade, nenhuma tecla
+          que marque presença sem crachá, e nada que invente dado. Ligado, aparecem o
+          leitor simulado, <kbd>espaço</kbd> e <kbd>P</kbd> para ensaiar, e os botões de
+          semear e apagar.
+        </p>
+      </Painel>
     </div>
   )
 }

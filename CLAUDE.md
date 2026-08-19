@@ -372,6 +372,16 @@ restaurações e adota **só o sal**: o `instalacaoId` tem de continuar diferent
 por navegador, senão duas instalações cunham o mesmo `evento_id`. Não troca por
 cima de vínculos locais — aí a decisão é humana. Ver `docs/01_cofre.md`.
 
+**Modo de ensaio em 19/08/2026:** `ambiente/preferencias.ts` guarda o que é
+desta máquina — modo de ensaio, leitor escolhido, conselho dispensado — no
+`localStorage` e **não** no cofre, senão o professor que recebe a pasta herdaria
+o modo de ensaio de quem a mandou. Desligado por padrão, e com ele desligado
+somem leitor simulado, teclas `espaço`/`P`, semear e apagar. A regra do que fica
+atrás dele: **se existe para provar que o programa funciona, é ensaio; se existe
+para descobrir por que não funcionou, é diagnóstico, e diagnóstico é de
+produção.** Dois defeitos apareceram na hora: o padrão publicado era o leitor
+**simulado**, e a escolha de leitor não sobrevivia ao recarregamento.
+
 **A pasta se explica em 19/08/2026:** `LEIA-ME.txt` é gravado a cada
 sincronização (`paraLeiaMe` em `nucleo/cofre.ts`) e diz o que é cada arquivo,
 como recuperar tudo nos dois caminhos, que ali há dado pessoal e o que não

@@ -89,6 +89,35 @@ describe('a rota decide a tela', () => {
   })
 })
 
+// O modo de ensaio vem desligado, e é o que separa o app publicado do banco de
+// testes. A propriedade que mais importa não é a tag sumir: é a tecla morrer.
+// Espaço é a tecla que mais se aperta sem querer, e viva ela marcaria presença
+// sem crachá nenhum — dado inventado dentro da chamada de verdade.
+describe('sem modo de ensaio', () => {
+  it('não mostra as teclas de ensaio, mesmo com leitor simulado', async () => {
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Encoste o seu crachá')
+
+    expect(screen.queryByText('crachá')).not.toBeInTheDocument()
+    expect(document.querySelector('kbd')).toBeNull()
+  })
+
+  it('espaço não encosta crachá nenhum', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    const antes = await bancada.repositorio.contarEventos()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Encoste o seu crachá')
+
+    await usuario.keyboard(' ')
+    await usuario.keyboard('p')
+
+    expect(await bancada.repositorio.contarEventos()).toBe(antes)
+    expect(screen.getByText('Encoste o seu crachá')).toBeInTheDocument()
+  })
+})
+
 // O caminho que perde trabalho de verdade: aula dada sem pasta, professor
 // conclui sem salvar, e a chamada fica só no navegador. Antes disto o app
 // esquecia junto com ele — nada na tela, nada na base, e a única memória de que

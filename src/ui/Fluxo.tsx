@@ -5,7 +5,7 @@
 // inteira quando não está. Ninguém deve saber que existe uma tela de
 // diagnóstico até precisar dela.
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { decidirRota } from '../nucleo/rota.ts'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import { hexParaUid } from '../nucleo/uid.ts'
@@ -15,7 +15,8 @@ import { escolherTurma } from '../nucleo/grade.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
-import { conselho, dispensarInstalacao, riscoDeApagar } from '../ambiente/instalacao.ts'
+import { conselho, riscoDeApagar } from '../ambiente/instalacao.ts'
+import { dispensarConselho, modoDev } from '../ambiente/preferencias.ts'
 import {
   acrescentarNoLog,
   caminhoDosRegistros,
@@ -77,6 +78,9 @@ export function Fluxo() {
   }>()
 
   const ambienteQuebrado = levantarCapacidades().some((c) => c.peso === 'essencial' && !c.presente)
+  // Lido uma vez: o modo de ensaio muda pelos Ajustes, e a folha recarrega a
+  // página ao trocar — ver `TelaDiagnostico`.
+  const ensaio = useMemo(modoDev, [])
   // Com pasta nada fica pendente: cada evento é gravado no ato.
   const porSalvar = pasta ? 0 : totalNaoSalvo(pendencias)
 
@@ -296,9 +300,11 @@ export function Fluxo() {
   // encosta o do professor — que é o que abre e fecha a aula. Sem isso, testar
   // o fluxo inteiro exigia caçar a carta certa no baralho.
   //
-  // Só existe com leitor simulado. Com o dongle ligado, quem digita é ele.
+  // Só existe com leitor simulado e modo de ensaio ligado. Uma tecla que dispara
+  // presença não pode estar viva no app publicado: espaço é a tecla que mais se
+  // aperta sem querer, e ali ela marcaria alguém presente.
   useEffect(() => {
-    if (!ehSimulavel(leitor)) return
+    if (!ensaio || !ehSimulavel(leitor)) return
     const simulado = leitor
 
     const aoTeclar = (evento: KeyboardEvent) => {
@@ -336,7 +342,7 @@ export function Fluxo() {
 
     window.addEventListener('keydown', aoTeclar)
     return () => window.removeEventListener('keydown', aoTeclar)
-  }, [leitor, repositorio, config.salHex])
+  }, [ensaio, leitor, repositorio, config.salHex])
 
   const rota = decidirRota({
     ambienteQuebrado,
@@ -372,7 +378,7 @@ export function Fluxo() {
         <TelaNavegador
           conselho={conselhoDoNavegador}
           aoDispensar={() => {
-            dispensarInstalacao()
+            dispensarConselho()
             setConselho(undefined)
           }}
         />
@@ -481,8 +487,8 @@ export function Fluxo() {
           </span>
         )}
 
-        {ehSimulavel(leitor) && (
-          <span className="selo-status" title="Só com leitor simulado">
+        {ensaio && ehSimulavel(leitor) && (
+          <span className="selo-status" title="Modo de ensaio, com leitor simulado">
             <kbd>espaço</kbd> crachá · <kbd>P</kbd> professor
           </span>
         )}

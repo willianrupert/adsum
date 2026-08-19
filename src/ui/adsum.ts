@@ -10,12 +10,15 @@ import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts
 import type { Config } from '../nucleo/tipos.ts'
 import type { LeitorDeCracha } from '../portas/LeitorDeCracha.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
+import { modoDev } from '../ambiente/preferencias.ts'
 
 export interface OpcaoDeLeitor {
   id: string
   nome: string
   /** Uma frase sobre quando este leitor é o certo. Aparece na escolha. */
   quando: string
+  /** Existe só para ensaiar. Some com o modo de ensaio desligado. */
+  ensaio?: boolean
   criar: () => LeitorDeCracha
 }
 
@@ -30,6 +33,7 @@ export const LEITORES: OpcaoDeLeitor[] = [
     id: 'simulado',
     nome: 'Simulado',
     quando: 'ensaio sem hardware',
+    ensaio: true,
     criar: () => new LeitorSimulado(),
   },
   {
@@ -40,7 +44,25 @@ export const LEITORES: OpcaoDeLeitor[] = [
   },
 ]
 
-export const LEITOR_PADRAO = 'simulado'
+/**
+ * O que aparece na escolha. Sem modo de ensaio, o simulado some — e some para
+ * valer: uma opção que existe para provar que o programa funciona não pertence
+ * à tela de quem vai dar aula.
+ */
+export function leitoresVisiveis(): OpcaoDeLeitor[] {
+  return modoDev() ? LEITORES : LEITORES.filter((o) => !o.ensaio)
+}
+
+/**
+ * O padrão era `simulado`, **inclusive no site publicado** — quem abrisse o
+ * Adsum de verdade encontrava um leitor de mentira esperando crachá que nunca
+ * ia chegar. Em produção o padrão é o dongle: é HID de teclado, não pede
+ * permissão nem driver, e funciona igual em todo navegador. No ensaio o padrão
+ * volta a ser o simulado, que é o ponto do ensaio.
+ */
+export function leitorPadrao(): string {
+  return modoDev() ? 'simulado' : 'dongle'
+}
 
 export interface Adsum {
   leitor: LeitorDeCracha

@@ -21,10 +21,9 @@
 // Onde há seletor de pasta, nada disso é urgente — lá os arquivos são arquivos.
 
 import { pastaDisponivel } from './pasta.ts'
+import { conselhoDispensado } from './preferencias.ts'
 
 export type Plataforma = 'mac' | 'ios' | 'outra'
-
-const CHAVE_DISPENSA = 'adsum.instalacao.dispensada'
 
 /**
  * O iPadOS se apresenta como `Macintosh` desde 2019. O que o denuncia é o
@@ -86,32 +85,6 @@ export function comoInstalar(alvo: Plataforma = plataforma()): ComoInstalar | un
   return undefined
 }
 
-export function instalacaoDispensada(): boolean {
-  try {
-    return window.localStorage.getItem(CHAVE_DISPENSA) === 'sim'
-  } catch {
-    return false
-  }
-}
-
-/**
- * `window.localStorage` e não o global solto: o Node tem um `localStorage`
- * próprio, incompleto, que ganha do jsdom sob o vitest — e o `try` esconderia a
- * diferença até alguém depender dela.
- *
- * Dispensar mora no localStorage de propósito: é preferência **desta máquina**,
- * não da base, e não deve viajar na pasta para o computador de outro professor.
- * Que o próprio WebKit apague isso em sete dias é aceitável — a essa altura o
- * convite voltar a aparecer é o comportamento certo.
- */
-export function dispensarInstalacao(): void {
-  try {
-    window.localStorage.setItem(CHAVE_DISPENSA, 'sim')
-  } catch {
-    // Modo privado recusa a escrita. O convite reaparece, e é só isso.
-  }
-}
-
 /**
  * O que dizer sobre o navegador — e a resposta muda por navegador, porque o que
  * cada um pode fazer muda.
@@ -129,7 +102,7 @@ export type Conselho =
   | { tipo: 'trocar' }
 
 export function conselho(temPasta: boolean = pastaDisponivel()): Conselho | undefined {
-  if (temPasta || instalacaoDispensada()) return undefined
+  if (temPasta || conselhoDispensado()) return undefined
   const caminho = riscoDeApagar() ? comoInstalar() : undefined
   return caminho ? { tipo: 'instalar', ...caminho } : { tipo: 'trocar' }
 }
