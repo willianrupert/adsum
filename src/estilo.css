@@ -1365,9 +1365,14 @@ button:focus-visible {
   min-height: 460px;
 }
 
+/* As telas de uma coisa só ocupam a altura da janela no app, e é isso que dá o
+   ar de folga. Na vitrine, onde elas aparecem em sequência, a mesma regra vira
+   trezentos pixels de nada em volta de cada uma. `.resumo` tinha ficado de fora
+   desta lista e era a mais gritante: o "41" no meio de um vazio. */
 .cena__tela .repouso,
 .cena__tela .coleta,
-.cena__tela .colagem {
+.cena__tela .colagem,
+.cena__tela .resumo {
   min-height: 0;
 }
 
