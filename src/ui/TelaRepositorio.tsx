@@ -16,6 +16,7 @@ import {
 import { DIAS, horaValida } from '../nucleo/grade.ts'
 import type { Aula, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.ts'
+import { pastaDisponivel } from '../ambiente/pasta.ts'
 import { useAdsum } from './adsum.ts'
 import { Linha, Painel, Selo } from './componentes/Painel.tsx'
 import { Cartao } from './componentes/Cartao.tsx'
@@ -139,9 +140,10 @@ export function TelaRepositorio({
       <Painel
         titulo="Onde os dados ficam"
         acoes={
-          aoTrocarPasta && (
-            // O rótulo diz o que vai acontecer, não o nome da função: sem pasta
-            // não há o que trocar.
+          // Sem seletor de diretório, não existe botão: oferecer uma ação que o
+          // navegador não pode executar é pior que não oferecer nada.
+          aoTrocarPasta &&
+          pastaDisponivel() && (
             <button className={pasta ? undefined : 'botao--acento'} onClick={aoTrocarPasta}>
               {pasta ? 'Trocar de pasta' : 'Escolher pasta'}
             </button>
@@ -161,10 +163,17 @@ export function TelaRepositorio({
               pasta pelo nome, onde você a escolheu.
             </p>
           </>
-        ) : (
+        ) : pastaDisponivel() ? (
           <p className="ferramentas__nota">
             Nenhuma pasta escolhida: os dados existem só neste navegador, e somem se você
             limpar os dados do site.
+          </p>
+        ) : (
+          <p className="ferramentas__nota">
+            Este navegador não tem seletor de pasta — só Chrome e Edge têm. Aqui os dados
+            ficam no navegador, e a cópia é por sua conta: exporte os arquivos abaixo e
+            guarde-os onde quiser. Para trazer uma base já existente, use{' '}
+            <strong>Já tenho uma pasta do Adsum</strong> na tela de colar a turma.
           </p>
         )}
       </Painel>

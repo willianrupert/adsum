@@ -405,7 +405,9 @@ export function Fluxo() {
               ? 'A pasta não recebeu a gravação'
               : !lendo
                 ? 'Nenhum leitor ativo'
-                : 'Os dados só existem neste navegador'}
+                : estadoDaPasta === 'indisponivel'
+                  ? 'Sem pasta neste navegador — exporte uma cópia'
+                  : 'Os dados só existem neste navegador'}
           </span>
         )}
 
