@@ -42,8 +42,11 @@ function comoMatriculado(turma: string, e: Entrada): Matriculado {
 export function TelaVinculo({
   turmaInicial,
   aoMudarBase,
+  aoSair,
 }: {
   turmaInicial?: string
+  /** Volta para onde estava. Só existe quando a tela foi aberta de propósito. */
+  aoSair?: () => void
   /** Chamado depois de gravar, não ao ouvir o crachá: quem conta pendências
       precisa contar sobre a base já escrita, e não competir com a escrita. */
   aoMudarBase?: () => void
@@ -130,13 +133,21 @@ export function TelaVinculo({
     const vinculos = await repositorio.listarVinculos()
     const comCracha = new Set(vinculos.map((v) => v.matricula).filter(Boolean))
 
-    setFila(
-      preparados.map((p) => ({
-        ...p,
-        estado: p.matricula && comCracha.has(p.matricula) ? 'feito' : 'pendente',
-      })),
-    )
+    const lista = preparados.map((p) => ({
+      ...p,
+      estado: (p.matricula && comCracha.has(p.matricula) ? 'feito' : 'pendente') as EstadoDaVez,
+    }))
+    setFila(lista)
     setArmado(undefined)
+
+    // Guardar não é decisão de ninguém: quem colou a turma quer a turma
+    // guardada. O botão que existia aqui era trabalho que o app pode fazer.
+    await repositorio.salvarTurma(
+      turma.trim(),
+      lista.map((e) => comoMatriculado(turma.trim(), e)),
+    )
+    setTurmasSalvas(await repositorio.listarTurmas())
+    aoMudarBase?.()
 
     const docentes = preparados.filter((p) => p.papel === 'professor').length
     const ambiguos = preparados.filter((p) => p.ambiguo).length
@@ -148,16 +159,6 @@ export function TelaVinculo({
         (ambiguos > 0 ? ` ${ambiguos} com nomes iguais — edite antes de armar.` : ''),
     })
   }, [colado, turma, repositorio])
-
-  const guardarTurma = useCallback(async () => {
-    await repositorio.salvarTurma(
-      turma.trim(),
-      fila.map((e) => comoMatriculado(turma.trim(), e)),
-    )
-    setTurmasSalvas(await repositorio.listarTurmas())
-    setRecado({ tom: 'ok', texto: `Turma ${turma.trim()} guardada com ${fila.length} pessoas.` })
-    aoMudarBase?.()
-  }, [repositorio, turma, fila, aoMudarBase])
 
   const proximoPendente = useCallback(
     (apartirDe: number) => {
@@ -310,7 +311,7 @@ export function TelaVinculo({
             >
               →
             </button>
-            <button onClick={() => setArmado(undefined)}>Encerrar</button>
+            <button onClick={() => setArmado(undefined)}>Parar</button>
           </div>
           <p className="armado__atalho">use ← e → para andar pela turma</p>
 
@@ -379,7 +380,6 @@ export function TelaVinculo({
           legenda={`${feitos} de ${fila.length} com crachá`}
           acoes={
             <>
-              <button onClick={() => void guardarTurma()}>Guardar</button>
               <button
                 className="botao--acento"
                 onClick={() => {
@@ -391,7 +391,7 @@ export function TelaVinculo({
                   setArmado(primeiro)
                 }}
               >
-                Começar
+                Cadastrar crachás
               </button>
             </>
           }
@@ -403,7 +403,7 @@ export function TelaVinculo({
                 <tr>
                   <th>Nome exibido</th>
                   <th>Papel</th>
-                  <th>Estado</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -445,7 +445,7 @@ export function TelaVinculo({
                         existe. A relação é muitos-para-um. */}
                     <td className="celula--estado">
                       {i === armado ? (
-                        <Selo tom="ok">Armado</Selo>
+                        <Selo tom="ok">Chamando</Selo>
                       ) : (
                         <>
                           {e.estado === 'feito' && <Selo tom="ok">Vinculado</Selo>}
@@ -464,13 +464,14 @@ export function TelaVinculo({
             <div className="ferramentas">
               <button
                 onClick={() => {
+                  if (aoSair) return aoSair()
                   setFila([])
                   setArmado(undefined)
                   setRecado(undefined)
                   setProblemas([])
                 }}
               >
-                Trocar de turma
+                {aoSair ? 'Concluir' : 'Trocar de turma'}
               </button>
               <span className="ferramentas__ou">
                 Segunda via: arme o nome de novo.

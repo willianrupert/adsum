@@ -243,6 +243,20 @@ textarea {
   padding: 11px 14px;
 }
 
+/* A seta do <select> encostava na borda. O espaço à direita é dela. */
+select {
+  padding: 8px 34px 8px 12px;
+  font-size: var(--t-menor);
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 17px) calc(50% + 1px),
+    calc(100% - 12px) calc(50% + 1px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
 textarea {
   width: 100%;
   resize: vertical;
@@ -403,10 +417,17 @@ button:focus-visible {
   vertical-align: middle;
 }
 
-.celula--estado {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+/* `display: flex` numa <td> a tira do layout de tabela: as colunas somem e o
+   conteúdo empilha. O arranjo horizontal vai num contêiner interno. */
+.celula--estado > * {
+  vertical-align: middle;
+}
+
+.celula--estado .selo,
+.celula--estado button,
+.celula--estado select,
+.celula--estado code {
+  margin-right: 8px;
 }
 
 .vazio {

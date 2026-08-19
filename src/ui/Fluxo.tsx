@@ -34,6 +34,7 @@ export function Fluxo() {
   const [turmaPendente, setTurmaPendente] = useState<string>()
   const [pendentesDaTurma, setPendentesDaTurma] = useState<Matriculado[]>([])
   const [matriculadosTodos, setMatriculadosTodos] = useState<Matriculado[]>([])
+  const [turmasAbertas, setTurmasAbertas] = useState<string[]>([])
   const [professorSemCracha, setProfessorSemCracha] = useState(false)
   const [sessao, setSessao] = useState<Sessao>()
   const [turmas1, setTurmas1] = useState<string>()
@@ -43,6 +44,10 @@ export function Fluxo() {
   )
   const [falhaNaPasta, setFalhaNaPasta] = useState<string>()
   const [folha, setFolha] = useState<Folha>()
+  // A rota decide sozinha, mas "quero cadastrar mais um crachá" é uma intenção
+  // que nenhum dado expressa — sem isto, o botão do repouso não tinha o que
+  // fazer e não fazia nada.
+  const [cadastrando, setCadastrando] = useState(false)
 
   const ambienteQuebrado = levantarCapacidades().some((c) => c.peso === 'essencial' && !c.presente)
 
@@ -65,6 +70,7 @@ export function Fluxo() {
     setMatriculadosTodos(matriculados)
     setTurmaPendente(faltando[0]?.turma)
     setProfessorSemCracha(!vinculos.some((v) => v.papel === 'professor'))
+    setTurmasAbertas(listaDeTurmas)
   }, [repositorio])
 
   useEffect(() => {
@@ -229,7 +235,16 @@ export function Fluxo() {
           aoRegistrar={gravarLinha}
         />
       )}
-      {rota === 'pronto' && <Repouso turmas={turmas} aoAbrirCerimonia={() => setFolha(undefined)} />}
+      {rota === 'pronto' && !cadastrando && (
+        <Repouso turmas={turmas} aoAbrirCerimonia={() => setCadastrando(true)} />
+      )}
+      {rota === 'pronto' && cadastrando && (
+        <TelaVinculo
+          turmaInicial={turmasAbertas[0]}
+          aoMudarBase={mudou}
+          aoSair={() => setCadastrando(false)}
+        />
+      )}
 
       {falhaNaPasta && (
         <div className="aviso aviso--grave">
