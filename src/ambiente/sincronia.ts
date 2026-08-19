@@ -111,6 +111,67 @@ export async function sincronizar(
   return { arquivos, problemas: [] }
 }
 
+/**
+ * Reconstrói o cache a partir de **arquivos soltos**, escolhidos à mão.
+ *
+ * Safari e Firefox não têm seletor de diretório, então lá a pasta do cofre não
+ * pode ser aberta nem acompanhada. O que eles têm é `<input type="file">`, e
+ * isso basta para **ler** o que está no disco: o professor escolhe os arquivos
+ * do cofre e a base volta. Escrever de volta continua não sendo possível —
+ * nesses navegadores o Adsum guarda no navegador e exporta à mão.
+ */
+export async function restaurarDeArquivos(
+  repositorio: Repositorio,
+  arquivos: File[],
+): Promise<Resumo> {
+  const problemas: string[] = []
+  const lidos: string[] = []
+
+  const conteudo = new Map<string, string>()
+  for (const arquivo of arquivos) conteudo.set(arquivo.name, await arquivo.text())
+
+  const vinculosCru = conteudo.get('vinculos.json')
+  if (vinculosCru) {
+    const { conteudo: lista, problemas: falhas } = deJsonVinculos(vinculosCru)
+    for (const vinculo of lista ?? []) await repositorio.gravarVinculo(vinculo)
+    problemas.push(...falhas.map((f) => f.motivo))
+    lidos.push('vinculos.json')
+  }
+
+  const gradeCru = conteudo.get('grade.json')
+  if (gradeCru) {
+    const { conteudo: lista, problemas: falhas } = deJsonGrade(gradeCru)
+    for (const aula of lista ?? []) await repositorio.gravarAula({ ...aula, id: undefined })
+    problemas.push(...falhas.map((f) => f.motivo))
+    lidos.push('grade.json')
+  }
+
+  for (const [nome, texto] of conteudo) {
+    if (nome === 'vinculos.json' || nome === 'grade.json' || nome === 'config.json') continue
+
+    if (nome.endsWith('.json')) {
+      const { conteudo: pessoas, problemas: falhas } = deJsonTurma(texto, nome)
+      if (pessoas?.length) await repositorio.salvarTurma(pessoas[0].turma, pessoas)
+      problemas.push(...falhas.map((f) => f.motivo))
+      lidos.push(nome)
+      continue
+    }
+
+    if (nome.endsWith('.csv')) {
+      const { itens, problemas: falhas } = deCsv(texto)
+      for (const evento of itens) await repositorio.acrescentarEvento(evento)
+      problemas.push(...falhas.map((f) => `${nome}, linha ${f.linha}: ${f.motivo}`))
+      lidos.push(nome)
+    }
+  }
+
+  if (lidos.length === 0) {
+    problemas.push('Nenhum arquivo do Adsum entre os escolhidos.')
+  }
+
+  return { arquivos: lidos, problemas }
+}
+
 /** Reconstrói o cache a partir da pasta. É o caminho de voltar do zero. */
 export async function restaurar(
   repositorio: Repositorio,

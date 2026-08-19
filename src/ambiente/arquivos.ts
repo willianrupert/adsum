@@ -77,3 +77,19 @@ export async function abrirTexto(): Promise<ArquivoLido | undefined> {
     campo.click()
   })
 }
+
+/**
+ * Escolher vários arquivos de uma vez, para reconstruir o cofre onde não há
+ * seletor de diretório. `webkitdirectory` faz o Safari e o Firefox oferecerem a
+ * pasta inteira; quem não aceitar cai na escolha múltipla comum.
+ */
+export async function abrirVarios(): Promise<File[]> {
+  return await new Promise<File[]>((resolver) => {
+    const campo = document.createElement('input')
+    campo.type = 'file'
+    campo.multiple = true
+    campo.setAttribute('webkitdirectory', '')
+    campo.onchange = () => resolver([...(campo.files ?? [])])
+    campo.click()
+  })
+}

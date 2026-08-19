@@ -87,5 +87,25 @@ export const paraJsonGrade = (aulas: Aula[]) => embrulhar(aulas)
 export const deJsonGrade = (texto: string) => desembrulhar<Aula[]>(texto, NOMES.grade)
 
 export const paraJsonTurma = (pessoas: Matriculado[]) => embrulhar(pessoas)
+
+/**
+ * O arquivo que um professor passa para outro.
+ *
+ * **Leva o sal junto, e não tem como não levar.** O identificador de cada
+ * crachá é `SHA-256(sal ‖ uid)`: sem o mesmo sal, os hashes de um professor são
+ * ruído para o outro, e a lista chega inútil. Exportar só os vínculos daria a
+ * impressão de funcionar e não funcionaria — que é pior.
+ *
+ * A consequência precisa estar dita na tela: este arquivo liga crachás a nomes
+ * e vale o mesmo cuidado que a lista da turma.
+ */
+export interface Compartilhamento {
+  salHex: string
+  vinculos: Vinculo[]
+}
+
+export const paraJsonCompartilhado = (dados: Compartilhamento) => embrulhar(dados)
+export const deJsonCompartilhado = (texto: string) =>
+  desembrulhar<Compartilhamento>(texto, 'o arquivo compartilhado')
 export const deJsonTurma = (texto: string, turma: string) =>
   desembrulhar<Matriculado[]>(texto, NOMES.turma(turma))

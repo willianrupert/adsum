@@ -145,7 +145,12 @@ Herdadas do aparelho (justificativa em `../Adsum/CLAUDE.md`):
 - **UID é campo de tamanho variável** — 4, 7 ou 10 bytes. Código que assume 4
   quebra na frente da turma, não no teste.
 - **Nada é reescrito — apenas append.** Vale para eventos.
-- **`uid_hash` = 8 primeiros bytes de SHA-256(sal ‖ uid).**
+- **`uid_hash` = 8 primeiros bytes de SHA-256(sal ‖ uid).** O sal **não aparece
+  na interface**: é sorteado uma vez, nunca é mostrado nem editável, e viaja
+  sozinho no arquivo que um professor passa a outro. Ele protege uma coisa só, e
+  não é o nome: sem ele, quem obtiver o `registros.csv` recupera o UID por força
+  bruta em segundos e pode **clonar o crachá**. Nome e matrícula já estão no
+  arquivo; o UID é o único dado ali que dá poder novo a quem o lê.
 - **Sem hora confiável, a sessão não abre.**
 - **O nome não trafega.** Sai `uid_hash`; a planilha resolve.
 

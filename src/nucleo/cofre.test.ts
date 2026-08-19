@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { VERSAO, deJsonVinculos, paraJsonVinculos } from './cofre.ts'
+import {
+  VERSAO,
+  deJsonCompartilhado,
+  deJsonVinculos,
+  paraJsonCompartilhado,
+  paraJsonVinculos,
+} from './cofre.ts'
 import type { Vinculo } from './tipos.ts'
 
 const VINCULOS: Vinculo[] = [
@@ -42,5 +48,21 @@ describe('arquivos do cofre', () => {
 
   it('diz qual arquivo está quebrado, não só que quebrou', () => {
     expect(deJsonVinculos('{ isto não é json').problemas[0].motivo).toMatch(/vinculos\.json/)
+  })
+})
+
+describe('arquivo para outro professor', () => {
+  // Sem o mesmo sal, os hashes de um professor são ruído para o outro. Exportar
+  // só os vínculos daria a impressão de funcionar — que é pior que não ter.
+  it('leva o sal junto, senão a lista chega inútil', () => {
+    const texto = paraJsonCompartilhado({ salHex: 'a'.repeat(32), vinculos: VINCULOS })
+    const { conteudo } = deJsonCompartilhado(texto)
+    expect(conteudo?.salHex).toBe('a'.repeat(32))
+    expect(conteudo?.vinculos).toEqual(VINCULOS)
+  })
+
+  it('recusa arquivo de versão mais nova, como os outros do cofre', () => {
+    const futuro = JSON.stringify({ versao: 99, conteudo: {} })
+    expect(deJsonCompartilhado(futuro).problemas[0].motivo).toMatch(/versão mais nova/)
   })
 })

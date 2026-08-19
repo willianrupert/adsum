@@ -15,6 +15,9 @@ import { calcularUidHash } from '../nucleo/hash.ts'
 import { prepararLista, type NomePreparado } from '../nucleo/nomes.ts'
 import { interpretarParticipantes } from '../nucleo/sigaa.ts'
 import { uidLegivel } from '../nucleo/uid.ts'
+import { abrirVarios } from '../ambiente/arquivos.ts'
+import { pastaDisponivel } from '../ambiente/pasta.ts'
+import { restaurarDeArquivos } from '../ambiente/sincronia.ts'
 import type { Matriculado, Papel } from '../nucleo/tipos.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { useAdsum } from './adsum.ts'
@@ -114,6 +117,20 @@ export function TelaVinculo({
   useEffect(() => {
     if (turmaInicial && fila.length === 0) void abrirTurma(turmaInicial)
   }, [turmaInicial, fila.length, abrirTurma])
+
+  const abrirPastaExistente = useCallback(async () => {
+    const arquivos = await abrirVarios()
+    if (arquivos.length === 0) return
+    const { arquivos: lidos, problemas: falhas } = await restaurarDeArquivos(repositorio, arquivos)
+    setProblemas(falhas)
+    if (lidos.length === 0) {
+      setRecado({ tom: 'grave', texto: 'Nenhum arquivo do Adsum entre os escolhidos.' })
+      return
+    }
+    setTurmasSalvas(await repositorio.listarTurmas())
+    setRecado({ tom: 'ok', texto: `${lidos.length} arquivos lidos.` })
+    aoMudarBase?.()
+  }, [repositorio, aoMudarBase])
 
   const interpretar = useCallback(async () => {
     if (!turma.trim()) {
@@ -361,6 +378,18 @@ export function TelaVinculo({
               Continuar
             </button>
           </div>
+
+          {/* Onde não há seletor de diretório — Safari, Firefox — o app não tem
+              como saber que já existe uma pasta do Adsum no disco, e tratava
+              quem já tem turma como se estivesse começando. Este caminho lê os
+              arquivos escolhidos à mão. */}
+          {!pastaDisponivel() && (
+            <div className="colagem__acoes">
+              <button onClick={() => void abrirPastaExistente()}>
+                Já tenho uma pasta do Adsum
+              </button>
+            </div>
+          )}
 
           {turmasSalvas.length > 0 && (
             <div className="colagem__acoes">

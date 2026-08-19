@@ -5,14 +5,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { deCsv, nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'
 import {
+  deJsonCompartilhado,
   deJsonGrade,
   deJsonVinculos,
   NOMES,
+  paraJsonCompartilhado,
   paraJsonGrade,
   paraJsonVinculos,
 } from '../nucleo/cofre.ts'
 import { DIAS, horaValida } from '../nucleo/grade.ts'
-import { salValido, sortearSal } from '../nucleo/hash.ts'
 import type { Aula, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.ts'
 import { useAdsum } from './adsum.ts'
@@ -40,7 +41,6 @@ export function TelaRepositorio() {
   const [totalEventos, setTotalEventos] = useState(0)
   const [busca, setBusca] = useState('')
   const [nova, setNova] = useState<Omit<Aula, 'id'>>(AULA_VAZIA)
-  const [sal, setSal] = useState(config.salHex)
   const [importacao, setImportacao] = useState<Resultado>()
   const [recado, setRecado] = useState<{ tom: 'ok' | 'grave'; texto: string }>()
 
@@ -58,8 +58,6 @@ export function TelaRepositorio() {
   useEffect(() => {
     void carregar()
   }, [carregar])
-
-  useEffect(() => setSal(config.salHex), [config.salHex])
 
   function tentar(rotulo: string, acao: () => Promise<string | void>) {
     return async () => {
@@ -439,53 +437,63 @@ export function TelaRepositorio() {
 
       </Painel>
 
-      {/* O sal fica atrás de um clique a mais de propósito.
-          Gravar um sal novo transforma todos os crachás em desconhecidos — é a
-          ação mais destrutiva do app, e estava exposta ao lado de "Exportar".
-          Ninguém precisa dela no uso normal; quem precisa sabe procurar. */}
-      <details className="avancado">
-        <summary>Avançado</summary>
-
-        <div className="avancado__corpo">
-          <p className="avancado__titulo">Sal</p>
-          <p className="avancado__nota">
-            É o segredo que impede o identificador do crachá de ser reconstruído. Trocá-lo
-            transforma todos os crachás em desconhecidos de uma vez, e não há como voltar
-            atrás.
-          </p>
-
-          <div className="ferramentas">
-            <input
-              value={sal}
-              onChange={(e) => setSal(e.target.value)}
-              spellCheck={false}
-              aria-label="Sal em hexadecimal"
-              className="entrada--larga"
-            />
-            <button onClick={() => setSal(sortearSal())}>Sortear</button>
+      <Painel
+        titulo="Passar os crachás a outro professor"
+        legenda="Quem dá aula para os mesmos alunos não precisa cadastrar tudo de novo."
+        acoes={
+          <>
             <button
-              className="botao--grave"
-              onClick={tentar('Gravar sal', async () => {
-                if (!salValido(sal)) throw new Error('precisa de 32 dígitos hexadecimais')
-                const quantos = vinculos.length
+              onClick={tentar('Importar crachás', async () => {
+                const arquivo = await abrirTexto()
+                if (!arquivo) return 'cancelado.'
+                const { conteudo, problemas } = deJsonCompartilhado(arquivo.texto)
+                if (!conteudo) throw new Error(problemas[0]?.motivo ?? 'arquivo não reconhecido')
+
+                // Trocar o sal é o que faz os crachás recebidos funcionarem — e
+                // o que quebra os que já estavam aqui, se forem de outro sal.
+                const meus = vinculos.length
                 if (
+                  conteudo.salHex !== config.salHex &&
+                  meus > 0 &&
                   !confirm(
-                    quantos > 0
-                      ? `Trocar o sal desfaz os ${quantos} crachás já vinculados. Eles terão de ser cadastrados de novo. Continuar?`
-                      : 'Trocar o sal? Só faz sentido antes de vincular alguém.',
+                    `Este arquivo vem de outra instalação e traz o segredo dela. Os ${meus} crachás já cadastrados aqui deixarão de ser reconhecidos. Continuar?`,
                   )
                 ) {
                   throw new Error('cancelado')
                 }
-                await repositorio.definirSal(sal)
+
+                await repositorio.definirSal(conteudo.salHex)
+                for (const vinculo of conteudo.vinculos) await repositorio.gravarVinculo(vinculo)
                 await recarregarConfig()
+                return `${conteudo.vinculos.length} crachás.`
               })}
             >
-              Trocar o sal
+              Importar
             </button>
-          </div>
-        </div>
-      </details>
+            <button
+              onClick={tentar('Exportar crachás', async () =>
+                comoFoi(
+                  await salvarTexto(
+                    'adsum-crachas.json',
+                    paraJsonCompartilhado({ salHex: config.salHex, vinculos }),
+                  ),
+                  'adsum-crachas.json',
+                ),
+              )}
+            >
+              Exportar
+            </button>
+          </>
+        }
+      >
+        <p className="ferramentas__nota">
+          O arquivo leva os {vinculos.length} crachás e o segredo que os liga aos nomes — sem
+          ele, a lista chega inútil do outro lado. Quem receber passa a reconhecer os mesmos
+          crachás, e os alunos não encostam duas vezes. Trate o arquivo com o mesmo cuidado
+          que a lista da turma.
+        </p>
+      </Painel>
+
     </div>
   )
 }
