@@ -28,8 +28,9 @@ import type { Conselho } from '../ambiente/instalacao.ts'
 function NaHora() {
   return (
     <>
-      cada presença é gravada numa pasta do seu computador <strong>na hora</strong>, sem
-      depender de você lembrar de salvar
+      cada presença é gravada numa pasta do seu computador{' '}
+      <strong className="sem-quebra">na hora</strong>, sem depender de você lembrar de
+      salvar
     </>
   )
 }
@@ -50,7 +51,7 @@ export function TelaNavegador({
           Lá <NaHora />. Aqui o Adsum guarda tudo dentro do navegador, e cada aula espera
           por um clique seu.
         </p>
-        <button className="repouso__link" onClick={aoDispensar}>
+        <button className="repouso__link botao--quieto" onClick={aoDispensar}>
           Continuar assim
         </button>
       </section>
@@ -76,19 +77,25 @@ export function TelaNavegador({
         ))}
       </p>
 
+      {/* Um parágrafo, e não dois. Separados, os dois tinham o mesmo cinza, o
+          mesmo tamanho e o mesmo espaço da recomendação abaixo — três blocos
+          iguais empilhados viram parede, e parede não se lê. São a mesma ideia
+          (este navegador tem prazo, instale agora), então são uma frase. */}
       <p className="pasta__nota">
         Numa aba, o Safari apaga os dados deste site depois de sete dias de uso sem você
-        voltar aqui. O app instalado guarda por fora do Safari.
-      </p>
-      <p className="pasta__nota">
-        Instale antes de cadastrar a turma: ele começa em branco.
+        voltar aqui. O app instalado guarda por fora — instale antes de cadastrar a
+        turma, porque ele começa em branco.
       </p>
 
+      {/* A recomendação é outra ideia, e o que a separa é espaço mais a pergunta
+          em tinta cheia. Sem régua e sem caixa: contraste tipográfico é o
+          separador que não vira moldura. */}
       <p className="pasta__nota instalar__alternativa">
-        Tem Chrome ou Edge? Lá é mais seguro ainda: <NaHora />.
+        <strong className="instalar__pergunta">Tem Chrome ou Edge?</strong> Lá é mais
+        seguro ainda: <NaHora />.
       </p>
 
-      <button className="repouso__link" onClick={aoDispensar}>
+      <button className="repouso__link botao--quieto" onClick={aoDispensar}>
         Continuar sem instalar
       </button>
     </section>

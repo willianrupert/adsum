@@ -94,6 +94,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Negrito partido em duas linhas denuncia acabamento — e `text-wrap: balance`
+   torna isso mais provável, porque ele iguala as linhas sem olhar o que quebra.
+   Onde a ênfase é de duas palavras, elas andam juntas. */
+.sem-quebra {
+  white-space: nowrap;
+}
+
 code {
   font-family: var(--mono);
   font-size: 0.88em;
@@ -219,6 +226,17 @@ button:active:not(:disabled) {
 .botao--acento:hover {
   background: var(--acao-viva);
   opacity: 1;
+}
+
+/* Azul é para onde se quer que a pessoa vá. Numa tela cujo objetivo é o caminho
+   do menu, o único azul era o botão de **não fazer** — o acento apontando para a
+   saída. Sair continua ali, e agora com o peso de sair. */
+.botao--quieto {
+  color: var(--tinta-fraca);
+}
+
+.botao--quieto:hover {
+  color: var(--tinta);
 }
 
 .botao--grave {
@@ -522,6 +540,11 @@ button:focus-visible {
   margin-top: 28px;
 }
 
+/* `balance` e não `pretty` nas linhas de apoio: são parágrafos de até três
+   linhas, e ali o que incomoda é a última linha curta sozinha. `pretty` cuida do
+   fim de parágrafos longos; `balance` distribui as linhas por igual, que é o que
+   a Apple faz em título e subtítulo. Acima de quatro linhas o navegador ignora,
+   e é a hora em que `pretty` volta a ser o certo — mas aqui não chega lá. */
 .pasta__nota {
   margin: 18px auto 0;
   /* 42ch empilhava sete linhas e dava aspecto de coluna de jornal. A faixa
@@ -530,7 +553,7 @@ button:focus-visible {
   max-width: 66ch;
   font-size: var(--t-corpo);
   color: var(--tinta-fraca);
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 .pasta__botao {
@@ -575,7 +598,12 @@ button:focus-visible {
 /* Separada das notas do passo principal por espaço, não por linha nem caixa:
    é outra ideia, e não outro parágrafo da mesma. */
 .instalar__alternativa {
-  margin-top: 26px;
+  margin-top: 40px;
+}
+
+.instalar__pergunta {
+  color: var(--tinta);
+  font-weight: 600;
 }
 
 /* Aula que só existe neste navegador. Fundo sólido e não translúcido: isto
@@ -1307,11 +1335,27 @@ button:focus-visible {
   color: var(--tinta-tenue);
 }
 
+/* `contain` não é enfeite aqui, é o que prende as sobreposições.
+   `Qual turma?` e `Crachá novo` são `position: fixed` — no app isso é certo, é
+   camada de verdade sobre a tela toda. Na vitrine, cada uma escapava da própria
+   cena, cobria a página inteira e a travava: o fundo é clicável para sair, mas
+   ali fora de contexto não havia o que fechar, e a vitrine ficava presa na
+   primeira sobreposição que encontrasse.
+
+   `layout` faz a cena virar bloco contentor de descendentes fixos; `paint`
+   recorta o que passar da borda. Duas palavras no lugar de um andaime. */
 .cena__tela {
+  position: relative;
+  contain: layout paint;
   border-radius: var(--raio);
   padding: 26px;
   background: var(--fundo);
   box-shadow: inset 0 0 0 1px var(--separador);
+}
+
+/* Sobreposição encostada no rodapé precisa de altura para não virar faixa. */
+.cena__tela:has(.folha__fundo) {
+  min-height: 460px;
 }
 
 .cena__tela .repouso,
