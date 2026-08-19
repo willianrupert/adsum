@@ -44,10 +44,10 @@ describe('crachá do professor', () => {
   it('recusa encerrar cedo demais, dizendo quanto falta', () => {
     const decisao = decidir(
       PROFESSOR.uidHash,
-      ctx({ vinculo: PROFESSOR, sessao: { ...SESSAO, abertaEm: '2026-08-18T09:59:30.000Z' } }),
+      ctx({ vinculo: PROFESSOR, sessao: { ...SESSAO, abertaEm: '2026-08-18T09:59:56.000Z' } }),
     )
-    expect(decisao).toEqual({ tipo: 'cedo_demais', faltamMs: 30_000 })
-    expect(JANELA_MINIMA_MS).toBe(60_000)
+    expect(decisao).toEqual({ tipo: 'cedo_demais', faltamMs: 6_000 })
+    expect(JANELA_MINIMA_MS).toBe(10_000)
   })
 
   it('não abre sem saber de que turma é a aula', () => {

@@ -339,7 +339,7 @@ com `registros/<turma>.csv`, nas colunas de `docs/02_formato.md`. E `;` + BOM
 selos discretos.
 
 **Coleta feita:** `nucleo/sessao.ts` tem as regras puras (quem conta presença,
-quem não conta, a janela de 60 s antes de aceitar o fechamento) e
+quem não conta, a janela de 10 s antes de aceitar o fechamento) e
 `ui/TelaColeta.tsx` desenha. Som por Web Audio, tocado **depois** de gravar. A
 tela se reconstrói do log: fechar o notebook no meio da aula não perde a
 chamada.

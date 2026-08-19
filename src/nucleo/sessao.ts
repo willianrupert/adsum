@@ -13,8 +13,12 @@ import type { Evento, Matriculado, Papel, Vinculo } from './tipos.ts'
  * O professor encosta duas vezes sem querer com facilidade — e sem esta janela
  * a segunda leitura encerra a aula que a primeira acabou de abrir, na frente da
  * turma.
+ *
+ * Dez segundos: o suficiente para separar dois toques do mesmo gesto, e pouco
+ * o bastante para não atrapalhar quem precisa reabrir a aula por engano de
+ * verdade. Sessenta era proteção contra um problema que dura dois.
  */
-export const JANELA_MINIMA_MS = 60_000
+export const JANELA_MINIMA_MS = 10_000
 
 export interface Sessao {
   turma: string
