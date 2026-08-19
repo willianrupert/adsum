@@ -3,35 +3,37 @@
 // A ilustração é desenhada, não fotografada. Um print da tela real levaria nome
 // completo, matrícula, login, e-mail e foto de quarenta e nove pessoas para um
 // repositório público — e o manual não precisa disso para ensinar. Os dados
-// aqui são inventados; o layout é o da página de verdade.
+// aqui são inventados; o layout é o da página de verdade. A linha destacada é a
+// que o Adsum lê — `Matrícula:`, e não `Usuário:`, que é login de acesso.
 //
 // Mesma disciplina do `gerar_mockups.py`: versiona-se o desenho, não a captura.
 
 const MENU = ['Principal', 'Gerenciar Perfil', 'Plano de Curso', 'Participantes', 'Fóruns']
 
 const DOCENTES = [
-  ['ANA PAULA MENDES DE SOUZA', 'ana.mendes'],
-  ['CARLOS EDUARDO RAMOS LIMA', 'carlos.ramos'],
+  ['ANA PAULA MENDES DE SOUZA', 'docente-1'],
+  ['CARLOS EDUARDO RAMOS LIMA', 'docente-2'],
 ]
 
 const DISCENTES = [
-  ['BRENO OLIVEIRA FILHO', 'breno.of'],
-  ['CARLA REGINA NASCIMENTO', 'carla.rn'],
-  ['DANIEL SOUZA LIMA', 'daniel.sl'],
-  ['EVA MARIA COSTA', 'eva.costa'],
+  ['BRENO OLIVEIRA FILHO', '20250000001'],
+  ['CARLA REGINA NASCIMENTO', '20250000002'],
+  ['DANIEL SOUZA LIMA', '20250000003'],
+  ['EVA MARIA COSTA', '20250000004'],
 ]
 
 function Pessoa({
   x,
   y,
   nome,
-  login,
+  apoio,
   rotuloDoId,
 }: {
   x: number
   y: number
   nome: string
-  login: string
+  apoio: string
+  /** A linha destacada: é dela que o Adsum tira o identificador. */
   rotuloDoId: string
 }) {
   return (
@@ -41,10 +43,10 @@ function Pessoa({
         {nome}
       </text>
       <text x="34" y="20" className="ilu-campo">
-        {rotuloDoId}
+        {apoio}
       </text>
       <text x="34" y="30" className="ilu-usuario">
-        Usuário: {login}
+        {rotuloDoId}
       </text>
     </g>
   )
@@ -62,8 +64,8 @@ export function ComoCopiar() {
         </li>
         <li>
           Clique logo antes de <strong>Docentes</strong> e arraste até depois do último
-          discente — o bloco inteiro, com as linhas de <code>Usuário:</code>. É delas que
-          sai o login do CIn.
+          discente — o bloco inteiro, com as linhas de <code>Matrícula:</code>. É delas
+          que sai a matrícula.
         </li>
         <li>
           Copie (<kbd>⌘C</kbd> ou <kbd>Ctrl+C</kbd>) e cole no campo abaixo. Pegar a página
@@ -98,40 +100,40 @@ export function ComoCopiar() {
 
         <text x="152" y="40" className="ilu-secao">DOCENTES (2)</text>
         <line x1="152" y1="46" x2="676" y2="46" className="ilu-regua" />
-        {DOCENTES.map(([nome, login], i) => (
+        {DOCENTES.map(([nome, chave], i) => (
           <Pessoa
-            key={login}
+            key={chave}
             x={152}
             y={56 + i * 40}
             nome={nome}
-            login={login}
+            apoio="Formação: DOUTORADO"
             rotuloDoId="Departamento: CENTRO DE INFORMÁTICA - CIN"
           />
         ))}
 
         <text x="152" y="156" className="ilu-secao">DISCENTES (47)</text>
         <line x1="152" y1="162" x2="676" y2="162" className="ilu-regua" />
-        {DISCENTES.map(([nome, login], i) => (
+        {DISCENTES.map(([nome, chave], i) => (
           <Pessoa
-            key={login}
+            key={chave}
             x={i % 2 === 0 ? 152 : 420}
             y={172 + Math.floor(i / 2) * 40}
             nome={nome}
-            login={login}
-            rotuloDoId="Matrícula: 2025000000"
+            apoio="Curso: CIÊNCIA DA COMPUTAÇÃO/CIN"
+            rotuloDoId={`Matrícula: ${chave}`}
           />
         ))}
         <text x="152" y="264" className="ilu-campo">… e mais 43</text>
 
         {/* marcação da seleção */}
         <text x="152" y="296" className="ilu-marca">
-          ↑ selecione daqui até o fim da lista, incluindo as linhas “Usuário:”
+          ↑ selecione daqui até o fim da lista, incluindo as linhas “Matrícula:”
         </text>
       </svg>
 
       <p className="manual__nota">
-        Nada disso sai do seu navegador. A lista fica aqui para a cerimônia e para preencher
-        o login na planilha.
+        Nada disso sai do seu navegador. O Adsum lê o nome completo e a matrícula; a linha{' '}
+        <code>Usuário:</code> é o login do SIGAA e não é lida.
       </p>
     </details>
   )
