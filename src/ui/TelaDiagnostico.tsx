@@ -47,10 +47,6 @@ function formatarBytes(n?: number): string {
   return `${i === 0 ? valor : valor.toFixed(1)} ${unidades[i]}`
 }
 
-function plural(n: number, singular: string, plural: string): string {
-  return `${n} ${n === 1 ? singular : plural}`
-}
-
 function hora(d: Date): string {
   return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
@@ -250,7 +246,7 @@ export function TelaDiagnostico() {
 
       <Painel
         titulo="Ambiente"
-        legenda="O que este navegador oferece, e o que se perde sem cada peça."
+        legenda="O que este navegador oferece."
         acoes={<button onClick={() => location.reload()}>Recarregar</button>}
       >
         <ul className="capacidades">
@@ -266,11 +262,18 @@ export function TelaDiagnostico() {
           ))}
         </ul>
         <Linha rotulo="service worker">{servico}</Linha>
-        {Object.entries(ambiente).map(([k, v]) => (
-          <Linha key={k} rotulo={k}>
-            <code>{v}</code>
-          </Linha>
-        ))}
+        {/* O agente do usuário e a origem só interessam quando algo falha, e
+            aí quem lê é quem conserta — ficam atrás de um clique. */}
+        <details className="avancado">
+          <summary>Detalhes do ambiente</summary>
+          <div className="avancado__corpo">
+            {Object.entries(ambiente).map(([k, v]) => (
+              <Linha key={k} rotulo={k}>
+                <code>{v}</code>
+              </Linha>
+            ))}
+          </div>
+        </details>
         <Linha rotulo="relógio">
           <code>{agora.toISOString()}</code> · {hora(agora)}
         </Linha>
@@ -339,16 +342,14 @@ export function TelaDiagnostico() {
             >
               Simular
             </button>
-            <p className="ferramentas__nota">
-              O baralho gira: dar a volta reencontra um crachá já visto.
-            </p>
+
           </div>
         )}
       </Painel>
 
       <Painel
         titulo="Últimas leituras"
-        legenda="UID → uid_hash → vínculo. Nada é gravado como presença: sessão é o passo 4."
+        legenda="Nada aqui conta presença."
       >
         {leituras.length === 0 ? (
           <p className="vazio">Nenhuma leitura ainda. Encoste um crachá acima.</p>
@@ -393,7 +394,7 @@ export function TelaDiagnostico() {
 
       <Painel
         titulo="Repositório"
-        legenda="Tudo em IndexedDB, neste navegador. Nada sai daqui."
+        legenda="O que está guardado."
         acoes={
           <>
             <button onClick={semear}>
@@ -416,7 +417,6 @@ export function TelaDiagnostico() {
           </>
         }
       >
-        <Linha rotulo="base">{diagRepo?.nome ?? '—'}</Linha>
         <Linha rotulo="aberta">
           <Selo tom={diagRepo?.aberto ? 'ok' : 'grave'}>{diagRepo?.aberto ? 'sim' : 'não'}</Selo>
         </Linha>
@@ -444,12 +444,6 @@ export function TelaDiagnostico() {
             </>
           )}
         </Linha>
-        <Linha rotulo="vínculos">
-          {plural(diagRepo?.vinculos ?? 0, 'crachá', 'crachás')}, dos quais{' '}
-          {plural(diagRepo?.professores ?? 0, 'de professor', 'de professor')}
-        </Linha>
-        <Linha rotulo="aulas na grade">{diagRepo?.aulas ?? 0}</Linha>
-        <Linha rotulo="eventos">{plural(diagRepo?.eventos ?? 0, 'linha', 'linhas')}</Linha>
         <Linha rotulo="espaço usado">
           {formatarBytes(diagRepo?.usoEstimado)} de {formatarBytes(diagRepo?.cotaEstimada)}
         </Linha>
