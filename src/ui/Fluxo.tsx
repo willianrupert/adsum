@@ -8,6 +8,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { decidirRota } from '../nucleo/rota.ts'
 import { calcularUidHash } from '../nucleo/hash.ts'
+import { hexParaUid } from '../nucleo/uid.ts'
+import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { decidir, eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
@@ -195,6 +197,52 @@ export function Fluxo() {
     })
   }, [leitor, repositorio, config, sessao, turmas1, mudou, gravarLinha])
 
+  // Ensaio sem hardware: espaço encosta o próximo crachá do baralho, e P
+  // encosta o do professor — que é o que abre e fecha a aula. Sem isso, testar
+  // o fluxo inteiro exigia caçar a carta certa no baralho.
+  //
+  // Só existe com leitor simulado. Com o dongle ligado, quem digita é ele.
+  useEffect(() => {
+    if (!ehSimulavel(leitor)) return
+    const simulado = leitor
+
+    const aoTeclar = (evento: KeyboardEvent) => {
+      const alvo = evento.target as HTMLElement | null
+      const digitando =
+        alvo?.tagName === 'INPUT' || alvo?.tagName === 'TEXTAREA' || alvo?.isContentEditable
+      if (digitando || evento.metaKey || evento.ctrlKey || evento.altKey) return
+
+      if (evento.code === 'Space') {
+        evento.preventDefault()
+        try {
+          simulado.encostarProximo()
+        } catch {
+          /* leitor parado: o diagnóstico já diz */
+        }
+        return
+      }
+
+      if (evento.key.toLowerCase() === 'p') {
+        evento.preventDefault()
+        void (async () => {
+          const professor = (await repositorio.listarVinculos()).find(
+            (v) => v.papel === 'professor',
+          )
+          if (!professor) return
+          // O vínculo guarda o hash, não o UID. O baralho é curto: acha-se qual
+          // carta gera aquele hash e encosta ela.
+          for (const hex of simulado.baralho()) {
+            const hash = await calcularUidHash(config.salHex, hexParaUid(hex))
+            if (hash === professor.uidHash) return simulado.simular(hex)
+          }
+        })()
+      }
+    }
+
+    window.addEventListener('keydown', aoTeclar)
+    return () => window.removeEventListener('keydown', aoTeclar)
+  }, [leitor, repositorio, config.salHex])
+
   const rota = decidirRota({
     ambienteQuebrado,
     pasta: estadoDaPasta,
@@ -280,6 +328,12 @@ export function Fluxo() {
               : !lendo
                 ? 'Nenhum leitor ativo'
                 : 'Os dados só existem neste navegador'}
+          </span>
+        )}
+
+        {ehSimulavel(leitor) && (
+          <span className="selo-status" title="Só com leitor simulado">
+            <kbd>espaço</kbd> crachá · <kbd>P</kbd> professor
           </span>
         )}
 

@@ -527,10 +527,17 @@ button:focus-visible {
 /* ── Cerimônia ───────────────────────────────────────────────────────────── */
 
 .armado {
+  position: relative;
   background: var(--fundo-alt);
   border-radius: var(--raio);
   padding: 44px 28px 32px;
   text-align: center;
+}
+
+.armado__voltar {
+  position: absolute;
+  top: 14px;
+  left: 12px;
 }
 
 .armado__rotulo {
@@ -883,6 +890,15 @@ button:focus-visible {
   background: var(--fundo-alt);
   border-radius: var(--pilula);
   padding: 6px 14px;
+}
+
+.selo-status kbd {
+  font-family: var(--fonte);
+  font-size: var(--t-nota);
+  background: color-mix(in srgb, var(--tinta) 10%, transparent);
+  border-radius: 5px;
+  padding: 1px 6px;
+  margin-right: 2px;
 }
 
 .selo-status--grave {

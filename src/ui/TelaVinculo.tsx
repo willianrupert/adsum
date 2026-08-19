@@ -174,7 +174,7 @@ export function TelaVinculo({
       tom: ambiguos > 0 ? 'alerta' : 'ok',
       texto:
         `${preparados.length} pessoas, ${docentes === 1 ? '1 professor' : `${docentes} professores`}.` +
-        (ambiguos > 0 ? ` ${ambiguos} com nomes iguais — edite antes de armar.` : ''),
+        (ambiguos > 0 ? ` ${ambiguos} com nomes iguais — edite antes de começar.` : ''),
     })
   }, [colado, turma, repositorio])
 
@@ -299,7 +299,15 @@ export function TelaVinculo({
 
       {armado !== undefined && atual && (
         <section className="armado">
-          <Ondas tamanho={54} />
+          {/* Voltar fica no canto, como numa folha do sistema: sair não pode
+              exigir procurar. */}
+          <button className="armado__voltar" onClick={() => setArmado(undefined)}>
+            ‹ Voltar
+          </button>
+
+          {/* Animado como no repouso: os dois são o mesmo estado — a tela
+              esperando um crachá. */}
+          <Ondas tamanho={54} animado />
           <p className="armado__rotulo">Encoste o crachá de</p>
           <p className="armado__nome">{atual.nome}</p>
           <p className="armado__completo">
@@ -330,9 +338,8 @@ export function TelaVinculo({
             >
               →
             </button>
-            <button onClick={() => setArmado(undefined)}>Parar</button>
           </div>
-          <p className="armado__atalho">use ← e → para andar pela turma</p>
+          <p className="armado__atalho">← e → andam pela turma</p>
 
           {/* Com leitor simulado a cerimônia inteira roda sem hardware — é como
               se ensaia o roteiro antes de ter cinquenta alunos na fila. */}
@@ -471,9 +478,9 @@ export function TelaVinculo({
                     <td className="celula--estado">
                       {e.ambiguo && <Selo tom="grave">Nome repetido</Selo>}
                     </td>
-                    {/* Armar continua disponível depois de vinculado: um aluno com
-                        dois crachás é permitido de propósito, porque segunda via
-                        existe. A relação é muitos-para-um. */}
+                    {/* Chamar continua disponível depois de vinculado: um aluno
+                        com dois crachás é permitido de propósito, porque segunda
+                        via existe. A relação é muitos-para-um. */}
                     <td className="celula--estado">
                       {i === armado ? (
                         <Selo tom="ok">Chamando</Selo>
@@ -483,7 +490,7 @@ export function TelaVinculo({
                           {e.estado === 'recusado' && <Selo tom="grave">{e.detalhe}</Selo>}
                           {e.estado === 'pulado' && <Selo tom="neutro">Pulado</Selo>}
                           <button onClick={() => setArmado(i)}>
-                            {e.estado === 'feito' ? 'outro crachá' : 'armar'}
+                            {e.estado === 'feito' ? 'Mais um crachá' : 'Chamar'}
                           </button>
                         </>
                       )}
@@ -505,7 +512,7 @@ export function TelaVinculo({
                 {aoSair ? 'Concluir' : 'Trocar de turma'}
               </button>
               <span className="ferramentas__ou">
-                Segunda via: arme o nome de novo.
+                Perdeu o crachá? Chame o nome de novo e cadastre o novo.
               </span>
             </div>
           </>
