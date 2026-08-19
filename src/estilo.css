@@ -26,6 +26,10 @@
   --fundo-alt: #f5f5f7;
   --tinta: #1d1d1f;
   --tinta-fraca: #6e6e73;
+  /* 3,6:1 sobre branco — abaixo do mínimo de 4,5:1 para texto normal. Fica
+     reservado ao que é **desenho**: ondas, seta de caminho, placeholder, ícone.
+     Informação que alguém precisa ler usa `--tinta-fraca`, que dá 5,9:1. A
+     regra vem do lugar onde isto roda: sala clara, projetor, visto de longe. */
   --tinta-tenue: #86868b;
   --acao: #0071e3;
   --acao-viva: #0077ed;
@@ -434,7 +438,7 @@ button:focus-visible {
 .tabela th {
   text-align: left;
   font-weight: 400;
-  color: var(--tinta-tenue);
+  color: var(--tinta-fraca);
   padding: 0 18px 10px 0;
 }
 
@@ -499,7 +503,7 @@ button:focus-visible {
 
 .carregando {
   padding: 48px 0;
-  color: var(--tinta-tenue);
+  color: var(--tinta-fraca);
   font-size: var(--t-menor);
 }
 
@@ -684,7 +688,7 @@ button:focus-visible {
 .armado__completo {
   margin: 8px 0 0;
   font-size: var(--t-menor);
-  color: var(--tinta-tenue);
+  color: var(--tinta-fraca);
 }
 
 .armado__acoes {
@@ -697,7 +701,7 @@ button:focus-visible {
 .armado__atalho {
   margin: 18px 0 0;
   font-size: var(--t-nota);
-  color: var(--tinta-tenue);
+  color: var(--tinta-fraca);
 }
 
 .linha--armada td {
@@ -853,7 +857,7 @@ button:focus-visible {
 
 .coleta__linha time {
   font-size: var(--t-menor);
-  color: var(--tinta-tenue);
+  color: var(--tinta-fraca);
   font-variant-numeric: tabular-nums;
 }
 
@@ -867,7 +871,7 @@ button:focus-visible {
 
 .coleta__vazio {
   font-size: var(--t-titulo);
-  color: var(--tinta-tenue);
+  color: var(--tinta-fraca);
 }
 
 .coleta__rodape {
@@ -1457,7 +1461,7 @@ button:focus-visible {
 
 .busca__completo {
   font-size: var(--t-nota);
-  color: var(--tinta-tenue);
+  color: var(--tinta-fraca);
 }
 
 .busca__vazio {
@@ -1475,7 +1479,7 @@ button:focus-visible {
   margin: 10px 0 0;
   text-align: center;
   font-size: var(--t-nota);
-  color: var(--tinta-tenue);
+  color: var(--tinta-fraca);
 }
 
 .busca__atalhos kbd {
@@ -1623,7 +1627,7 @@ button:focus-visible {
 .resumo__arquivo {
   margin: 26px 0 0;
   font-size: var(--t-menor);
-  color: var(--tinta-tenue);
+  color: var(--tinta-fraca);
   max-width: 60ch;
 }
 
