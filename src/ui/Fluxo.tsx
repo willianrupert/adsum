@@ -182,7 +182,7 @@ export function Fluxo() {
           abertaEm: leitura.em.toISOString(),
           uidHashProfessor: uidHash,
         })
-        tocar('sessao')
+        tocar('abertura')
         await mudou()
       })()
     })

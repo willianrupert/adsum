@@ -201,7 +201,7 @@ export function TelaAula({
       case 'cedo_demais':
         return tocar('desconhecido')
       case 'encerrar':
-        return tocar('sessao')
+        return tocar('encerramento')
       default:
         if (evento) tocar('ok')
     }

@@ -14,10 +14,7 @@ elimina sozinho a maior parte das ideias boas em telas paradas:
 - **Nada que se mova muito.** Movimento a cada 1,5 s por cinquenta vezes vira
   ruído visual e cansa. Uma entrada curta (150–200 ms) na linha nova, e nada
   mais.
-- **O som não pode empilhar.** Bipes de 90 ms com 1,5 s entre eles funcionam;
-  dois bipes sobrepostos viram estalo. O som precisa cortar o anterior em vez de
-  somar, e o volume tem que aguentar cinquenta repetições sem irritar quem está
-  na sala há uma hora.
+- **O som não pode empilhar nem cansar.** Ver a seção de som abaixo.
 
 **O que a Apple faz nesse caso** é não celebrar cada evento. O feedback é
 pequeno, imediato e igual toda vez — a lista cresce, o número muda. Comemoração
@@ -83,6 +80,30 @@ o botão diz quantos crachás serão desfeitos antes de perguntar.
 E duas de forma: **rótulo de interface começa com maiúscula** ("Encostar próximo
 crachá", não "encostar"), e **poucas opções exclusivas viram controle
 segmentado**, não uma lista de botões.
+
+## Som
+
+Cinquenta repetições em um minuto é o número que manda. A primeira versão errava
+em quatro pontos, e vale registrar para não voltarem:
+
+| Errado | Por quê |
+|---|---|
+| senoide a 1200 Hz | agudo cansa, e senoide pura soa a caixa de supermercado |
+| bipe duplo para repetido | repetição é o que mais irrita cinquenta vezes |
+| corte linear no fim | deixa estalo audível |
+| sons somando | duas leituras juntas dobravam o volume |
+
+Como ficou: notas curtas com **decaimento exponencial**, como corda beliscada —
+som que já está sumindo quando se percebe. Onda triangular filtrada em 2,6 kHz,
+tudo entre 349 e 784 Hz, volume entre 0,09 e 0,12, e **nada passa de meio
+segundo**. Um toque novo corta o anterior em 20 ms em vez de somar.
+
+A diferença entre avisos é de **altura, nunca de repetição**: subir é bom,
+descer é problema. Presença registrada é o toque mais discreto de todos — uma
+nota só — porque é o caso normal, e o normal não se anuncia.
+
+Há teste garantindo cada uma dessas propriedades: duração, faixa de frequência,
+volume, número de notas, e a direção de cada par.
 
 ## Movimento
 
