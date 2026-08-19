@@ -18,6 +18,9 @@ export const INTERVALO_MAXIMO_MS = 60
 /** Menos que isto não é UID nenhum, é tecla solta. */
 export const MINIMO_DE_CARACTERES = 6
 
+/** Separadores que os leitores costumam imprimir entre os bytes. */
+export const SEPARADORES = /[\s:.-]/g
+
 export interface Tecla {
   caractere: string
   em: number
@@ -25,9 +28,18 @@ export interface Tecla {
 
 export interface Digitacao {
   uid: Uid
-  /** Como veio, antes de virar bytes. Aparece no diagnóstico. */
+  /** Como veio, antes de qualquer limpeza. Aparece no diagnóstico. */
   cru: string
   formato: 'hexadecimal' | 'decimal'
+  /**
+   * O mesmo UID com os bytes na ordem inversa.
+   *
+   * Alguns leitores imprimem em little-endian, e não há como saber qual é o
+   * certo sem comparar com outra fonte. O diagnóstico mostra os dois para que
+   * uma conferência a olho resolva — em vez de o app escolher errado em
+   * silêncio e o vínculo não bater com o do celular.
+   */
+  invertido: string
 }
 
 function hexParaBytes(hex: string): Uint8Array {
@@ -68,18 +80,31 @@ export function foiDigitadoPorMaquina(teclas: Tecla[]): boolean {
  * Converte uma rajada de teclas num UID, ou devolve `undefined` quando aquilo
  * não era um crachá. Nunca adivinha: comprimento fora do padrão é recusa.
  */
+function inverter(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .reverse()
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
 export function interpretarDigitacao(teclas: Tecla[]): Digitacao | undefined {
   if (!foiDigitadoPorMaquina(teclas)) return undefined
 
   const cru = teclas.map((t) => t.caractere).join('').trim()
 
-  if (/^[0-9a-fA-F]+$/.test(cru) && cru.length % 2 === 0 && [8, 14, 20].includes(cru.length)) {
-    return { uid: hexParaBytes(cru.toLowerCase()), cru, formato: 'hexadecimal' }
+  // De fábrica, esses leitores costumam separar os bytes com dois-pontos —
+  // `1D:F3:1F:D3:1B:10:80`. Recusar por causa do separador seria recusar o
+  // aparelho no estado em que ele chega da caixa.
+  const limpo = cru.replace(/[\s:.-]/g, '')
+
+  if (/^[0-9a-fA-F]+$/.test(limpo) && [8, 14, 20].includes(limpo.length)) {
+    const uid = hexParaBytes(limpo.toLowerCase())
+    return { uid, cru, formato: 'hexadecimal', invertido: inverter(uid) }
   }
 
-  if (/^\d+$/.test(cru)) {
-    const bytes = decimalParaBytes(cru)
-    if (bytes) return { uid: bytes, cru, formato: 'decimal' }
+  if (/^\d+$/.test(limpo)) {
+    const uid = decimalParaBytes(limpo)
+    if (uid) return { uid, cru, formato: 'decimal', invertido: inverter(uid) }
   }
 
   return undefined

@@ -58,3 +58,32 @@ describe('formatos que o dongle pode imprimir', () => {
     expect(interpretarDigitacao(digitar('04A23B91', 12))?.cru).toBe('04A23B91')
   })
 })
+
+describe('o formato de fábrica', () => {
+  // É como esses leitores chegam da caixa: hexadecimal com dois-pontos entre os
+  // bytes. Recusar por causa do separador seria recusar o aparelho novo.
+  it('aceita hexadecimal separado por dois-pontos', () => {
+    const lido = interpretarDigitacao(digitar('1D:F3:1F:D3:1B:10:80', 12))
+    expect(lido?.formato).toBe('hexadecimal')
+    expect(uidParaHex(lido!.uid)).toBe('1df31fd31b1080')
+    expect(lido!.uid).toHaveLength(7)
+  })
+
+  it('aceita os outros separadores comuns', () => {
+    for (const cru of ['04-a2-3b-91', '04 a2 3b 91', '04.a2.3b.91']) {
+      expect(uidParaHex(interpretarDigitacao(digitar(cru, 12))!.uid)).toBe('04a23b91')
+    }
+  })
+
+  it('guarda o texto cru com o separador, que é o que identifica o modelo', () => {
+    expect(interpretarDigitacao(digitar('1D:F3:1F:D3:1B:10:80', 12))?.cru).toBe(
+      '1D:F3:1F:D3:1B:10:80',
+    )
+  })
+
+  // Não dá para saber qual ordem é a certa sem comparar com outra fonte, então
+  // o app mostra as duas em vez de escolher errado em silêncio.
+  it('oferece a leitura invertida, para conferência', () => {
+    expect(interpretarDigitacao(digitar('04a23b91', 12))?.invertido).toBe('913ba204')
+  })
+})

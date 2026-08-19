@@ -33,6 +33,8 @@ export class LeitorTeclado implements LeitorDeCracha {
   #recusados = 0
   #ultimaCrua?: string
   #ultimoFormato?: Digitacao['formato']
+  #ultimoInvertido?: string
+  #ultimoUid?: string
   #leituras = criarEmissor<Leitura>()
   #estados = criarEmissor<EstadoLeitor>()
 
@@ -73,10 +75,15 @@ export class LeitorTeclado implements LeitorDeCracha {
       detalhes: {
         'leituras aceitas': String(this.#lidos),
         'rajadas recusadas': String(this.#recusados),
-        // O que o dongle real imprime só se descobre com ele na mão. Este campo
-        // responde isso no primeiro toque, sem precisar de mais código.
+        // O que o dongle real imprime só se descobre com ele na mão. Estes
+        // campos respondem isso no primeiro toque, sem precisar de mais código.
         'última rajada': this.#ultimaCrua ?? '—',
         formato: this.#ultimoFormato ?? '—',
+        'UID lido': this.#ultimoUid ?? '—',
+        // Alguns leitores imprimem em little-endian. Sem outra fonte não dá
+        // para saber qual é o certo, então aparecem os dois: comparar com o
+        // celular resolve a olho.
+        'se estiver invertido': this.#ultimoInvertido ?? '—',
       },
     }
   }
@@ -119,12 +126,16 @@ export class LeitorTeclado implements LeitorDeCracha {
     if (!lido) {
       this.#recusados++
       this.#ultimoFormato = undefined
+      this.#ultimoInvertido = undefined
+      this.#ultimoUid = undefined
       return
     }
 
     evento?.preventDefault()
     this.#lidos++
     this.#ultimoFormato = lido.formato
+    this.#ultimoInvertido = lido.invertido
+    this.#ultimoUid = Array.from(lido.uid, (b) => b.toString(16).padStart(2, '0')).join('')
     this.#leituras.emitir({ uid: lido.uid, em: new Date(), origem: this.nome })
   }
 
