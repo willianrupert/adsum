@@ -192,8 +192,8 @@ describe('o conselho de navegador vem antes da turma', () => {
     fingirSer(SAFARI)
     renderizarCom(bancada, <Fluxo />)
 
-    expect(await screen.findByText(/Mais seguro ainda/)).toBeInTheDocument()
-    expect(screen.getByText(/gravada no seu computador/)).toBeInTheDocument()
+    expect(await screen.findByText(/Tem Chrome ou Edge\?/)).toBeInTheDocument()
+    expect(screen.getByText(/sem depender de você lembrar de salvar/)).toBeInTheDocument()
   })
 
   // O Firefox não tem pasta, não apaga sozinho e não tem o que instalar: o
@@ -232,7 +232,7 @@ describe('o conselho de navegador vem antes da turma', () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
 
-    expect(await screen.findByText(/apaga a base em 7 dias/)).toBeInTheDocument()
+    expect(await screen.findByText(/o Safari pode apagar a base sozinho/)).toBeInTheDocument()
   })
 
   // A tela da base dizia só "os dados ficam no navegador", como se fosse
@@ -247,7 +247,7 @@ describe('o conselho de navegador vem antes da turma', () => {
     await screen.findByText('Encoste o seu crachá')
 
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
-    expect(await screen.findByText(/sete dias/)).toBeInTheDocument()
+    expect(await screen.findByText(/sete dias de/)).toBeInTheDocument()
     expect(screen.getByText(/Arquivo › Adicionar ao Dock/)).toBeInTheDocument()
   })
 })

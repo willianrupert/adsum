@@ -91,7 +91,9 @@ Caminhos, do mais barato ao mais caro, para decidir com o professor:
 
    **No Safari é pior, e foi medido em 19/08/2026:** o ITP apaga IndexedDB,
    localStorage e o registro do service worker depois de **sete dias de uso do
-   Safari sem visitar o site**. Não é despejo sob pressão de espaço — é rotina.
+   Safari sem visitar o site**. Contam dias de uso do navegador, não dias de
+   calendário — um mês sem abrir o Safari não gasta nenhum. Não é despejo sob
+   pressão de espaço — é rotina.
    A saída é do próprio WebKit: app adicionado ao Dock (macOS) ou à tela de
    início (iOS) sai do Safari, ganha container próprio e é **pulado** no
    algoritmo de remoção. Como o armazenamento é separado, **instalar tem de vir

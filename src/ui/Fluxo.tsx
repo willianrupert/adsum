@@ -475,7 +475,7 @@ export function Fluxo() {
                   ? 'Nenhum leitor ativo'
                   : estadoDaPasta === 'indisponivel'
                     ? riscoDeApagar()
-                      ? 'Sem pasta — este navegador apaga a base em 7 dias'
+                      ? 'Sem pasta — o Safari pode apagar a base sozinho'
                       : 'Sem pasta neste navegador — exporte uma cópia'
                     : 'Os dados só existem neste navegador'}
           </span>

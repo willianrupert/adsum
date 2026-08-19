@@ -278,3 +278,35 @@ só porque ela se repete é como se escreve frase que não fecha.
 conselho passou a valer nele e virou a primeira tela de toda a suíte. Quem não
 está testando o conselho dispensa no `beforeEach` — é o equivalente ao professor
 que já decidiu.
+
+## Auditoria do texto, 19/08/2026
+
+O autor questionou duas frases. Uma estava errada, uma estava frouxa, e a
+terceira — a recomendação de Chrome — ficou como estava, com fonte a mais.
+
+**Errada: "sete dias sem visita."** O WebKit conta **sete dias de uso do
+Safari** sem interação com o site, não dias de calendário. Um mês sem abrir o
+Safari não gasta um dia sequer. A diferença importa: um professor de férias não
+perde a turma por ficar longe do computador, perde por usar o Safari para outras
+coisas sem voltar aqui. Corrigido em `TelaNavegador`, `TelaRepositorio`,
+`TelaResumo` e no selo do canto — que virou "o Safari pode apagar a base
+sozinho", curto e sem prometer calendário. Exagerar um risco verdadeiro é a
+forma mais rápida de o aviso deixar de ser levado a sério.
+
+**Frouxa: "o Adsum abre sozinho numa janela própria."** Que o ícone entra no
+Dock na hora está documentado; que a janela se abre por conta própria, não.
+Sumiu da tela, e não fazia falta nenhuma.
+
+**Reforçada: "o app instalado começa em branco."** É melhor documentada do que
+eu supunha — ao adicionar ao Dock, o Safari **copia os cookies** para o web app
+e **nenhum outro armazenamento local**. IndexedDB não vai junto, então a base
+realmente começa vazia, e instalar depois de cadastrar a turma faz recomeçar.
+
+**O que continua sendo inferência, e precisa estar dito:** a isenção do prazo
+para app instalado é **documentada pelo WebKit para a tela de início do iOS**.
+Para o `Adicionar ao Dock` do macOS, o que a Apple documenta é o armazenamento
+separado — "não compartilha histórico, cookies, dados de sites nem ajustes com o
+Safari". A isenção decorre disso (o contador é por contexto, e o web app não é o
+Safari), mas não achei documento da Apple dizendo isso do macOS com todas as
+letras. Por isso o texto da tela afirma só o que é certo: **o app instalado
+guarda por fora do Safari.**

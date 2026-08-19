@@ -73,7 +73,7 @@ export function TelaResumo({
       ) : (
         <p className="resumo__arquivo resumo__arquivo--sem">
           {riscoDeApagar()
-            ? 'Esta chamada existe só neste navegador, que apaga os dados de sites depois de sete dias sem visita. Salve o arquivo agora.'
+            ? 'Esta chamada existe só neste navegador, que apaga os dados do site depois de sete dias de uso sem você voltar aqui. Salve o arquivo agora.'
             : 'Esta chamada existe só neste navegador. Salve o arquivo antes de fechar.'}
         </p>
       )}

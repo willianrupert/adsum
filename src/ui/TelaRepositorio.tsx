@@ -45,8 +45,8 @@ function SemPasta() {
 
       {prazo && (
         <p className="ferramentas__nota ferramentas__nota--forte">
-          E há prazo: este navegador apaga os dados de sites depois de <strong>sete dias
-          sem visita</strong>, levando a turma junto.
+          E há prazo: o Safari apaga os dados deste site depois de <strong>sete dias de
+          uso dele</strong> sem você voltar aqui, levando a turma junto.
           {caminho && (
             <>
               {' '}
