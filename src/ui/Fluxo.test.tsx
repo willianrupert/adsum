@@ -167,7 +167,8 @@ describe('a grade abre a aula sozinha', () => {
     // Sem pasta o acento é salvar, e concluir vira "concluir sem salvar".
     await usuario.click(await screen.findByRole('button', { name: 'Concluir sem salvar' }))
 
-    expect(await screen.findByText('Começar a chamada')).toBeInTheDocument()
+    // Com grade, o repouso não pede clique nenhum: diz qual aula vem.
+    expect(await screen.findByText('Sua próxima aula')).toBeInTheDocument()
     expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
   })
 

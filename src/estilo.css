@@ -511,6 +511,13 @@ button:focus-visible {
   text-wrap: balance;
 }
 
+.repouso__quando {
+  margin: 10px 0 0;
+  font-size: var(--t-titulo);
+  color: var(--tinta-fraca);
+  letter-spacing: -0.012em;
+}
+
 .repouso__link {
   margin-top: 28px;
 }

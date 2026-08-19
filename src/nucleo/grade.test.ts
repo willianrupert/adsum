@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { abrirSozinho, FOLGA_MIN, aulasAgora, emMinutos, escolherTurma, horaValida } from './grade.ts'
+import { abrirSozinho, proximaAula, FOLGA_MIN, aulasAgora, emMinutos, escolherTurma, horaValida } from './grade.ts'
 
 const PROF = 'aaaa000000000000'
 const OUTRO = 'bbbb000000000000'
@@ -132,5 +132,34 @@ describe('a aula que abre sozinha', () => {
   it('mas o encerramento da semana passada não impede a aula de hoje', () => {
     const encerradas = { 'IF685 · T01': '2026-08-12T09:30:00' }
     expect(abrirSozinho([AULA], 'prof', em('08:05'), encerradas)).toBe('IF685 · T01')
+  })
+})
+
+describe('a próxima aula', () => {
+  const SEG = { uidHashProfessor: 'prof', dia: 1, inicio: '10:00', fim: '12:00', turma: 'A' }
+  const QUA = { uidHashProfessor: 'prof', dia: 3, inicio: '08:00', fim: '10:00', turma: 'B' }
+  // Quarta-feira, 19/08/2026.
+  const em = (hhmm: string) => new Date(`2026-08-19T${hhmm}:00`)
+
+  it('acha a de hoje quando ela ainda não começou', () => {
+    expect(proximaAula([SEG, QUA], 'prof', em('06:00'))?.aula.turma).toBe('B')
+  })
+
+  // Passada a hora de hoje, a próxima é a da semana que vem — e não a de hoje
+  // de novo, que é o erro clássico de quem só compara o horário.
+  it('depois da aula de hoje, pula para a próxima da semana', () => {
+    const proxima = proximaAula([SEG, QUA], 'prof', em('11:00'))
+    expect(proxima?.aula.turma).toBe('A')
+    expect(proxima?.quando.getDay()).toBe(1)
+  })
+
+  it('a aula semanal única volta em sete dias', () => {
+    const proxima = proximaAula([QUA], 'prof', em('09:00'))
+    expect(proxima?.quando.toISOString().slice(0, 10)).toBe('2026-08-26')
+  })
+
+  it('sem grade, não promete nada', () => {
+    expect(proximaAula([], 'prof', em('09:00'))).toBeUndefined()
+    expect(proximaAula([QUA], 'outro', em('09:00'))).toBeUndefined()
   })
 })

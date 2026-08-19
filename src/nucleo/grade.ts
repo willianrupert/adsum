@@ -125,3 +125,42 @@ export function abrirSozinho(
   }
   return aula.turma
 }
+
+/**
+ * A próxima aula daquele professor, a partir de agora.
+ *
+ * Com a grade abrindo sozinha, o repouso deixou de ser "clique aqui" e virou
+ * espera — e espera sem prazo é ansiedade. Dizer qual turma vem e quando é a
+ * única informação que a tela tem para dar, e é a que responde "estou no lugar
+ * certo?" antes de a pessoa perguntar.
+ *
+ * Procura nos sete dias seguintes e devolve a primeira: a semana fecha o ciclo,
+ * então não existe grade cadastrada cuja próxima aula esteja além disso.
+ */
+export function proximaAula(
+  aulas: Aula[],
+  uidHashProfessor: string,
+  agora: Date,
+): { aula: Aula; quando: Date } | undefined {
+  const minhas = aulas.filter((a) => a.uidHashProfessor === uidHashProfessor)
+  if (minhas.length === 0) return undefined
+
+  let melhor: { aula: Aula; quando: Date } | undefined
+
+  for (const aula of minhas) {
+    for (let adiante = 0; adiante < 8; adiante++) {
+      const dia = new Date(agora)
+      dia.setDate(dia.getDate() + adiante)
+      if (dia.getDay() !== aula.dia) continue
+
+      const quando = new Date(dia)
+      quando.setHours(0, emMinutos(aula.inicio), 0, 0)
+      if (quando.getTime() <= agora.getTime()) continue
+
+      if (!melhor || quando.getTime() < melhor.quando.getTime()) melhor = { aula, quando }
+      break
+    }
+  }
+
+  return melhor
+}

@@ -11,7 +11,7 @@ import { calcularUidHash } from '../nucleo/hash.ts'
 import { hexParaUid } from '../nucleo/uid.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
-import { abrirSozinho, escolherTurma } from '../nucleo/grade.ts'
+import { abrirSozinho, escolherTurma, proximaAula, DIAS } from '../nucleo/grade.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
@@ -69,6 +69,7 @@ export function Fluxo() {
   const [falhaNaPasta, setFalhaNaPasta] = useState<string>()
   // Sem pasta, isto é a única memória de que existe trabalho fora do disco.
   const [pendencias, setPendencias] = useState<Pendencia[]>([])
+  const [proxima, setProxima] = useState<{ turma: string; quando: Date }>()
   const [folha, setFolha] = useState<Folha>()
   // A rota decide sozinha, mas "quero cadastrar mais um crachá" é uma intenção
   // que nenhum dado expressa — sem isto, o botão do repouso não tinha o que
@@ -118,6 +119,14 @@ export function Fluxo() {
     ])
     setSessao(aberta)
     setPendencias(naoSalvos(eventos, atual.exportado))
+
+    // Com a grade abrindo sozinha, o repouso virou espera — e espera sem prazo
+    // é ansiedade. Qual turma vem e quando é a única informação que a tela tem
+    // para dar, e é a que responde "estou no lugar certo?" sem ninguém pedir.
+    const professor = vinculos.find((v) => v.papel === 'professor')
+    const aulas = professor ? await repositorio.listarAulas() : []
+    const vem = professor ? proximaAula(aulas, professor.uidHash, new Date()) : undefined
+    setProxima(vem && { turma: vem.aula.turma, quando: vem.quando })
     // Quem já tem crachá é reconhecido pela matrícula — e, para quem não tem
     // matrícula na página (docente), pelo nome. Sem esta segunda via o
     // professor contava como pendente para sempre: `!m.matricula` era verdade
@@ -487,6 +496,7 @@ export function Fluxo() {
         <Repouso
           turmas={turmas}
           pendencias={pasta ? [] : pendencias}
+          proxima={proxima}
           aoIniciar={() => void iniciarAula()}
           aoSalvar={(turma) => void salvarCopia(turma)}
           aoAbrirCerimonia={() => setCadastrando(true)}
@@ -596,18 +606,30 @@ export function Fluxo() {
 export function Repouso({
   turmas,
   pendencias,
+  proxima,
   aoIniciar,
   aoSalvar,
   aoAbrirCerimonia,
 }: {
   turmas: number
   pendencias: Pendencia[]
+  proxima?: { turma: string; quando: Date }
   aoIniciar: () => void
   aoSalvar: (turma: string) => void
   aoAbrirCerimonia: () => void
 }) {
   const dia = (iso: string) =>
     new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
+
+  /** "hoje às 08:00", "amanhã às 10:00", "segunda às 10:00". */
+  function quandoPorExtenso(quando: Date): string {
+    const hora = quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    const meiaNoite = (d: Date) => new Date(d).setHours(0, 0, 0, 0)
+    const dias = Math.round((meiaNoite(quando) - meiaNoite(new Date())) / 86_400_000)
+    if (dias === 0) return `hoje às ${hora}`
+    if (dias === 1) return `amanhã às ${hora}`
+    return `${DIAS[quando.getDay()]} às ${hora}`
+  }
 
   return (
     <section className="repouso">
@@ -635,13 +657,32 @@ export function Repouso({
       )}
 
       <Ondas tamanho={72} animado />
-      <p className="repouso__turma">
-        {turmas === 1 ? 'Sua turma está pronta' : `${turmas} turmas prontas`}
-      </p>
-      <p className="repouso__acao">Começar a chamada</p>
 
-      <button className="botao--acento pasta__botao" onClick={aoIniciar}>
-        Iniciar a aula
+      {proxima ? (
+        <>
+          {/* Com grade, a turma é o assunto e a hora é o apoio: é a ordem em
+              que a pergunta se forma na cabeça de quem olha — "qual aula?" vem
+              antes de "que horas?". */}
+          <p className="repouso__turma">Sua próxima aula</p>
+          <p className="repouso__acao">{proxima.turma}</p>
+          <p className="repouso__quando">{quandoPorExtenso(proxima.quando)}</p>
+        </>
+      ) : (
+        <>
+          <p className="repouso__turma">
+            {turmas === 1 ? 'Sua turma está pronta' : `${turmas} turmas prontas`}
+          </p>
+          <p className="repouso__acao">Começar a chamada</p>
+        </>
+      )}
+
+      {/* Com grade, o botão é a exceção — aula fora do horário, reposição — e
+          por isso perde o acento. Sem grade, é a única ação da tela. */}
+      <button
+        className={proxima ? 'repouso__link' : 'botao--acento pasta__botao'}
+        onClick={aoIniciar}
+      >
+        {proxima ? 'Começar agora, fora do horário' : 'Iniciar a aula'}
       </button>
       {/* O crachá continua abrindo, e a tela **não** diz isso. Anunciar dois
           caminhos para a mesma coisa é a decisão que se queria evitar: quem lê

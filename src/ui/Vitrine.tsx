@@ -139,10 +139,21 @@ export function Vitrine() {
         />
       </Cena>
 
-      <Cena titulo="Repouso" quando="tudo pronto, fora de aula">
+      <Cena titulo="Repouso" quando="sem grade: iniciar é a ação">
         <Repouso
           turmas={1}
           pendencias={[]}
+          aoIniciar={() => {}}
+          aoSalvar={() => {}}
+          aoAbrirCerimonia={() => {}}
+        />
+      </Cena>
+
+      <Cena titulo="Repouso com grade" quando="a aula abre sozinha; a tela só espera">
+        <Repouso
+          turmas={2}
+          pendencias={[]}
+          proxima={{ turma: TURMA, quando: new Date(Date.now() + 3 * 3600_000) }}
           aoIniciar={() => {}}
           aoSalvar={() => {}}
           aoAbrirCerimonia={() => {}}
