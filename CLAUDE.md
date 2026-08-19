@@ -215,6 +215,18 @@ Específicas do app:
   `{ itens, problemas }`, e a tela mostra linha, conteúdo e motivo. É a mesma
   regra da recusa muda: 46 alunos onde deveria haver 48, sem explicação, é bug.
 
+## O README é vitrine
+
+`README.md` é a primeira impressão do repositório, que é portfólio. Ele conta o
+**porquê** das decisões, não a lista de recursos — o que impressiona ali é o
+raciocínio, e é o que um recrutador ou um colega consegue julgar sem rodar nada.
+
+Duas regras que ele segue: **nenhum número que envelhece** (contagem de testes
+em badge vira mentira na semana seguinte, como a coluna `login` virou), e
+**imagens geradas por script** — `scripts/gerar_icone.py`,
+`gerar_diagrama.py`, `gerar_arquitetura.py`. Versiona-se o desenho, nunca a
+captura, que é a mesma regra que mantém dado real de turma fora daqui.
+
 ## Convenções
 
 - Documentação, comentários **e identificadores de domínio** em português. É
