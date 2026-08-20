@@ -639,6 +639,20 @@ button:focus-visible {
   text-align: left;
 }
 
+/* Quadrado arredondado com o símbolo dentro, como nos cartões: é a forma que a
+   Apple usa para "isto é um app", e aqui o convite é sobre virar um. */
+.convite__icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--raio-pequeno);
+  background: var(--acao-fraca);
+  color: var(--acao);
+}
+
 .convite__texto {
   display: flex;
   flex-direction: column;

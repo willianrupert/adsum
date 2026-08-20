@@ -318,7 +318,7 @@ export function TelaAula({
     // encostou: o app não sabe distinguir fraude de fila apressada, mas sabe
     // dizer que o padrão é fisicamente implausível. Quem julga está na sala.
     if (decisao.tipo === 'rapido_demais') {
-      setRecado('Dois crachás quase juntos — o segundo não foi contado. Passe um de cada vez.')
+      setRecado('Dois crachás quase juntos. O segundo não foi contado. Passe um de cada vez.')
     }
   }
 

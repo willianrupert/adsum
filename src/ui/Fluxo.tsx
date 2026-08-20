@@ -47,7 +47,7 @@ import { TelaPasta } from './TelaPasta.tsx'
 import { TelaNavegador } from './TelaNavegador.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
 import { EscolherTurma } from './componentes/EscolherTurma.tsx'
-import { Cadeado, Engrenagem, Ondas } from './componentes/Simbolos.tsx'
+import { Baixar, Cadeado, Engrenagem, Ondas } from './componentes/Simbolos.tsx'
 import { levantarCapacidades } from '../ambiente/capacidades.ts'
 import { marcarAte, naoSalvos, totalNaoSalvo, type Pendencia } from '../nucleo/pendencias.ts'
 import { useAdsum } from './adsum.ts'
@@ -565,9 +565,12 @@ export function Fluxo() {
           Some durante a chamada: ali a tela é da fila, e nada mais. */}
       {convidarApp && rota !== 'chamada' && (
         <div className="convite">
+          <span className="convite__icone" aria-hidden="true">
+            <Baixar />
+          </span>
           <span className="convite__texto">
-            <strong>Instalar o Adsum</strong>
-            <small>Janela própria, e abre num clique — sem procurar a aba</small>
+            <strong>O Adsum em janela própria</strong>
+            <small>Abre num clique, sem procurar entre as abas</small>
           </span>
           <span className="convite__acoes">
             <button

@@ -51,6 +51,39 @@ export function Cadeado({ tamanho = 12 }: { tamanho?: number }) {
 }
 
 /**
+ * Baixar e guardar — a bandeja com a seta entrando nela.
+ *
+ * É a forma do `square.and.arrow.down` da Apple, que é o que ela usa para
+ * "guardar isto aqui": aparece em salvar arquivo, adicionar à tela de início e
+ * baixar no App Store. Reconhecível justamente por ser a mesma em toda parte.
+ *
+ * A bandeja é aberta em cima porque a seta **entra** nela — desenhá-la fechada
+ * viraria outro símbolo, o de mover para baixo. E a ponta da seta fica dentro da
+ * abertura, sem tocar as laterais: é o que dá a leitura de "entrando".
+ *
+ * Mesma gramática dos outros daqui: 24×24, traço 2, pontas redondas.
+ */
+export function Baixar({ tamanho = 22 }: { tamanho?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={tamanho} height={tamanho} aria-hidden="true">
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {/* A bandeja: desce, atravessa embaixo com os cantos arredondados, sobe. */}
+        <path d="M5 12.6v5.1a2.7 2.7 0 0 0 2.7 2.7h8.6a2.7 2.7 0 0 0 2.7-2.7v-5.1" />
+        {/* A haste e a ponta, num traço só para as junções fecharem sozinhas. */}
+        <path d="M12 3.2v12.4" />
+        <path d="M7.9 11.5 12 15.6l4.1-4.1" />
+      </g>
+    </svg>
+  )
+}
+
+/**
  * Ondas de aproximação — o sinal de "encoste aqui".
  *
  * A geometria foi **medida no símbolo de referência**, não estimada: o PNG foi

@@ -39,7 +39,7 @@ export function TelaNavegador({
 
       <p className="pasta__nota">
         Lá cada presença é gravada numa pasta do seu computador{' '}
-        <strong className="sem-quebra">na hora</strong> — nada depende de você lembrar de
+        <strong className="sem-quebra">na hora</strong>. Nada depende de você lembrar de
         salvar no fim da aula. É o arranjo mais seguro que existe para este programa, e a
         diferença não é pequena.
       </p>
@@ -67,7 +67,7 @@ export function TelaNavegador({
 
           <p className="pasta__nota">
             Numa aba, o Safari apaga os dados deste site depois de sete dias de uso sem
-            você voltar aqui. Instalado, ele guarda por fora — e a chamada continua
+            você voltar aqui. Instalado, ele guarda por fora do Safari. A chamada continua
             esperando um clique seu no fim de cada aula.
           </p>
           <p className="pasta__nota">

@@ -313,21 +313,21 @@ describe('o convite de instalar no Chrome', () => {
     await screen.findByText('Cole sua turma')
 
     await act(async () => oferecer())
-    expect(await screen.findByText('Instalar o Adsum')).toBeInTheDocument()
+    expect(await screen.findByText('O Adsum em janela própria')).toBeInTheDocument()
   })
 
-  it('some durante a chamada — ali a tela é da fila', async () => {
+  it('some durante a chamada, onde a tela é da fila', async () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
     await screen.findByText('Tudo pronto')
 
     await act(async () => oferecer())
-    await screen.findByText('Instalar o Adsum')
+    await screen.findByText('O Adsum em janela própria')
 
     await usuario.click(screen.getByRole('button', { name: 'Começar a chamada' }))
     await screen.findByRole('button', { name: 'Encerrar a chamada' })
-    expect(screen.queryByText('Instalar o Adsum')).not.toBeInTheDocument()
+    expect(screen.queryByText('O Adsum em janela própria')).not.toBeInTheDocument()
   })
 
   it('aparece no repouso, e some para sempre ao ser recusado', async () => {
@@ -337,18 +337,18 @@ describe('o convite de instalar no Chrome', () => {
     await screen.findByText('Tudo pronto')
 
     await act(async () => oferecer())
-    expect(await screen.findByText('Instalar o Adsum')).toBeInTheDocument()
+    expect(await screen.findByText('O Adsum em janela própria')).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Agora não' }))
     await waitFor(() =>
-      expect(screen.queryByText('Instalar o Adsum')).not.toBeInTheDocument(),
+      expect(screen.queryByText('O Adsum em janela própria')).not.toBeInTheDocument(),
     )
 
     // Insistir a cada abertura é como um convite vira incômodo.
     unmount()
     renderizarCom(bancada, <Fluxo />)
     await screen.findByText('Tudo pronto')
-    expect(screen.queryByText('Instalar o Adsum')).not.toBeInTheDocument()
+    expect(screen.queryByText('O Adsum em janela própria')).not.toBeInTheDocument()
   })
 })
 
@@ -460,7 +460,7 @@ describe('o conselho de navegador vem antes da turma', () => {
 
     expect(await screen.findByText(/na hora/)).toBeInTheDocument()
     expect(
-      screen.getByText(/nada depende de você lembrar de salvar no fim da aula/),
+      screen.getByText(/Nada depende de você lembrar de salvar no fim da aula/),
     ).toBeInTheDocument()
   })
 

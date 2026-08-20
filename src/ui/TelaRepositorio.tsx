@@ -39,7 +39,7 @@ function SemPasta() {
   return (
     <>
       <p className="ferramentas__nota">
-        Este navegador não tem seletor de pasta — só Chrome e Edge têm. Aqui a cópia é
+        Este navegador não tem seletor de pasta. Só Chrome e Edge têm, e aqui a cópia é
         por sua conta: exporte os arquivos abaixo e guarde-os onde quiser.
       </p>
 
@@ -51,7 +51,7 @@ function SemPasta() {
             <>
               {' '}
               Instalar o Adsum ({caminho.passos.join(' › ')}) tira o app do Safari e para
-              essa contagem — mas o app instalado começa em branco, então exporte antes e
+              essa contagem. Mas o app instalado começa em branco, então exporte antes e
               importe lá.
             </>
           )}
@@ -66,8 +66,8 @@ function SemPasta() {
 
       <p className="ferramentas__nota">
         Para trazer uma base já existente, use <strong>Já tenho uma pasta do Adsum</strong>{' '}
-        na tela de colar a turma — aqui o seletor abre a pasta inteira de uma vez, e ler
-        já é um clique só. O que falta é escrever de volta sozinho.
+        na tela de colar a turma. Aqui o seletor abre a pasta inteira de uma vez, e ler já
+        é um clique só; o que falta é escrever de volta sozinho.
       </p>
     </>
   )
@@ -82,7 +82,7 @@ function plural(n: number, singular: string, plural: string): string {
 function comoFoi(salvou: ComoSalvou, nome: string): string {
   if (salvou === 'cancelado') return 'cancelado.'
   if (salvou === 'gravado') return `${nome} gravado.`
-  return `${nome} foi para a pasta de downloads — este navegador não tem File System Access.`
+  return `${nome} foi para a pasta de downloads. Este navegador não tem File System Access.`
 }
 
 export function TelaRepositorio({
@@ -232,13 +232,13 @@ export function TelaRepositorio({
               <code>config.json · vinculos.json · turmas/ · registros/</code>
             </Linha>
             <p className="ferramentas__nota">
-              Gravado a cada mudança. O navegador não revela o caminho completo — procure a
-              pasta pelo nome, onde você a escolheu. O <code>LEIA-ME.txt</code> lá dentro
+              Gravado a cada mudança. O navegador não revela o caminho completo, então
+              procure a pasta pelo nome, onde você a escolheu. O <code>LEIA-ME.txt</code> lá dentro
               explica cada arquivo e como recuperar tudo.
             </p>
             <p className="ferramentas__nota">
               <strong>Reler a pasta</strong> traz de volta o que estiver lá e não estiver
-              aqui — útil se a pasta fica no iCloud e outra máquina gravou nela. Não apaga
+              aqui. Útil se a pasta fica no iCloud e outra máquina gravou nela, e não apaga
               nada.
             </p>
           </>
@@ -497,7 +497,7 @@ export function TelaRepositorio({
           />
           <button
             onClick={tentar('Acrescentar aula', async () => {
-              if (!nova.uidHashProfessor) throw new Error('escolha o professor — a grade é indexada por ele')
+              if (!nova.uidHashProfessor) throw new Error('escolha o professor: a grade é indexada por ele')
               if (!horaValida(nova.inicio) || !horaValida(nova.fim)) {
                 throw new Error('horário fora do formato hh:mm')
               }

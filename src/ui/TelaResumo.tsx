@@ -63,8 +63,7 @@ export function TelaResumo({
         // linha o clique não produz sinal nenhum na tela, e o professor clica de
         // novo achando que falhou.
         <p className="resumo__arquivo">
-          Baixado: <code>{nomeDoArquivo(sessao.turma)}</code> — está na sua pasta de
-          downloads.
+          Está na sua pasta de downloads: <code>{nomeDoArquivo(sessao.turma)}</code>
         </p>
       ) : salvo === 'gravado' ? (
         <p className="resumo__arquivo">

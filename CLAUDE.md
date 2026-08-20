@@ -248,6 +248,20 @@ em badge vira mentira na semana seguinte, como a coluna `login` virou), e
 `gerar_diagrama.py`, `gerar_arquitetura.py`. Versiona-se o desenho, nunca a
 captura, que é a mesma regra que mantém dado real de turma fora daqui.
 
+## Voz da interface
+
+O texto de tela não é o texto dos comentários. Nos comentários o travessão
+carrega o raciocínio; **na tela ele soa a ensaio**, e o autor notou isso na
+primeira frase que leu em voz alta: "parece de IA".
+
+A regra: **travessão em tela quase sempre é duas frases disfarçadas de uma.**
+Separe, ou use dois-pontos quando a segunda parte explica a primeira. Frase
+curta e completa ganha de fragmento elegante.
+
+E título não repete o verbo do botão. "Instalar o Adsum" com um botão
+"Instalar" logo ao lado é a mesma palavra duas vezes; o título vale mais dizendo
+o que a pessoa ganha — "O Adsum em janela própria".
+
 ## Convenções
 
 - Documentação, comentários **e identificadores de domínio** em português. É

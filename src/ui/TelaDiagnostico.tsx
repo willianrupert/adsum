@@ -141,7 +141,7 @@ export function TelaDiagnostico() {
         (regs) => {
           if (!vivo) return
           const nosso = regs.find((r) => location.href.startsWith(r.scope))
-          if (!nosso) return setServico('nenhum registrado — o app não abre offline')
+          if (!nosso) return setServico('nenhum registrado, o app não abre offline')
           const controlada = Boolean(navigator.serviceWorker.controller)
           setServico(
             `${controlada ? 'controlando esta página' : 'registrado, ainda sem controlar'} · escopo ${nosso.scope}`,
@@ -452,7 +452,7 @@ export function TelaDiagnostico() {
                   await repositorio.diagnostico()
                   if (!concedido) {
                     throw new Error(
-                      'o navegador recusou por ora — instalar o app costuma destravar',
+                      'o navegador recusou por ora; instalar o app costuma destravar',
                     )
                   }
                 })}

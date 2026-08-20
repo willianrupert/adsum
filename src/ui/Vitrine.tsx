@@ -16,6 +16,7 @@ import { TelaVinculo } from './TelaVinculo.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
 import { Busca } from './componentes/Busca.tsx'
+import { Baixar } from './componentes/Simbolos.tsx'
 import type { Matriculado } from '../nucleo/tipos.ts'
 
 const TURMA = 'IF685 · T01'
@@ -81,8 +82,8 @@ export function Vitrine() {
   return (
     <div className="vitrine">
       <p className="vitrine__aviso">
-        Todas as telas do Adsum numa página só. <strong>Ninguém desta lista existe</strong> —
-        os nomes são inventados, e nada aqui grava nem altera a sua base.
+        Todas as telas do Adsum numa página só. <strong>Ninguém desta lista existe.</strong>{' '}
+        Os nomes são inventados, e nada aqui grava nem altera a sua base.
       </p>
 
       <Cena titulo="Escolha onde guardar" quando="primeira vez, antes de tudo">
@@ -173,9 +174,12 @@ export function Vitrine() {
 
       <Cena titulo="Convite de instalar" quando="Chrome, uma vez só, em qualquer tela">
         <div className="convite">
+          <span className="convite__icone" aria-hidden="true">
+            <Baixar />
+          </span>
           <span className="convite__texto">
-            <strong>Instalar o Adsum</strong>
-            <small>Janela própria, e abre num clique — sem procurar a aba</small>
+            <strong>O Adsum em janela própria</strong>
+            <small>Abre num clique, sem procurar entre as abas</small>
           </span>
           <span className="convite__acoes">
             <button className="botao--quieto">Agora não</button>
@@ -212,7 +216,7 @@ export function Vitrine() {
         <div className="aviso aviso--grave">
           <strong>A pasta não recebeu a última gravação.</strong>
           <p>
-            Permissão negada. Nada se perdeu — está tudo aqui no navegador. Conserte e o
+            Permissão negada. Nada se perdeu: está tudo aqui no navegador. Conserte e o
             Adsum regrava.
           </p>
           <button>Gravar de novo</button>
@@ -245,7 +249,7 @@ export function Vitrine() {
       ) : (
         <p className="vitrine__aviso">
           Faltam duas: <strong>Ajustes</strong> e <strong>Diagnóstico</strong>. Elas não
-          aparecem aqui porque mexem na base de verdade de quem abrir — no Adsum, você as
+          aparecem aqui porque mexem na base de verdade de quem abrir. No Adsum, você as
           encontra pela engrenagem no canto.
         </p>
       )}
