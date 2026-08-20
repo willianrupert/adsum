@@ -54,7 +54,14 @@ Cada coluna se justifica sozinha:
 - **`nome`** — só para quem abrir o arquivo e querer entender o que está vendo.
   Nenhum cálculo depende dele.
 - **`origem`** — `cracha`, `professor`, `manual`.
-- **`resultado`** — `ok`, `duplicado`, `desconhecido`.
+- **`resultado`** — `ok`, `duplicado`, `desconhecido`, `rapido_demais`.
+
+  `rapido_demais` entrou em 20/08/2026, com a regra de intervalo mínimo entre
+  crachás diferentes: dois cartões numa mão só são lidos em centenas de
+  milissegundos, e duas pessoas numa fila levam segundos. A recusa fica no log
+  com o `uid_hash` do crachá recusado — recusa muda é bug, e o professor merece
+  poder conferir depois que houve tentativa. Arquivo antigo nunca contém o
+  valor, então ler o passado continua funcionando.
 - **`uid_hash`** — o único identificador que sobra quando o crachá é
   desconhecido, e portanto o único jeito de resolver depois quem era.
 

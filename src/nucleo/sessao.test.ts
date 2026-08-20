@@ -159,3 +159,77 @@ describe('cadastro e chamada são a mesma coisa', () => {
     )
   })
 })
+
+// Pedido pelo Prof. Paulo: impedir dois crachás de uma vez. Empilhados na mão,
+// os dois são lidos em algumas centenas de milissegundos; duas pessoas numa
+// fila levam segundos. Um segundo separa as duas situações com folga.
+describe('dois crachás quase juntos', () => {
+  const ANA = {
+    uidHash: 'aaaa000000000000',
+    papel: 'aluno' as const,
+    nome: 'Ana Paula',
+    matricula: '1',
+    criadoEm: '2026-08-20T10:00:00.000Z',
+  }
+  const BRENO = { ...ANA, uidHash: 'bbbb000000000000', nome: 'Breno Oliveira', matricula: '2' }
+  const SESSAO = {
+    turma: 'IF685 · T01',
+    abertaEm: '2026-08-20T10:00:00.000Z',
+    uidHashProfessor: 'prof',
+  }
+  const em = (ms: number) => new Date(Date.parse('2026-08-20T10:30:00.000Z') + ms)
+
+  const ctx = (extra: Partial<Contexto> = {}): Contexto => ({
+    sessao: SESSAO,
+    jaPresentes: new Set(),
+    agora: em(0),
+    ...extra,
+  })
+
+  it('recusa o segundo crachá dentro do intervalo', () => {
+    const decisao = decidir(BRENO.uidHash, ctx({
+      vinculo: BRENO,
+      ultima: { uidHash: ANA.uidHash, em: em(-300) },
+    }))
+    expect(decisao.tipo).toBe('rapido_demais')
+  })
+
+  it('aceita quando a fila anda no ritmo de gente', () => {
+    const decisao = decidir(BRENO.uidHash, ctx({
+      vinculo: BRENO,
+      ultima: { uidHash: ANA.uidHash, em: em(-1500) },
+    }))
+    expect(decisao.tipo).toBe('presenca')
+  })
+
+  // O mesmo crachá duas vezes é outro assunto, e já tinha resposta.
+  it('o mesmo crachá de novo continua sendo repetido, não recusa', () => {
+    const decisao = decidir(ANA.uidHash, ctx({
+      vinculo: ANA,
+      jaPresentes: new Set([ANA.uidHash]),
+      ultima: { uidHash: ANA.uidHash, em: em(-200) },
+    }))
+    expect(decisao.tipo).toBe('repetido')
+  })
+
+  // Bloquear quem abre e encerra a aula seria atrapalhar sem proteger nada: o
+  // crachá do professor não é o vetor da fraude.
+  it('não atrapalha o professor', () => {
+    const professor = { ...ANA, uidHash: 'prof', papel: 'professor' as const }
+    const decisao = decidir('prof', ctx({
+      vinculo: professor,
+      agora: em(JANELA_MINIMA_MS + 1),
+      ultima: { uidHash: ANA.uidHash, em: em(JANELA_MINIMA_MS) },
+    }))
+    expect(decisao.tipo).toBe('encerrar')
+  })
+
+  // Recusa muda é bug: a tentativa fica no log, com o hash do crachá recusado.
+  it('a recusa entra no log', () => {
+    const evento = eventoDe(
+      { tipo: 'rapido_demais', faltamMs: 700 },
+      { eventoId: 'web-aaaa-20260820-0009', quando: em(0), turma: SESSAO.turma, uidHash: BRENO.uidHash },
+    )
+    expect(evento).toMatchObject({ resultado: 'rapido_demais', uidHash: BRENO.uidHash })
+  })
+})

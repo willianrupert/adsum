@@ -61,7 +61,11 @@ export interface Aula {
 }
 
 export type Origem = 'cracha' | 'professor' | 'manual'
-export type Resultado = 'ok' | 'duplicado' | 'desconhecido'
+/**
+ * `rapido_demais` entrou em 20/08/2026 com a regra do intervalo mínimo. Arquivo
+ * antigo nunca contém o valor, então ler o passado continua funcionando.
+ */
+export type Resultado = 'ok' | 'duplicado' | 'desconhecido' | 'rapido_demais'
 
 /** Uma linha de `registros/<turma>.csv`. Nunca é reescrita — só acrescentada. */
 export interface Evento {

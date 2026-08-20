@@ -20,6 +20,28 @@ import type { Evento, Matriculado, Papel, Vinculo } from './tipos.ts'
  */
 export const JANELA_MINIMA_MS = 10_000
 
+/**
+ * Intervalo mínimo entre **crachás diferentes**.
+ *
+ * Pedido pelo Prof. Paulo: impedir que alguém encoste dois crachás de uma vez —
+ * o seu e o de um colega ausente — passando os dois como se fossem duas
+ * pessoas. Empilhados na mão, os dois são lidos dentro do ciclo de varredura do
+ * leitor, tipicamente em algumas centenas de milissegundos. Duas pessoas numa
+ * fila levam segundos: uma encosta, vê o nome, sai, a outra chega.
+ *
+ * Um segundo separa as duas situações com folga dos dois lados.
+ *
+ * **O que esta regra não faz, e precisa estar dito:** ela não distingue fraude
+ * de fila apressada, e não pega o caso mais comum — alguém encostar o crachá de
+ * um colega ausente sozinho, com calma. Nenhuma regra de tempo pega isso. O que
+ * ela faz é recusar o padrão fisicamente implausível e **dizer em voz alta**,
+ * para o professor, que está na sala, olhar. Julgar é dele.
+ *
+ * Recusar em silêncio seria pior que não ter regra: a presença sumiria sem
+ * ninguém saber por quê.
+ */
+export const INTERVALO_MINIMO_MS = 1_000
+
 export interface Sessao {
   turma: string
   abertaEm: string
@@ -36,6 +58,8 @@ export type Decisao =
   | { tipo: 'presenca'; vinculo: Vinculo }
   | { tipo: 'repetido'; vinculo: Vinculo }
   | { tipo: 'desconhecido' }
+  /** Dois crachás diferentes quase juntos. Ver `INTERVALO_MINIMO_MS`. */
+  | { tipo: 'rapido_demais'; faltamMs: number }
   | { tipo: 'sem_turma' }
 
 export interface Contexto {
@@ -51,6 +75,8 @@ export interface Contexto {
   armado?: Matriculado
   /** `uid_hash` de quem já foi registrado nesta sessão. */
   jaPresentes: ReadonlySet<string>
+  /** A última leitura aceita, para separar dois crachás de um gesto só. */
+  ultima?: { uidHash: string; em: Date }
   turmaSugerida?: string
   agora: Date
 }
@@ -75,6 +101,20 @@ export function decidir(uidHash: string, ctx: Contexto): Decisao {
       return { tipo: 'cedo_demais', faltamMs: JANELA_MINIMA_MS - decorrido }
     }
     return { tipo: 'encerrar' }
+  }
+
+  // Dois crachás diferentes quase juntos não são duas pessoas — é uma mão com
+  // dois cartões. Vem depois do professor de propósito: bloquear quem abre e
+  // encerra a aula seria atrapalhar sem proteger nada, porque o crachá dele não
+  // é o vetor da fraude.
+  //
+  // Encostar **o mesmo** crachá duas vezes segue sendo `repetido`, que é outro
+  // assunto e já tem resposta.
+  if (ctx.ultima && ctx.ultima.uidHash !== uidHash) {
+    const desde = agora.getTime() - ctx.ultima.em.getTime()
+    if (desde < INTERVALO_MINIMO_MS) {
+      return { tipo: 'rapido_demais', faltamMs: INTERVALO_MINIMO_MS - desde }
+    }
   }
 
   // Crachá desconhecido com nome armado é cadastro. A garantia contra trocar
@@ -106,6 +146,12 @@ export function eventoDe(
     case 'abrir':
     case 'encerrar':
       return { ...base, nome: '', origem: 'professor', resultado: 'ok' }
+    // Fica no log: o professor pode ter olhado para a turma na hora em que a
+    // tela avisou, e no fim da aula ele merece poder conferir que houve
+    // tentativa — com o hash do crachá recusado, que é o que permite descobrir
+    // de quem era.
+    case 'rapido_demais':
+      return { ...base, nome: '', origem: 'cracha', resultado: 'rapido_demais' }
     case 'presenca':
       return {
         ...base,

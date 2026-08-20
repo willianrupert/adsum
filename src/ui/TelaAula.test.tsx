@@ -216,3 +216,45 @@ describe('o fim da aula', () => {
     expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
   })
 })
+
+// Pedido pelo Prof. Paulo. Dois crachás empilhados numa mão são lidos em
+// centenas de milissegundos; duas pessoas numa fila levam segundos.
+describe('dois crachás de uma vez', () => {
+  it('recusa o segundo, diz o motivo na tela e não conta presença', async () => {
+    await comCrachaDaAna()
+    const outro = await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_NOVO))
+    await bancada.repositorio.gravarVinculo({
+      uidHash: outro,
+      papel: 'aluno',
+      nome: BRENO.nome,
+      matricula: BRENO.matricula,
+      criadoEm: new Date().toISOString(),
+    })
+    montar([])
+
+    // Os dois na mesma mão: sem espera nenhuma entre eles.
+    await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+
+    expect(await screen.findByText(/Dois crachás quase juntos/)).toBeInTheDocument()
+    // Um presente, não dois — que é a fraude que a regra existe para fechar.
+    await waitFor(() => expect(screen.getByText('1')).toBeInTheDocument())
+    expect(screen.queryByText(BRENO.nome)).not.toBeInTheDocument()
+  })
+
+  // Recusa muda é bug: a tentativa fica no log com o hash do crachá recusado.
+  it('a recusa entra no log e aparece na lista pelo que é', async () => {
+    await comCrachaDaAna()
+    montar([])
+
+    await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+
+    expect(await screen.findByText('Dois crachás de uma vez')).toBeInTheDocument()
+    const eventos = await bancada.repositorio.listarEventos()
+    const recusa = eventos.find((e) => e.resultado === 'rapido_demais')
+    expect(recusa?.uidHash).toBe(
+      await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_NOVO)),
+    )
+  })
+})

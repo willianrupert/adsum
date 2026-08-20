@@ -66,6 +66,21 @@ export function TelaAula({
    * nova em vez de duplicata. O contador não mudava — é um conjunto —, mas o
    * log ganhava duas linhas `ok` para a mesma pessoa.
    */
+  /** A última leitura aceita de crachá de aluno. Ver `INTERVALO_MINIMO_MS`. */
+  const ultima = useRef<{ uidHash: string; em: Date }>(undefined)
+
+  /**
+   * Conta as leituras para o recado de uma não apagar o de outra.
+   *
+   * `mostrar` roda antes dos `await` e `confirmar` depois deles, então com dois
+   * crachás quase juntos a gravação do primeiro terminava **depois** de o
+   * segundo já ter escrito o aviso na tela — e o limpava. Justamente o caso que
+   * a regra do intervalo existe para tornar visível.
+   *
+   * Achado pelo teste de tela, não a olho: em jsdom as duas leituras se
+   * sobrepõem do mesmo jeito que numa mão com dois cartões.
+   */
+  const geracao = useRef(0)
   const jaPresentes = useRef<Set<string>>(new Set())
   const [linhas, setLinhas] = useState<Linha[]>([])
   const [recado, setRecado] = useState<string>()
@@ -120,8 +135,16 @@ export function TelaAula({
         .slice(0, 6)
         .map((e) => ({
           chave: e.eventoId,
-          nome: e.nome || 'Crachá não cadastrado',
+          // A recusa por dois crachás não tem nome — e "Crachá não cadastrado"
+          // ali seria mentira, além de mandar o professor procurar a pessoa numa
+          // lista onde ela pode muito bem estar.
+          nome:
+            e.resultado === 'rapido_demais'
+              ? 'Dois crachás de uma vez'
+              : e.nome || 'Crachá não cadastrado',
           hora: hhmm(new Date(e.quando)),
+          // `rapido_demais` cai no tom de 'desconhecido' de propósito: os dois
+          // são recusa, e a lista não precisa de um terceiro vermelho.
           tom: e.resultado === 'ok' ? 'ok' : e.resultado === 'duplicado' ? 'repetido' : 'desconhecido',
         })),
     )
@@ -134,6 +157,7 @@ export function TelaAula({
   useEffect(() => {
     return leitor.aoLer((leitura) => {
       void (async () => {
+        const minha = ++geracao.current
         const uidHash = await calcularUidHash(config.salHex, leitura.uid)
         const vinculo = await repositorio.vinculoPorHash(uidHash)
         const decisao = decidir(uidHash, {
@@ -141,8 +165,20 @@ export function TelaAula({
           vinculo,
           armado: aCadastrar,
           jaPresentes: jaPresentes.current,
+          ultima: ultima.current,
           agora: leitura.em,
         })
+
+        // Antes de qualquer `await`, como `jaPresentes`: dois crachás de uma mão
+        // chegam em centenas de milissegundos, e o segundo não pode encontrar
+        // este valor desatualizado — seria a fraude passando pela porta que a
+        // regra existe para fechar.
+        //
+        // A recusa **não** conta como leitura: assim a janela segue medida a
+        // partir do último crachá aceito, e insistir depressa não a reinicia.
+        if (decisao.tipo !== 'rapido_demais' && vinculo?.papel !== 'professor') {
+          ultima.current = { uidHash, em: leitura.em }
+        }
 
         // Entra no conjunto antes de qualquer `await`: é isso que faz a leitura
         // seguinte já saber que esta pessoa passou.
@@ -197,7 +233,7 @@ export function TelaAula({
           aoEncerrar?.(jaPresentes.current.size)
         }
 
-        confirmar(decisao, evento)
+        confirmar(decisao, evento, minha)
         await recarregar()
         aoMudarBase()
       })()
@@ -249,19 +285,31 @@ export function TelaAula({
     if (decisao.tipo === 'cedo_demais') {
       setRecado(`Para encerrar, encoste de novo em ${Math.ceil(decisao.faltamMs / 1000)} s.`)
     }
+    // Este é o único recado da tela que serve ao **professor** e não a quem
+    // encostou: o app não sabe distinguir fraude de fila apressada, mas sabe
+    // dizer que o padrão é fisicamente implausível. Quem julga está na sala.
+    if (decisao.tipo === 'rapido_demais') {
+      setRecado('Dois crachás quase juntos — o segundo não foi contado. Passe um de cada vez.')
+    }
   }
 
   /** Depois de gravar: o som. Bipe significa "está salvo". */
-  function confirmar(decisao: Decisao, evento?: Evento) {
+  function confirmar(decisao: Decisao, evento?: Evento, minha = geracao.current) {
+    // Só limpa o que era **desta** leitura: se outra chegou no meio, o recado na
+    // tela é dela, e apagá-lo escondia a recusa de dois crachás juntos.
+    const limpar = () => minha === geracao.current && setRecado(undefined)
+
     switch (decisao.tipo) {
       case 'presenca':
       case 'cadastro':
-        setRecado(undefined)
+        limpar()
         return tocar('ok')
       case 'repetido':
-        setRecado(undefined)
+        limpar()
         return tocar('repetido')
       case 'desconhecido':
+        return tocar('desconhecido')
+      case 'rapido_demais':
         return tocar('desconhecido')
       case 'cedo_demais':
         return tocar('desconhecido')
