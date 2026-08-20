@@ -305,36 +305,42 @@ lista e cair num painel de nove capacidades era eu quebrando a regra que este
 arquivo já tinha. `ui/TelaProblema.tsx` tem uma frase e uma ação; o diagnóstico
 fica a um clique, que é a diferença entre estar disponível e estar no caminho.
 
-## Achados na validação de 20/08/2026 — a fazer
+## A validação de 20/08/2026 — feita
 
-O autor percorreu o fluxo do zero, com a pasta esvaziada. Sete coisas, e a
-primeira metade é a mesma doença: **a cerimônia foi desenhada como uma tela de
-lista com um modo escondido dentro.**
+Os sete achados do autor percorrendo o fluxo do zero. Os quatro primeiros eram a
+mesma doença: **a cerimônia foi desenhada como lista com um modo escondido
+dentro.** A barra "Encoste o crachá de" passou a abrir de saída nos dois
+caminhos (colar e reabrir turma salva); "Cadastrar crachás" some enquanto ela
+está aberta, porque botão que não responde é pior que botão nenhum; "Voltar"
+virou "Parar de chamar", já que a lista está logo abaixo e nada sai da tela.
 
-1. **A barra "Encoste o crachá de" deve aparecer de saída.** Hoje exige clicar em
-   "Cadastrar crachás" primeiro. É um clique para chegar onde a tela já deveria
-   estar: acabou de cadastrar a turma, o passo seguinte é dar crachá a ela.
-2. **Não há "encerrar o cadastro inicial".** O professor cadastra alguns e não
-   sabe como sair, nem onde reencontrar a lista depois.
-3. **"Cadastrar crachás" fica morto** enquanto a barra está aberta — clicar não
-   faz nada. Ou muda de função, ou some.
-4. **"Voltar" não diz para onde.** Voltar de quê, para quê.
-5. **Os Ajustes estão poluídos.** Tudo o que há ali é necessário, mas aparece de
-   uma vez. Quer seções recolhíveis, no estilo dos Ajustes da Apple.
-6. **A grade nos Ajustes deve ser a mesma grade visual** de `TelaCronograma`,
-   com um seletor horizontal de turma em cima — e não a lista de campos atual.
-7. **`N` não abre a lupa durante a cerimônia, e isso confundiu.** Não é bug: a
-   busca (`Busca`) vive em `TelaAula`, e a cerimônia é `TelaVinculo`, onde um
-   crachá desconhecido é o cadastro da pessoa chamada. Só que o ensaio não deixa
-   isso claro, e não há como chegar na lupa sem antes ter turma cadastrada **e**
-   a chamada aberta. **Ensaio que não explica o estado em que está não valida
-   fluxo** — é o mesmo defeito do `P`, que já foi corrigido uma vez.
+O quarto era o mais escondido: **não havia saída, e o rodapé dizia "Trocar de
+turma".** O que encerra o cadastro inicial não é um botão — é o crachá do
+professor. Sem ele a chamada não abre; com ele a rota sai sozinha. E os alunos
+que faltarem se cadastram encostando, na primeira aula. A tela diz as duas
+coisas, na ordem certa.
 
-O item 7 aponta para a raiz dos outros: **a cerimônia e a chamada fazem a mesma
-coisa com telas diferentes.** `TelaVinculo` chama nome e espera crachá;
-`TelaAula` também, e ainda tem a lupa. Vale considerar se a cerimônia não deveria
-ser a própria `TelaAula` com a fila cheia — o `CLAUDE.md` já diz que "a cerimônia
-é a primeira chamada", e o código ainda tem duas telas para isso.
+**Ajustes recolhíveis**, com um critério: **o que responde uma pergunta fica
+aberto** (onde estão meus dados, quantos crachás tenho); **o que faz alguma
+coisa fica recolhido**. O cabeçalho inteiro é o alvo, e as ações somem com o
+painel fechado — botão de zerar ao lado de um título recolhido é convite a
+clicar sem ver no quê.
+
+**A grade dos Ajustes virou a mesma semana do cronograma**, com seletor de turma
+em cima e gravação a cada toque: em ajustes não existe "salvar", existe mudar. A
+grade vive em `ui/componentes/GradeDaSemana.tsx` porque duas implementações
+divergiriam, e a dos Ajustes acabaria mentindo sobre a do cadastro.
+
+**A tag do ensaio passou a mudar com a rota.** `N` produz crachá desconhecido em
+qualquer tela, mas só na chamada isso abre a lupa — na cerimônia, crachá
+desconhecido é o cadastro de quem está sendo chamado. A tag dizia sempre a mesma
+coisa, e o autor apertou `N` na cerimônia esperando a busca. **Ensaio que não diz
+em que estado está não valida fluxo nenhum**, e é o mesmo defeito do `P`.
+
+Fica em aberto a suspeita que motivou tudo: `TelaVinculo` e `TelaAula` chamam um
+nome e esperam um crachá, e este arquivo já diz que "a cerimônia é a primeira
+chamada". São duas telas para uma coisa só, e unificá-las apagaria a classe
+inteira de defeitos em vez de remendá-los um a um.
 
 ## Palavras que não se usam
 

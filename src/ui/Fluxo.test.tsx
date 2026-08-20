@@ -430,6 +430,56 @@ describe('reabrir a chamada encerrada por engano', () => {
   })
 })
 
+// Os Ajustes mostravam tudo de uma vez: pasta, vínculos, grade, registros, sal e
+// diagnóstico empilhados. Tudo necessário, e por isso mesmo impossível de achar.
+describe('os Ajustes se recolhem', () => {
+  it('as tabelas grandes começam fechadas, e o cabeçalho abre', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Tudo pronto')
+    await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
+
+    const vinculos = await screen.findByRole('button', { name: /Vínculos/ })
+    expect(vinculos).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByPlaceholderText('filtrar por nome ou hash')).not.toBeInTheDocument()
+
+    await usuario.click(vinculos)
+    expect(vinculos).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByPlaceholderText('filtrar por nome ou hash')).toBeInTheDocument()
+  })
+
+  // Botão de zerar ao lado de um título recolhido é convite a clicar sem ver
+  // no quê.
+  it('as ações somem com o painel fechado', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Tudo pronto')
+    await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
+
+    await screen.findByRole('button', { name: /Registros/ })
+    expect(screen.queryByRole('button', { name: 'Zerar registros' })).not.toBeInTheDocument()
+  })
+
+  // A mesma grade do cronograma, e não a lista de campos que existia aqui.
+  it('a grade horária é a semana visual', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Tudo pronto')
+    await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
+
+    // A grade começa aberta: é das que respondem uma pergunta, não das que
+    // fazem alguma coisa.
+    await screen.findByRole('button', { name: /Grade horária/ })
+    expect(
+      await screen.findByRole('group', { name: 'Horários de IF685 · T01' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'QUA, 13:00 às 14:50' })).toBeInTheDocument()
+  })
+})
+
 // O ensaio precisa alcançar **todos** os estados, senão não serve para validar
 // o fluxo. Faltavam dois, e o autor achou os dois: não havia como produzir um
 // crachá desconhecido depois da cerimônia, e `P` não fazia nada nem dizia nada

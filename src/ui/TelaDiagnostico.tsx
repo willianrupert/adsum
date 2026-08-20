@@ -249,6 +249,7 @@ export function TelaDiagnostico() {
 
       <Painel
         titulo="Ambiente"
+        recolhivel
         legenda="O que este navegador oferece."
         acoes={<button onClick={() => location.reload()}>Recarregar</button>}
       >
@@ -284,6 +285,7 @@ export function TelaDiagnostico() {
 
       <Painel
         titulo="Leitor de crachá"
+        recolhivel
         legenda="De onde vêm os UIDs."
         acoes={
           <>
@@ -352,6 +354,8 @@ export function TelaDiagnostico() {
 
       <Painel
         titulo="Últimas leituras"
+        recolhivel
+        abertoDeInicio={false}
         legenda="Nada aqui conta presença."
       >
         {leituras.length === 0 ? (
@@ -412,6 +416,7 @@ export function TelaDiagnostico() {
 
       <Painel
         titulo="Repositório"
+        recolhivel
         legenda="O que está guardado."
         acoes={
           <>
@@ -516,6 +521,8 @@ export function TelaDiagnostico() {
           duas vezes na vida. */}
       <Painel
         titulo="Modo de ensaio"
+        recolhivel
+        abertoDeInicio={false}
         legenda="Leitor simulado, teclas de ensaio, semear e apagar."
         acoes={
           <button

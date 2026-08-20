@@ -13,14 +13,15 @@ import {
   paraJsonGrade,
   paraJsonVinculos,
 } from '../nucleo/cofre.ts'
-import { DIAS, horaValida } from '../nucleo/grade.ts'
 import type { Aula, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.ts'
 import { pastaDisponivel } from '../ambiente/pasta.ts'
 import { comoInstalar, ehWebKit, instalado } from '../ambiente/instalacao.ts'
 import { useAdsum } from './adsum.ts'
-import { Linha, Painel, Selo } from './componentes/Painel.tsx'
+import { Linha, Painel } from './componentes/Painel.tsx'
 import { Cartao } from './componentes/Cartao.tsx'
+import { GradeDaSemana, aulasDe } from './componentes/GradeDaSemana.tsx'
+import { marcadosDe } from '../nucleo/horarios.ts'
 import { Importacao, type Resultado } from './componentes/Importacao.tsx'
 
 /**
@@ -73,7 +74,82 @@ function SemPasta() {
   )
 }
 
-const AULA_VAZIA = { uidHashProfessor: '', dia: 1, inicio: '08:00', fim: '10:00', turma: '' }
+/**
+ * A grade nos Ajustes: seletor de turma em cima, a mesma semana embaixo.
+ *
+ * Era uma lista de campos — dia, início, fim, professor, turma — mais um botão
+ * de acrescentar. Cadastrar assim já era ruim; **corrigir** era pior, porque
+ * mudar a quarta de lugar exigia apagar e recriar.
+ *
+ * Grava a cada toque: em ajustes não existe "salvar", existe mudar. E o seletor
+ * só aparece com mais de uma turma, porque escolher entre uma é escolher nada.
+ */
+function GradeDeAjustes({
+  turmas,
+  aulas,
+  professorPadrao,
+  aoMudar,
+}: {
+  turmas: string[]
+  aulas: Aula[]
+  professorPadrao: string
+  aoMudar: (turma: string, aulas: Aula[]) => Promise<void>
+}) {
+  const [escolhida, setEscolhida] = useState<string>()
+  const turma = escolhida && turmas.includes(escolhida) ? escolhida : turmas[0]
+
+  const daTurma = useMemo(() => aulas.filter((a) => a.turma === turma), [aulas, turma])
+  const { marcados, foraDosBlocos } = useMemo(() => marcadosDe(daTurma), [daTurma])
+
+  if (turmas.length === 0) {
+    return <p className="ferramentas__nota">Nenhuma turma cadastrada ainda.</p>
+  }
+
+  return (
+    <>
+      {turmas.length > 1 && (
+        <div className="segmentado segmentado--turmas" role="group" aria-label="turma">
+          {turmas.map((t) => (
+            <button
+              key={t}
+              className={t === turma ? 'segmento segmento--ativo' : 'segmento'}
+              onClick={() => setEscolhida(t)}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <GradeDaSemana
+        marcados={marcados}
+        rotulo={`Horários de ${turma}`}
+        aoMudar={(novos) => {
+          // O professor da grade é quem já tem crachá. Sem nenhum, a grade não
+          // tem por onde ser indexada — e a tela diz isso abaixo.
+          void aoMudar(turma, aulasDe(novos, turma, daTurma[0]?.uidHashProfessor ?? professorPadrao))
+        }}
+      />
+
+      {foraDosBlocos > 0 && (
+        <p className="cronograma__aviso">
+          {foraDosBlocos === 1
+            ? 'Uma aula desta turma está em horário fora destes blocos e não aparece na grade.'
+            : `${foraDosBlocos} aulas desta turma estão em horários fora destes blocos e não aparecem na grade.`}{' '}
+          Tocar aqui substitui o horário dela pelo que ficar marcado.
+        </p>
+      )}
+
+      {!professorPadrao && (
+        <p className="ferramentas__nota">
+          Nenhum vínculo de professor ainda. A grade não tem por onde ser indexada até
+          existir um.
+        </p>
+      )}
+    </>
+  )
+}
+
 
 function plural(n: number, singular: string, plural: string): string {
   return `${n} ${n === 1 ? singular : plural}`
@@ -99,21 +175,23 @@ export function TelaRepositorio({
 
   const [vinculos, setVinculos] = useState<Vinculo[]>([])
   const [aulas, setAulas] = useState<Aula[]>([])
+  const [turmas, setTurmas] = useState<string[]>([])
   const [totalEventos, setTotalEventos] = useState(0)
   const [busca, setBusca] = useState('')
-  const [nova, setNova] = useState<Omit<Aula, 'id'>>(AULA_VAZIA)
   const [importacao, setImportacao] = useState<Resultado>()
   const [recado, setRecado] = useState<{ tom: 'ok' | 'grave'; texto: string }>()
 
   const carregar = useCallback(async () => {
-    const [v, a, e] = await Promise.all([
+    const [v, a, e, t] = await Promise.all([
       repositorio.listarVinculos(),
       repositorio.listarAulas(),
       repositorio.contarEventos(),
+      repositorio.listarTurmas(),
     ])
     setVinculos(v)
     setAulas(a)
     setTotalEventos(e)
+    setTurmas(t)
   }, [repositorio])
 
   useEffect(() => {
@@ -133,10 +211,6 @@ export function TelaRepositorio({
   }
 
   const professores = useMemo(() => vinculos.filter((v) => v.papel === 'professor'), [vinculos])
-  const nomePorHash = useMemo(
-    () => new Map(vinculos.map((v) => [v.uidHash, v.nome])),
-    [vinculos],
-  )
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase()
     if (!termo) return vinculos
@@ -278,6 +352,8 @@ export function TelaRepositorio({
 
       <Painel
         titulo="Vínculos"
+        recolhivel
+        abertoDeInicio={false}
         legenda="Quais crachás são de quem."
         acoes={
           <>
@@ -382,8 +458,15 @@ export function TelaRepositorio({
         )}
       </Painel>
 
+      {/* A mesma grade do cronograma, e não uma lista de campos. O professor
+          que quer mudar a quarta de lugar olha a semana e aponta — foi assim
+          que ele cadastrou, e é assim que ele corrige. Um seletor de turma em
+          cima porque aqui há mais de uma; no cadastro, só havia aquela.
+
+          Grava a cada toque: em ajustes não existe "salvar", existe mudar. */}
       <Painel
         titulo="Grade horária"
+        recolhivel
         legenda="Quando cada turma tem aula."
         acoes={
           <>
@@ -395,130 +478,24 @@ export function TelaRepositorio({
             >
               Exportar
             </button>
-            <button
-              className="botao--grave"
-              onClick={tentar('Zerar grade', async () => {
-                if (!confirm(`Apagar as ${aulas.length} aulas?`)) throw new Error('cancelado')
-                await repositorio.zerarAulas()
-              })}
-            >
-              Zerar
-            </button>
           </>
         }
       >
-        {aulas.length === 0 ? (
-          <p className="vazio">Nenhuma aula cadastrada.</p>
-        ) : (
-          <table className="tabela">
-            <thead>
-              <tr>
-                <th>Dia</th>
-                <th>Início</th>
-                <th>Fim</th>
-                <th>Turma</th>
-                <th>Professor</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {aulas.map((a) => (
-                <tr key={a.id}>
-                  <td>{DIAS[a.dia]}</td>
-                  <td>{a.inicio}</td>
-                  <td>{a.fim}</td>
-                  <td>{a.turma}</td>
-                  <td>
-                    {nomePorHash.get(a.uidHashProfessor) ?? (
-                      <Selo tom="grave">Crachá sem vínculo</Selo>
-                    )}
-                  </td>
-                  <td>
-                    <button
-                      className="botao--grave"
-                      onClick={tentar('Remover aula', async () => {
-                        const restantes = aulas.filter((x) => x.id !== a.id)
-                        await repositorio.zerarAulas()
-                        for (const aula of restantes) {
-                          await repositorio.gravarAula({ ...aula, id: undefined })
-                        }
-                      })}
-                    >
-                      Remover
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-        <div className="ferramentas">
-          <select
-            value={nova.uidHashProfessor}
-            onChange={(e) => setNova({ ...nova, uidHashProfessor: e.target.value })}
-            aria-label="professor"
-          >
-            <option value="">professor…</option>
-            {professores.map((p) => (
-              <option key={p.uidHash} value={p.uidHash}>
-                {p.nome}
-              </option>
-            ))}
-          </select>
-          <select
-            value={nova.dia}
-            onChange={(e) => setNova({ ...nova, dia: Number(e.target.value) })}
-            aria-label="dia da semana"
-          >
-            {DIAS.map((d, i) => (
-              <option key={d} value={i}>
-                {d}
-              </option>
-            ))}
-          </select>
-          <input
-            value={nova.inicio}
-            onChange={(e) => setNova({ ...nova, inicio: e.target.value })}
-            aria-label="início"
-            size={5}
-          />
-          <input
-            value={nova.fim}
-            onChange={(e) => setNova({ ...nova, fim: e.target.value })}
-            aria-label="fim"
-            size={5}
-          />
-          <input
-            value={nova.turma}
-            onChange={(e) => setNova({ ...nova, turma: e.target.value })}
-            placeholder="IF685 · T01"
-            aria-label="turma"
-          />
-          <button
-            onClick={tentar('Acrescentar aula', async () => {
-              if (!nova.uidHashProfessor) throw new Error('escolha o professor: a grade é indexada por ele')
-              if (!horaValida(nova.inicio) || !horaValida(nova.fim)) {
-                throw new Error('horário fora do formato hh:mm')
-              }
-              if (!nova.turma.trim()) throw new Error('sem turma')
-              await repositorio.gravarAula({ ...nova, turma: nova.turma.trim() })
-              setNova({ ...AULA_VAZIA, uidHashProfessor: nova.uidHashProfessor })
-            })}
-          >
-            Acrescentar
-          </button>
-          {professores.length === 0 && (
-            <p className="ferramentas__nota">
-              Nenhum vínculo de professor ainda. A grade não tem por onde ser indexada até
-              existir um.
-            </p>
-          )}
-        </div>
+        <GradeDeAjustes
+          turmas={turmas}
+          aulas={aulas}
+          professorPadrao={professores[0]?.uidHash ?? ''}
+          aoMudar={async (turma, novas) => {
+            await repositorio.definirHorarioDaTurma(turma, novas)
+            await carregar()
+          }}
+        />
       </Painel>
 
       <Painel
         titulo="Registros"
+        recolhivel
+        abertoDeInicio={false}
         legenda="O que a planilha consome."
         acoes={
           <>
@@ -564,6 +541,8 @@ export function TelaRepositorio({
 
       <Painel
         titulo="Passar os crachás a outro professor"
+        recolhivel
+        abertoDeInicio={false}
         legenda="Quem dá aula para os mesmos alunos não precisa cadastrar tudo de novo."
         acoes={
           <>

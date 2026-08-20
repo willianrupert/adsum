@@ -707,9 +707,28 @@ export function Fluxo() {
           </span>
         )}
 
+        {/* As teclas de ensaio, e **o que cada uma faz aqui**.
+            O `N` produz um crachá desconhecido em qualquer tela, mas só na
+            chamada isso abre a lupa: na cerimônia, crachá desconhecido é o
+            cadastro de quem está sendo chamado. O autor apertou `N` na
+            cerimônia esperando a busca, e a tag dizia sempre a mesma coisa.
+            Ensaio que não diz em que estado está não valida fluxo nenhum. */}
         {ensaio && ehSimulavel(leitor) && (
           <span className="selo-status" title="Modo de ensaio, com leitor simulado">
-            <kbd>espaço</kbd> crachá · <kbd>N</kbd> desconhecido · <kbd>P</kbd> professor
+            <kbd>espaço</kbd> crachá
+            {rota === 'chamada' ? (
+              <>
+                {' · '}
+                <kbd>N</kbd> abre a busca
+              </>
+            ) : rota === 'cerimonia' ? (
+              <>
+                {' · '}
+                <kbd>N</kbd> cadastra o chamado
+              </>
+            ) : null}
+            {' · '}
+            <kbd>P</kbd> professor
           </span>
         )}
 

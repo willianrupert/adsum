@@ -141,6 +141,43 @@ code {
   padding: 26px 28px 28px;
 }
 
+/* Fechado encolhe: sem isto o painel guardaria a altura do conteúdo escondido,
+   e recolher não teria devolvido espaço nenhum. */
+.painel--fechado {
+  padding-bottom: 22px;
+}
+
+.painel--fechado .painel__topo {
+  margin-bottom: 0;
+}
+
+/* O cabeçalho inteiro é o alvo. Alvo grande é o que faz recolher parecer
+   natural; setinha de 12 px faz procurar. */
+.painel__gatilho {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  border-radius: 0;
+}
+
+.painel__gatilho:hover {
+  background: transparent;
+}
+
+.painel__seta {
+  display: inline-block;
+  margin-left: 8px;
+  color: var(--tinta-tenue);
+  font-weight: 300;
+  transition: transform var(--rapido) var(--curva);
+}
+
+.painel__seta--aberta {
+  transform: rotate(90deg);
+}
+
 .painel__topo {
   display: flex;
   justify-content: space-between;
@@ -865,6 +902,37 @@ button:focus-visible {
   /* O filete some do bloco em si: quem o desenha é a linha da hora, e repetir
      em seis colunas viraria régua. O espaço fica. */
   border-top-color: transparent;
+}
+
+/* Seletor de turma nos Ajustes: rola na horizontal quando são muitas, em vez
+   de quebrar em duas linhas e empurrar a grade para baixo. */
+.segmentado--turmas {
+  width: 100%;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.segmentado--turmas::-webkit-scrollbar {
+  display: none;
+}
+
+.segmentado--turmas .segmento {
+  white-space: nowrap;
+}
+
+/* Nos Ajustes a grade divide espaço com o resto do painel: blocos mais baixos,
+   e a largura do painel em vez dos 720px da tela dedicada. */
+.painel .cronograma__grade {
+  max-width: none;
+}
+
+.painel .cronograma__bloco {
+  height: 42px;
+}
+
+.painel .cronograma__bloco--curto {
+  height: 26px;
 }
 
 .cronograma__resumo {
