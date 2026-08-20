@@ -371,6 +371,32 @@ nome e esperam um crachá, e este arquivo já diz que "a cerimônia é a primeir
 chamada". São duas telas para uma coisa só, e unificá-las apagaria a classe
 inteira de defeitos em vez de remendá-los um a um.
 
+**A cerimônia expulsava a si mesma, achado ao vivo em 20/08/2026.** O autor
+colou a turma, preencheu o cronograma, e ficou sem saber o que fazer depois de
+cadastrar só os crachás de quem estava na sala. A causa: `professorSemCracha` é
+recalculado a cada vínculo gravado, e a rota decidia por ele a cada render —
+o crachá do próprio professor, tocado no meio da fila, mudava esse estado e a
+rota saltava para `'pronto'` na hora, debaixo do professor, antes de ele poder
+chamar o próximo aluno. Seguir a instrução da própria tela ("comece pelo seu
+crachá") acionava o bug.
+
+O conserto **não** apagou a regra — o crachá do professor continua sendo o que
+teria que existir para a chamada abrir. O que mudou foi quem decide *quando*
+sair da tela: antes era a rota, recalculada a cada gravação; agora é
+`modoCadastro`, em `Fluxo.tsx`, que só muda por um gesto explícito
+("Concluir"). A rota crua ainda governa a entrada (sem crachá de professor
+nenhum, não há para onde ir); o que ela deixou de governar é a saída no meio
+da fila.
+
+Foi testando isso ao vivo que apareceu o defeito irmão: reabrir "Cadastrar mais
+um crachá" chamava o professor de novo, sempre. `abrirTurma`, em
+`TelaVinculo.tsx`, reconhecia "já tem crachá" só por matrícula — e o docente
+não tem matrícula na página do SIGAA. É o mesmo bug que `recontar()`, em
+`Fluxo.tsx`, já tinha corrigido para a contagem de pendentes ("Quem já tem
+crachá é reconhecido pela matrícula — e, para quem não tem matrícula, pelo
+nome"), só que a correção nunca chegou a `abrirTurma`. Segunda via por nome,
+igual à de lá.
+
 ## Palavras que não se usam
 
 **"Armar" e "armado" saíram em 20/08/2026.** O autor tinha pedido a troca antes,

@@ -45,11 +45,27 @@ function comoMatriculado(turma: string, e: Entrada): Matriculado {
 
 export function TelaVinculo({
   turmaInicial,
+  primeiroDia = true,
   aoMudarBase,
   aoSair,
 }: {
   turmaInicial?: string
-  /** Volta para onde estava. Só existe quando a tela foi aberta de propósito. */
+  /**
+   * É o cadastro inicial da turma, não "mais um crachá" de uma turma que já
+   * dá aula. Só muda título e legenda — o resto do fluxo é o mesmo, de
+   * propósito: são a mesma cerimônia, e o app já teve duas telas para uma
+   * coisa só. Padrão `true`: sem dizer o contrário, é sempre o que a tela
+   * era antes de existir "mais um crachá".
+   */
+  primeiroDia?: boolean
+  /**
+   * Volta para o repouso.
+   *
+   * Chamável mesmo no primeiro dia — mas só funciona depois do crachá do
+   * professor: antes disso o repouso seria mentira ("tudo pronto" sem
+   * professor não está), e o botão do rodapé continua sendo "Escolher outra
+   * turma" em vez de "Concluir". Ver `professorComCracha` abaixo.
+   */
   aoSair?: () => void
   /** Chamado depois de gravar, não ao ouvir o crachá: quem conta pendências
       precisa contar sobre a base já escrita, e não competir com a escrita. */
@@ -80,6 +96,12 @@ export function TelaVinculo({
         repositorio.listarVinculos(),
       ])
       const comCracha = new Set(vinculos.map((v) => v.matricula).filter(Boolean))
+      // Quem não tem matrícula na página — o docente — precisa da segunda via
+      // por nome. Sem ela, o professor reaparecia "Chamando" toda vez que a
+      // turma era reaberta, mesmo depois de já ter o próprio crachá: mesmo bug
+      // que `recontar()`, em `Fluxo.tsx`, já tinha corrigido para a contagem
+      // de pendentes — só que aqui, não.
+      const comCrachaPorNome = new Set(vinculos.map((v) => v.nome))
       const preparados = prepararLista(
         pessoas.map((p) => ({
           nomeCompleto: p.nomeCompleto,
@@ -92,28 +114,29 @@ export function TelaVinculo({
       // pessoa para outra — em silêncio, que é o pior jeito de errar isso.
       const porChave = new Map(pessoas.map((p) => [p.matricula || p.nomeCompleto.toLowerCase(), p]))
 
+      const lista = preparados.map((p) => {
+        const guardado = porChave.get(p.matricula || p.completo.toLowerCase())
+        const nome = guardado?.nome ?? p.nome
+        return {
+          ...p,
+          // O que está guardado vence o que o encurtamento supôs: já foi
+          // decidido por quem opera, e edição de nome não se perde.
+          papel: guardado?.papel ?? p.papel,
+          nome,
+          estado: (p.matricula ? comCracha.has(p.matricula) : comCrachaPorNome.has(nome))
+            ? ('feito' as const)
+            : ('pendente' as const),
+        }
+      })
+
       setTurma(nomeDaTurma)
-      setFila(
-        preparados.map((p) => {
-          const guardado = porChave.get(p.matricula || p.completo.toLowerCase())
-          return {
-            ...p,
-            // O que está guardado vence o que o encurtamento supôs: já foi
-            // decidido por quem opera, e edição de nome não se perde.
-            papel: guardado?.papel ?? p.papel,
-            nome: guardado?.nome ?? p.nome,
-            estado: p.matricula && comCracha.has(p.matricula) ? ('feito' as const) : ('pendente' as const),
-          }
-        }),
-      )
+      setFila(lista)
       // A barra já abre chamando o primeiro pendente. Antes exigia clicar em
       // "Cadastrar crachás" primeiro, e era um clique para chegar onde a tela
       // já deveria estar: acabou de cadastrar a turma, o passo seguinte é dar
       // crachá a ela. Turma inteira cadastrada abre fechada, que é o certo —
       // não há quem chamar.
-      const primeiro = preparados.findIndex(
-        (p) => !(p.matricula && comCracha.has(p.matricula)),
-      )
+      const primeiro = lista.findIndex((p) => p.estado === 'pendente')
       setChamado(primeiro >= 0 ? primeiro : undefined)
       setProblemas([])
     },
@@ -280,6 +303,16 @@ export function TelaVinculo({
    * confundir as duas fazia a tela dar o conselho errado.
    */
   const professorComCracha = fila.some((e) => e.papel === 'professor' && e.estado === 'feito')
+  /**
+   * Se dá para sair desta tela agora.
+   *
+   * Fora do primeiro dia (`aoSair` de "mais um crachá"), sempre — chegar aqui
+   * já exigiu o crachá do professor antes, noutra visita. No primeiro dia,
+   * só depois que **esta** fila registrar o professor: antes disso a rota
+   * não tem para onde ir, e "Concluir" que não conclui é pior que o botão
+   * de trocar de turma, que ao menos diz o que faz.
+   */
+  const podeConcluir = !primeiroDia || professorComCracha
   const atual = chamado !== undefined ? fila[chamado] : undefined
 
   function renomear(indice: number, nome: string) {
@@ -444,11 +477,11 @@ export function TelaVinculo({
         // ficava. O título diz agora, e a legenda conta o progresso — que só é
         // notícia no primeiro dia, quando falta a turma toda.
         <Painel
-          titulo={aoSair ? 'Cadastrar mais um crachá' : `Primeiro dia · ${turma}`}
+          titulo={primeiroDia ? `Primeiro dia · ${turma}` : 'Cadastrar mais um crachá'}
           legenda={
-            aoSair
-              ? `${turma} · chame o nome e encoste o crachá novo`
-              : `${feitos} de ${fila.length} com crachá`
+            primeiroDia
+              ? `${feitos} de ${fila.length} com crachá`
+              : `${turma} · chame o nome e encoste o crachá novo`
           }
           acoes={
             // Some enquanto a barra está aberta: ali ele não tinha o que fazer,
@@ -539,28 +572,26 @@ export function TelaVinculo({
                 ))}
               </tbody>
             </table>
-            {/* Não existia saída daqui, e o botão dizia "Trocar de turma", que
-                não é saída nenhuma. O que encerra o cadastro inicial é o crachá
-                do professor: sem ele a chamada não abre, e com ele a rota sai
-                sozinha desta tela. Os alunos que faltarem não precisam ser
-                perseguidos — eles se cadastram encostando, durante a aula.
-
-                Dizer isso na tela é o que transforma "cadê o botão de encerrar"
-                em "ah, então já acabou". */}
+            {/* O que encerra o cadastro inicial é o crachá do professor, não
+                este botão: sem ele não há repouso nenhum para onde voltar — a
+                tela diria "tudo pronto" sendo mentira. Por isso o botão só
+                vira "Concluir" depois dele. Antes, a única saída é trocar de
+                turma: não perde nada gravado, só a lista visível, que volta
+                ao reabrir esta turma. */}
             <div className="ferramentas">
-              <button className={aoSair ? undefined : 'botao--quieto'}
+              <button className={podeConcluir ? undefined : 'botao--quieto'}
                 onClick={() => {
-                  if (aoSair) return aoSair()
+                  if (podeConcluir) return aoSair?.()
                   setFila([])
                   setChamado(undefined)
                   setRecado(undefined)
                   setProblemas([])
                 }}
               >
-                {aoSair ? 'Concluir' : 'Escolher outra turma'}
+                {podeConcluir ? 'Concluir' : 'Escolher outra turma'}
               </button>
               <span className="ferramentas__ou">
-                {professorComCracha
+                {podeConcluir
                   ? 'Pode parar quando quiser. Quem faltar se cadastra na primeira aula, encostando o crachá.'
                   : 'Comece pelo seu crachá: é ele que abre a chamada.'}
               </span>

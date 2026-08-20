@@ -94,10 +94,20 @@ export function Fluxo() {
   const [semHorario, setSemHorario] = useState<{ turma: string; aulas: Aula[] }>()
   const [uidDoProfessor, setUidDoProfessor] = useState('')
   const [folha, setFolha] = useState<Folha>()
-  // A rota decide sozinha, mas "quero cadastrar mais um crachá" é uma intenção
-  // que nenhum dado expressa — sem isto, o botão do repouso não tinha o que
-  // fazer e não fazia nada.
-  const [cadastrando, setCadastrando] = useState(false)
+  // A rota decide sozinha, mas "estou cadastrando crachás" é uma intenção que
+  // nenhum dado expressa sozinha.
+  //
+  // 'inicial' é a cerimônia do primeiro dia, aberta pela própria rota.
+  // 'extra' é "Cadastrar mais um crachá", aberta por escolha no repouso.
+  //
+  // Por que isto não é só ler a rota a cada render: o crachá do próprio
+  // professor, tocado no meio da cerimônia, muda `professorSemCracha` e a
+  // rota recalcula para 'pronto' na hora — e sem este estado a tela sumia
+  // debaixo dele no meio de chamar o próximo aluno, porque a rota é o
+  // repositório, não a intenção de quem está com a mão no leitor. Só um gesto
+  // explícito ("Concluir") deve tirar a cerimônia da tela; a base mudando por
+  // baixo, não.
+  const [modoCadastro, setModoCadastro] = useState<'nenhum' | 'inicial' | 'extra'>('nenhum')
   const [resumo, setResumo] = useState<{ sessao: Sessao; presentes: number }>()
   const [escolhendo, setEscolhendo] = useState<{
     opcoes: string[]
@@ -455,6 +465,18 @@ export function Fluxo() {
     pastaDispensada: semPasta,
   })
 
+  // Entra em cadastro 'inicial' assim que a rota chega em 'cerimonia' — e só
+  // sai por um gesto explícito (ver o comentário de `modoCadastro`), não por a
+  // rota ter mudado de ideia.
+  useEffect(() => {
+    if (rota === 'cerimonia') setModoCadastro((m) => (m === 'nenhum' ? 'inicial' : m))
+  }, [rota])
+
+  // A tela de cadastro fica no ar por `modoCadastro`, não pela rota crua —
+  // ver o comentário dele. `rota === 'cerimonia'` continua na conta para não
+  // haver um frame em branco antes do efeito acima rodar.
+  const naTelaDeCadastro = rota === 'cerimonia' || (rota === 'pronto' && modoCadastro !== 'nenhum')
+
   /**
    * A grade abre a aula sozinha.
    *
@@ -547,7 +569,14 @@ export function Fluxo() {
         />
       )}
       {rota === 'turma' && <TelaVinculo aoMudarBase={mudou} />}
-      {rota === 'cerimonia' && <TelaVinculo turmaInicial={turmaPendente} aoMudarBase={mudou} />}
+      {!resumo && naTelaDeCadastro && (
+        <TelaVinculo
+          turmaInicial={modoCadastro === 'extra' ? turmasAbertas[0] : turmaPendente}
+          primeiroDia={modoCadastro !== 'extra'}
+          aoMudarBase={mudou}
+          aoSair={() => setModoCadastro('nenhum')}
+        />
+      )}
       {rota === 'chamada' && sessao && (
         <TelaAula
           sessao={sessao}
@@ -601,21 +630,14 @@ export function Fluxo() {
         />
       )}
 
-      {!resumo && rota === 'pronto' && !cadastrando && (
+      {!resumo && rota === 'pronto' && modoCadastro === 'nenhum' && (
         <Repouso
           turmas={turmas}
           pendencias={pasta ? [] : pendencias}
           proxima={proxima}
           aoIniciar={() => void iniciarChamada()}
           aoSalvar={(turma) => void salvarCopia(turma)}
-          aoAbrirCerimonia={() => setCadastrando(true)}
-        />
-      )}
-      {!resumo && rota === 'pronto' && cadastrando && (
-        <TelaVinculo
-          turmaInicial={turmasAbertas[0]}
-          aoMudarBase={mudou}
-          aoSair={() => setCadastrando(false)}
+          aoAbrirCerimonia={() => setModoCadastro('extra')}
         />
       )}
 
@@ -723,7 +745,7 @@ export function Fluxo() {
                 {' · '}
                 <kbd>N</kbd> abre a busca
               </>
-            ) : rota === 'cerimonia' ? (
+            ) : naTelaDeCadastro ? (
               <>
                 {' · '}
                 <kbd>N</kbd> cadastra o chamado
