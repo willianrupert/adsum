@@ -248,6 +248,14 @@ em badge vira mentira na semana seguinte, como a coluna `login` virou), e
 `gerar_diagrama.py`, `gerar_arquitetura.py`. Versiona-se o desenho, nunca a
 captura, que é a mesma regra que mantém dado real de turma fora daqui.
 
+**Arrastar pinta, 20/08/2026:** aula de 4h ocupa dois blocos seguidos, e três
+encontros na semana custavam seis cliques certeiros. **O primeiro bloco decide o
+modo** — vazio, o arrasto pinta; marcado, apaga —, que é o comportamento de
+calendário e o que evita a alternativa ruim: alternar cada bloco por onde se
+passa transforma um tremor da mão em xadrez. Um bloco só muda uma vez por
+arrasto. No toque o ponteiro fica capturado pelo primeiro alvo, então o iPad
+depende de `elementFromPoint`, e não de `pointerenter`.
+
 **Os blocos são medidos, 20/08/2026:** o autor mandou as grades de horário reais
 de vários períodos do CIn, e dois palpites meus estavam errados — faltava o
 bloco de **meio-dia (12:00–12:50, 50 minutos, um crédito só)** e a noite não é

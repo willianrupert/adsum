@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { Fluxo } from './Fluxo.tsx'
@@ -269,6 +269,71 @@ describe('o cronograma da turma', () => {
     await waitFor(() =>
       expect(screen.queryByText('Quando esta turma tem aula')).not.toBeInTheDocument(),
     )
+  })
+
+  // Aula de 4h ocupa dois blocos seguidos, e três encontros na semana custavam
+  // seis cliques certeiros. Arrastando, é um gesto.
+  it('arrastar pinta vários blocos de uma vez', async () => {
+    const usuario = userEvent.setup()
+    await comTurma()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Quando esta turma tem aula')
+
+    const manha = screen.getByRole('button', { name: 'QUA, 08:00 às 09:50' })
+    const meio = screen.getByRole('button', { name: 'QUA, 10:00 às 11:50' })
+
+    fireEvent.pointerDown(manha)
+    fireEvent.pointerEnter(meio)
+    fireEvent.pointerUp(window)
+
+    expect(screen.getByText(/2 horários/)).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Salvar horário' }))
+    await waitFor(async () =>
+      expect(await bancada.repositorio.listarAulas()).toHaveLength(2),
+    )
+  })
+
+  // O primeiro bloco decide o modo. Alternar cada um por onde se passa
+  // transformaria um tremor da mão em xadrez.
+  it('começar num bloco marcado apaga em vez de pintar', async () => {
+    await comTurma()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Quando esta turma tem aula')
+
+    const a = screen.getByRole('button', { name: 'SEG, 13:00 às 14:50' })
+    const b = screen.getByRole('button', { name: 'SEG, 15:00 às 16:50' })
+
+    // Pinta os dois.
+    fireEvent.pointerDown(a)
+    fireEvent.pointerEnter(b)
+    fireEvent.pointerUp(window)
+    expect(screen.getByText(/2 horários/)).toBeInTheDocument()
+
+    // Começando por um já marcado, o mesmo arrasto apaga os dois.
+    fireEvent.pointerDown(a)
+    fireEvent.pointerEnter(b)
+    fireEvent.pointerUp(window)
+    expect(screen.getByText('Nenhum horário escolhido')).toBeInTheDocument()
+  })
+
+  // Sair e voltar sobre a mesma célula não pode alternar de novo: passar o
+  // mouse de lado viraria pisca-pisca.
+  it('um bloco só muda uma vez por arrasto', async () => {
+    await comTurma()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Quando esta turma tem aula')
+
+    const a = screen.getByRole('button', { name: 'TER, 13:00 às 14:50' })
+    const b = screen.getByRole('button', { name: 'TER, 15:00 às 16:50' })
+
+    fireEvent.pointerDown(a)
+    fireEvent.pointerEnter(b)
+    fireEvent.pointerEnter(a)
+    fireEvent.pointerEnter(b)
+    fireEvent.pointerUp(window)
+
+    expect(screen.getByText(/2 horários/)).toBeInTheDocument()
   })
 
   // Trocar o horário de uma turma não pode apagar o das outras: era isso que

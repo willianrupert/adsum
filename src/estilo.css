@@ -834,6 +834,12 @@ button:focus-visible {
   height: 58px;
   padding: 0;
   border: none;
+  /* Sem isto, arrastar num tablet rola a página em vez de pintar. Vale só nos
+     blocos: o resto da tela continua rolando normalmente. */
+  touch-action: none;
+  /* Arrastar sobre botões seleciona o texto entre eles no Firefox, e o cursor
+     de texto no meio do gesto denuncia que aquilo não era para ser arrastado. */
+  user-select: none;
   border-radius: var(--raio-pequeno);
   background: var(--fundo-alt);
   cursor: pointer;
