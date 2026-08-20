@@ -1455,7 +1455,13 @@ button:focus-visible {
   letter-spacing: -0.019em;
 }
 
+/* Repositório e Diagnóstico são dois componentes irmãos aqui dentro, cada um
+   com seu próprio `gap`. Sem esta coluna, a emenda entre os dois era o único
+   lugar da folha sem espaço — e via-se. */
 .folha__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   overflow-y: auto;
   padding: 4px 26px 34px;
 }
@@ -1936,9 +1942,15 @@ button:focus-visible {
   color: var(--alerta);
 }
 
+/* Empilhadas, e não lado a lado.
+   Uma pílula preenchida ao lado de um link de texto tem massa visual muito
+   diferente: o grupo fica centrado, mas o olho vê o conjunto torto. Empilhar
+   também põe a hierarquia na vertical, que é como as outras telas de uma ação
+   só já fazem — pílula, depois o secundário, depois o terciário. */
 .resumo__acoes {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 6px;
   margin-top: 28px;
 }

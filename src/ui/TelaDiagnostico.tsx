@@ -355,7 +355,6 @@ export function TelaDiagnostico() {
       <Painel
         titulo="Últimas leituras"
         recolhivel
-        abertoDeInicio={false}
         legenda="Nada aqui conta presença."
       >
         {leituras.length === 0 ? (
@@ -472,6 +471,11 @@ export function TelaDiagnostico() {
         </Linha>
         {/* "Não apareceu" é uma reclamação que não dá para investigar: cada
             motivo tem conserto diferente. Aqui ela vira um fato. */}
+        {/* "Não achei a mudança" some no meio de cache, PWA instalado e aba
+            antiga. Com o carimbo na tela, vira uma comparação. */}
+        <Linha rotulo="versão desta cópia">
+          <code>{__CARIMBO__}</code>
+        </Linha>
         <Linha rotulo="convite de instalar">
           <Selo tom={estadoDoConvite() === 'oferecido' ? 'ok' : 'neutro'}>
             {
@@ -522,7 +526,6 @@ export function TelaDiagnostico() {
       <Painel
         titulo="Modo de ensaio"
         recolhivel
-        abertoDeInicio={false}
         legenda="Leitor simulado, teclas de ensaio, semear e apagar."
         acoes={
           <button

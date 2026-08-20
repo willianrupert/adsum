@@ -86,8 +86,7 @@ export function TelaResumo({
             <button className="botao--acento pasta__botao" onClick={aoConcluir}>
               Concluir
             </button>
-            {!arquivo && <button onClick={guardar}>Salvar de novo</button>}
-            {arquivo && <button onClick={guardar}>Salvar uma cópia</button>}
+            <button onClick={guardar}>{arquivo ? 'Salvar uma cópia' : 'Salvar de novo'}</button>
           </>
         ) : (
           <>
@@ -103,8 +102,6 @@ export function TelaResumo({
             </button>
           </>
         )}
-      </div>
-
       {/* Encerrar por engano é fácil: o crachá do professor encerra, e ele
           também é o crachá de alguém que pode encostar sem pensar. Sem
           reabrir, a saída seria começar outra chamada — e aí a aula fica
@@ -117,6 +114,8 @@ export function TelaResumo({
           Encerrei sem querer, reabrir a chamada
         </button>
       )}
+      </div>
+
     </section>
   )
 }

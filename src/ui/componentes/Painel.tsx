@@ -8,9 +8,11 @@ import { useState, type ReactNode } from 'react'
  * registros, sal e diagnóstico empilhados. Recolhido, cada seção continua a um
  * clique — e o que ele procura fica achável.
  *
- * O critério de qual abre por padrão: **o que responde uma pergunta** fica
- * aberto (onde estão meus dados, quantos crachás tenho). **O que faz alguma
- * coisa** fica recolhido, porque só se abre quando se vai usar.
+ * **Todos começam fechados, sem exceção.** Eu tinha tentado um critério — o que
+ * responde uma pergunta abre, o que faz alguma coisa recolhe — e o resultado foi
+ * uma tela em que metade abria e metade não, sem que se soubesse qual pelo quê.
+ * Regra com exceção é regra que o usuário precisa decorar. Abrir tudo custa um
+ * clique; adivinhar custa a tela inteira.
  *
  * O cabeçalho inteiro é o gesto, e não uma setinha de 12 px: alvo grande é o que
  * faz recolher parecer natural em vez de escondido.
@@ -20,7 +22,7 @@ export function Painel({
   legenda,
   acoes,
   recolhivel = false,
-  abertoDeInicio = true,
+  abertoDeInicio = false,
   children,
 }: {
   titulo: string

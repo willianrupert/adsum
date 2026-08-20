@@ -165,11 +165,14 @@ export function TelaRepositorio({
   pasta,
   aoTrocarPasta,
   aoRelerPasta,
+  aoDesconectarPasta,
 }: {
   pasta?: FileSystemDirectoryHandle
   aoTrocarPasta?: () => void
   /** Puxa da pasta para o cache. Ver o botão abaixo. */
   aoRelerPasta?: () => Promise<{ arquivos: string[]; problemas: string[] }>
+  /** Solta o vínculo com a pasta. Não apaga arquivo nem base. */
+  aoDesconectarPasta?: () => Promise<void>
 } = {}) {
   const { repositorio, config, recarregarConfig } = useAdsum()
 
@@ -267,6 +270,7 @@ export function TelaRepositorio({
           proteção, não uma limitação a contornar. */}
       <Painel
         titulo="Onde os dados ficam"
+        recolhivel
         acoes={
           // Sem seletor de diretório, não existe botão: oferecer uma ação que o
           // navegador não pode executar é pior que não oferecer nada.
@@ -279,6 +283,24 @@ export function TelaRepositorio({
                   nunca entrava, apesar de "a pasta é a dona". Não apaga nada:
                   vínculos entram por chave e eventos por `evento_id`, então
                   reler duas vezes dá no mesmo. */}
+              {pasta && aoDesconectarPasta && (
+                <button
+                  className="botao--grave"
+                  onClick={tentar('Desconectar', async () => {
+                    if (
+                      !confirm(
+                        'Desconectar a pasta? Os arquivos continuam onde estão, e a base continua neste navegador. O Adsum só para de gravar nela.',
+                      )
+                    ) {
+                      throw new Error('cancelado')
+                    }
+                    await aoDesconectarPasta()
+                    return 'a pasta não recebe mais gravação.'
+                  })}
+                >
+                  Desconectar
+                </button>
+              )}
               {pasta && aoRelerPasta && (
                 <button
                   onClick={tentar('Reler a pasta', async () => {
@@ -309,6 +331,18 @@ export function TelaRepositorio({
               Gravado a cada mudança. O navegador não revela o caminho completo, então
               procure a pasta pelo nome, onde você a escolheu. O <code>LEIA-ME.txt</code> lá dentro
               explica cada arquivo e como recuperar tudo.
+            </p>
+            {/* O que surpreendeu o autor: esvaziar a pasta pela mão não muda
+                nada na tela, e a gravação seguinte a reenche. É de propósito —
+                pasta no iCloud que ainda não sincronizou, ou volume
+                desmontado, aparecem vazios, e apagar a base local por causa
+                disso seria perder a turma por um problema de rede. A pasta é a
+                dona do que ela **tem**, não do que falta nela. */}
+            <p className="ferramentas__nota">
+              Esvaziar a pasta pela mão não apaga a base daqui, e a próxima
+              gravação a reenche. Para parar de gravar nela, use{' '}
+              <strong>Desconectar</strong>. Para apagar a base, os botões de zerar
+              abaixo.
             </p>
             <p className="ferramentas__nota">
               <strong>Reler a pasta</strong> traz de volta o que estiver lá e não estiver
@@ -353,7 +387,6 @@ export function TelaRepositorio({
       <Painel
         titulo="Vínculos"
         recolhivel
-        abertoDeInicio={false}
         legenda="Quais crachás são de quem."
         acoes={
           <>
@@ -495,7 +528,6 @@ export function TelaRepositorio({
       <Painel
         titulo="Registros"
         recolhivel
-        abertoDeInicio={false}
         legenda="O que a planilha consome."
         acoes={
           <>
@@ -542,7 +574,6 @@ export function TelaRepositorio({
       <Painel
         titulo="Passar os crachás a outro professor"
         recolhivel
-        abertoDeInicio={false}
         legenda="Quem dá aula para os mesmos alunos não precisa cadastrar tudo de novo."
         acoes={
           <>

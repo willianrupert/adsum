@@ -7,7 +7,18 @@ import { VitePWA } from 'vite-plugin-pwa'
 // ou passe `BASE_ADSUM` no ambiente do workflow.
 const base = process.env.BASE_ADSUM ?? '/adsum/'
 
+/**
+ * Carimbo da build, para os Ajustes poderem responder "esta cópia é a atual?".
+ *
+ * O service worker serve offline por desenho, e o preço é que uma janela aberta
+ * pode continuar mostrando a versão anterior depois de um deploy. Sem um número
+ * na tela, "não achei a mudança" não tem como ser investigado — some no meio de
+ * cache, PWA instalado e aba antiga.
+ */
+const CARIMBO = new Date().toISOString().slice(0, 16).replace('T', ' ')
+
 export default defineConfig(({ command, isPreview }) => ({
+  define: { __CARIMBO__: JSON.stringify(CARIMBO) },
   // Em desenvolvimento o site é a raiz, que é o confortável. No `preview` o
   // `base` volta a valer — sem isso, o preview serve tudo em `/` e passa por
   // bom um build que o Pages serviria quebrado.

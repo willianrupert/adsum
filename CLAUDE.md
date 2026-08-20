@@ -320,16 +320,31 @@ professor. Sem ele a chamada não abre; com ele a rota sai sozinha. E os alunos
 que faltarem se cadastram encostando, na primeira aula. A tela diz as duas
 coisas, na ordem certa.
 
-**Ajustes recolhíveis**, com um critério: **o que responde uma pergunta fica
-aberto** (onde estão meus dados, quantos crachás tenho); **o que faz alguma
-coisa fica recolhido**. O cabeçalho inteiro é o alvo, e as ações somem com o
-painel fechado — botão de zerar ao lado de um título recolhido é convite a
+**Ajustes recolhíveis, e todos começam fechados.** Tentei um critério primeiro —
+o que responde uma pergunta abre, o que faz alguma coisa recolhe — e o resultado
+foi metade abrindo e metade não, sem que se soubesse qual pelo quê. **Regra com
+exceção é regra que o usuário precisa decorar.** Abrir tudo custa um clique;
+adivinhar custa a tela inteira. O cabeçalho inteiro é o alvo, e as ações somem
+com o painel fechado — botão de zerar ao lado de um título recolhido é convite a
 clicar sem ver no quê.
 
 **A grade dos Ajustes virou a mesma semana do cronograma**, com seletor de turma
 em cima e gravação a cada toque: em ajustes não existe "salvar", existe mudar. A
 grade vive em `ui/componentes/GradeDaSemana.tsx` porque duas implementações
 divergiriam, e a dos Ajustes acabaria mentindo sobre a do cadastro.
+
+**Esvaziar a pasta pela mão não muda nada, e agora isso está dito.** O autor
+apagou o conteúdo para testar e estranhou. É de propósito: pasta no iCloud que
+ainda não sincronizou, ou volume desmontado, aparecem vazios — apagar a base
+local por causa disso seria perder a turma por um problema de rede. **A pasta é
+dona do que ela tem, não do que falta nela.** Faltava o gesto explícito, e agora
+existe: `Desconectar`, que solta o vínculo sem apagar arquivo nem base.
+
+**O carimbo da build aparece nos Ajustes.** "Não achei a mudança" sumia no meio
+de cache, PWA instalado e aba antiga, e aconteceu mais de uma vez. Com a versão
+na tela, vira comparação. `__CARIMBO__` vem do `vite.config.ts`, e o
+`vitest.config.ts` precisa do mesmo `define` — são configs separadas, e sem isso
+qualquer tela que o mostre estoura no teste por um motivo que não é do app.
 
 **A tag do ensaio passou a mudar com a rota.** `N` produz crachá desconhecido em
 qualquer tela, mas só na chamada isso abre a lupa — na cerimônia, crachá

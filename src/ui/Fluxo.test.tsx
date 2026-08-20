@@ -470,15 +470,20 @@ describe('os Ajustes se recolhem', () => {
     await screen.findByText('Tudo pronto')
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
 
-    // A grade começa aberta: é das que respondem uma pergunta, não das que
-    // fazem alguma coisa.
-    await screen.findByRole('button', { name: /Grade horária/ })
+    // Todos começam fechados, sem exceção: regra com exceção é regra que o
+    // usuário precisa decorar.
+    await usuario.click(await screen.findByRole('button', { name: /Grade horária/ }))
     expect(
       await screen.findByRole('group', { name: 'Horários de IF685 · T01' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'QUA, 13:00 às 14:50' })).toBeInTheDocument()
   })
 })
+
+// Nota: desconectar a pasta não tem teste de tela. O handle de mentira não
+// sobrevive ao `structuredClone` do IndexedDB, então não há como montar o Fluxo
+// com uma pasta ligada em jsdom — e um teste que finge a pasta não provaria o
+// que interessa. `esquecerPasta` está coberto no adaptador.
 
 // O ensaio precisa alcançar **todos** os estados, senão não serve para validar
 // o fluxo. Faltavam dois, e o autor achou os dois: não havia como produzir um
@@ -821,6 +826,7 @@ describe('o conselho de navegador vem antes da turma', () => {
     await screen.findByText('Começar a chamada')
 
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
+    await usuario.click(await screen.findByRole('button', { name: /Onde os dados ficam/ }))
     expect(await screen.findByText(/sete dias de/)).toBeInTheDocument()
     expect(screen.getByText(/Arquivo › Adicionar ao Dock/)).toBeInTheDocument()
   })

@@ -57,6 +57,9 @@ declare global {
 // Dentro de `declare global` porque este arquivo é módulo (tem `export {}`):
 // interface solta aqui fica visível só nele, e o resto do app não a enxerga.
 declare global {
+  /** Carimbo da build, injetado pelo Vite. Ver `vite.config.ts`. */
+  const __CARIMBO__: string
+
   /**
    * `beforeinstallprompt` é do Chromium e não está na lib padrão do TypeScript.
    * O navegador dispara, o app guarda, e `prompt()` só pode ser chamado a partir

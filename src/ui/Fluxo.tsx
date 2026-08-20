@@ -747,6 +747,16 @@ export function Fluxo() {
           <TelaRepositorio
             pasta={pasta}
             aoTrocarPasta={() => void ligarPasta(true)}
+            aoDesconectarPasta={async () => {
+              await repositorio.esquecerPasta()
+              setPasta(undefined)
+              setEstadoDaPasta(pastaDisponivel() ? 'sem_pasta' : 'indisponivel')
+              setFalhaNaPasta(undefined)
+              // Sem dispensar, a rota mandaria escolher pasta na hora — e
+              // desconectar viraria um laço com a tela que pede uma.
+              dispensarPasta()
+              setSemPasta(true)
+            }}
             aoRelerPasta={async () => {
               const resumo = await restaurar(repositorio, pasta!)
               await recontar()
