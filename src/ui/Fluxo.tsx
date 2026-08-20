@@ -7,13 +7,13 @@
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { decidirRota } from '../nucleo/rota.ts'
-import { calcularUidHash } from '../nucleo/hash.ts'
+import { calcularUidHash, uidHashSintetico } from '../nucleo/hash.ts'
 import { uidInedito, hexParaUid } from '../nucleo/uid.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { podeApagar } from '../portas/Repositorio.ts'
 import { eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
 import { abrirSozinho, escolherTurma, proximaAula, DIAS , type Aula } from '../nucleo/grade.ts'
-import type { Matriculado } from '../nucleo/tipos.ts'
+import type { Matriculado, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
 import {
@@ -361,6 +361,35 @@ export function Fluxo() {
   )
 
   /**
+   * Garante que existe um vínculo de professor, criando um sem crachá se
+   * for preciso.
+   *
+   * "O botão pra começar e o crachá têm que ser equivalentes — passar o
+   * crachá é opcional, não pré-requisito." Sem isto, o clique só funcionava
+   * depois que alguém já tivesse encostado um crachá real uma vez, o que não
+   * é um gesto equivalente — é um atalho que depende do outro ter acontecido
+   * primeiro. O vínculo criado aqui é tão de professor quanto qualquer
+   * outro: abre e fecha aula, e a grade reconhece ele igual. O nome vem do
+   * docente que o SIGAA já apontou, se a turma tiver um.
+   */
+  const garantirProfessor = useCallback(async (): Promise<Vinculo> => {
+    const existente = (await repositorio.listarVinculos()).find((v) => v.papel === 'professor')
+    if (existente) return existente
+
+    const docente = (await repositorio.listarMatriculados()).find((m) => m.papel === 'professor')
+    const vinculo: Vinculo = {
+      uidHash: uidHashSintetico(),
+      papel: 'professor',
+      nome: docente?.nome ?? 'Professor',
+      matricula: docente?.matricula || undefined,
+      criadoEm: new Date().toISOString(),
+    }
+    await repositorio.gravarVinculo(vinculo)
+    await mudou()
+    return vinculo
+  }, [repositorio, mudou])
+
+  /**
    * Abrir sem crachá.
    *
    * O gesto do crachá é herança do aparelho, que não tinha teclado nem mouse —
@@ -370,10 +399,9 @@ export function Fluxo() {
    * O crachá continua valendo, para quem está longe do teclado.
    */
   const iniciarChamada = useCallback(async () => {
-    const professor = (await repositorio.listarVinculos()).find((v) => v.papel === 'professor')
-    if (!professor) return
+    const professor = await garantirProfessor()
     await abrirComProfessor(professor.uidHash, new Date())
-  }, [repositorio, abrirComProfessor])
+  }, [garantirProfessor, abrirComProfessor])
 
   // Não se reconta ao ouvir o crachá: a gravação acontece depois, e contar
   // antes dela devolveria a pendência que acabou de deixar de existir. Quem
@@ -660,7 +688,6 @@ export function Fluxo() {
           turmas={turmas}
           pendencias={pasta ? [] : pendencias}
           proxima={proxima}
-          professorSemCracha={professorSemCracha}
           aoIniciar={() => void iniciarChamada()}
           aoSalvar={(turma) => void salvarCopia(turma)}
           aoAbrirCerimonia={() => {
@@ -850,7 +877,6 @@ export function Repouso({
   turmas,
   pendencias,
   proxima,
-  professorSemCracha,
   aoIniciar,
   aoSalvar,
   aoAbrirCerimonia,
@@ -858,8 +884,6 @@ export function Repouso({
   turmas: number
   pendencias: Pendencia[]
   proxima?: { turma: string; quando: Date }
-  /** O cadastro ficou pra depois, sem crachá de professor nenhum ainda. */
-  professorSemCracha: boolean
   aoIniciar: () => void
   aoSalvar: (turma: string) => void
   aoAbrirCerimonia: () => void
@@ -904,16 +928,7 @@ export function Repouso({
 
       <Ondas tamanho={72} animado />
 
-      {professorSemCracha ? (
-        <>
-          {/* Sem crachá de professor nenhum, "tudo pronto" seria mentira — e
-              "sua próxima aula" também, já que sem ele ela não abre sozinha.
-              O repouso é quem cobra isso agora, em vez da tela de cadastro
-              travar quem só queria dar uma olhada no app antes. */}
-          <p className="repouso__turma">Falta o crachá do professor</p>
-          <p className="repouso__acao">Sem ele, a chamada não abre.</p>
-        </>
-      ) : proxima ? (
+      {proxima ? (
         <>
           {/* Com grade, a turma é o assunto e a hora é o apoio: é a ordem em
               que a pergunta se forma na cabeça de quem olha — "qual aula?" vem
@@ -934,34 +949,27 @@ export function Repouso({
         </>
       )}
 
-      {professorSemCracha ? (
-        <button className="botao--acento pasta__botao" onClick={aoAbrirCerimonia}>
-          Cadastrar agora
-        </button>
-      ) : (
-        <>
-          {/* Com grade, o botão é a exceção — aula fora do horário, reposição
-              — e por isso perde o acento. Sem grade, é a única ação da tela. */}
-          <button
-            className={proxima ? 'repouso__link botao--quieto' : 'botao--acento pasta__botao'}
-            onClick={aoIniciar}
-          >
-            {proxima ? 'Começar a chamada agora' : 'Começar a chamada'}
-          </button>
-          {/* O crachá continua abrindo, e a tela **não** diz isso. Anunciar dois
-              caminhos para a mesma coisa é a decisão que se queria evitar: quem lê
-              "ou encoste o crachá" para para escolher, e escolher é o custo. Quem
-              precisa do atalho descobre encostando. */}
+      {/* Com grade, o botão é a exceção — aula fora do horário, reposição — e
+          por isso perde o acento. Sem grade, é a única ação da tela. Funciona
+          de cara, mesmo sem crachá de professor nenhum ainda: ver
+          `garantirProfessor`, em `Fluxo.tsx`. */}
+      <button
+        className={proxima ? 'repouso__link botao--quieto' : 'botao--acento pasta__botao'}
+        onClick={aoIniciar}
+      >
+        {proxima ? 'Começar a chamada agora' : 'Começar a chamada'}
+      </button>
+      {/* O crachá continua abrindo, e a tela **não** diz isso. Anunciar dois
+          caminhos para a mesma coisa é a decisão que se queria evitar: quem lê
+          "ou encoste o crachá" para para escolher, e escolher é o custo. Quem
+          precisa do atalho descobre encostando. */}
 
-          {/* Terciário, e por isso quieto. A regra do repouso: o único acento é
-              "Iniciar a aula", e só quando não há grade. Com grade a tela é
-              espera — e tela de espera com dois azuis embaixo pede para ser
-              clicada. Some quando falta o professor: a ação de cima já é essa. */}
-          <button className="repouso__link botao--quieto" onClick={aoAbrirCerimonia}>
-            Cadastrar mais um crachá
-          </button>
-        </>
-      )}
+      {/* Terciário, e por isso quieto. A regra do repouso: o único acento é
+          "Iniciar a aula", e só quando não há grade. Com grade a tela é espera —
+          e tela de espera com dois azuis embaixo pede para ser clicada. */}
+      <button className="repouso__link botao--quieto" onClick={aoAbrirCerimonia}>
+        Cadastrar mais um crachá
+      </button>
     </section>
   )
 }

@@ -32,6 +32,20 @@ function salParaBytes(salHex: string): Uint8Array {
   return bytes
 }
 
+/**
+ * Um `uid_hash` sem crachá nenhum atrás — do mesmo formato e comprimento de um
+ * de verdade, só que sorteado, não derivado de UID físico nenhum.
+ *
+ * Existe porque "começar a chamada" e "encostar o crachá do professor" têm
+ * que ser gestos equivalentes desde o primeiro uso, não só depois que alguém
+ * já tocou um crachá real uma vez. Ver `garantirProfessor`, em `Fluxo.tsx`.
+ */
+export function uidHashSintetico(): UidHash {
+  const bytes = new Uint8Array(BYTES_DO_HASH)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 export async function calcularUidHash(salHex: string, uid: Uid): Promise<UidHash> {
   const sal = salParaBytes(salHex)
   const entrada = new Uint8Array(sal.length + uid.length)

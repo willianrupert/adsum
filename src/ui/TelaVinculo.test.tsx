@@ -156,12 +156,26 @@ describe('a cerimônia não esconde a própria ação', () => {
     expect(screen.getByRole('button', { name: /Cadastrar crachás|Continuar cadastrando/ })).toBeInTheDocument()
   })
 
-  // "Cadê o botão de encerrar?" A resposta é que não existe um formal, mas dá
-  // pra sair mesmo assim — e a tela precisa dizer o porquê da diferença.
-  it('a tela diz que ainda falta o crachá do professor, mas que dá pra sair', async () => {
+  // "Cadê o botão de encerrar?" existe, e sempre — sair não depende de
+  // crachá de professor nenhum: "começar a chamada" e encostar o crachá são
+  // gestos equivalentes desde o primeiro uso.
+  it('"Concluir" está sempre disponível, mesmo sem ninguém vinculado ainda', async () => {
     await colar()
     await screen.findByText('Encoste o crachá de')
 
-    expect(screen.getByText(/Sem o crachá do professor, a chamada não abre/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Escolher outra turma' })).toBeInTheDocument()
+  })
+
+  // Regressão: numa turma de 49, o botão de sair vivia depois da lista
+  // inteira — inalcançável sem rolar a tela toda. Ele mora no cabeçalho do
+  // painel agora, e continua ali mesmo no meio de uma chamada em andamento.
+  it('o botão de sair não some no meio de uma chamada em andamento', async () => {
+    const usuario = await colar()
+    await screen.findByText('Encoste o crachá de')
+    await usuario.click(screen.getByRole('button', { name: 'Simular um crachá' }))
+
+    // Ainda chamando o próximo (Breno), e o botão de sair continua visível.
+    await screen.findByText('Breno Oliveira')
+    expect(screen.getByRole('button', { name: 'Escolher outra turma' })).toBeInTheDocument()
   })
 })

@@ -59,12 +59,11 @@ export function TelaVinculo({
    */
   primeiroDia?: boolean
   /**
-   * Volta para o repouso.
-   *
-   * Chamável mesmo no primeiro dia — mas só funciona depois do crachá do
-   * professor: antes disso o repouso seria mentira ("tudo pronto" sem
-   * professor não está), e o botão do rodapé continua sendo "Escolher outra
-   * turma" em vez de "Concluir". Ver `professorComCracha` abaixo.
+   * Volta para o repouso. Chamável a qualquer momento, com ou sem crachá de
+   * professor registrado — "começar a chamada" e "encostar o crachá" são
+   * gestos equivalentes desde o primeiro uso, e sair daqui não é diferente:
+   * `Fluxo.tsx` sabe abrir a aula por clique mesmo que ninguém tenha
+   * encostado nada ainda.
    */
   aoSair?: () => void
   /** Chamado depois de gravar, não ao ouvir o crachá: quem conta pendências
@@ -292,17 +291,6 @@ export function TelaVinculo({
 
   const feitos = useMemo(() => fila.filter((e) => e.estado === 'feito').length, [fila])
   const semProfessor = fila.length > 0 && fila.every((e) => e.papel !== 'professor')
-  /**
-   * O que de fato encerra o cadastro inicial.
-   *
-   * Não é um botão: é o crachá do professor. Sem ele a chamada não abre; com
-   * ele a rota sai desta tela sozinha. Os alunos que faltarem não precisam ser
-   * perseguidos — cadastram-se encostando, na primeira aula.
-   *
-   * "Ninguém é professor" é outra coisa e já tinha nome (`semProfessor`);
-   * confundir as duas fazia a tela dar o conselho errado.
-   */
-  const professorComCracha = fila.some((e) => e.papel === 'professor' && e.estado === 'feito')
   const atual = chamado !== undefined ? fila[chamado] : undefined
 
   function renomear(indice: number, nome: string) {
@@ -474,27 +462,45 @@ export function TelaVinculo({
               : `${turma} · chame o nome e encoste o crachá novo`
           }
           acoes={
-            // Some enquanto a barra está aberta: ali ele não tinha o que fazer,
-            // e clicar num botão que não responde é pior que não ter botão.
-            // A barra **é** a ação; este só a traz de volta depois de parada.
-            chamado === undefined && (
+            <>
+              {/* Some enquanto a barra está aberta: ali ele não tinha o que
+                  fazer, e clicar num botão que não responde é pior que não
+                  ter botão. A barra **é** a ação; ela volta depois de parada. */}
+              {chamado === undefined && (
+                <button
+                  className="botao--acento"
+                  onClick={() => {
+                    const primeiro = proximoPendente(0)
+                    if (primeiro === undefined) {
+                      setRecado({
+                        tom: 'ok',
+                        texto: 'A turma inteira já tem crachá.',
+                      })
+                      return
+                    }
+                    setChamado(primeiro)
+                  }}
+                >
+                  {feitos > 0 ? 'Continuar cadastrando' : 'Cadastrar crachás'}
+                </button>
+              )}
+              {/* Este não some: "tô no meio de chamar, mas já dá pra parar
+                  por hoje" é um estado real, não um erro. E mora aqui, não lá
+                  embaixo depois da lista inteira — numa turma de 49, ele era
+                  inalcançável sem rolar a tela toda. */}
               <button
-                className="botao--acento"
+                className="botao--quieto"
                 onClick={() => {
-                  const primeiro = proximoPendente(0)
-                  if (primeiro === undefined) {
-                    setRecado({
-                      tom: 'ok',
-                      texto: 'A turma inteira já tem crachá.',
-                    })
-                    return
-                  }
-                  setChamado(primeiro)
+                  if (aoSair) return aoSair()
+                  setFila([])
+                  setChamado(undefined)
+                  setRecado(undefined)
+                  setProblemas([])
                 }}
               >
-                {feitos > 0 ? 'Continuar cadastrando' : 'Cadastrar crachás'}
+                {aoSair ? 'Concluir' : 'Escolher outra turma'}
               </button>
-            )
+            </>
           }
         >
 
@@ -562,30 +568,6 @@ export function TelaVinculo({
                 ))}
               </tbody>
             </table>
-            {/* Sair não exige mais o crachá do professor — só custava a tela
-                de cadastro ficar sem saída pra quem quer olhar o resto do
-                app antes, ou parar sem ter chamado ninguém ainda. Quem
-                decide se isso é seguro é `Fluxo.tsx`: sem professor, ele
-                marca a dispensa como "por agora", e o repouso cobra depois
-                em vez de fingir que está tudo pronto. */}
-            <div className="ferramentas">
-              <button className={aoSair ? undefined : 'botao--quieto'}
-                onClick={() => {
-                  if (aoSair) return aoSair()
-                  setFila([])
-                  setChamado(undefined)
-                  setRecado(undefined)
-                  setProblemas([])
-                }}
-              >
-                {aoSair ? 'Concluir' : 'Escolher outra turma'}
-              </button>
-              <span className="ferramentas__ou">
-                {professorComCracha
-                  ? 'Pode parar quando quiser. Quem faltar se cadastra na primeira aula, encostando o crachá.'
-                  : 'Sem o crachá do professor, a chamada não abre. Dá pra continuar depois.'}
-              </span>
-            </div>
           </>
         </Painel>
       )}

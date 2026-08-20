@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { Fluxo } from './Fluxo.tsx'
-import { adiarHorario } from '../ambiente/preferencias.ts'
+import { adiarHorario, dispensarCadastro } from '../ambiente/preferencias.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 
 let bancada: Bancada
@@ -172,6 +172,39 @@ describe('a rota decide a tela', () => {
     // Chama Carla, não Ana Paula de novo.
     expect(await screen.findByText('Carla Regina')).toBeInTheDocument()
     expect(screen.queryByText('Ana Paula', { selector: '.chamado__nome' })).not.toBeInTheDocument()
+  })
+
+  // "O botão pra iniciar e encerrar tem que ser equivalente. Passar o
+  // crachá do professor é opcional." Sem vínculo de professor nenhum — nem
+  // real, nem adiado —, "Começar a chamada" tinha que funcionar mesmo assim.
+  it('"Começar a chamada" funciona mesmo sem crachá de professor nenhum', async () => {
+    const usuario = userEvent.setup()
+    adiarHorario('IF685 · T01')
+    await bancada.repositorio.salvarTurma('IF685 · T01', [
+      {
+        turma: 'IF685 · T01',
+        chave: 'ana paula mendes de souza',
+        matricula: '',
+        nomeCompleto: 'ANA PAULA MENDES DE SOUZA',
+        nome: 'Ana Paula',
+        papel: 'professor',
+      },
+      pessoa('2', 'Breno Oliveira'),
+    ])
+    // Ninguém tocou em crachá nenhum: pula a cerimônia de propósito.
+    dispensarCadastro()
+
+    renderizarCom(bancada, <Fluxo />)
+    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+
+    // Abriu — e o vínculo criado usa o nome do docente que o SIGAA apontou.
+    await screen.findByText('IF685 · T01')
+    const vinculos = await bancada.repositorio.listarVinculos()
+    expect(vinculos).toHaveLength(1)
+    expect(vinculos[0]).toMatchObject({ papel: 'professor', nome: 'Ana Paula' })
+
+    const sessao = await bancada.repositorio.sessaoAberta()
+    expect(sessao?.uidHashProfessor).toBe(vinculos[0].uidHash)
   })
 
   it('a engrenagem abre os ajustes e clicar fora fecha', async () => {

@@ -380,29 +380,43 @@ rota saltava para `'pronto'` na hora, debaixo do professor, antes de ele poder
 chamar o próximo aluno. Seguir a instrução da própria tela ("comece pelo seu
 crachá") acionava o bug.
 
-O conserto **não** apagou a regra — o crachá do professor continua sendo o que
-teria que existir para a chamada abrir. O que mudou foi quem decide *quando*
-sair da tela: antes era a rota, recalculada a cada gravação; agora é
-`modoCadastro`, em `Fluxo.tsx`, que só muda por um gesto explícito
-("Concluir").
+O que mudou foi quem decide *quando* sair da tela: antes era a rota,
+recalculada a cada gravação; agora é `modoCadastro`, em `Fluxo.tsx`, que só
+muda por um gesto explícito ("Concluir").
 
-**E o autor foi além, no mesmo dia: "não deveria ser bloqueante o professor não
-ter o crachá."** Ele tinha razão — e a distinção que faltava no raciocínio
-anterior é entre duas coisas diferentes. A **chamada** (a aula de verdade,
-tomando presença) continua exigindo o crachá do professor para abrir, sem
-exceção — isso não mudou. A **tela de cadastro** é outra coisa, e travar nela
-sem saída, só porque o professor ainda não passou o crachá, era a mesma
-armadilha da pasta sem seletor, com outro nome.
+**Eu tinha escrito, logo abaixo desse conserto: "o crachá do professor
+continua sendo o que teria que existir pra chamada abrir." O autor discordou
+na hora — "não deveria ser bloqueante o professor não ter o crachá" — e ele
+tinha razão duas vezes seguidas, sobre duas coisas diferentes.**
 
-`cadastroDispensado`, em `ambiente/preferencias.ts`, é o "sigo sem, por agora"
-— mesmo padrão de `pastaDispensada`. `decidirRota` para de mandar para
-`'cerimonia'` quando ele está marcado, e o repouso passa a dizer a verdade em
-vez de "tudo pronto": **"Falta o crachá do professor. Sem ele, a chamada não
-abre."**, com um botão "Cadastrar agora" que desfaz a dispensa. Registrar o
-professor por qualquer caminho também desfaz sozinho — não há mais o que
-adiar. `Ajustes` (a engrenagem) sempre esteve alcançável em qualquer tela,
-inclusive nesta; o que faltava era o repouso ter um estado honesto pra onde
-ir quando ninguém, nem o professor, tinha crachá ainda.
+A primeira rodada corrigiu só a **tela de cadastro**: `cadastroDispensado`,
+em `ambiente/preferencias.ts` (mesmo padrão de `pastaDispensada`), deixava
+sair dela sem crachá nenhum — mas o repouso ainda dizia **"Falta o crachá do
+professor, sem ele a chamada não abre"**, e isso era exatamente a mesma
+premissa de novo, só que uma tela adiante. Clicar em "Concluir" continuava
+levando a um beco.
+
+A correção de verdade foi noutro lugar: `garantirProfessor()`, em
+`Fluxo.tsx`. **"Começar a chamada" e encostar o crachá do professor têm que
+ser gestos equivalentes desde o primeiro uso — passar o crachá é opcional,
+nunca pré-requisito.** Sem vínculo de professor nenhum, o clique cria um na
+hora — `uidHashSintetico()`, em `nucleo/hash.ts`, do mesmo formato e
+comprimento de um `uid_hash` de verdade, só que sorteado, sem crachá físico
+atrás — com o nome do docente que o SIGAA já apontou, se a turma tiver um.
+Esse vínculo abre e fecha aula igual a qualquer outro; a grade automática o
+reconhece igual. `cadastroDispensado` continua existindo — ainda é o que
+deixa sair da cerimônia no meio da fila —, mas o repouso voltou a dizer
+sempre "Tudo pronto", porque agora essa frase é sempre verdade: o botão
+funciona de cara. Não sobrou estado nenhum em que "começar a chamada" pede
+alguma coisa que só um crachá físico dá.
+
+Achado no mesmo fôlego: "Concluir" morava depois da lista inteira de
+matriculados — numa turma de 49, inalcançável sem rolar a tela toda, e foi
+isso que o autor via como "difícil de acessar". Ele mora no cabeçalho do
+painel agora (`acoes`, em `TelaVinculo.tsx`), visível mesmo no meio de uma
+chamada em andamento — o único dos dois botões do cabeçalho que não some
+quando a barra está aberta, porque sair sempre faz sentido, chamando alguém
+ou não.
 
 Foi testando isso ao vivo que apareceu o defeito irmão: reabrir "Cadastrar mais
 um crachá" chamava o professor de novo, sempre. `abrirTurma`, em
