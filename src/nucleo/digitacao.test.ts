@@ -61,7 +61,7 @@ describe('formatos que o dongle pode imprimir', () => {
 
 describe('o formato de fábrica', () => {
   // É como esses leitores chegam da caixa: hexadecimal com dois-pontos entre os
-  // bytes. Recusar por causa do separador seria recusar o aparelho novo.
+  // bytes. Recusar por causa do separador seria recusar o dongle recém-tirado da caixa.
   it('aceita hexadecimal separado por dois-pontos', () => {
     const lido = interpretarDigitacao(digitar('1D:F3:1F:D3:1B:10:80', 12))
     expect(lido?.formato).toBe('hexadecimal')

@@ -7,7 +7,7 @@
 //
 // A ordem das perguntas é a regra. Problema vem antes de tudo, porque tela
 // bonita sobre leitor desligado é mentira. Turma vem antes de cerimônia,
-// porque não há quem armar. Cerimônia vem antes de repouso, porque crachá
+// porque não há quem chamar. Cerimônia vem antes de repouso, porque crachá
 // faltando é trabalho pendente, e repouso é a ausência dele.
 
 export type Rota =

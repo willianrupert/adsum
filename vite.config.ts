@@ -22,7 +22,7 @@ export default defineConfig(({ command, isPreview }) => ({
         name: 'Adsum — frequência por crachá',
         short_name: 'Adsum',
         description:
-          'Registro de frequência em sala por leitura de crachá. Os dados ficam neste aparelho.',
+          'Registro de frequência em sala por leitura de crachá. Os dados ficam no seu computador.',
         lang: 'pt-BR',
         start_url: '.',
         scope: '.',

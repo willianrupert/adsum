@@ -36,7 +36,7 @@ describe('configuração', () => {
     expect((await repo.lerConfig()).salHex).toBe((await repo.lerConfig()).salHex)
   })
 
-  it('aceita sal importado — é assim que a base se junta à do aparelho', async () => {
+  it('aceita sal importado, que é como a base se junta à de outro professor', async () => {
     await repo.definirSal('FFEEDDCCBBAA99887766554433221100')
     expect((await repo.lerConfig()).salHex).toBe('ffeeddccbbaa99887766554433221100')
   })

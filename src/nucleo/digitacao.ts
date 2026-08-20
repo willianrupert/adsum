@@ -94,7 +94,7 @@ export function interpretarDigitacao(teclas: Tecla[]): Digitacao | undefined {
 
   // De fábrica, esses leitores costumam separar os bytes com dois-pontos —
   // `1D:F3:1F:D3:1B:10:80`. Recusar por causa do separador seria recusar o
-  // aparelho no estado em que ele chega da caixa.
+  // dongle no estado em que ele chega da caixa.
   const limpo = cru.replace(/[\s:.-]/g, '')
 
   if (/^[0-9a-fA-F]+$/.test(limpo) && [8, 14, 20].includes(limpo.length)) {

@@ -88,7 +88,7 @@ describe('a rota decorre do estado', () => {
     )
   })
 
-  // Sem turma não há quem armar, então colar a lista vem antes de reclamar do
+  // Sem turma não há quem chamar, então colar a lista vem antes de reclamar do
   // leitor — é o que o professor precisa fazer primeiro de qualquer jeito.
   it('colar a turma vem antes de cobrar leitor', () => {
     expect(decidirRota({ ...BASE, turmas: 0, lendo: false })).toBe('turma')

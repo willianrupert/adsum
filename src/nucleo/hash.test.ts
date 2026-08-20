@@ -6,7 +6,7 @@ const SAL = '000102030405060708090a0b0c0d0e0f'
 
 describe('uid_hash', () => {
   // Valor congelado. Se este teste quebrar, a regra do hash mudou — e mudar a
-  // regra invalida todo vínculo e toda grade já gravados, aqui e no aparelho.
+  // regra invalida todo vínculo e toda grade já gravados, aqui e em qualquer cópia.
   // Quebrou sem querer? É bug. Quebrou de propósito? É migração, não commit.
   it('bate com o vetor conhecido', async () => {
     expect(await calcularUidHash(SAL, hexParaUid('04a23b91'))).toBe('309940e145b847cf')

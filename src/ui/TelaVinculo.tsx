@@ -1,6 +1,6 @@
 // Cerimônia de vínculo: um UID vira uma pessoa, sem chance de trocar aluno.
 //
-// A garantia não vem do meio de transporte. Vem de haver **um só nome armado
+// A garantia não vem do meio de transporte. Vem de haver **um só nome chamado
 // por vez**: arma-se um nome, ele aparece grande na tela, o aluno confere e
 // encosta o crachá. O UID capturado só pode ser daquele nome — não havia
 // segundo candidato. E o aluno lê o próprio nome antes de encostar, o que faz
@@ -61,7 +61,7 @@ export function TelaVinculo({
   const [turmasSalvas, setTurmasSalvas] = useState<string[]>([])
   const [colado, setColado] = useState('')
   const [fila, setFila] = useState<Entrada[]>([])
-  const [armado, setArmado] = useState<number>()
+  const [chamado, setChamado] = useState<number>()
   const [problemas, setProblemas] = useState<string[]>([])
   const [recado, setRecado] = useState<{ tom: 'ok' | 'grave' | 'alerta'; texto: string }>()
   const [estadoLeitor, setEstadoLeitor] = useState(leitor.estado())
@@ -106,7 +106,7 @@ export function TelaVinculo({
           }
         }),
       )
-      setArmado(undefined)
+      setChamado(undefined)
       setProblemas([])
     },
     [repositorio],
@@ -156,7 +156,7 @@ export function TelaVinculo({
       estado: (p.matricula && comCracha.has(p.matricula) ? 'feito' : 'pendente') as EstadoDaVez,
     }))
     setFila(lista)
-    setArmado(undefined)
+    setChamado(undefined)
 
     // Guardar não é decisão de ninguém: quem colou a turma quer a turma
     // guardada. O botão que existia aqui era trabalho que o app pode fazer.
@@ -186,21 +186,21 @@ export function TelaVinculo({
     [fila],
   )
 
-  // O laço da cerimônia. Só reage se houver exatamente um nome armado — sem
-  // armado, uma leitura não tem a quem pertencer, e adivinhar seria justamente
+  // O laço da cerimônia. Só reage se houver exatamente um nome chamado — sem
+  // chamado, uma leitura não tem a quem pertencer, e adivinhar seria justamente
   // o erro que tudo isto evita.
   useEffect(() => {
     return leitor.aoLer((leitura) => {
       void (async () => {
-        if (armado === undefined) {
+        if (chamado === undefined) {
           setRecado({
             tom: 'alerta',
-            texto: `Crachá ${uidLegivel(leitura.uid)} lido sem nome armado — nada foi gravado.`,
+            texto: `Crachá ${uidLegivel(leitura.uid)} lido sem nome chamado — nada foi gravado.`,
           })
           return
         }
 
-        const entrada = fila[armado]
+        const entrada = fila[chamado]
         const uidHash = await calcularUidHash(config.salHex, leitura.uid)
         const dono = await repositorio.vinculoPorHash(uidHash)
 
@@ -209,12 +209,12 @@ export function TelaVinculo({
         if (dono) {
           setFila((antes) =>
             antes.map((e, i) =>
-              i === armado ? { ...e, estado: 'recusado', detalhe: `crachá é de ${dono.nome}` } : e,
+              i === chamado ? { ...e, estado: 'recusado', detalhe: `crachá é de ${dono.nome}` } : e,
             ),
           )
           setRecado({
             tom: 'grave',
-            texto: `Recusado: este crachá já é de ${dono.nome}. ${entrada.nome} continua armado — pode encostar outro.`,
+            texto: `Recusado: este crachá já é de ${dono.nome}. ${entrada.nome} continua chamado — pode encostar outro.`,
           })
           return
         }
@@ -228,23 +228,23 @@ export function TelaVinculo({
         })
 
         setFila((antes) =>
-          antes.map((e, i) => (i === armado ? { ...e, estado: 'feito', detalhe: uidHash } : e)),
+          antes.map((e, i) => (i === chamado ? { ...e, estado: 'feito', detalhe: uidHash } : e)),
         )
         setRecado({ tom: 'ok', texto: `${entrada.nome} vinculado.` })
-        setArmado(proximoPendente(armado + 1))
+        setChamado(proximoPendente(chamado + 1))
         aoMudarBase?.()
       })()
     })
-  }, [leitor, armado, fila, repositorio, config.salHex, proximoPendente, aoMudarBase])
+  }, [leitor, chamado, fila, repositorio, config.salHex, proximoPendente, aoMudarBase])
 
   // Setas andam pela lista. Quem opera está com a mão no teclado e um aluno na
   // frente: pedir para mirar e clicar numa linha é atrito onde não cabe.
   useEffect(() => {
-    if (armado === undefined) return
+    if (chamado === undefined) return
     const andar = (evento: KeyboardEvent) => {
       if (evento.key !== 'ArrowRight' && evento.key !== 'ArrowLeft') return
       const passo = evento.key === 'ArrowRight' ? 1 : -1
-      setArmado((atual) => {
+      setChamado((atual) => {
         if (atual === undefined) return atual
         const proximo = atual + passo
         return proximo >= 0 && proximo < fila.length ? proximo : atual
@@ -253,11 +253,11 @@ export function TelaVinculo({
     }
     window.addEventListener('keydown', andar)
     return () => window.removeEventListener('keydown', andar)
-  }, [armado, fila.length])
+  }, [chamado, fila.length])
 
   const feitos = useMemo(() => fila.filter((e) => e.estado === 'feito').length, [fila])
   const semProfessor = fila.length > 0 && fila.every((e) => e.papel !== 'professor')
-  const atual = armado !== undefined ? fila[armado] : undefined
+  const atual = chamado !== undefined ? fila[chamado] : undefined
 
   function renomear(indice: number, nome: string) {
     setFila((antes) =>
@@ -297,54 +297,54 @@ export function TelaVinculo({
         </div>
       )}
 
-      {armado !== undefined && atual && (
-        <section className="armado">
+      {chamado !== undefined && atual && (
+        <section className="chamado">
           {/* Voltar fica no canto, como numa folha do sistema: sair não pode
               exigir procurar. */}
-          <button className="armado__voltar" onClick={() => setArmado(undefined)}>
+          <button className="chamado__voltar" onClick={() => setChamado(undefined)}>
             ‹ Voltar
           </button>
 
           {/* Animado como no repouso: os dois são o mesmo estado — a tela
               esperando um crachá. */}
           <Ondas tamanho={54} animado />
-          <p className="armado__rotulo">Encoste o crachá de</p>
-          <p className="armado__nome">{atual.nome}</p>
-          <p className="armado__completo">
+          <p className="chamado__rotulo">Encoste o crachá de</p>
+          <p className="chamado__nome">{atual.nome}</p>
+          <p className="chamado__completo">
             {atual.completo} · {atual.papel}
           </p>
-          <div className="armado__acoes">
+          <div className="chamado__acoes">
             <button
-              onClick={() => setArmado(Math.max(0, armado - 1))}
+              onClick={() => setChamado(Math.max(0, chamado - 1))}
               aria-label="anterior"
-              disabled={armado === 0}
+              disabled={chamado === 0}
             >
               ←
             </button>
             <button
               onClick={() => {
                 setFila((antes) =>
-                  antes.map((e, i) => (i === armado ? { ...e, estado: 'pulado' } : e)),
+                  antes.map((e, i) => (i === chamado ? { ...e, estado: 'pulado' } : e)),
                 )
-                setArmado(proximoPendente(armado + 1))
+                setChamado(proximoPendente(chamado + 1))
               }}
             >
               Pular
             </button>
             <button
-              onClick={() => setArmado(Math.min(fila.length - 1, armado + 1))}
+              onClick={() => setChamado(Math.min(fila.length - 1, chamado + 1))}
               aria-label="próximo"
-              disabled={armado === fila.length - 1}
+              disabled={chamado === fila.length - 1}
             >
               →
             </button>
           </div>
-          <p className="armado__atalho">← e → andam pela turma</p>
+          <p className="chamado__atalho">← e → andam pela turma</p>
 
           {/* Com leitor simulado a cerimônia inteira roda sem hardware — é como
               se ensaia o roteiro antes de ter cinquenta alunos na fila. */}
           {ehSimulavel(leitor) && (
-            <div className="armado__acoes">
+            <div className="chamado__acoes">
               <button
                 onClick={() => {
                   try {
@@ -426,7 +426,7 @@ export function TelaVinculo({
                     setRecado({ tom: 'ok', texto: 'Nada pendente — a turma inteira já tem crachá.' })
                     return
                   }
-                  setArmado(primeiro)
+                  setChamado(primeiro)
                 }}
               >
                 Cadastrar crachás
@@ -446,7 +446,7 @@ export function TelaVinculo({
               </thead>
               <tbody>
                 {fila.map((e, i) => (
-                  <tr key={`${e.matricula || e.completo}-${i}`} className={i === armado ? 'linha--armada' : ''}>
+                  <tr key={`${e.matricula || e.completo}-${i}`} className={i === chamado ? 'linha--chamada' : ''}>
                     <td>
                       <input
                         className="entrada--celula"
@@ -482,14 +482,14 @@ export function TelaVinculo({
                         com dois crachás é permitido de propósito, porque segunda
                         via existe. A relação é muitos-para-um. */}
                     <td className="celula--estado">
-                      {i === armado ? (
+                      {i === chamado ? (
                         <Selo tom="ok">Chamando</Selo>
                       ) : (
                         <>
                           {e.estado === 'feito' && <Selo tom="ok">Vinculado</Selo>}
                           {e.estado === 'recusado' && <Selo tom="grave">{e.detalhe}</Selo>}
                           {e.estado === 'pulado' && <Selo tom="neutro">Pulado</Selo>}
-                          <button onClick={() => setArmado(i)}>
+                          <button onClick={() => setChamado(i)}>
                             {e.estado === 'feito' ? 'Mais um crachá' : 'Chamar'}
                           </button>
                         </>
@@ -504,7 +504,7 @@ export function TelaVinculo({
                 onClick={() => {
                   if (aoSair) return aoSair()
                   setFila([])
-                  setArmado(undefined)
+                  setChamado(undefined)
                   setRecado(undefined)
                   setProblemas([])
                 }}

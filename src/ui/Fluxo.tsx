@@ -405,7 +405,7 @@ export function Fluxo() {
           // de parecer quebrada.
           if (!professor) {
             return setDicaDeEnsaio(
-              'Ainda não há crachá de professor. Na cerimônia, arme o nome dele e aperte espaço.',
+              'Ainda não há crachá de professor. Na cerimônia, chame o nome dele e aperte espaço.',
             )
           }
           // O vínculo guarda o hash, não o UID. O baralho é curto: acha-se qual

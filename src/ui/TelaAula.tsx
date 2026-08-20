@@ -93,7 +93,7 @@ export function TelaAula({
   const jaPresentes = useRef<Set<string>>(new Set())
   const [linhas, setLinhas] = useState<Linha[]>([])
   const [recado, setRecado] = useState<string>()
-  const [armado, setArmado] = useState(0)
+  const [chamado, setChamado] = useState(0)
   const [procurando, setProcurando] = useState<string>()
   const sequencia = useRef(0)
 
@@ -122,7 +122,7 @@ export function TelaAula({
 
   const primeiroDia = useRef(pendentes.length > 0 && pendentes.length === alunosDaTurma).current
   const aCadastrar = primeiroDia
-    ? pendentes[Math.min(armado, Math.max(0, pendentes.length - 1))]
+    ? pendentes[Math.min(chamado, Math.max(0, pendentes.length - 1))]
     : undefined
 
   // Setas andam pela fila de cadastro. Quem opera está com a mão no teclado e
@@ -131,7 +131,7 @@ export function TelaAula({
     if (pendentes.length === 0) return
     const andar = (evento: KeyboardEvent) => {
       if (evento.key !== 'ArrowRight' && evento.key !== 'ArrowLeft') return
-      setArmado((i) => Math.min(pendentes.length - 1, Math.max(0, i + (evento.key === 'ArrowRight' ? 1 : -1))))
+      setChamado((i) => Math.min(pendentes.length - 1, Math.max(0, i + (evento.key === 'ArrowRight' ? 1 : -1))))
       evento.preventDefault()
     }
     window.addEventListener('keydown', andar)
@@ -185,7 +185,7 @@ export function TelaAula({
         const decisao = decidir(uidHash, {
           sessao,
           vinculo,
-          armado: aCadastrar,
+          chamado: aCadastrar,
           jaPresentes: jaPresentes.current,
           ultima: ultima.current,
           agora: leitura.em,
@@ -385,9 +385,9 @@ export function TelaAula({
         <section className="fila">
           <button
             className="fila__seta"
-            onClick={() => setArmado((i) => Math.max(0, i - 1))}
+            onClick={() => setChamado((i) => Math.max(0, i - 1))}
             aria-label="Anterior"
-            disabled={armado === 0}
+            disabled={chamado === 0}
           >
             ‹
           </button>
@@ -401,9 +401,9 @@ export function TelaAula({
 
           <button
             className="fila__seta"
-            onClick={() => setArmado((i) => Math.min(pendentes.length - 1, i + 1))}
+            onClick={() => setChamado((i) => Math.min(pendentes.length - 1, i + 1))}
             aria-label="Próximo"
-            disabled={armado >= pendentes.length - 1}
+            disabled={chamado >= pendentes.length - 1}
           >
             ›
           </button>

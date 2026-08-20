@@ -112,7 +112,7 @@ describe('linhas do log', () => {
     expect(eventoDe({ tipo: 'sem_turma' }, dados)).toBeUndefined()
   })
 
-  it('monta o evento_id com aparelho, dia e sequência', () => {
+  it('monta o evento_id com instalação, dia e sequência', () => {
     expect(proximoEventoId('web-a1b2', AGORA, 7)).toBe('web-a1b2-20260818-0007')
   })
 })
@@ -129,8 +129,8 @@ describe('cadastro e chamada são a mesma coisa', () => {
 
   // Quem encosta o crachá para se cadastrar já está presente naquela aula.
   // Separar as duas obrigaria a turma a passar duas vezes.
-  it('crachá novo com nome armado cadastra e conta presença', () => {
-    const decisao = decidir('novo', ctx({ sessao: SESSAO, armado: PESSOA }))
+  it('crachá novo com nome chamado cadastra e conta presença', () => {
+    const decisao = decidir('novo', ctx({ sessao: SESSAO, chamado: PESSOA }))
     expect(decisao).toEqual({ tipo: 'cadastro', pessoa: PESSOA })
 
     const evento = eventoDe(decisao, {
@@ -142,19 +142,19 @@ describe('cadastro e chamada são a mesma coisa', () => {
     expect(evento).toMatchObject({ nome: 'Carla Regina', matricula: '20250001', resultado: 'ok' })
   })
 
-  // Sem nome armado não há a quem pertencer, e adivinhar é o erro que a
+  // Sem nome chamado não há a quem pertencer, e adivinhar é o erro que a
   // cerimônia existe para evitar.
-  it('crachá novo sem nome armado continua desconhecido', () => {
+  it('crachá novo sem nome chamado continua desconhecido', () => {
     expect(decidir('novo', ctx({ sessao: SESSAO })).tipo).toBe('desconhecido')
   })
 
   it('o crachá do professor não é capturado pela fila de cadastro', () => {
-    const decisao = decidir(PROFESSOR.uidHash, ctx({ vinculo: PROFESSOR, sessao: SESSAO, armado: PESSOA }))
+    const decisao = decidir(PROFESSOR.uidHash, ctx({ vinculo: PROFESSOR, sessao: SESSAO, chamado: PESSOA }))
     expect(decisao.tipo).toBe('encerrar')
   })
 
   it('quem já tem crachá não vira cadastro de novo', () => {
-    expect(decidir(ALUNA.uidHash, ctx({ vinculo: ALUNA, sessao: SESSAO, armado: PESSOA })).tipo).toBe(
+    expect(decidir(ALUNA.uidHash, ctx({ vinculo: ALUNA, sessao: SESSAO, chamado: PESSOA })).tipo).toBe(
       'presenca',
     )
   })

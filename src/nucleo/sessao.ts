@@ -68,7 +68,7 @@ export interface Sessao {
 
 export type Decisao =
   | { tipo: 'abrir'; turma: string }
-  /** Crachá novo com um nome armado: cadastra **e** conta presença. */
+  /** Crachá novo com um nome chamado: cadastra **e** conta presença. */
   | { tipo: 'cadastro'; pessoa: Matriculado }
   | { tipo: 'encerrar' }
   | { tipo: 'cedo_demais'; faltamMs: number }
@@ -83,13 +83,13 @@ export interface Contexto {
   sessao?: Sessao
   vinculo?: Vinculo
   /**
-   * Quem está armado na fila de cadastro, se houver.
+   * Quem está chamado na fila de cadastro, se houver.
    *
    * É o que faz a cerimônia e a chamada serem a mesma coisa: quem encosta o
    * crachá para se cadastrar já está presente naquela aula, e separar as duas
    * obrigaria a turma a passar duas vezes.
    */
-  armado?: Matriculado
+  chamado?: Matriculado
   /** `uid_hash` de quem já foi registrado nesta sessão. */
   jaPresentes: ReadonlySet<string>
   /** A última leitura aceita, para separar dois crachás de um gesto só. */
@@ -134,10 +134,10 @@ export function decidir(uidHash: string, ctx: Contexto): Decisao {
     }
   }
 
-  // Crachá desconhecido com nome armado é cadastro. A garantia contra trocar
-  // aluno continua sendo a de sempre: existe **um só** nome armado por vez, e
+  // Crachá desconhecido com nome chamado é cadastro. A garantia contra trocar
+  // aluno continua sendo a de sempre: existe **um só** nome chamado por vez, e
   // ele está grande na tela para a pessoa conferir antes de encostar.
-  if (!vinculo) return ctx.armado ? { tipo: 'cadastro', pessoa: ctx.armado } : { tipo: 'desconhecido' }
+  if (!vinculo) return ctx.chamado ? { tipo: 'cadastro', pessoa: ctx.chamado } : { tipo: 'desconhecido' }
   if (jaPresentes.has(uidHash)) return { tipo: 'repetido', vinculo }
   return { tipo: 'presenca', vinculo }
 }

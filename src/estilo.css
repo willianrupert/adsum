@@ -739,7 +739,7 @@ button:focus-visible {
 
 /* ── Cerimônia ───────────────────────────────────────────────────────────── */
 
-.armado {
+.chamado {
   position: relative;
   background: var(--fundo-alt);
   border-radius: var(--raio);
@@ -747,19 +747,19 @@ button:focus-visible {
   text-align: center;
 }
 
-.armado__voltar {
+.chamado__voltar {
   position: absolute;
   top: 14px;
   left: 12px;
 }
 
-.armado__rotulo {
+.chamado__rotulo {
   margin: 0;
   font-size: var(--t-corpo);
   color: var(--tinta-fraca);
 }
 
-.armado__nome {
+.chamado__nome {
   margin: 10px 0 0;
   font-size: var(--t-grande);
   line-height: 1.05;
@@ -768,26 +768,26 @@ button:focus-visible {
   overflow-wrap: anywhere;
 }
 
-.armado__completo {
+.chamado__completo {
   margin: 8px 0 0;
   font-size: var(--t-menor);
   color: var(--tinta-fraca);
 }
 
-.armado__acoes {
+.chamado__acoes {
   display: flex;
   gap: 10px;
   justify-content: center;
   margin-top: 26px;
 }
 
-.armado__atalho {
+.chamado__atalho {
   margin: 18px 0 0;
   font-size: var(--t-nota);
   color: var(--tinta-fraca);
 }
 
-.linha--armada td {
+.linha--chamada td {
   background: var(--acao-fraca);
 }
 
@@ -1665,7 +1665,7 @@ button:focus-visible {
   }
 }
 
-.armado .ondas {
+.chamado .ondas {
   color: var(--acao);
   margin-bottom: 14px;
 }

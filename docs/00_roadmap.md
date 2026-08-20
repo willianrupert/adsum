@@ -36,7 +36,7 @@ conversar com o aparelho, quebra no `npm test`, não na aula.
 ## 3 · Cerimônia de vínculo — **feito**
 
 O `vincular.html` reescrito: lista colada do SIGAA, encurtamento de nome com
-medida em pixel, **um nome armado por vez**. A garantia contra trocar aluno não
+medida em pixel, **um nome chamado por vez**. A garantia contra trocar aluno não
 vem do meio de transporte; vem de não haver segundo candidato.
 
 Cuidados que já custaram bug e não podem se perder: aluno vem seguido de
@@ -47,7 +47,7 @@ Feito: `nucleo/nomes.ts` traz do `vincular.html` **as tabelas de avanço das
 fontes do firmware**, com teste para cada regra — partícula, colisão
 desempatada, e os dois limites (210 px na coluna, 31 bytes no buffer). A tela
 arma um nome por vez, recusa crachá já vinculado dizendo de quem é, e permite
-armar de novo um nome já feito, porque segunda via existe.
+chamar de novo um nome já feito, porque segunda via existe.
 
 Duas regras mudaram em relação ao `vincular.html`, e as duas por decisão de
 produto:

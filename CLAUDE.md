@@ -21,7 +21,7 @@ Leia antes de qualquer tarefa.
 > - **`uid_hash` = SHA-256(sal ‖ uid), 8 primeiros bytes.** Sem sal, o hash é o
 >   UID disfarçado e cai por força bruta em segundos.
 > - **Nada é reescrito — apenas acrescentado.**
-> - **Um só nome armado por vez** na cerimônia de vínculo.
+> - **Um só nome chamado por vez** na cerimônia de vínculo.
 > - **Sem hora confiável, a sessão não abre.**
 >
 > **Os limites de tela (210 px, 31 bytes) sumiram**, junto com as tabelas de
@@ -169,7 +169,7 @@ Herdadas do aparelho (justificativa em `../Adsum/CLAUDE.md`):
 
 Específicas do app:
 
-- **Nenhum dado sai do aparelho sem gesto explícito do professor.** Não existe
+- **Nenhum dado sai do computador sem gesto explícito do professor.** Não existe
   telemetria, analytics, fonte remota nem CDN. O `runtimeCaching` do service
   worker é vazio de propósito.
 - **A porta `Repositorio` não ganha `atualizarEvento` nem `removerEvento`.** Se
@@ -247,6 +247,22 @@ em badge vira mentira na semana seguinte, como a coluna `login` virou), e
 **imagens geradas por script** — `scripts/gerar_icone.py`,
 `gerar_diagrama.py`, `gerar_arquitetura.py`. Versiona-se o desenho, nunca a
 captura, que é a mesma regra que mantém dado real de turma fora daqui.
+
+## Palavras que não se usam
+
+**"Armar" e "armado" saíram em 20/08/2026.** O autor tinha pedido a troca antes,
+e só o texto de tela mudou — os identificadores, as classes de CSS e os
+comentários seguiram com a palavra. Ela lembra arma, não é institucional, e nada
+justificava mantê-la: a pessoa cujo nome aparece grande na tela está **chamada**,
+que é o que se faz numa chamada. `chamado` em toda parte.
+
+**"Aparelho" é do A1**, e onde ele significava "esta máquina" virou
+**computador** — inclusive na descrição do manifesto, que é o que o professor lê
+ao instalar. Onde a palavra conta história ("o verde que estava aqui era do Adsum
+A1"), ela fica: aí ela explica uma decisão.
+
+Palavra herdada não some porque a tela mudou. Ela mora nos identificadores, e é
+lá que precisa ser procurada.
 
 ## Voz da interface
 
@@ -340,8 +356,8 @@ Verificado no navegador:
 - a cerimônia inteira, com leitor simulado: dica de docente no topo, avanço
   automático, `Maria Vitoria S.` / `Maria Vitoria A.` desempatadas pela inicial
   do último sobrenome, quatro crachás para o mesmo aluno aceitos, e crachá já
-  vinculado **recusado dizendo de quem é**, com o nome armado permanecendo
-  armado;
+  vinculado **recusado dizendo de quem é**, com o nome chamado continuando
+  chamado;
 - o toggle de papel: marcar professor grava `papel: professor` e apaga o aviso
   de "ninguém está marcado como professor";
 - trocar para o `LeitorWebNfc` no desktop falha **dizendo o motivo** ("só o
@@ -488,7 +504,7 @@ Mushroom cards) e o corte de texto das telas de vínculo e base.
 - ler só o UID público, nunca Crypto1 — é legitimidade, não limitação técnica
 - hash com sal — é privacidade
 - registro append-only
-- um só nome armado por vez na cerimônia — é a garantia contra trocar aluno
+- um só nome chamado por vez na cerimônia — é a garantia contra trocar aluno
 - leitura da página do SIGAA: nome, matrícula, conferência do total
 - encurtar nome por legibilidade (o conceito, não os números)
 

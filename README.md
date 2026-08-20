@@ -119,7 +119,7 @@ custou. Boa parte do raciocínio mora no código, não em documento à parte.
 
 ## Privacidade, em uma linha cada
 
-- Nenhum dado sai do aparelho sem gesto explícito do professor
+- Nenhum dado sai do computador sem gesto explícito do professor
 - Sem telemetria, sem analytics, sem fonte remota, sem CDN — o `runtimeCaching`
   do service worker é vazio de propósito
 - O login do SIGAA **não é lido**: é credencial de acesso, e credencial não entra
