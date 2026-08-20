@@ -776,7 +776,7 @@ button:focus-visible {
    esquerda é o eixo de leitura de qualquer mural de horário. */
 .cronograma__grade {
   display: grid;
-  grid-template-columns: 68px repeat(5, minmax(0, 1fr));
+  grid-template-columns: 68px repeat(6, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
   max-width: 720px;

@@ -256,6 +256,24 @@ passa transforma um tremor da mão em xadrez. Um bloco só muda uma vez por
 arrasto. No toque o ponteiro fica capturado pelo primeiro alvo, então o iPad
 depende de `elementFromPoint`, e não de `pointerenter`.
 
+**Sábado e a ida e volta do meio-dia, 20/08/2026:** eu tinha escrito que sábado
+"existe na universidade e não na grade de ninguém" — a grade real tem
+`sáb. 07:00–11:50` e `sáb. 13:00–17:50`, dois blocos longos que **não existem em
+dia útil nenhum**, e por isso a linha deles tem uma célula só. O bloco de
+12:00–12:50 passou por uma correção e uma retificação: eu li nas capturas, o
+autor achou que era almoço, foi conferir e confirmou que algumas turmas têm aula
+aí. Fica.
+
+Daí saiu um furo real: `marcadosDe` checava só o horário, então uma aula de
+sábado às 08:00 seria marcada numa célula que a tela não desenha, e sumiria
+calada. Agora o par **dia e hora** precisa existir.
+
+**Reabrir a chamada, 20/08/2026:** encerrar por engano é fácil, porque o crachá
+do professor encerra e ele também é o crachá de alguém que pode encostar sem
+pensar. Sem reabrir, a saída seria abrir outra chamada — e a aula ficaria
+partida em dois arquivos, com dois horários de abertura. Reabrir grava um `abrir`
+novo no log: o registro conta o que aconteceu, inclusive que foi reaberta.
+
 **Os blocos são medidos, 20/08/2026:** o autor mandou as grades de horário reais
 de vários períodos do CIn, e dois palpites meus estavam errados — faltava o
 bloco de **meio-dia (12:00–12:50, 50 minutos, um crédito só)** e a noite não é

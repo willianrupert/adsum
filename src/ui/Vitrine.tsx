@@ -169,6 +169,7 @@ export function Vitrine() {
           arquivo="Adsum ▸ registros/IF685-T01.csv"
           aoSalvarCopia={async () => 'gravado'}
           aoConcluir={() => {}}
+          aoReabrir={() => {}}
         />
       </Cena>
 

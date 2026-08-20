@@ -25,6 +25,7 @@ export function TelaResumo({
   arquivo,
   aoSalvarCopia,
   aoConcluir,
+  aoReabrir,
 }: {
   sessao: Sessao
   presentes: number
@@ -32,6 +33,8 @@ export function TelaResumo({
   arquivo?: string
   aoSalvarCopia: () => Promise<ComoSalvou>
   aoConcluir: () => void
+  /** Encerrar por engano acontece, e desfazer não pode custar uma aula. */
+  aoReabrir?: () => void
 }) {
   const [salvo, setSalvo] = useState<ComoSalvou>()
 
@@ -101,6 +104,19 @@ export function TelaResumo({
           </>
         )}
       </div>
+
+      {/* Encerrar por engano é fácil: o crachá do professor encerra, e ele
+          também é o crachá de alguém que pode encostar sem pensar. Sem
+          reabrir, a saída seria começar outra chamada — e aí a aula fica
+          partida em dois arquivos, com dois horários de abertura.
+
+          Reabrir grava um `abrir` novo no log, como qualquer abertura: o
+          registro conta o que aconteceu, inclusive que foi reaberta. */}
+      {aoReabrir && (
+        <button className="repouso__link botao--quieto" onClick={aoReabrir}>
+          Encerrei sem querer, reabrir a chamada
+        </button>
+      )}
     </section>
   )
 }

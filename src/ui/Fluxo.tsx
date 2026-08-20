@@ -31,6 +31,7 @@ import {
   esquecerDispensaDaPasta,
   pastaDispensada,
   encerradas,
+  esquecerEncerramento,
   marcarEncerrada,
   modoDev,
 } from '../ambiente/preferencias.ts'
@@ -582,6 +583,19 @@ export function Fluxo() {
           arquivo={pasta ? `${pasta.name} ▸ ${caminhoDosRegistros(resumo.sessao.turma)}` : undefined}
           aoSalvarCopia={() => salvarCopia(resumo.sessao.turma)}
           aoConcluir={() => setResumo(undefined)}
+          aoReabrir={() => {
+            void (async () => {
+              // A marca de encerrada some junto, senão o relógio da grade
+              // entenderia que esta aula já acabou e não reabriria nada.
+              esquecerEncerramento(resumo.sessao.turma)
+              await abrirChamada(
+                resumo.sessao.turma,
+                resumo.sessao.uidHashProfessor,
+                new Date(),
+              )
+              setResumo(undefined)
+            })()
+          }}
         />
       )}
 

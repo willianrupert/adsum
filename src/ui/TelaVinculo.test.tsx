@@ -86,7 +86,6 @@ describe('a cerimônia', () => {
     const usuario = await colar()
     await waitFor(() => expect(screen.getByDisplayValue('Ana Paula')).toBeInTheDocument())
 
-    await usuario.click(screen.getByRole('button', { name: 'Cadastrar crachás' }))
     expect(await screen.findByText('Ana Paula')).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Simular um crachá' }))
@@ -102,9 +101,8 @@ describe('a cerimônia', () => {
   // A garantia contra trocar aluno: o crachá capturado só pode ser de quem
   // estava chamado, porque não havia segundo candidato.
   it('recusa crachá que já é de outra pessoa, dizendo de quem', async () => {
-    const usuario = await colar()
+    await colar()
     await waitFor(() => expect(screen.getByDisplayValue('Ana Paula')).toBeInTheDocument())
-    await usuario.click(screen.getByRole('button', { name: 'Cadastrar crachás' }))
 
     // O mesmo crachá duas vezes, injetado direto no leitor: é a duplicata sem
     // precisar de dois crachás na mão.
@@ -123,11 +121,47 @@ describe('a cerimônia', () => {
   it('as setas andam pela turma', async () => {
     const usuario = await colar()
     await waitFor(() => expect(screen.getByDisplayValue('Ana Paula')).toBeInTheDocument())
-    await usuario.click(screen.getByRole('button', { name: 'Cadastrar crachás' }))
 
     await usuario.keyboard('{ArrowRight}')
     expect(await screen.findByText('Breno Oliveira')).toBeInTheDocument()
     await usuario.keyboard('{ArrowLeft}')
     expect(await screen.findByText('Ana Paula')).toBeInTheDocument()
+  })
+})
+
+// Quatro achados da validação de ponta a ponta, e todos na mesma tela: ela foi
+// desenhada como lista com um modo escondido dentro.
+describe('a cerimônia não esconde a própria ação', () => {
+  it('a barra já abre chamando o primeiro pendente', async () => {
+    // Sem clicar em nada depois de colar: o passo seguinte a cadastrar a turma
+    // é dar crachá a ela, e a tela já começa ali.
+    await colar()
+    expect(await screen.findByText('Encoste o crachá de')).toBeInTheDocument()
+  })
+
+  // Clicar num botão que não responde é pior que não ter botão.
+  it('"Cadastrar crachás" não fica na tela enquanto a barra está aberta', async () => {
+    await colar()
+    await screen.findByText('Encoste o crachá de')
+
+    expect(screen.queryByRole('button', { name: 'Cadastrar crachás' })).not.toBeInTheDocument()
+  })
+
+  it('parar de chamar devolve o botão, agora dizendo continuar', async () => {
+    const usuario = await colar()
+    await screen.findByText('Encoste o crachá de')
+
+    await usuario.click(screen.getByRole('button', { name: 'Parar de chamar' }))
+    expect(screen.queryByText('Encoste o crachá de')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Cadastrar crachás|Continuar cadastrando/ })).toBeInTheDocument()
+  })
+
+  // "Cadê o botão de encerrar?" A resposta é que não existe um, e a tela
+  // precisa dizer por quê em vez de deixar o professor procurando.
+  it('a tela diz quando pode parar, e por quê', async () => {
+    await colar()
+    await screen.findByText('Encoste o crachá de')
+
+    expect(screen.getByText(/Comece pelo seu crachá/)).toBeInTheDocument()
   })
 })

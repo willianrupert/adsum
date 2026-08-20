@@ -390,6 +390,46 @@ describe('quando o leitor não está lendo', () => {
   })
 })
 
+// Encerrar por engano é fácil: o crachá do professor encerra, e ele também é o
+// crachá de alguém que pode encostar sem pensar. Sem reabrir, a saída seria
+// abrir outra chamada — e aí a aula fica partida em dois arquivos.
+describe('reabrir a chamada encerrada por engano', () => {
+  it('volta para a chamada, na mesma turma', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+
+    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Encerrar a chamada' }))
+    await screen.findByText(/Chamada encerrada/)
+
+    await usuario.click(
+      screen.getByRole('button', { name: 'Encerrei sem querer, reabrir a chamada' }),
+    )
+
+    expect(await screen.findByRole('button', { name: 'Encerrar a chamada' })).toBeInTheDocument()
+    expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: 'IF685 · T01' })
+  })
+
+  // O log conta o que aconteceu, inclusive que foi reaberta.
+  it('a reabertura fica no log, como qualquer abertura', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+
+    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Encerrar a chamada' }))
+    await usuario.click(
+      await screen.findByRole('button', { name: 'Encerrei sem querer, reabrir a chamada' }),
+    )
+
+    await waitFor(async () => {
+      const eventos = await bancada.repositorio.listarEventos()
+      expect(eventos.filter((e) => e.origem === 'professor')).toHaveLength(3)
+    })
+  })
+})
+
 // O ensaio precisa alcançar **todos** os estados, senão não serve para validar
 // o fluxo. Faltavam dois, e o autor achou os dois: não havia como produzir um
 // crachá desconhecido depois da cerimônia, e `P` não fazia nada nem dizia nada

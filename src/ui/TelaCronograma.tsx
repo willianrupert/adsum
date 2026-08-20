@@ -233,6 +233,9 @@ function Linha({
         <small>{bloco.fim}</small>
       </div>
       {DIAS_UTEIS.map((dia) => {
+        // Bloco de sábado não existe de segunda a sexta: a célula vazia diz
+        // isso melhor que um quadradinho clicável que não deveria ser clicado.
+        if (bloco.soSabado && dia !== 6) return <div key={dia} aria-hidden="true" />
         const chave = chaveDoBloco(dia, bloco.inicio)
         const escolhido = marcados.has(chave)
         return (

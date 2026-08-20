@@ -106,7 +106,15 @@ export function TelaVinculo({
           }
         }),
       )
-      setChamado(undefined)
+      // A barra já abre chamando o primeiro pendente. Antes exigia clicar em
+      // "Cadastrar crachás" primeiro, e era um clique para chegar onde a tela
+      // já deveria estar: acabou de cadastrar a turma, o passo seguinte é dar
+      // crachá a ela. Turma inteira cadastrada abre fechada, que é o certo —
+      // não há quem chamar.
+      const primeiro = preparados.findIndex(
+        (p) => !(p.matricula && comCracha.has(p.matricula)),
+      )
+      setChamado(primeiro >= 0 ? primeiro : undefined)
       setProblemas([])
     },
     [repositorio],
@@ -156,7 +164,11 @@ export function TelaVinculo({
       estado: (p.matricula && comCracha.has(p.matricula) ? 'feito' : 'pendente') as EstadoDaVez,
     }))
     setFila(lista)
-    setChamado(undefined)
+    // Mesmo motivo de `abrirTurma`: acabou de colar a turma, o passo seguinte é
+    // dar crachá a ela. Este era o caminho que o autor percorreu — colar e cair
+    // numa lista com a ação escondida atrás de um botão.
+    const primeiro = lista.findIndex((p) => p.estado === 'pendente')
+    setChamado(primeiro >= 0 ? primeiro : undefined)
 
     // Guardar não é decisão de ninguém: quem colou a turma quer a turma
     // guardada. O botão que existia aqui era trabalho que o app pode fazer.
@@ -257,6 +269,17 @@ export function TelaVinculo({
 
   const feitos = useMemo(() => fila.filter((e) => e.estado === 'feito').length, [fila])
   const semProfessor = fila.length > 0 && fila.every((e) => e.papel !== 'professor')
+  /**
+   * O que de fato encerra o cadastro inicial.
+   *
+   * Não é um botão: é o crachá do professor. Sem ele a chamada não abre; com
+   * ele a rota sai desta tela sozinha. Os alunos que faltarem não precisam ser
+   * perseguidos — cadastram-se encostando, na primeira aula.
+   *
+   * "Ninguém é professor" é outra coisa e já tinha nome (`semProfessor`);
+   * confundir as duas fazia a tela dar o conselho errado.
+   */
+  const professorComCracha = fila.some((e) => e.papel === 'professor' && e.estado === 'feito')
   const atual = chamado !== undefined ? fila[chamado] : undefined
 
   function renomear(indice: number, nome: string) {
@@ -301,8 +324,11 @@ export function TelaVinculo({
         <section className="chamado">
           {/* Voltar fica no canto, como numa folha do sistema: sair não pode
               exigir procurar. */}
+          {/* Não é "voltar": a lista já está logo abaixo, e nada some da tela.
+              O que este botão faz é parar de chamar nomes, e é isso que ele
+              precisa dizer. */}
           <button className="chamado__voltar" onClick={() => setChamado(undefined)}>
-            ‹ Voltar
+            Parar de chamar
           </button>
 
           {/* Animado como no repouso: os dois são o mesmo estado — a tela
@@ -417,21 +443,27 @@ export function TelaVinculo({
           titulo={turma}
           legenda={`${feitos} de ${fila.length} com crachá`}
           acoes={
-            <>
+            // Some enquanto a barra está aberta: ali ele não tinha o que fazer,
+            // e clicar num botão que não responde é pior que não ter botão.
+            // A barra **é** a ação; este só a traz de volta depois de parada.
+            chamado === undefined && (
               <button
                 className="botao--acento"
                 onClick={() => {
                   const primeiro = proximoPendente(0)
                   if (primeiro === undefined) {
-                    setRecado({ tom: 'ok', texto: 'Nada pendente — a turma inteira já tem crachá.' })
+                    setRecado({
+                      tom: 'ok',
+                      texto: 'A turma inteira já tem crachá.',
+                    })
                     return
                   }
                   setChamado(primeiro)
                 }}
               >
-                Cadastrar crachás
+                {feitos > 0 ? 'Continuar cadastrando' : 'Cadastrar crachás'}
               </button>
-            </>
+            )
           }
         >
 
@@ -499,8 +531,16 @@ export function TelaVinculo({
                 ))}
               </tbody>
             </table>
+            {/* Não existia saída daqui, e o botão dizia "Trocar de turma", que
+                não é saída nenhuma. O que encerra o cadastro inicial é o crachá
+                do professor: sem ele a chamada não abre, e com ele a rota sai
+                sozinha desta tela. Os alunos que faltarem não precisam ser
+                perseguidos — eles se cadastram encostando, durante a aula.
+
+                Dizer isso na tela é o que transforma "cadê o botão de encerrar"
+                em "ah, então já acabou". */}
             <div className="ferramentas">
-              <button
+              <button className={aoSair ? undefined : 'botao--quieto'}
                 onClick={() => {
                   if (aoSair) return aoSair()
                   setFila([])
@@ -509,10 +549,12 @@ export function TelaVinculo({
                   setProblemas([])
                 }}
               >
-                {aoSair ? 'Concluir' : 'Trocar de turma'}
+                {aoSair ? 'Concluir' : 'Escolher outra turma'}
               </button>
               <span className="ferramentas__ou">
-                Perdeu o crachá? Chame o nome de novo e cadastre o novo.
+                {professorComCracha
+                  ? 'Pode parar quando quiser. Quem faltar se cadastra na primeira aula, encostando o crachá.'
+                  : 'Comece pelo seu crachá: é ele que abre a chamada.'}
               </span>
             </div>
           </>

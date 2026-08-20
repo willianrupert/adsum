@@ -149,3 +149,10 @@ export function horariosAdiados(): string[] {
 export function adiarHorario(turma: string): void {
   gravar(CHAVES.horarioAdiado, JSON.stringify([...new Set([...horariosAdiados(), turma])]))
 }
+
+/** Reabrir uma chamada encerrada por engano apaga a marca junto. */
+export function esquecerEncerramento(turma: string): void {
+  const resto = { ...encerradas() }
+  delete resto[turma]
+  gravar(CHAVES.encerradas, JSON.stringify(resto))
+}
