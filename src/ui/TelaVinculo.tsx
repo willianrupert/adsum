@@ -303,16 +303,6 @@ export function TelaVinculo({
    * confundir as duas fazia a tela dar o conselho errado.
    */
   const professorComCracha = fila.some((e) => e.papel === 'professor' && e.estado === 'feito')
-  /**
-   * Se dá para sair desta tela agora.
-   *
-   * Fora do primeiro dia (`aoSair` de "mais um crachá"), sempre — chegar aqui
-   * já exigiu o crachá do professor antes, noutra visita. No primeiro dia,
-   * só depois que **esta** fila registrar o professor: antes disso a rota
-   * não tem para onde ir, e "Concluir" que não conclui é pior que o botão
-   * de trocar de turma, que ao menos diz o que faz.
-   */
-  const podeConcluir = !primeiroDia || professorComCracha
   const atual = chamado !== undefined ? fila[chamado] : undefined
 
   function renomear(indice: number, nome: string) {
@@ -572,28 +562,28 @@ export function TelaVinculo({
                 ))}
               </tbody>
             </table>
-            {/* O que encerra o cadastro inicial é o crachá do professor, não
-                este botão: sem ele não há repouso nenhum para onde voltar — a
-                tela diria "tudo pronto" sendo mentira. Por isso o botão só
-                vira "Concluir" depois dele. Antes, a única saída é trocar de
-                turma: não perde nada gravado, só a lista visível, que volta
-                ao reabrir esta turma. */}
+            {/* Sair não exige mais o crachá do professor — só custava a tela
+                de cadastro ficar sem saída pra quem quer olhar o resto do
+                app antes, ou parar sem ter chamado ninguém ainda. Quem
+                decide se isso é seguro é `Fluxo.tsx`: sem professor, ele
+                marca a dispensa como "por agora", e o repouso cobra depois
+                em vez de fingir que está tudo pronto. */}
             <div className="ferramentas">
-              <button className={podeConcluir ? undefined : 'botao--quieto'}
+              <button className={aoSair ? undefined : 'botao--quieto'}
                 onClick={() => {
-                  if (podeConcluir) return aoSair?.()
+                  if (aoSair) return aoSair()
                   setFila([])
                   setChamado(undefined)
                   setRecado(undefined)
                   setProblemas([])
                 }}
               >
-                {podeConcluir ? 'Concluir' : 'Escolher outra turma'}
+                {aoSair ? 'Concluir' : 'Escolher outra turma'}
               </button>
               <span className="ferramentas__ou">
-                {podeConcluir
+                {professorComCracha
                   ? 'Pode parar quando quiser. Quem faltar se cadastra na primeira aula, encostando o crachá.'
-                  : 'Comece pelo seu crachá: é ele que abre a chamada.'}
+                  : 'Sem o crachá do professor, a chamada não abre. Dá pra continuar depois.'}
               </span>
             </div>
           </>

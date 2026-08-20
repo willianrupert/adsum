@@ -186,6 +186,18 @@ export function Vitrine() {
         <Repouso
           turmas={1}
           pendencias={[]}
+          professorSemCracha={false}
+          aoIniciar={() => {}}
+          aoSalvar={() => {}}
+          aoAbrirCerimonia={() => {}}
+        />
+      </Cena>
+
+      <Cena titulo="Repouso sem crachá de professor" quando="cadastro adiado: o repouso cobra, sem fingir que está tudo pronto">
+        <Repouso
+          turmas={1}
+          pendencias={[]}
+          professorSemCracha={true}
           aoIniciar={() => {}}
           aoSalvar={() => {}}
           aoAbrirCerimonia={() => {}}
@@ -213,6 +225,7 @@ export function Vitrine() {
           turmas={2}
           pendencias={[]}
           proxima={{ turma: TURMA, quando: new Date(Date.now() + 3 * 3600_000) }}
+          professorSemCracha={false}
           aoIniciar={() => {}}
           aoSalvar={() => {}}
           aoAbrirCerimonia={() => {}}
@@ -226,6 +239,7 @@ export function Vitrine() {
             { turma: TURMA, quantos: 41, desde: '2026-08-19T10:04:00.000Z' },
             { turma: 'IF969 · T02', quantos: 28, desde: '2026-08-18T14:02:00.000Z' },
           ]}
+          professorSemCracha={false}
           aoIniciar={() => {}}
           aoSalvar={() => {}}
           aoAbrirCerimonia={() => {}}

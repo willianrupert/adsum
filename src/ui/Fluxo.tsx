@@ -32,6 +32,9 @@ import {
   esquecerDispensaDaPasta,
   esquecerPreferencias,
   pastaDispensada,
+  cadastroDispensado,
+  dispensarCadastro,
+  esquecerDispensaDoCadastro,
   encerradas,
   esquecerEncerramento,
   marcarEncerrada,
@@ -84,6 +87,7 @@ export function Fluxo() {
   // clique. Dispensar troca o estado, não a leitura.
   const [conselhoDoNavegador, setConselho] = useState(conselho)
   const [semPasta, setSemPasta] = useState(pastaDispensada)
+  const [semCadastro, setSemCadastro] = useState(cadastroDispensado)
   /** Recado das teclas de ensaio. Some sozinho: é resposta a um toque. */
   const [dicaDeEnsaio, setDicaDeEnsaio] = useState<string>()
   const [convidarApp, setConvidarApp] = useState(podeInstalarApp)
@@ -198,7 +202,15 @@ export function Fluxo() {
     setPendentesDaTurma(faltando)
     setMatriculadosTodos(matriculados)
     setTurmaPendente(faltando[0]?.turma)
-    setProfessorSemCracha(!vinculos.some((v) => v.papel === 'professor'))
+    const temProfessor = vinculos.some((v) => v.papel === 'professor')
+    setProfessorSemCracha(!temProfessor)
+    // A dispensa é "por agora": assim que o professor tem crachá, não há mais
+    // o que adiar. Sem isto, o repouso continuaria cobrando um crachá que já
+    // existe, só porque a marca ficou de uma visita anterior.
+    if (temProfessor) {
+      esquecerDispensaDoCadastro()
+      setSemCadastro(false)
+    }
     setTurmasAbertas(listaDeTurmas)
   }, [repositorio])
 
@@ -463,6 +475,7 @@ export function Fluxo() {
     conselharNavegador: !!conselhoDoNavegador,
     turmaSemHorario: semHorario?.turma,
     pastaDispensada: semPasta,
+    cadastroDispensado: semCadastro,
   })
 
   // Entra em cadastro 'inicial' assim que a rota chega em 'cerimonia' — e só
@@ -571,10 +584,22 @@ export function Fluxo() {
       {rota === 'turma' && <TelaVinculo aoMudarBase={mudou} />}
       {!resumo && naTelaDeCadastro && (
         <TelaVinculo
-          turmaInicial={modoCadastro === 'extra' ? turmasAbertas[0] : turmaPendente}
+          // `turmaPendente` é de aluno pendente — se só o professor falta
+          // (todo o resto já com crachá), ele fica indefinido, e cair para
+          // `turmasAbertas[0]` é o que evita reabrir em branco.
+          turmaInicial={modoCadastro === 'extra' ? turmasAbertas[0] : (turmaPendente ?? turmasAbertas[0])}
           primeiroDia={modoCadastro !== 'extra'}
           aoMudarBase={mudou}
-          aoSair={() => setModoCadastro('nenhum')}
+          aoSair={() => {
+            // Sair sem o crachá do professor ainda registrado é "por agora",
+            // não "nunca mais": a rota volta a cobrar sozinha assim que ele
+            // encostar, em qualquer tela. Ver `cadastroDispensado`.
+            if (professorSemCracha) {
+              dispensarCadastro()
+              setSemCadastro(true)
+            }
+            setModoCadastro('nenhum')
+          }}
         />
       )}
       {rota === 'chamada' && sessao && (
@@ -635,9 +660,15 @@ export function Fluxo() {
           turmas={turmas}
           pendencias={pasta ? [] : pendencias}
           proxima={proxima}
+          professorSemCracha={professorSemCracha}
           aoIniciar={() => void iniciarChamada()}
           aoSalvar={(turma) => void salvarCopia(turma)}
-          aoAbrirCerimonia={() => setModoCadastro('extra')}
+          aoAbrirCerimonia={() => {
+            // Voltar a cadastrar desfaz a dispensa: ele mudou de ideia.
+            esquecerDispensaDoCadastro()
+            setSemCadastro(false)
+            setModoCadastro(professorSemCracha ? 'inicial' : 'extra')
+          }}
         />
       )}
 
@@ -819,6 +850,7 @@ export function Repouso({
   turmas,
   pendencias,
   proxima,
+  professorSemCracha,
   aoIniciar,
   aoSalvar,
   aoAbrirCerimonia,
@@ -826,6 +858,8 @@ export function Repouso({
   turmas: number
   pendencias: Pendencia[]
   proxima?: { turma: string; quando: Date }
+  /** O cadastro ficou pra depois, sem crachá de professor nenhum ainda. */
+  professorSemCracha: boolean
   aoIniciar: () => void
   aoSalvar: (turma: string) => void
   aoAbrirCerimonia: () => void
@@ -870,7 +904,16 @@ export function Repouso({
 
       <Ondas tamanho={72} animado />
 
-      {proxima ? (
+      {professorSemCracha ? (
+        <>
+          {/* Sem crachá de professor nenhum, "tudo pronto" seria mentira — e
+              "sua próxima aula" também, já que sem ele ela não abre sozinha.
+              O repouso é quem cobra isso agora, em vez da tela de cadastro
+              travar quem só queria dar uma olhada no app antes. */}
+          <p className="repouso__turma">Falta o crachá do professor</p>
+          <p className="repouso__acao">Sem ele, a chamada não abre.</p>
+        </>
+      ) : proxima ? (
         <>
           {/* Com grade, a turma é o assunto e a hora é o apoio: é a ordem em
               que a pergunta se forma na cabeça de quem olha — "qual aula?" vem
@@ -891,27 +934,34 @@ export function Repouso({
         </>
       )}
 
-      {/* Com grade, o botão é a exceção — aula fora do horário, reposição — e
-          por isso perde o acento. Sem grade, é a única ação da tela. */}
-      <button
-        className={proxima ? 'repouso__link botao--quieto' : 'botao--acento pasta__botao'}
-        onClick={aoIniciar}
-      >
-        {proxima ? 'Começar a chamada agora' : 'Começar a chamada'}
-      </button>
-      {/* O crachá continua abrindo, e a tela **não** diz isso. Anunciar dois
-          caminhos para a mesma coisa é a decisão que se queria evitar: quem lê
-          "ou encoste o crachá" para para escolher, e escolher é o custo. Quem
-          precisa do atalho descobre encostando. */}
+      {professorSemCracha ? (
+        <button className="botao--acento pasta__botao" onClick={aoAbrirCerimonia}>
+          Cadastrar agora
+        </button>
+      ) : (
+        <>
+          {/* Com grade, o botão é a exceção — aula fora do horário, reposição
+              — e por isso perde o acento. Sem grade, é a única ação da tela. */}
+          <button
+            className={proxima ? 'repouso__link botao--quieto' : 'botao--acento pasta__botao'}
+            onClick={aoIniciar}
+          >
+            {proxima ? 'Começar a chamada agora' : 'Começar a chamada'}
+          </button>
+          {/* O crachá continua abrindo, e a tela **não** diz isso. Anunciar dois
+              caminhos para a mesma coisa é a decisão que se queria evitar: quem lê
+              "ou encoste o crachá" para para escolher, e escolher é o custo. Quem
+              precisa do atalho descobre encostando. */}
 
-      {/* Terciário, e por isso quieto. A regra do repouso: o único acento é
-          "Iniciar a aula", e só quando não há grade. Com grade a tela é espera —
-          e tela de espera com dois azuis embaixo pede para ser clicada. */}
-      <button className="repouso__link botao--quieto" onClick={aoAbrirCerimonia}>
-        Cadastrar mais um crachá
-      </button>
-
-
+          {/* Terciário, e por isso quieto. A regra do repouso: o único acento é
+              "Iniciar a aula", e só quando não há grade. Com grade a tela é
+              espera — e tela de espera com dois azuis embaixo pede para ser
+              clicada. Some quando falta o professor: a ação de cima já é essa. */}
+          <button className="repouso__link botao--quieto" onClick={aoAbrirCerimonia}>
+            Cadastrar mais um crachá
+          </button>
+        </>
+      )}
     </section>
   )
 }

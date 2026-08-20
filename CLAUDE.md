@@ -384,9 +384,25 @@ O conserto **não** apagou a regra — o crachá do professor continua sendo o q
 teria que existir para a chamada abrir. O que mudou foi quem decide *quando*
 sair da tela: antes era a rota, recalculada a cada gravação; agora é
 `modoCadastro`, em `Fluxo.tsx`, que só muda por um gesto explícito
-("Concluir"). A rota crua ainda governa a entrada (sem crachá de professor
-nenhum, não há para onde ir); o que ela deixou de governar é a saída no meio
-da fila.
+("Concluir").
+
+**E o autor foi além, no mesmo dia: "não deveria ser bloqueante o professor não
+ter o crachá."** Ele tinha razão — e a distinção que faltava no raciocínio
+anterior é entre duas coisas diferentes. A **chamada** (a aula de verdade,
+tomando presença) continua exigindo o crachá do professor para abrir, sem
+exceção — isso não mudou. A **tela de cadastro** é outra coisa, e travar nela
+sem saída, só porque o professor ainda não passou o crachá, era a mesma
+armadilha da pasta sem seletor, com outro nome.
+
+`cadastroDispensado`, em `ambiente/preferencias.ts`, é o "sigo sem, por agora"
+— mesmo padrão de `pastaDispensada`. `decidirRota` para de mandar para
+`'cerimonia'` quando ele está marcado, e o repouso passa a dizer a verdade em
+vez de "tudo pronto": **"Falta o crachá do professor. Sem ele, a chamada não
+abre."**, com um botão "Cadastrar agora" que desfaz a dispensa. Registrar o
+professor por qualquer caminho também desfaz sozinho — não há mais o que
+adiar. `Ajustes` (a engrenagem) sempre esteve alcançável em qualquer tela,
+inclusive nesta; o que faltava era o repouso ter um estado honesto pra onde
+ir quando ninguém, nem o professor, tinha crachá ainda.
 
 Foi testando isso ao vivo que apareceu o defeito irmão: reabrir "Cadastrar mais
 um crachá" chamava o professor de novo, sempre. `abrirTurma`, em

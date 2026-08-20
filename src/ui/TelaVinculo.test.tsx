@@ -156,12 +156,12 @@ describe('a cerimônia não esconde a própria ação', () => {
     expect(screen.getByRole('button', { name: /Cadastrar crachás|Continuar cadastrando/ })).toBeInTheDocument()
   })
 
-  // "Cadê o botão de encerrar?" A resposta é que não existe um, e a tela
-  // precisa dizer por quê em vez de deixar o professor procurando.
-  it('a tela diz quando pode parar, e por quê', async () => {
+  // "Cadê o botão de encerrar?" A resposta é que não existe um formal, mas dá
+  // pra sair mesmo assim — e a tela precisa dizer o porquê da diferença.
+  it('a tela diz que ainda falta o crachá do professor, mas que dá pra sair', async () => {
     await colar()
     await screen.findByText('Encoste o crachá de')
 
-    expect(screen.getByText(/Comece pelo seu crachá/)).toBeInTheDocument()
+    expect(screen.getByText(/Sem o crachá do professor, a chamada não abre/)).toBeInTheDocument()
   })
 })

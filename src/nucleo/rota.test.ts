@@ -11,6 +11,7 @@ const BASE: EstadoDoApp = {
   professorSemCracha: false,
   conselharNavegador: false,
   pastaDispensada: false,
+  cadastroDispensado: false,
 }
 
 describe('a rota decorre do estado', () => {
@@ -31,6 +32,15 @@ describe('a rota decorre do estado', () => {
   // está presente.
   it('sem crachá de professor, a tela é a cerimônia', () => {
     expect(decidirRota({ ...BASE, professorSemCracha: true })).toBe('cerimonia')
+  })
+
+  // Regressão, mesma família da pasta sem saída: um crachá específico não
+  // pode ser a única porta pra sair da tela de cadastro. Dispensado, o
+  // repouso é quem cobra depois — sem fingir que está tudo pronto.
+  it('sem crachá de professor, mas dispensado, segue para o repouso', () => {
+    expect(
+      decidirRota({ ...BASE, professorSemCracha: true, cadastroDispensado: true }),
+    ).toBe('pronto')
   })
 
   it('aluno sem crachá não tira o professor do repouso', () => {

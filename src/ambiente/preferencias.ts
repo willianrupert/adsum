@@ -14,6 +14,7 @@ const CHAVES = {
   conselhoDispensado: 'adsum.instalacao.dispensada',
   encerradas: 'adsum.encerradas',
   pastaDispensada: 'adsum.pasta.dispensada',
+  cadastroDispensado: 'adsum.cadastro.dispensado',
   conviteDeApp: 'adsum.app.dispensado',
   horarioAdiado: 'adsum.horario.adiado',
 } as const
@@ -121,6 +122,29 @@ export function dispensarPasta(): void {
 /** Escolher uma pasta desfaz a dispensa: ele mudou de ideia, e o app segue. */
 export function esquecerDispensaDaPasta(): void {
   gravar(CHAVES.pastaDispensada, undefined)
+}
+
+/**
+ * "Cadastro fica pra depois."
+ *
+ * Sem o crachá do professor a chamada não abre — isso continua verdade. O que
+ * não deveria ser verdade é a tela de cadastro travar quem quer só dar uma
+ * olhada no app, ou parar no meio sem ter chamado ninguém ainda. Dispensar
+ * não fecha o assunto: o repouso passa a avisar que falta o crachá do
+ * professor, em vez de fingir que está tudo pronto.
+ *
+ * Registrar o professor desfaz a dispensa sozinho — não há mais o que adiar.
+ */
+export function cadastroDispensado(): boolean {
+  return ler(CHAVES.cadastroDispensado) === 'sim'
+}
+
+export function dispensarCadastro(): void {
+  gravar(CHAVES.cadastroDispensado, 'sim')
+}
+
+export function esquecerDispensaDoCadastro(): void {
+  gravar(CHAVES.cadastroDispensado, undefined)
 }
 
 export function conviteDeAppDispensado(): boolean {

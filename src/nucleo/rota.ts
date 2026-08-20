@@ -47,8 +47,13 @@ export interface EstadoDoApp {
   turmaSemHorario?: string
   /** O professor disse "sigo sem pasta". Ver o comentário em `decidirRota`. */
   pastaDispensada: boolean
-  /** Nenhum professor tem crachá ainda. É o único caso que exige cerimônia. */
+  /** Nenhum professor tem crachá ainda. Por si só, pede a cerimônia. */
   professorSemCracha: boolean
+  /**
+   * "Cadastro fica pra depois." Ver o comentário em `decidirRota`: mesmo sem
+   * crachá de professor, a tela de cadastro não pode ser a única porta.
+   */
+  cadastroDispensado: boolean
 }
 
 export function decidirRota(estado: EstadoDoApp): Rota {
@@ -84,9 +89,12 @@ export function decidirRota(estado: EstadoDoApp): Rota {
   if (!estado.lendo) return 'problema'
   if (estado.chamadaAberta) return 'chamada'
 
-  // A cerimônia sobrou para uma coisa só: dar o primeiro crachá ao professor.
-  // Sem ele a aula não abre, e é dentro da aula que todo o resto se cadastra —
-  // quem encosta para se cadastrar já está presente.
-  if (estado.professorSemCracha) return 'cerimonia'
+  // A cerimônia existe para dar o primeiro crachá ao professor — sem ele a
+  // aula não abre, e é dentro da aula que todo o resto se cadastra. Mas essa
+  // urgência é dele, não do app: uma tela que só sai do caminho depois de um
+  // crachá específico é a mesma armadilha da pasta sem saída, com outro nome.
+  // `cadastroDispensado` é o "sigo sem, por agora" — o repouso é quem cobra
+  // depois, sem fingir que está tudo pronto.
+  if (estado.professorSemCracha && !estado.cadastroDispensado) return 'cerimonia'
   return 'pronto'
 }
