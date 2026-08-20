@@ -11,7 +11,7 @@ import { calcularUidHash } from '../nucleo/hash.ts'
 import { uidInedito, hexParaUid } from '../nucleo/uid.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
-import { abrirSozinho, escolherTurma, proximaAula, DIAS } from '../nucleo/grade.ts'
+import { abrirSozinho, escolherTurma, proximaAula, DIAS , type Aula } from '../nucleo/grade.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
@@ -24,7 +24,9 @@ import {
   riscoDeApagar,
 } from '../ambiente/instalacao.ts'
 import {
+  adiarHorario,
   dispensarConselho,
+  horariosAdiados,
   dispensarPasta,
   esquecerDispensaDaPasta,
   pastaDispensada,
@@ -53,6 +55,7 @@ import { marcarAte, naoSalvos, totalNaoSalvo, type Pendencia } from '../nucleo/p
 import { useAdsum } from './adsum.ts'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
 import { TelaProblema } from './TelaProblema.tsx'
+import { TelaCronograma } from './TelaCronograma.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaVinculo } from './TelaVinculo.tsx'
 
@@ -85,6 +88,8 @@ export function Fluxo() {
   // Sem pasta, isto é a única memória de que existe trabalho fora do disco.
   const [pendencias, setPendencias] = useState<Pendencia[]>([])
   const [proxima, setProxima] = useState<{ turma: string; quando: Date }>()
+  const [semHorario, setSemHorario] = useState<{ turma: string; aulas: Aula[] }>()
+  const [uidDoProfessor, setUidDoProfessor] = useState('')
   const [folha, setFolha] = useState<Folha>()
   // A rota decide sozinha, mas "quero cadastrar mais um crachá" é uma intenção
   // que nenhum dado expressa — sem isto, o botão do repouso não tinha o que
@@ -149,7 +154,18 @@ export function Fluxo() {
     // é ansiedade. Qual turma vem e quando é a única informação que a tela tem
     // para dar, e é a que responde "estou no lugar certo?" sem ninguém pedir.
     const professor = vinculos.find((v) => v.papel === 'professor')
-    const aulas = professor ? await repositorio.listarAulas() : []
+    setUidDoProfessor(professor?.uidHash ?? '')
+
+    // A primeira turma sem horário que ele ainda não adiou. Uma por vez: a tela
+    // pergunta de uma turma, e enfileirar cinco de uma vez seria formulário.
+    const todasAsAulas = await repositorio.listarAulas()
+    const adiadas = new Set(horariosAdiados())
+    const semGrade = listaDeTurmas.find(
+      (t) => !adiadas.has(t) && !todasAsAulas.some((a) => a.turma === t),
+    )
+    setSemHorario(semGrade ? { turma: semGrade, aulas: [] } : undefined)
+
+    const aulas = professor ? todasAsAulas : []
     const vem = professor ? proximaAula(aulas, professor.uidHash, new Date()) : undefined
     setProxima(vem && { turma: vem.aula.turma, quando: vem.quando })
     // Quem já tem crachá é reconhecido pela matrícula — e, para quem não tem
@@ -432,6 +448,7 @@ export function Fluxo() {
     chamadaAberta: !!sessao,
     professorSemCracha,
     conselharNavegador: !!conselhoDoNavegador,
+    turmaSemHorario: semHorario?.turma,
     pastaDispensada: semPasta,
   })
 
@@ -503,6 +520,26 @@ export function Fluxo() {
           aoDispensar={() => {
             dispensarConselho()
             setConselho(undefined)
+          }}
+        />
+      )}
+      {rota === 'cronograma' && semHorario && (
+        <TelaCronograma
+          turma={semHorario.turma}
+          aulas={semHorario.aulas}
+          uidHashProfessor={uidDoProfessor}
+          aoSalvar={(novas) => {
+            void (async () => {
+              await repositorio.definirHorarioDaTurma(semHorario.turma, novas)
+              // Salvar sem marcar nada é o mesmo que adiar: sem isto a tela
+              // voltaria na hora, porque a turma continua sem horário.
+              if (novas.length === 0) adiarHorario(semHorario.turma)
+              await mudou()
+            })()
+          }}
+          aoPular={() => {
+            adiarHorario(semHorario.turma)
+            void recontar()
           }}
         />
       )}

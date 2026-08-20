@@ -248,6 +248,25 @@ em badge vira mentira na semana seguinte, como a coluna `login` virou), e
 `gerar_diagrama.py`, `gerar_arquitetura.py`. Versiona-se o desenho, nunca a
 captura, que é a mesma regra que mantém dado real de turma fora daqui.
 
+**Cronograma feito em 20/08/2026:** a grade existia só como três campos nos
+Ajustes — dia, início, fim — e ninguém preenche três campos cinco vezes. O
+professor não pensa "quarta, 13h, 14h50"; ele olha a semana e aponta onde a
+turma cai, que é como o horário chega até ele em qualquer mural. `nucleo/
+horarios.ts` tem os blocos do CIn e a conversão; `ui/TelaCronograma.tsx` desenha
+a semana. Vem **depois** de colar a lista, porque a grade precisa saber de qual
+turma fala, e **antes** do leitor, porque preencher horário não depende de
+dongle. É pulável: a chamada funciona sem ela, só deixa de abrir sozinha.
+
+A porta ganhou `definirHorarioDaTurma`: `zerarAulas` apagava a grade inteira, o
+que transformava "mudei a quarta de lugar" em "recadastre tudo". Isso **não**
+contradiz a porta não ter `removerEvento` — lá o passado é imutável porque é
+registro do que aconteceu; aqui é intenção, e intenção muda.
+
+**Rota `problema` deixou de ser o diagnóstico inteiro, 20/08/2026:** colar a
+lista e cair num painel de nove capacidades era eu quebrando a regra que este
+arquivo já tinha. `ui/TelaProblema.tsx` tem uma frase e uma ação; o diagnóstico
+fica a um clique, que é a diferença entre estar disponível e estar no caminho.
+
 ## Palavras que não se usam
 
 **"Armar" e "armado" saíram em 20/08/2026.** O autor tinha pedido a troca antes,

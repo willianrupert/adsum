@@ -56,6 +56,18 @@ export interface Repositorio {
 
   listarAulas(): Promise<Aula[]>
   gravarAula(aula: Aula): Promise<void>
+  /**
+   * Troca o horário de **uma** turma pelo que veio.
+   *
+   * A grade é configuração, não log: corrigir um horário errado é o caso normal,
+   * e não havia como. `zerarAulas` apagava a grade inteira, o que transformava
+   * "mudei a quarta de lugar" em "recadastre tudo".
+   *
+   * Isto **não** contradiz a porta não ter `removerEvento`: lá o passado é
+   * imutável porque é registro do que aconteceu; aqui é a intenção de quando as
+   * aulas acontecem, e intenção muda.
+   */
+  definirHorarioDaTurma(turma: string, aulas: Aula[]): Promise<void>
   zerarAulas(): Promise<void>
 
   /**

@@ -19,6 +19,8 @@ export type Rota =
   | 'navegador'
   /** Nenhuma turma cadastrada: a tela é colar a lista do SIGAA. */
   | 'turma'
+  /** Turma sem horário: a tela é a semana, para apontar onde ela cai. */
+  | 'cronograma'
   /** Há gente sem crachá: a tela é a cerimônia. */
   | 'cerimonia'
   /** Chamada aberta: a tela é a coleta — presença e cadastro na mesma coisa. */
@@ -41,6 +43,8 @@ export interface EstadoDoApp {
    * conselho. Ver `ambiente/instalacao.ts` — o que dizer muda por navegador.
    */
   conselharNavegador: boolean
+  /** Turma cadastrada e sem horário, que o professor ainda não adiou. */
+  turmaSemHorario?: string
   /** O professor disse "sigo sem pasta". Ver o comentário em `decidirRota`. */
   pastaDispensada: boolean
   /** Nenhum professor tem crachá ainda. É o único caso que exige cerimônia. */
@@ -71,6 +75,12 @@ export function decidirRota(estado: EstadoDoApp): Rota {
   if (estado.conselharNavegador) return 'navegador'
 
   if (estado.turmas === 0) return 'turma'
+
+  // Depois da turma e não antes: a grade precisa saber de qual turma fala. E
+  // antes do leitor, porque preencher horário não depende de dongle nenhum —
+  // parar aqui por falta de hardware seria travar o cadastro por nada.
+  if (estado.turmaSemHorario) return 'cronograma'
+
   if (!estado.lendo) return 'problema'
   if (estado.chamadaAberta) return 'chamada'
 

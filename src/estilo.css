@@ -737,6 +737,139 @@ button:focus-visible {
   color: var(--tinta-fraca);
 }
 
+/* ── Cronograma ──────────────────────────────────────────────────────────── */
+
+.cronograma {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.cronograma__topo {
+  margin-bottom: 34px;
+}
+
+.cronograma__rotulo {
+  margin: 0 0 6px;
+  font-size: var(--t-corpo);
+  color: var(--tinta-fraca);
+}
+
+.cronograma__turma {
+  margin: 0;
+  font-size: var(--t-grande);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+}
+
+.cronograma__nota {
+  margin: 16px auto 0;
+  max-width: 52ch;
+  font-size: var(--t-corpo);
+  color: var(--tinta-fraca);
+  text-wrap: balance;
+}
+
+/* Uma coluna estreita para a hora e cinco iguais para os dias. A hora à
+   esquerda é o eixo de leitura de qualquer mural de horário. */
+.cronograma__grade {
+  display: grid;
+  grid-template-columns: 68px repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 720px;
+}
+
+.cronograma__dia {
+  padding-bottom: 4px;
+  font-size: var(--t-nota);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--tinta-fraca);
+}
+
+.cronograma__hora {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  padding-right: 4px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.cronograma__hora strong {
+  font-size: var(--t-menor);
+  font-weight: 600;
+}
+
+.cronograma__hora small {
+  font-size: var(--t-nota);
+  color: var(--tinta-tenue);
+}
+
+/* O filete entre turnos: separa manhã de tarde sem precisar de um rótulo
+   dizendo "tarde". É como o mural faz. */
+.cronograma__hora--turno,
+.cronograma__bloco--turno {
+  margin-top: 14px;
+  border-top: 1px solid var(--separador);
+  padding-top: 14px;
+}
+
+.cronograma__bloco {
+  height: 58px;
+  padding: 0;
+  border: none;
+  border-radius: var(--raio-pequeno);
+  background: var(--fundo-alt);
+  cursor: pointer;
+  transition:
+    background var(--rapido) var(--curva),
+    transform var(--rapido) var(--curva);
+}
+
+.cronograma__bloco:hover {
+  background: color-mix(in srgb, var(--tinta) 10%, transparent);
+}
+
+.cronograma__bloco:active {
+  transform: scale(0.96);
+}
+
+.cronograma__bloco--on,
+.cronograma__bloco--on:hover {
+  background: var(--acao);
+}
+
+.cronograma__bloco--turno {
+  /* O filete some do bloco em si: quem o desenha é a linha da hora, e repetir
+     em seis colunas viraria régua. O espaço fica. */
+  border-top-color: transparent;
+}
+
+.cronograma__resumo {
+  margin: 26px 0 0;
+  font-size: var(--t-corpo);
+  color: var(--tinta-fraca);
+}
+
+.cronograma__aviso {
+  margin: 12px auto 0;
+  max-width: 56ch;
+  font-size: var(--t-menor);
+  color: var(--alerta);
+  text-wrap: pretty;
+}
+
+.cronograma__acoes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 /* ── Cerimônia ───────────────────────────────────────────────────────────── */
 
 .chamado {

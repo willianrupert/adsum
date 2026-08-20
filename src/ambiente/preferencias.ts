@@ -15,6 +15,7 @@ const CHAVES = {
   encerradas: 'adsum.encerradas',
   pastaDispensada: 'adsum.pasta.dispensada',
   conviteDeApp: 'adsum.app.dispensado',
+  horarioAdiado: 'adsum.horario.adiado',
 } as const
 
 function ler(chave: string): string | undefined {
@@ -128,4 +129,23 @@ export function conviteDeAppDispensado(): boolean {
 
 export function dispensarConviteDeApp(): void {
   gravar(CHAVES.conviteDeApp, 'sim')
+}
+
+/**
+ * Turmas cujo horário o professor adiou.
+ *
+ * Local, e por turma: adiar não é "nunca mais", é "agora não". Os Ajustes
+ * continuam oferecendo a grade, e cadastrar o horário lá também tira a turma
+ * desta lista, porque aí ela deixou de estar sem horário.
+ */
+export function horariosAdiados(): string[] {
+  try {
+    return JSON.parse(ler(CHAVES.horarioAdiado) ?? '[]') as string[]
+  } catch {
+    return []
+  }
+}
+
+export function adiarHorario(turma: string): void {
+  gravar(CHAVES.horarioAdiado, JSON.stringify([...new Set([...horariosAdiados(), turma])]))
 }

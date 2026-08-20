@@ -16,6 +16,7 @@ import { TelaVinculo } from './TelaVinculo.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
 import { TelaProblema } from './TelaProblema.tsx'
+import { TelaCronograma } from './TelaCronograma.tsx'
 import { Busca } from './componentes/Busca.tsx'
 import { Baixar } from './componentes/Simbolos.tsx'
 import type { Matriculado } from '../nucleo/tipos.ts'
@@ -114,6 +115,19 @@ export function Vitrine() {
 
       <Cena titulo="Use o Chrome" quando="Firefox: sem pasta e sem o que instalar">
         <TelaNavegador conselho={{ tipo: 'trocar' }} aoDispensar={() => {}} />
+      </Cena>
+
+      <Cena titulo="O cronograma" quando="logo depois de colar a turma, e pulável">
+        <TelaCronograma
+          turma={TURMA}
+          aulas={[
+            { uidHashProfessor: 'x', dia: 3, inicio: '13:00', fim: '14:50', turma: TURMA },
+            { uidHashProfessor: 'x', dia: 1, inicio: '15:00', fim: '16:50', turma: TURMA },
+          ]}
+          uidHashProfessor="x"
+          aoSalvar={() => {}}
+          aoPular={() => {}}
+        />
       </Cena>
 
       <Cena titulo="Sem leitor" quando="o dongle não respondeu: uma frase e uma ação">

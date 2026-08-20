@@ -3,6 +3,7 @@ import { act, cleanup, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { Fluxo } from './Fluxo.tsx'
+import { adiarHorario } from '../ambiente/preferencias.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 
 let bancada: Bancada
@@ -26,7 +27,11 @@ beforeEach(async () => {
 
 afterEach(() => window.localStorage.clear())
 
+// Quem não está testando o cronograma começa depois dele — é o equivalente ao
+// professor que já respondeu "depois". Os testes do cronograma não usam este
+// helper, justamente para encontrá-lo.
 async function turmaInteiraComCracha() {
+  adiarHorario('IF685 · T01')
   await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('1', 'Ana Paula')])
   await bancada.repositorio.gravarVinculo({
     uidHash: 'aaaa000000000000',
@@ -210,6 +215,84 @@ describe('a grade abre a chamada sozinha', () => {
 
     expect(await screen.findByText('Começar a chamada')).toBeInTheDocument()
     expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
+  })
+})
+
+// A grade existia só como três campos nos Ajustes, e ninguém preenche três
+// campos cinco vezes. Vem depois de colar a lista porque precisa saber de qual
+// turma fala, e é pulável porque a chamada funciona sem ela.
+describe('o cronograma da turma', () => {
+  const comTurma = () =>
+    bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('1', 'Ana Paula')])
+
+  it('vem logo depois de colar a lista', async () => {
+    await comTurma()
+    renderizarCom(bancada, <Fluxo />)
+
+    expect(await screen.findByText('Quando esta turma tem aula')).toBeInTheDocument()
+    expect(screen.getByText('IF685 · T01')).toBeInTheDocument()
+  })
+
+  it('tocar num horário e salvar grava a aula daquela turma', async () => {
+    const usuario = userEvent.setup()
+    await comTurma()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Quando esta turma tem aula')
+
+    await usuario.click(screen.getByRole('button', { name: 'QUA, 13:00 às 14:50' }))
+    expect(screen.getByText(/1 horário/)).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Salvar horário' }))
+
+    await waitFor(async () => {
+      const aulas = await bancada.repositorio.listarAulas()
+      expect(aulas).toHaveLength(1)
+      expect(aulas[0]).toMatchObject({ dia: 3, inicio: '13:00', fim: '14:50', turma: 'IF685 · T01' })
+    })
+  })
+
+  // Salvar sem marcar nada é o mesmo que adiar: sem isto a tela voltaria na
+  // hora, porque a turma continua sem horário.
+  it('"Depois" e salvar em branco não prendem o professor aqui', async () => {
+    const usuario = userEvent.setup()
+    await comTurma()
+    const { unmount } = renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Quando esta turma tem aula')
+
+    await usuario.click(screen.getByRole('button', { name: 'Depois' }))
+    await waitFor(() =>
+      expect(screen.queryByText('Quando esta turma tem aula')).not.toBeInTheDocument(),
+    )
+
+    unmount()
+    renderizarCom(bancada, <Fluxo />)
+    await waitFor(() =>
+      expect(screen.queryByText('Quando esta turma tem aula')).not.toBeInTheDocument(),
+    )
+  })
+
+  // Trocar o horário de uma turma não pode apagar o das outras: era isso que
+  // `zerarAulas` fazia, e por isso a porta ganhou `definirHorarioDaTurma`.
+  it('salvar uma turma não mexe no horário das outras', async () => {
+    const usuario = userEvent.setup()
+    await bancada.repositorio.gravarAula({
+      uidHashProfessor: 'p',
+      dia: 5,
+      inicio: '08:00',
+      fim: '09:50',
+      turma: 'IF969 · T02',
+    })
+    await comTurma()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Quando esta turma tem aula')
+
+    await usuario.click(screen.getByRole('button', { name: 'SEG, 10:00 às 11:50' }))
+    await usuario.click(screen.getByRole('button', { name: 'Salvar horário' }))
+
+    await waitFor(async () => {
+      const aulas = await bancada.repositorio.listarAulas()
+      expect(aulas.map((a) => a.turma).sort()).toEqual(['IF685 · T01', 'IF969 · T02'])
+    })
   })
 })
 

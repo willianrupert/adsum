@@ -116,6 +116,21 @@ export class RepositorioDexie implements Repositorio {
     await this.#banco.aulas.put(aula)
   }
 
+  async definirHorarioDaTurma(turma: string, aulas: Aula[]): Promise<void> {
+    // Numa transação só: a turma não pode ficar sem horário nenhum se algo
+    // falhar entre apagar e gravar.
+    await this.#banco.transaction('rw', this.#banco.aulas, async () => {
+      // Filtra em memória: `turma` não é índice, e criar um exigiria versão
+      // nova de esquema para uma tabela de meia dúzia de linhas.
+      const todas = await this.#banco.aulas.toArray()
+      const daTurma = todas.filter((a) => a.turma === turma)
+      await this.#banco.aulas.bulkDelete(daTurma.map((a) => a.id!))
+      if (aulas.length > 0) {
+        await this.#banco.aulas.bulkPut(aulas.map((a) => ({ ...a, id: undefined })))
+      }
+    })
+  }
+
   async zerarAulas(): Promise<void> {
     await this.#banco.aulas.clear()
   }
