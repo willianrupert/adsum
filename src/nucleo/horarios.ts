@@ -5,7 +5,12 @@
 // ele olha a semana e aponta onde a turma cai, que é como o horário chega até
 // ele em qualquer mural da universidade.
 //
-// Os blocos são os do CIn, e vêm em pares porque aula de 4h ocupa dois seguidos.
+// Os blocos são os do CIn, **lidos das grades de horário reais** que o autor
+// mandou — não inventados. Duas coisas que eu tinha errado por estimativa:
+// faltava o bloco de meio-dia, de 50 minutos, e o da noite não é 19:00–20:50 e
+// sim 18:50–20:30, encostado no anterior.
+//
+// Aula de 4h ocupa dois blocos, e é por isso que a tela é de marcar vários.
 // Quem tiver horário fora deles continua com os campos livres nos Ajustes: esta
 // tela cobre o caso comum sem impedir o incomum.
 
@@ -19,10 +24,16 @@ export interface Bloco {
 export const BLOCOS: Bloco[] = [
   { inicio: '08:00', fim: '09:50', turno: 'manha' },
   { inicio: '10:00', fim: '11:50', turno: 'manha' },
+  // Meio-dia é o bloco de 50 minutos, de um crédito só. Existe de verdade na
+  // grade do CIn e é fácil de esquecer, porque é o único fora do padrão.
+  { inicio: '12:00', fim: '12:50', turno: 'manha' },
   { inicio: '13:00', fim: '14:50', turno: 'tarde' },
   { inicio: '15:00', fim: '16:50', turno: 'tarde' },
-  { inicio: '17:00', fim: '18:50', turno: 'tarde' },
-  { inicio: '19:00', fim: '20:50', turno: 'noite' },
+  { inicio: '17:00', fim: '18:50', turno: 'noite' },
+  // Encosta no anterior: um termina 18:50 e o outro começa 18:50, sem intervalo.
+  // Não é engano de digitação, é como a grade do CIn é — e tem consequência,
+  // documentada em `grade.ts`.
+  { inicio: '18:50', fim: '20:30', turno: 'noite' },
 ]
 
 /** Segunda a sexta. Sábado existe na universidade, e não na grade de ninguém. */
@@ -80,4 +91,20 @@ export function horasPorSemana(marcados: ReadonlySet<string>): number {
     const [hf, mf] = bloco.fim.split(':').map(Number)
     return total + (hf * 60 + mf - (hi * 60 + mi)) / 60
   }, 0)
+}
+
+/** Minutos de um bloco. O de meio-dia tem 50; os outros, 100 ou 110. */
+export function duracaoEmMinutos(bloco: Bloco): number {
+  const [hi, mi] = bloco.inicio.split(':').map(Number)
+  const [hf, mf] = bloco.fim.split(':').map(Number)
+  return hf * 60 + mf - (hi * 60 + mi)
+}
+
+/**
+ * Bloco curto é o de meio-dia. A tela o desenha mais baixo, porque um
+ * quadradinho do mesmo tamanho para 50 e para 110 minutos mente sobre a
+ * duração — e é justamente esse bloco que o professor esquece que existe.
+ */
+export function ehCurto(bloco: Bloco): boolean {
+  return duracaoEmMinutos(bloco) < 60
 }

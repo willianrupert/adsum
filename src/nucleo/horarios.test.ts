@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BLOCOS, chaveDoBloco, horasPorSemana, marcadosDe } from './horarios.ts'
+import { BLOCOS, chaveDoBloco, ehCurto, horasPorSemana, marcadosDe } from './horarios.ts'
 
 describe('a grade como o professor a enxerga', () => {
   it('marca o que já está cadastrado', () => {
@@ -31,5 +31,29 @@ describe('a grade como o professor a enxerga', () => {
 
   it('os blocos cobrem manhã, tarde e noite', () => {
     expect(new Set(BLOCOS.map((b) => b.turno))).toEqual(new Set(['manha', 'tarde', 'noite']))
+  })
+})
+
+// Lidos das grades de horário reais do CIn que o autor mandou, e é por isso que
+// estão aqui: dois dos meus palpites estavam errados.
+describe('os blocos são os do CIn, não os que eu supus', () => {
+  it('tem o bloco de meio-dia, de 50 minutos', () => {
+    const meioDia = BLOCOS.find((b) => b.inicio === '12:00')
+    expect(meioDia).toMatchObject({ fim: '12:50' })
+    expect(ehCurto(meioDia!)).toBe(true)
+  })
+
+  // Eu tinha escrito 19:00–20:50 por estimativa. A grade real diz outra coisa.
+  it('a noite é 17:00–18:50 e 18:50–20:30, encostadas', () => {
+    const noite = BLOCOS.filter((b) => b.turno === 'noite')
+    expect(noite.map((b) => `${b.inicio}-${b.fim}`)).toEqual(['17:00-18:50', '18:50-20:30'])
+    expect(noite[0].fim).toBe(noite[1].inicio)
+  })
+
+  it('os sete blocos cobrem o dia sem se sobrepor, fora a virada da noite', () => {
+    expect(BLOCOS).toHaveLength(7)
+    expect(BLOCOS.map((b) => b.inicio)).toEqual([
+      '08:00', '10:00', '12:00', '13:00', '15:00', '17:00', '18:50',
+    ])
   })
 })

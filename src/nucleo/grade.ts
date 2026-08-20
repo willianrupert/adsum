@@ -29,6 +29,23 @@ export function emMinutos(hhmm: string): number {
  */
 export const FOLGA_MIN = 20
 
+/**
+ * **Consequência dos blocos da noite, e ela é real.**
+ *
+ * No CIn o bloco das 17:00 termina 18:50 e o seguinte começa 18:50 — encostados,
+ * sem intervalo. Com a folga de 20 minutos dos dois lados, das 18:30 às 19:10 os
+ * dois estão "acontecendo agora".
+ *
+ * Para quem dá **uma** aula à noite não muda nada. Para quem dá as duas, com
+ * turmas diferentes e coladas, `escolherTurma` devolve `perguntar` nessa faixa e
+ * `abrirSozinho` recusa abrir — de propósito: entre duas turmas plausíveis, o
+ * app não adivinha qual. O botão continua ali, e a pergunta aparece com as duas
+ * opções.
+ *
+ * Diminuir a folga resolveria este caso e criaria outro pior: o professor que
+ * chega às 12h50 para a aula de 13h não acharia aula nenhuma.
+ */
+
 export interface Aula {
   uidHashProfessor: string
   dia: number

@@ -248,6 +248,18 @@ em badge vira mentira na semana seguinte, como a coluna `login` virou), e
 `gerar_diagrama.py`, `gerar_arquitetura.py`. Versiona-se o desenho, nunca a
 captura, que é a mesma regra que mantém dado real de turma fora daqui.
 
+**Os blocos são medidos, 20/08/2026:** o autor mandou as grades de horário reais
+de vários períodos do CIn, e dois palpites meus estavam errados — faltava o
+bloco de **meio-dia (12:00–12:50, 50 minutos, um crédito só)** e a noite não é
+19:00–20:50 e sim **17:00–18:50 e 18:50–20:30, encostados**. Sete blocos, e o de
+meio-dia é desenhado mais baixo porque quadradinho de tamanho único mente sobre
+a duração. Mesma disciplina dos arcos do NFC: medir em vez de estimar.
+
+A virada da noite tem consequência e está testada: com a folga de 20 minutos, das
+18:30 às 19:10 os dois blocos estão acontecendo, e quem dá as duas aulas coladas
+recebe `perguntar` em vez de abertura automática. Entre duas turmas plausíveis o
+app não adivinha.
+
 **Cronograma feito em 20/08/2026:** a grade existia só como três campos nos
 Ajustes — dia, início, fim — e ninguém preenche três campos cinco vezes. O
 professor não pensa "quarta, 13h, 14h50"; ele olha a semana e aponta onde a

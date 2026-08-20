@@ -819,6 +819,17 @@ button:focus-visible {
   padding-top: 14px;
 }
 
+/* Cinquenta minutos não podem ocupar o mesmo espaço que cento e dez: o
+   quadradinho de tamanho único mentiria sobre a duração, e é justamente o bloco
+   de meio-dia que o professor esquece que existe. */
+.cronograma__bloco--curto {
+  height: 34px;
+}
+
+.cronograma__hora--curto strong {
+  font-size: var(--t-nota);
+}
+
 .cronograma__bloco {
   height: 58px;
   padding: 0;

@@ -163,3 +163,27 @@ describe('a próxima aula', () => {
     expect(proximaAula([QUA], 'outro', em('09:00'))).toBeUndefined()
   })
 })
+
+// Os blocos da noite encostam: um termina 18:50 e o outro começa 18:50. Com a
+// folga de 20 minutos, das 18:30 às 19:10 os dois estão acontecendo — e o app
+// precisa recusar adivinhar em vez de escolher um.
+describe('as duas aulas coladas da noite', () => {
+  const CEDO = { uidHashProfessor: 'prof', dia: 3, inicio: '17:00', fim: '18:50', turma: 'A' }
+  const TARDE = { uidHashProfessor: 'prof', dia: 3, inicio: '18:50', fim: '20:30', turma: 'B' }
+  const em = (hhmm: string) => new Date(`2026-08-19T${hhmm}:00`)
+
+  it('na virada, com duas turmas, pergunta em vez de escolher', () => {
+    const escolha = escolherTurma([CEDO, TARDE], ['A', 'B'], 'prof', em('18:45'))
+    expect(escolha).toEqual({ tipo: 'perguntar', opcoes: ['A', 'B'], motivo: 'varias' })
+  })
+
+  it('e não abre sozinho, porque entre duas plausíveis não se adivinha', () => {
+    expect(abrirSozinho([CEDO, TARDE], 'prof', em('18:45'))).toBeUndefined()
+  })
+
+  // Longe da virada não há ambiguidade nenhuma.
+  it('fora da faixa de sobreposição, abre normalmente', () => {
+    expect(abrirSozinho([CEDO, TARDE], 'prof', em('17:30'))).toBe('A')
+    expect(abrirSozinho([CEDO, TARDE], 'prof', em('19:40'))).toBe('B')
+  })
+})

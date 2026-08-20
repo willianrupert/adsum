@@ -19,6 +19,7 @@ import {
   SIGLA_DO_DIA,
   chaveDoBloco,
   deChave,
+  ehCurto,
   horasPorSemana,
   marcadosDe,
 } from '../nucleo/horarios.ts'
@@ -140,7 +141,15 @@ function Linha({
 }) {
   return (
     <>
-      <div className={trocaDeTurno ? 'cronograma__hora cronograma__hora--turno' : 'cronograma__hora'}>
+      <div
+        className={[
+          'cronograma__hora',
+          trocaDeTurno && 'cronograma__hora--turno',
+          ehCurto(bloco) && 'cronograma__hora--curto',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <strong>{bloco.inicio}</strong>
         <small>{bloco.fim}</small>
       </div>
@@ -152,11 +161,14 @@ function Linha({
             type="button"
             aria-pressed={escolhido}
             aria-label={`${SIGLA_DO_DIA[dia]}, ${bloco.inicio} às ${bloco.fim}`}
-            className={
-              trocaDeTurno
-                ? `cronograma__bloco cronograma__bloco--turno${escolhido ? ' cronograma__bloco--on' : ''}`
-                : `cronograma__bloco${escolhido ? ' cronograma__bloco--on' : ''}`
-            }
+            className={[
+              'cronograma__bloco',
+              trocaDeTurno && 'cronograma__bloco--turno',
+              ehCurto(bloco) && 'cronograma__bloco--curto',
+              escolhido && 'cronograma__bloco--on',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             onClick={() => alternar(dia, bloco.inicio)}
           />
         )
