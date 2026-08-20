@@ -425,6 +425,16 @@ restaurações e adota **só o sal**: o `instalacaoId` tem de continuar diferent
 por navegador, senão duas instalações cunham o mesmo `evento_id`. Não troca por
 cima de vínculos locais — aí a decisão é humana. Ver `docs/01_cofre.md`.
 
+**As teclas de ensaio, corrigidas em 20/08/2026:** o autor perguntou como `P`
+podia representar o crachá do professor antes de o professor ter crachá. Não
+podia: a tecla não fazia nada e não dizia nada. Agora ela explica que o crachá
+dele nasce na cerimônia. E faltava um estado inteiro — **não havia como produzir
+um crachá desconhecido depois da cerimônia**, porque o baralho é finito e,
+cadastrado inteiro, toda carta vira gente conhecida. `N` (`uidInedito`) sorteia
+um crachá que o app nunca viu, e é o que torna a busca do desconhecido
+exercitável à mão. **Ensaio que não alcança todos os estados não valida fluxo
+nenhum.**
+
 **Modo de ensaio em 19/08/2026:** `ambiente/preferencias.ts` guarda o que é
 desta máquina — modo de ensaio, leitor escolhido, conselho dispensado — no
 `localStorage` e **não** no cofre, senão o professor que recebe a pasta herdaria

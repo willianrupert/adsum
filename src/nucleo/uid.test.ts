@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hexParaUid, uidLegivel, uidParaHex } from './uid.ts'
+import { uidInedito, hexParaUid, uidLegivel, uidParaHex } from './uid.ts'
 
 describe('UID', () => {
   it('faz a volta hex → bytes → hex', () => {
@@ -34,5 +34,23 @@ describe('UID', () => {
 
   it('escreve legível para conferência a olho nu', () => {
     expect(uidLegivel(hexParaUid('04a23b91'))).toBe('04 a2 3b 91')
+  })
+})
+
+// Existe para o ensaio conseguir produzir "crachá desconhecido", que depois da
+// cerimônia era impossível de alcançar: o baralho é finito e, cadastrado
+// inteiro, toda carta vira gente conhecida.
+describe('um UID que o baralho não tem', () => {
+  it('nunca devolve carta do baralho', () => {
+    const baralho = Array.from({ length: 40 }, (_, i) =>
+      i.toString(16).padStart(8, '0'),
+    )
+    for (let i = 0; i < 200; i++) {
+      expect(baralho).not.toContain(uidInedito(baralho))
+    }
+  })
+
+  it('tem a forma de um UID de 4 bytes', () => {
+    expect(uidInedito()).toMatch(/^[0-9a-f]{8}$/)
   })
 })

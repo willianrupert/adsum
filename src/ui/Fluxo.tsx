@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { decidirRota } from '../nucleo/rota.ts'
 import { calcularUidHash } from '../nucleo/hash.ts'
-import { hexParaUid } from '../nucleo/uid.ts'
+import { uidInedito, hexParaUid } from '../nucleo/uid.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
 import { abrirSozinho, escolherTurma, proximaAula, DIAS } from '../nucleo/grade.ts'
@@ -77,6 +77,8 @@ export function Fluxo() {
   // clique. Dispensar troca o estado, não a leitura.
   const [conselhoDoNavegador, setConselho] = useState(conselho)
   const [semPasta, setSemPasta] = useState(pastaDispensada)
+  /** Recado das teclas de ensaio. Some sozinho: é resposta a um toque. */
+  const [dicaDeEnsaio, setDicaDeEnsaio] = useState<string>()
   const [convidarApp, setConvidarApp] = useState(podeInstalarApp)
   const [falhaNaPasta, setFalhaNaPasta] = useState<string>()
   // Sem pasta, isto é a única memória de que existe trabalho fora do disco.
@@ -123,6 +125,12 @@ export function Fluxo() {
   // O `beforeinstallprompt` pode chegar antes ou depois desta montagem, e uma
   // vez só. O ouvinte é de módulo (ver `instalacao.ts`); aqui só se reage.
   useEffect(() => aoPoderInstalar(() => setConvidarApp(podeInstalarApp())), [])
+
+  useEffect(() => {
+    if (!dicaDeEnsaio) return
+    const relogio = setTimeout(() => setDicaDeEnsaio(undefined), 6000)
+    return () => clearTimeout(relogio)
+  }, [dicaDeEnsaio])
 
   const recontar = useCallback(async () => {
     const [listaDeTurmas, matriculados, vinculos, aberta, eventos, atual] = await Promise.all([
@@ -372,13 +380,34 @@ export function Fluxo() {
         return
       }
 
+      // Um crachá que o app nunca viu, para exercitar a busca do desconhecido.
+      // Sem esta tecla ela era **intestável depois da cerimônia**: o baralho é
+      // finito e, cadastrado inteiro, toda carta vira gente conhecida.
+      if (evento.key.toLowerCase() === 'n') {
+        evento.preventDefault()
+        try {
+          simulado.simular(uidInedito(simulado.baralho()))
+        } catch {
+          /* leitor parado: o diagnóstico já diz */
+        }
+        return
+      }
+
       if (evento.key.toLowerCase() === 'p') {
         evento.preventDefault()
         void (async () => {
           const professor = (await repositorio.listarVinculos()).find(
             (v) => v.papel === 'professor',
           )
-          if (!professor) return
+          // Antes ele não fazia nada e não dizia nada, e a pergunta certa é a
+          // que o autor fez: como `P` seria o crachá do professor se o professor
+          // ainda não tem crachá? Não seria. Agora a tecla explica isso em vez
+          // de parecer quebrada.
+          if (!professor) {
+            return setDicaDeEnsaio(
+              'Ainda não há crachá de professor. Na cerimônia, arme o nome dele e aperte espaço.',
+            )
+          }
           // O vínculo guarda o hash, não o UID. O baralho é curto: acha-se qual
           // carta gera aquele hash e encosta ela.
           for (const hex of simulado.baralho()) {
@@ -592,6 +621,8 @@ export function Fluxo() {
         </div>
       )}
 
+      {dicaDeEnsaio && <p className="dica-ensaio">{dicaDeEnsaio}</p>}
+
       <div className="canto">
         {(falhaNaPasta || porSalvar > 0 || !lendo || !pasta) && (
           <span
@@ -626,7 +657,7 @@ export function Fluxo() {
 
         {ensaio && ehSimulavel(leitor) && (
           <span className="selo-status" title="Modo de ensaio, com leitor simulado">
-            <kbd>espaço</kbd> crachá · <kbd>P</kbd> professor
+            <kbd>espaço</kbd> crachá · <kbd>N</kbd> desconhecido · <kbd>P</kbd> professor
           </span>
         )}
 

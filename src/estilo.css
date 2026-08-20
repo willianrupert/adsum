@@ -620,6 +620,25 @@ button:focus-visible {
   font-weight: 600;
 }
 
+/* Resposta a uma tecla de ensaio. Fica onde os olhos já estão — perto do canto
+   das teclas — e some sozinha: recado que exige fechar é recado que atrapalha. */
+.dica-ensaio {
+  position: fixed;
+  top: 62px;
+  right: 22px;
+  z-index: 9;
+  max-width: 34ch;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--raio-pequeno);
+  background: var(--alerta-fraca);
+  color: var(--alerta);
+  font-size: var(--t-menor);
+  letter-spacing: -0.016em;
+  text-align: right;
+  animation: aparecer var(--rapido) var(--curva);
+}
+
 /* Convite, não aviso: fundo neutro e nenhum vermelho. Mesma forma do bloco de
    pendências para a tela ter um vocabulário só, e peso menor porque ninguém
    perde nada por ignorá-lo. */

@@ -213,6 +213,45 @@ describe('a grade abre a chamada sozinha', () => {
   })
 })
 
+// O ensaio precisa alcançar **todos** os estados, senão não serve para validar
+// o fluxo. Faltavam dois, e o autor achou os dois: não havia como produzir um
+// crachá desconhecido depois da cerimônia, e `P` não fazia nada nem dizia nada
+// enquanto o professor não tivesse crachá.
+describe('as teclas de ensaio', () => {
+  const comEnsaio = () => window.localStorage.removeItem('adsum.modoDev') ||
+    window.localStorage.setItem('adsum.modoDev', 'sim')
+
+  it('N produz um crachá que o app nunca viu, e abre a busca', async () => {
+    const usuario = userEvent.setup()
+    comEnsaio()
+    await turmaInteiraComCracha()
+    await bancada.repositorio.salvarTurma('IF685 · T01', [
+      pessoa('1', 'Ana Paula'),
+      pessoa('2', 'Breno Oliveira'),
+    ])
+    renderizarCom(bancada, <Fluxo />)
+
+    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await screen.findByRole('button', { name: 'Encerrar a chamada' })
+
+    await usuario.keyboard('n')
+    expect(await screen.findByText('Crachá novo')).toBeInTheDocument()
+  })
+
+  // "Como P representa o crachá do professor se ele nem foi cadastrado ainda?"
+  // Não representa. A tecla passou a dizer isso em vez de parecer quebrada.
+  it('P explica que ainda não há crachá de professor', async () => {
+    const usuario = userEvent.setup()
+    comEnsaio()
+    await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('1', 'Ana Paula')])
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText(/Encoste o crachá de|Cole sua turma|Tudo pronto/)
+
+    await usuario.keyboard('p')
+    expect(await screen.findByText(/Ainda não há crachá de professor/)).toBeInTheDocument()
+  })
+})
+
 // O modo de ensaio vem desligado, e é o que separa o app publicado do banco de
 // testes. A propriedade que mais importa não é a tag sumir: é a tecla morrer.
 // Espaço é a tecla que mais se aperta sem querer, e viva ela marcaria presença

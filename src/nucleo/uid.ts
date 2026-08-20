@@ -33,3 +33,26 @@ export function hexParaUid(hex: string): Uid {
 export function uidLegivel(uid: Uid): string {
   return Array.from(uid, (b) => b.toString(16).padStart(2, '0')).join(' ')
 }
+
+/**
+ * Um UID que o baralho não contém.
+ *
+ * Existe para o ensaio conseguir produzir o estado "crachá desconhecido", que
+ * depois da cerimônia era **impossível de alcançar**: o baralho é finito e, com
+ * a turma toda cadastrada, toda carta vira gente conhecida. Sem isto, a busca do
+ * crachá novo não tinha como ser exercitada à mão.
+ *
+ * Quatro bytes porque é o tamanho mais comum, e o sorteio é do `crypto` para não
+ * repetir dentro da mesma sessão de ensaio.
+ */
+export function uidInedito(baralho: readonly string[] = []): string {
+  const conhecidos = new Set(baralho.map((h) => h.toLowerCase()))
+  for (let tentativa = 0; tentativa < 50; tentativa++) {
+    const bytes = crypto.getRandomValues(new Uint8Array(4))
+    const hex = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('')
+    if (!conhecidos.has(hex)) return hex
+  }
+  // 2³² possibilidades contra um baralho de dezenas: chegar aqui é impossível
+  // na prática, e devolver algo previsível é melhor que estourar num ensaio.
+  return 'deadbeef'
+}
