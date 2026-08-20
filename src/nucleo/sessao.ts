@@ -25,22 +25,39 @@ export const JANELA_MINIMA_MS = 10_000
  *
  * Pedido pelo Prof. Paulo: impedir que alguém encoste dois crachás de uma vez —
  * o seu e o de um colega ausente — passando os dois como se fossem duas
- * pessoas. Empilhados na mão, os dois são lidos dentro do ciclo de varredura do
- * leitor, tipicamente em algumas centenas de milissegundos. Duas pessoas numa
- * fila levam segundos: uma encosta, vê o nome, sai, a outra chega.
+ * pessoas.
  *
- * Um segundo separa as duas situações com folga dos dois lados.
+ * **Este número ainda não foi medido, e é preciso dizer isso.** Começou em um
+ * segundo, por estimativa minha de que "duas pessoas numa fila levam segundos".
+ * O autor, que já viu a fila, corrigiu: no fim da aula todo mundo quer sair, as
+ * pessoas se encavalam no leitor, e um segundo trava justamente o momento de
+ * maior pressa. Estimativa contra observação, a observação ganha.
  *
- * **O que esta regra não faz, e precisa estar dito:** ela não distingue fraude
- * de fila apressada, e não pega o caso mais comum — alguém encostar o crachá de
- * um colega ausente sozinho, com calma. Nenhuma regra de tempo pega isso. O que
- * ela faz é recusar o padrão fisicamente implausível e **dizer em voz alta**,
- * para o professor, que está na sala, olhar. Julgar é dele.
+ * 400 ms é o novo palpite, e a escolha é assimétrica de propósito:
+ *
+ * - **Errar bloqueando** custa um toque a mais. O cartão ainda está na mão, a
+ *   tela diz o motivo, a pessoa encosta de novo. Segundos de vida.
+ * - **Errar deixando passar** grava presença de quem não estava.
+ *
+ * Como o custo de bloquear é pequeno, vale bloquear cedo — mas não tão cedo que
+ * a fila sinta. Dois cartões na mesma mão dependem do ciclo de varredura do
+ * leitor, tipicamente 200 a 500 ms; uma pessoa trocando de lugar com outra
+ * precisa mover o braço.
+ *
+ * **O jeito certo de acertar isto é medir**, e a tela de diagnóstico passou a
+ * mostrar o intervalo entre leituras justamente para isso: com o dongle na mão e
+ * uma fila de verdade, dá para ler os números e trocar o palpite por dado.
+ *
+ * **O que a regra não faz, e precisa estar dito:** ela não distingue fraude de
+ * fila apressada, e não pega o caso mais comum — alguém encostar o crachá de um
+ * colega ausente sozinho, com calma. Nenhuma regra de tempo pega isso. O que ela
+ * faz é recusar o padrão fisicamente implausível e **dizer em voz alta**, para o
+ * professor, que está na sala, olhar. Julgar é dele.
  *
  * Recusar em silêncio seria pior que não ter regra: a presença sumiria sem
  * ninguém saber por quê.
  */
-export const INTERVALO_MINIMO_MS = 1_000
+export const INTERVALO_MINIMO_MS = 400
 
 export interface Sessao {
   turma: string

@@ -360,15 +360,30 @@ export function TelaDiagnostico() {
             <thead>
               <tr>
                 <th>Hora</th>
+                {/* O instrumento que troca palpite por dado. `INTERVALO_MINIMO_MS`
+                    foi escolhido por estimativa — primeiro 1 s, depois 400 ms —
+                    e o jeito certo de acertá-lo é medir: com o dongle na mão e
+                    uma fila de verdade, estes números dizem quanto tempo separa
+                    duas pessoas apressadas de dois cartões na mesma mão. */}
+                <th>Desde a anterior</th>
                 <th>UID</th>
                 <th>uid_hash</th>
                 <th>Quem</th>
               </tr>
             </thead>
             <tbody>
-              {leituras.map((l) => (
+              {leituras.map((l, i) => (
                 <tr key={l.chave}>
                   <td>{hora(l.em)}</td>
+                  <td>
+                    {/* A lista vem da mais nova para a mais velha, então a
+                        anterior no tempo é a de baixo. */}
+                    {leituras[i + 1] ? (
+                      <code>{l.em.getTime() - leituras[i + 1].em.getTime()} ms</code>
+                    ) : (
+                      <code>—</code>
+                    )}
+                  </td>
                   <td>
                     <code>{l.legivel}</code>
                   </td>

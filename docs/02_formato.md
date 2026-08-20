@@ -57,8 +57,8 @@ Cada coluna se justifica sozinha:
 - **`resultado`** — `ok`, `duplicado`, `desconhecido`, `rapido_demais`.
 
   `rapido_demais` entrou em 20/08/2026, com a regra de intervalo mínimo entre
-  crachás diferentes: dois cartões numa mão só são lidos em centenas de
-  milissegundos, e duas pessoas numa fila levam segundos. A recusa fica no log
+  crachás diferentes: dois cartões numa mão dependem do ciclo de varredura do
+  leitor, e duas pessoas apressadas precisam mover o braço. A recusa fica no log
   com o `uid_hash` do crachá recusado — recusa muda é bug, e o professor merece
   poder conferir depois que houve tentativa. Arquivo antigo nunca contém o
   valor, então ler o passado continua funcionando.

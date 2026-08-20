@@ -194,10 +194,13 @@ describe('dois crachás quase juntos', () => {
     expect(decisao.tipo).toBe('rapido_demais')
   })
 
-  it('aceita quando a fila anda no ritmo de gente', () => {
+  // Fim de aula, todo mundo querendo sair: a fila se encavala no leitor. Meio
+  // segundo entre duas pessoas é comum, e travar aí seria o pior atrito
+  // possível — no momento de maior pressa.
+  it('aceita a fila apressada do fim da aula', () => {
     const decisao = decidir(BRENO.uidHash, ctx({
       vinculo: BRENO,
-      ultima: { uidHash: ANA.uidHash, em: em(-1500) },
+      ultima: { uidHash: ANA.uidHash, em: em(-600) },
     }))
     expect(decisao.tipo).toBe('presenca')
   })

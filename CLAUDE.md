@@ -203,12 +203,22 @@ Específicas do app:
   passa a ser visível — dica `SIGAA: docente` na linha, e um aviso enquanto
   ninguém estiver marcado. Padrão silencioso continua proibido; o que existe
   agora é padrão **anunciado**.
-- **Intervalo mínimo entre crachás diferentes** (`INTERVALO_MINIMO_MS`, 1 s).
+- **Intervalo mínimo entre crachás diferentes** (`INTERVALO_MINIMO_MS`, 400 ms —
+  **e este número ainda não foi medido**).
   Pedido pelo Prof. Paulo contra passar dois cartões de uma vez. O que a regra
   **não** faz precisa estar dito junto: ela não distingue fraude de fila
   apressada, e não pega alguém encostando sozinho o crachá de um colega ausente
   — nenhuma regra de tempo pega. Ela recusa o padrão implausível e **avisa em
   voz alta**; quem julga é o professor, que está na sala.
+
+  Começou em 1 s, por estimativa minha de que "duas pessoas numa fila levam
+  segundos". O autor, que já viu a fila, corrigiu: no fim da aula todo mundo
+  quer sair, as pessoas se encavalam no leitor, e um segundo trava justamente o
+  momento de maior pressa. **Estimativa contra observação, a observação ganha.**
+  A escolha é assimétrica de propósito — errar bloqueando custa um toque a mais,
+  com o cartão ainda na mão; errar deixando passar grava presença de quem não
+  estava. O diagnóstico passou a mostrar **o intervalo entre leituras** para que
+  o número saia de medição, e não de palpite.
 - **O formato CSV não muda sem motivo.** Ele veio do firmware antigo e continua
   servindo: `;`, BOM, e `evento_id` como chave de idempotência. Os testes usam
   as linhas literais herdadas — mudar o formato é decisão, não descuido.
