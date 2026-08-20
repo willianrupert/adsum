@@ -79,11 +79,21 @@ export function Vitrine() {
       </p>
 
       <Cena titulo="Escolha onde guardar" quando="primeira vez, antes de tudo">
-        <TelaPasta precisaDePermissao={false} aoEscolher={() => {}} aoLiberar={() => {}} />
+        <TelaPasta
+          precisaDePermissao={false}
+          aoEscolher={() => {}}
+          aoLiberar={() => {}}
+          aoDispensar={() => {}}
+        />
       </Cena>
 
       <Cena titulo="Libere o acesso" quando="voltando numa sessão nova">
-        <TelaPasta precisaDePermissao aoEscolher={() => {}} aoLiberar={() => {}} />
+        <TelaPasta
+          precisaDePermissao
+          aoEscolher={() => {}}
+          aoLiberar={() => {}}
+          aoDispensar={() => {}}
+        />
       </Cena>
 
       <Cena titulo="Instale o Adsum" quando="Safari: a base tem sete dias na aba">

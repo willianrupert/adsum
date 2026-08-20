@@ -10,9 +10,18 @@ const BASE: EstadoDoApp = {
   chamadaAberta: false,
   professorSemCracha: false,
   conselharNavegador: false,
+  pastaDispensada: false,
 }
 
 describe('a rota decorre do estado', () => {
+  // Regressão: sem saída, a tela da pasta prendia o professor — cancelar o
+  // seletor não mudava nada e a rota nunca deixava passar.
+  it('sem pasta, pede a pasta; dispensada, segue a vida', () => {
+    expect(decidirRota({ ...BASE, pasta: 'sem_pasta' })).toBe('pasta')
+    expect(decidirRota({ ...BASE, pasta: 'sem_pasta', pastaDispensada: true })).toBe('pronto')
+    expect(decidirRota({ ...BASE, pasta: 'sem_permissao', pastaDispensada: true })).toBe('pronto')
+  })
+
   it('sem turma, a tela é colar a turma', () => {
     expect(decidirRota({ ...BASE, turmas: 0 })).toBe('turma')
   })

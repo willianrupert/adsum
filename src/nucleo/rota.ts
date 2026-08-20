@@ -41,6 +41,8 @@ export interface EstadoDoApp {
    * conselho. Ver `ambiente/instalacao.ts` — o que dizer muda por navegador.
    */
   conselharNavegador: boolean
+  /** O professor disse "sigo sem pasta". Ver o comentário em `decidirRota`. */
+  pastaDispensada: boolean
   /** Nenhum professor tem crachá ainda. É o único caso que exige cerimônia. */
   professorSemCracha: boolean
 }
@@ -51,7 +53,16 @@ export function decidirRota(estado: EstadoDoApp): Rota {
   // Escolher a pasta vem antes de tudo o que grava. Onde o navegador não
   // oferece seletor, seguir é a única opção — e aí a tela da base é que precisa
   // dizer que os dados não estão seguros, em vez de fingir que estão.
-  if (estado.pasta === 'sem_pasta' || estado.pasta === 'sem_permissao') return 'pasta'
+  // `pastaDispensada` existe porque esta tela não tinha saída: cancelar o
+  // seletor, ou o navegador negar a permissão, prendia o professor nela. Uma
+  // tela sem saída é pior do que a garantia que ela protege — a garantia
+  // depende de o programa ser usado.
+  if (
+    !estado.pastaDispensada &&
+    (estado.pasta === 'sem_pasta' || estado.pasta === 'sem_permissao')
+  ) {
+    return 'pasta'
+  }
 
   // Mesmo lugar da pasta, e pelo mesmo motivo: é a pergunta "onde isto vive",
   // e ela vem antes de existir base. Depois seria tarde — o app instalado tem

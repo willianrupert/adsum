@@ -13,6 +13,7 @@ const CHAVES = {
   leitor: 'adsum.leitor',
   conselhoDispensado: 'adsum.instalacao.dispensada',
   encerradas: 'adsum.encerradas',
+  pastaDispensada: 'adsum.pasta.dispensada',
 } as const
 
 function ler(chave: string): string | undefined {
@@ -93,4 +94,29 @@ export function encerradas(): Record<string, string> {
 
 export function marcarEncerrada(turma: string, quando: string): void {
   gravar(CHAVES.encerradas, JSON.stringify({ ...encerradas(), [turma]: quando }))
+}
+
+/**
+ * "Sigo sem pasta."
+ *
+ * A tela de escolher pasta não tinha saída: cancelar o seletor — ou o navegador
+ * negar a permissão — deixava o professor preso nela, e a única forma de sair
+ * era fechar o app. Uma tela sem saída é pior do que a garantia que ela protege,
+ * porque a garantia depende de o programa ser usado.
+ *
+ * Dispensar não esconde nada: o selo do canto passa a avisar, o fim da aula
+ * cobra o arquivo, e os Ajustes continuam oferecendo escolher a pasta. O que
+ * muda é que a decisão volta a ser do professor.
+ */
+export function pastaDispensada(): boolean {
+  return ler(CHAVES.pastaDispensada) === 'sim'
+}
+
+export function dispensarPasta(): void {
+  gravar(CHAVES.pastaDispensada, 'sim')
+}
+
+/** Escolher uma pasta desfaz a dispensa: ele mudou de ideia, e o app segue. */
+export function esquecerDispensaDaPasta(): void {
+  gravar(CHAVES.pastaDispensada, undefined)
 }

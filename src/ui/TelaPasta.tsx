@@ -9,10 +9,12 @@ export function TelaPasta({
   precisaDePermissao,
   aoEscolher,
   aoLiberar,
+  aoDispensar,
 }: {
   precisaDePermissao: boolean
   aoEscolher: () => void
   aoLiberar: () => void
+  aoDispensar: () => void
 }) {
   return (
     <section className="repouso">
@@ -29,6 +31,17 @@ export function TelaPasta({
       </p>
       <button className="botao--acento pasta__botao" onClick={precisaDePermissao ? aoLiberar : aoEscolher}>
         {precisaDePermissao ? 'Liberar' : 'Escolher pasta'}
+      </button>
+
+      {/* A saída que faltava. Cancelar o seletor ou negar a permissão prendia o
+          professor aqui, e a única forma de sair era fechar o app — uma tela sem
+          saída é pior do que a garantia que ela protege, porque a garantia
+          depende de o programa ser usado.
+
+          Quieta, e não escondida: ele continua sendo avisado no canto e cobrado
+          no fim da aula, e os Ajustes seguem oferecendo a pasta. */}
+      <button className="repouso__link botao--quieto" onClick={aoDispensar}>
+        Seguir sem pasta por enquanto
       </button>
     </section>
   )

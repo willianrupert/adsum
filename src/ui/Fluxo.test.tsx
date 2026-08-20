@@ -242,6 +242,53 @@ describe('sem modo de ensaio', () => {
   })
 })
 
+// Regressão da pior espécie: a tela da pasta não tinha saída. Cancelar o
+// seletor não mudava nada, negar a permissão devolvia à mesma tela, e a rota
+// nunca deixava passar — o professor ficava preso e só saía fechando o app.
+// Tela sem saída é pior do que a garantia que ela protege, porque a garantia
+// depende de o programa ser usado.
+describe('a tela da pasta tem saída', () => {
+  const comPasta = () =>
+    Object.defineProperty(window, 'showDirectoryPicker', {
+      value: () => Promise.resolve(undefined),
+      configurable: true,
+    })
+
+  afterEach(() => {
+    // @ts-expect-error — devolvendo o jsdom ao que ele era
+    delete window.showDirectoryPicker
+  })
+
+  it('dá para seguir sem pasta, e a escolha persiste', async () => {
+    const usuario = userEvent.setup()
+    comPasta()
+    await turmaInteiraComCracha()
+    const { unmount } = renderizarCom(bancada, <Fluxo />)
+
+    await screen.findByText('Escolha onde guardar')
+    await usuario.click(screen.getByRole('button', { name: 'Seguir sem pasta por enquanto' }))
+    expect(await screen.findByText('Tudo pronto')).toBeInTheDocument()
+
+    // Sem gravar a escolha, a tela voltaria a prender no recarregamento.
+    unmount()
+    renderizarCom(bancada, <Fluxo />)
+    expect(await screen.findByText('Tudo pronto')).toBeInTheDocument()
+  })
+
+  // Seguir sem pasta não é seguir sem aviso.
+  it('quem seguiu sem pasta continua sendo avisado', async () => {
+    const usuario = userEvent.setup()
+    comPasta()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+
+    await screen.findByText('Escolha onde guardar')
+    await usuario.click(screen.getByRole('button', { name: 'Seguir sem pasta por enquanto' }))
+
+    expect(await screen.findByText(/Os dados só existem neste navegador/)).toBeInTheDocument()
+  })
+})
+
 // O caminho que perde trabalho de verdade: aula dada sem pasta, professor
 // conclui sem salvar, e a chamada fica só no navegador. Antes disto o app
 // esquecia junto com ele — nada na tela, nada na base, e a única memória de que

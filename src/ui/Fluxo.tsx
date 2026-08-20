@@ -18,6 +18,9 @@ import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
 import { conselho, riscoDeApagar } from '../ambiente/instalacao.ts'
 import {
   dispensarConselho,
+  dispensarPasta,
+  esquecerDispensaDaPasta,
+  pastaDispensada,
   encerradas,
   marcarEncerrada,
   modoDev,
@@ -66,6 +69,7 @@ export function Fluxo() {
   // Decidido uma vez: reavaliar a cada render faria a tela sumir no meio de um
   // clique. Dispensar troca o estado, não a leitura.
   const [conselhoDoNavegador, setConselho] = useState(conselho)
+  const [semPasta, setSemPasta] = useState(pastaDispensada)
   const [falhaNaPasta, setFalhaNaPasta] = useState<string>()
   // Sem pasta, isto é a única memória de que existe trabalho fora do disco.
   const [pendencias, setPendencias] = useState<Pendencia[]>([])
@@ -386,6 +390,7 @@ export function Fluxo() {
     chamadaAberta: !!sessao,
     professorSemCracha,
     conselharNavegador: !!conselhoDoNavegador,
+    pastaDispensada: semPasta,
   })
 
   /**
@@ -428,6 +433,10 @@ export function Fluxo() {
     if (!handle) return
     if ((await permissao(handle, true)) !== 'granted') return setEstadoDaPasta('sem_permissao')
     await repositorio.guardarPasta(handle)
+    // Ele mudou de ideia: a dispensa some junto, senão o app seguiria achando
+    // que ele não quer pasta enquanto grava numa.
+    esquecerDispensaDaPasta()
+    setSemPasta(false)
     setPasta(handle)
     setEstadoDaPasta('ligada')
   }
@@ -440,6 +449,10 @@ export function Fluxo() {
           precisaDePermissao={estadoDaPasta === 'sem_permissao'}
           aoEscolher={() => void ligarPasta(true)}
           aoLiberar={() => void ligarPasta(false)}
+          aoDispensar={() => {
+            dispensarPasta()
+            setSemPasta(true)
+          }}
         />
       )}
       {rota === 'navegador' && conselhoDoNavegador && (
