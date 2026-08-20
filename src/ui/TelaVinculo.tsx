@@ -439,9 +439,17 @@ export function TelaVinculo({
           <ComoCopiar />
         </section>
       ) : (
+        // As duas situações usavam a mesma tela e o mesmo título, e só o botão
+        // do rodapé as distinguia. "Fica claro quando é cadastro inicial?" Não
+        // ficava. O título diz agora, e a legenda conta o progresso — que só é
+        // notícia no primeiro dia, quando falta a turma toda.
         <Painel
-          titulo={turma}
-          legenda={`${feitos} de ${fila.length} com crachá`}
+          titulo={aoSair ? 'Cadastrar mais um crachá' : `Primeiro dia · ${turma}`}
+          legenda={
+            aoSair
+              ? `${turma} · chame o nome e encoste o crachá novo`
+              : `${feitos} de ${fila.length} com crachá`
+          }
           acoes={
             // Some enquanto a barra está aberta: ali ele não tinha o que fazer,
             // e clicar num botão que não responde é pior que não ter botão.

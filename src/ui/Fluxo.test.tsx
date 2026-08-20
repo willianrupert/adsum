@@ -485,6 +485,25 @@ describe('os Ajustes se recolhem', () => {
 // com uma pasta ligada em jsdom — e um teste que finge a pasta não provaria o
 // que interessa. `esquecerPasta` está coberto no adaptador.
 
+// Existia só no modo de ensaio, e o professor real também precisa: fim de
+// semestre, máquina que muda de dono, refazer o cadastro sem resíduo.
+describe('recomeçar do zero', () => {
+  it('apaga a base e diz que os arquivos da pasta ficam', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Tudo pronto')
+
+    await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
+    await usuario.click(await screen.findByRole('button', { name: /Recomeçar do zero/ }))
+
+    // O texto é o que impede o professor de apagar achando que apagou os dois,
+    // ou de não apagar achando que apagaria.
+    expect(screen.getByText(/Não apaga os arquivos da pasta/)).toBeInTheDocument()
+    expect(screen.getByText(/preferências/)).toBeInTheDocument()
+  })
+})
+
 // O ensaio precisa alcançar **todos** os estados, senão não serve para validar
 // o fluxo. Faltavam dois, e o autor achou os dois: não havia como produzir um
 // crachá desconhecido depois da cerimônia, e `P` não fazia nada nem dizia nada

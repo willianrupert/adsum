@@ -10,6 +10,7 @@ import { decidirRota } from '../nucleo/rota.ts'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import { uidInedito, hexParaUid } from '../nucleo/uid.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
+import { podeApagar } from '../portas/Repositorio.ts'
 import { eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
 import { abrirSozinho, escolherTurma, proximaAula, DIAS , type Aula } from '../nucleo/grade.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
@@ -29,6 +30,7 @@ import {
   horariosAdiados,
   dispensarPasta,
   esquecerDispensaDaPasta,
+  esquecerPreferencias,
   pastaDispensada,
   encerradas,
   esquecerEncerramento,
@@ -747,6 +749,19 @@ export function Fluxo() {
           <TelaRepositorio
             pasta={pasta}
             aoTrocarPasta={() => void ligarPasta(true)}
+            aoResetar={
+              podeApagar(repositorio)
+                ? async () => {
+                    await repositorio.apagarTudo()
+                    await repositorio.esquecerPasta()
+                    esquecerPreferencias()
+                    // Recarrega em vez de reconstruir o estado à mão: são doze
+                    // pedaços de estado nesta tela, e "meio zerado" é o defeito
+                    // que este botão existe para não produzir.
+                    location.reload()
+                  }
+                : undefined
+            }
             aoDesconectarPasta={async () => {
               await repositorio.esquecerPasta()
               setPasta(undefined)

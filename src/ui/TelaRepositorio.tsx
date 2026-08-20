@@ -166,6 +166,7 @@ export function TelaRepositorio({
   aoTrocarPasta,
   aoRelerPasta,
   aoDesconectarPasta,
+  aoResetar,
 }: {
   pasta?: FileSystemDirectoryHandle
   aoTrocarPasta?: () => void
@@ -173,6 +174,8 @@ export function TelaRepositorio({
   aoRelerPasta?: () => Promise<{ arquivos: string[]; problemas: string[] }>
   /** Solta o vínculo com a pasta. Não apaga arquivo nem base. */
   aoDesconectarPasta?: () => Promise<void>
+  /** Apaga a base deste navegador. Os arquivos da pasta ficam. */
+  aoResetar?: () => Promise<void>
 } = {}) {
   const { repositorio, config, recarregarConfig } = useAdsum()
 
@@ -570,6 +573,53 @@ export function TelaRepositorio({
         </Linha>
 
       </Painel>
+
+      {/* Recomeçar do zero.
+          Existia só no modo de ensaio, e o professor real também precisa: fim
+          de semestre, máquina que muda de dono, ou simplesmente querer refazer
+          o cadastro sem resíduo.
+
+          O texto importa mais que o botão. "Apagar tudo" não diz **o quê**, e
+          aqui há duas coisas com destinos diferentes: a base deste navegador
+          some, os arquivos da pasta ficam onde estão. Quem não souber disso
+          apaga achando que apagou os dois, ou não apaga achando que apagaria. */}
+      {aoResetar && (
+        <Painel
+          titulo="Recomeçar do zero"
+          recolhivel
+          legenda="Devolve este navegador ao estado de quem nunca abriu o Adsum."
+        >
+          <p className="ferramentas__nota">
+            Apaga <strong>deste navegador</strong>: turmas, crachás vinculados, grade
+            horária, registros de presença e as preferências (leitor escolhido, avisos
+            dispensados). O segredo desta instalação some junto, e com ele os crachás
+            deixam de ser reconhecíveis.
+          </p>
+          <p className="ferramentas__nota ferramentas__nota--forte">
+            Não apaga os arquivos da pasta. Eles continuam onde estão, e reescolher a
+            pasta depois traz tudo de volta — inclusive o segredo. Para apagar de
+            verdade, apague a pasta você mesmo, no Finder.
+          </p>
+          <div className="ferramentas">
+            <button
+              className="botao--grave"
+              onClick={tentar('Recomeçar', async () => {
+                if (
+                  !confirm(
+                    'Apagar a base deste navegador? Os arquivos da pasta continuam onde estão.',
+                  )
+                ) {
+                  throw new Error('cancelado')
+                }
+                await aoResetar()
+                return 'pronto. O Adsum vai recomeçar.'
+              })}
+            >
+              Apagar a base deste navegador
+            </button>
+          </div>
+        </Painel>
+      )}
 
       <Painel
         titulo="Passar os crachás a outro professor"

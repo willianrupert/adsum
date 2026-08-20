@@ -156,3 +156,15 @@ export function esquecerEncerramento(turma: string): void {
   delete resto[turma]
   gravar(CHAVES.encerradas, JSON.stringify(resto))
 }
+
+/**
+ * Apaga as preferências desta máquina.
+ *
+ * Vai junto com o reset de fábrica: sem isso o app voltaria "do zero" ainda
+ * lembrando que você dispensou o convite de instalar, adiou o horário de uma
+ * turma que não existe mais e escolheu um leitor. Meio zero é pior que nenhum,
+ * porque o comportamento estranho não tem explicação na tela.
+ */
+export function esquecerPreferencias(): void {
+  for (const chave of Object.values(CHAVES)) gravar(chave, undefined)
+}

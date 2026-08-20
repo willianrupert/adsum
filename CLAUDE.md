@@ -346,6 +346,20 @@ na tela, vira comparação. `__CARIMBO__` vem do `vite.config.ts`, e o
 `vitest.config.ts` precisa do mesmo `define` — são configs separadas, e sem isso
 qualquer tela que o mostre estoura no teste por um motivo que não é do app.
 
+**O primeiro dia e "mais um crachá" eram a mesma tela.** Só o botão do rodapé
+os distinguia, e a pergunta do autor — "fica claro quando é cadastro inicial?" —
+tinha a resposta óbvia. O título diz agora: `Primeiro dia · IF685 · T01` contra
+`Cadastrar mais um crachá`, e a legenda muda junto, porque contar quantos faltam
+só é notícia no primeiro dia.
+
+**Recomeçar do zero saiu do modo de ensaio.** Existia só lá, e o professor
+também precisa: fim de semestre, máquina que muda de dono, refazer o cadastro sem
+resíduo. **O texto importa mais que o botão** — "apagar tudo" não diz o quê, e
+aqui há duas coisas com destinos diferentes: a base deste navegador some, os
+arquivos da pasta ficam. Sem dizer isso, o professor apaga achando que apagou os
+dois, ou não apaga achando que apagaria. As preferências vão junto: meio zero é
+pior que nenhum, porque o comportamento estranho não tem explicação na tela.
+
 **A tag do ensaio passou a mudar com a rota.** `N` produz crachá desconhecido em
 qualquer tela, mas só na chamada isso abre a lupa — na cerimônia, crachá
 desconhecido é o cadastro de quem está sendo chamado. A tag dizia sempre a mesma
