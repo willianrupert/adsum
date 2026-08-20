@@ -569,13 +569,23 @@ button:focus-visible {
 /* O caminho do menu, no lugar onde as outras telas põem o botão. Não é botão —
    o Safari não expõe nada para clicar — então o peso vem do tamanho e do
    espaço, e não de uma pílula azul que convidaria ao clique inútil. */
+/* A dobradiça entre a recomendação e o plano B. Espaço grande em cima porque é
+   outra ideia; letra pequena porque é pergunta, não título. */
+.navegador__ou {
+  margin: 44px 0 0;
+  font-size: var(--t-corpo);
+  font-weight: 600;
+  color: var(--tinta);
+  letter-spacing: -0.018em;
+}
+
 .instalar__caminho {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: center;
   gap: 12px;
-  margin: 30px 0 6px;
+  margin: 16px 0 6px;
   font-size: var(--t-secao);
   font-weight: 500;
   letter-spacing: -0.015em;
@@ -608,6 +618,44 @@ button:focus-visible {
 .instalar__pergunta {
   color: var(--tinta);
   font-weight: 600;
+}
+
+/* Convite, não aviso: fundo neutro e nenhum vermelho. Mesma forma do bloco de
+   pendências para a tela ter um vocabulário só, e peso menor porque ninguém
+   perde nada por ignorá-lo. */
+.convite {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  max-width: 560px;
+  margin: 40px 0 0;
+  padding: 16px 20px;
+  border-radius: var(--raio);
+  background: var(--fundo-alt);
+  text-align: left;
+}
+
+.convite__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--t-corpo);
+  letter-spacing: -0.018em;
+}
+
+.convite__texto small {
+  font-size: var(--t-menor);
+  color: var(--tinta-fraca);
+}
+
+.convite__acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 /* Aula que só existe neste navegador. Fundo sólido e não translúcido: isto

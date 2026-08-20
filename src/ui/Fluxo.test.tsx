@@ -290,6 +290,42 @@ describe('a tela da pasta tem saída', () => {
   })
 })
 
+// O `beforeinstallprompt` chega uma vez só, e pode chegar antes de o React
+// montar — por isso o ouvinte é de módulo. O teste dispara o evento como o
+// Chrome dispararia.
+describe('o convite de instalar no Chrome', () => {
+  const oferecer = () => {
+    // Tipado aqui e não pelo global: `apis.d.ts` não entra no projeto de teste,
+    // e o teste só precisa da forma que o app consome.
+    const evento = Object.assign(new Event('beforeinstallprompt'), {
+      prompt: () => Promise.resolve(),
+      userChoice: Promise.resolve({ outcome: 'dismissed' as const }),
+    })
+    window.dispatchEvent(evento)
+  }
+
+  it('aparece no repouso, e some para sempre ao ser recusado', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    const { unmount } = renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Tudo pronto')
+
+    await act(async () => oferecer())
+    expect(await screen.findByText('Instalar o Adsum')).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Agora não' }))
+    await waitFor(() =>
+      expect(screen.queryByText('Instalar o Adsum')).not.toBeInTheDocument(),
+    )
+
+    // Insistir a cada abertura é como um convite vira incômodo.
+    unmount()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Tudo pronto')
+    expect(screen.queryByText('Instalar o Adsum')).not.toBeInTheDocument()
+  })
+})
+
 // O caminho que perde trabalho de verdade: aula dada sem pasta, professor
 // conclui sem salvar, e a chamada fica só no navegador. Antes disto o app
 // esquecia junto com ele — nada na tela, nada na base, e a única memória de que
@@ -378,11 +414,14 @@ describe('o conselho de navegador vem antes da turma', () => {
   const SAFARI =
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15'
 
-  it('ensina o caminho do menu em vez de pedir a turma', async () => {
+  // A recomendação é o título, e o caminho do menu é o plano B logo abaixo:
+  // a diferença entre os dois arranjos não é de conforto.
+  it('recomenda o Chrome primeiro e ensina o menu depois', async () => {
     fingirSer(SAFARI)
     renderizarCom(bancada, <Fluxo />)
 
-    expect(await screen.findByText('Instale o Adsum')).toBeInTheDocument()
+    expect(await screen.findByText('Use o Chrome ou o Edge')).toBeInTheDocument()
+    expect(screen.getByText('Vai ficar no Safari?')).toBeInTheDocument()
     expect(screen.getByText('Adicionar ao Dock')).toBeInTheDocument()
     expect(screen.queryByText('Cole sua turma')).not.toBeInTheDocument()
   })
@@ -393,8 +432,10 @@ describe('o conselho de navegador vem antes da turma', () => {
     fingirSer(SAFARI)
     renderizarCom(bancada, <Fluxo />)
 
-    expect(await screen.findByText(/Tem Chrome ou Edge\?/)).toBeInTheDocument()
-    expect(screen.getByText(/sem depender de você lembrar de salvar/)).toBeInTheDocument()
+    expect(await screen.findByText(/na hora/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/nada depende de você lembrar de salvar no fim da aula/),
+    ).toBeInTheDocument()
   })
 
   // O Firefox não tem pasta, não apaga sozinho e não tem o que instalar: o
@@ -407,7 +448,8 @@ describe('o conselho de navegador vem antes da turma', () => {
     renderizarCom(bancada, <Fluxo />)
 
     expect(await screen.findByText('Use o Chrome ou o Edge')).toBeInTheDocument()
-    expect(screen.queryByText('Instale o Adsum')).not.toBeInTheDocument()
+    // Sem plano B: no Firefox instalar não muda nada, e oferecer seria mentira.
+    expect(screen.queryByText('Vai ficar no Safari?')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Continuar assim' })).toBeInTheDocument()
   })
 
@@ -417,7 +459,7 @@ describe('o conselho de navegador vem antes da turma', () => {
     const usuario = userEvent.setup()
     fingirSer(SAFARI)
     const { unmount } = renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Instale o Adsum')
+    await screen.findByText('Use o Chrome ou o Edge')
 
     await usuario.click(screen.getByRole('button', { name: 'Continuar sem instalar' }))
     expect(await screen.findByText('Cole sua turma')).toBeInTheDocument()

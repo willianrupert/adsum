@@ -53,3 +53,21 @@ declare global {
     onreadingerror: ((evento: Event) => void) | null
   }
 }
+
+// Dentro de `declare global` porque este arquivo é módulo (tem `export {}`):
+// interface solta aqui fica visível só nele, e o resto do app não a enxerga.
+declare global {
+  /**
+   * `beforeinstallprompt` é do Chromium e não está na lib padrão do TypeScript.
+   * O navegador dispara, o app guarda, e `prompt()` só pode ser chamado a partir
+   * de um gesto do usuário — daí o evento ficar guardado esperando o clique.
+   */
+  interface BeforeInstallPromptEvent extends Event {
+    prompt: () => Promise<void>
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+  }
+
+  interface WindowEventMap {
+    beforeinstallprompt: BeforeInstallPromptEvent
+  }
+}

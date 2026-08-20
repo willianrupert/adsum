@@ -14,6 +14,7 @@ const CHAVES = {
   conselhoDispensado: 'adsum.instalacao.dispensada',
   encerradas: 'adsum.encerradas',
   pastaDispensada: 'adsum.pasta.dispensada',
+  conviteDeApp: 'adsum.app.dispensado',
 } as const
 
 function ler(chave: string): string | undefined {
@@ -119,4 +120,12 @@ export function dispensarPasta(): void {
 /** Escolher uma pasta desfaz a dispensa: ele mudou de ideia, e o app segue. */
 export function esquecerDispensaDaPasta(): void {
   gravar(CHAVES.pastaDispensada, undefined)
+}
+
+export function conviteDeAppDispensado(): boolean {
+  return ler(CHAVES.conviteDeApp) === 'sim'
+}
+
+export function dispensarConviteDeApp(): void {
+  gravar(CHAVES.conviteDeApp, 'sim')
 }

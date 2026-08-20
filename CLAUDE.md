@@ -429,10 +429,18 @@ não contagem, porque contagem mentiria para menos se o log recebesse eventos
 antigos. Cobrado em três lugares: selo do canto, bloco no repouso e
 `beforeunload` (só quando há o que perder). Com pasta é zero por construção.
 
+**Convite de instalar no Chrome, 20/08/2026:** o `beforeinstallprompt` chega
+**uma vez só** e pode chegar antes de o React montar, então o ouvinte é de
+módulo em `ambiente/instalacao.ts`, não de componente. Ali não é sobre perder
+dados — com pasta, nada se perde — é sobre janela própria e abrir num clique.
+Por isso é convite e não aviso, e recusar dispensa para sempre: insistir a cada
+abertura é como um convite vira incômodo.
+
 **Safari feito:** `ambiente/instalacao.ts` separa quem tem prazo (WebKit) de
 quem só não tem pasta (Firefox), e `ui/TelaNavegador.tsx` tem duas caras na rota
-`'navegador'`: no WebKit ensina o caminho do menu (não há botão,
-`beforeinstallprompt` é do Chromium) e recomenda Chrome/Edge **depois**; no
+`'navegador'`: no WebKit **recomenda Chrome/Edge no título** e ensina o caminho do menu
+logo abaixo, como plano B (não há botão de instalar, `beforeinstallprompt` é do
+Chromium); no
 Firefox trocar de navegador **é** a ação, porque lá não há conserto no lugar.
 Onde há seletor de pasta não há tela nenhuma — o app já está no melhor arranjo.
 `TelaResumo` inverte a hierarquia sem pasta: salvar é a ação de acento, concluir

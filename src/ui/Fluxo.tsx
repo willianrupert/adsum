@@ -15,7 +15,14 @@ import { abrirSozinho, escolherTurma, proximaAula, DIAS } from '../nucleo/grade.
 import type { Matriculado } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
-import { conselho, riscoDeApagar } from '../ambiente/instalacao.ts'
+import {
+  aoPoderInstalar,
+  conselho,
+  dispensarConvite,
+  instalarApp,
+  podeInstalarApp,
+  riscoDeApagar,
+} from '../ambiente/instalacao.ts'
 import {
   dispensarConselho,
   dispensarPasta,
@@ -70,6 +77,7 @@ export function Fluxo() {
   // clique. Dispensar troca o estado, não a leitura.
   const [conselhoDoNavegador, setConselho] = useState(conselho)
   const [semPasta, setSemPasta] = useState(pastaDispensada)
+  const [convidarApp, setConvidarApp] = useState(podeInstalarApp)
   const [falhaNaPasta, setFalhaNaPasta] = useState<string>()
   // Sem pasta, isto é a única memória de que existe trabalho fora do disco.
   const [pendencias, setPendencias] = useState<Pendencia[]>([])
@@ -111,6 +119,10 @@ export function Fluxo() {
     window.addEventListener('beforeunload', avisar)
     return () => window.removeEventListener('beforeunload', avisar)
   }, [pasta, pendencias.length])
+
+  // O `beforeinstallprompt` pode chegar antes ou depois desta montagem, e uma
+  // vez só. O ouvinte é de módulo (ver `instalacao.ts`); aqui só se reage.
+  useEffect(() => aoPoderInstalar(() => setConvidarApp(podeInstalarApp())), [])
 
   const recontar = useCallback(async () => {
     const [listaDeTurmas, matriculados, vinculos, aberta, eventos, atual] = await Promise.all([
@@ -511,6 +523,12 @@ export function Fluxo() {
           turmas={turmas}
           pendencias={pasta ? [] : pendencias}
           proxima={proxima}
+          convidarApp={convidarApp}
+          aoInstalarApp={() => void instalarApp().finally(() => setConvidarApp(false))}
+          aoDispensarApp={() => {
+            dispensarConvite()
+            setConvidarApp(false)
+          }}
           aoIniciar={() => void iniciarChamada()}
           aoSalvar={(turma) => void salvarCopia(turma)}
           aoAbrirCerimonia={() => setCadastrando(true)}
@@ -621,6 +639,9 @@ export function Repouso({
   turmas,
   pendencias,
   proxima,
+  convidarApp,
+  aoInstalarApp,
+  aoDispensarApp,
   aoIniciar,
   aoSalvar,
   aoAbrirCerimonia,
@@ -628,6 +649,9 @@ export function Repouso({
   turmas: number
   pendencias: Pendencia[]
   proxima?: { turma: string; quando: Date }
+  convidarApp?: boolean
+  aoInstalarApp?: () => void
+  aoDispensarApp?: () => void
   aoIniciar: () => void
   aoSalvar: (turma: string) => void
   aoAbrirCerimonia: () => void
@@ -712,6 +736,27 @@ export function Repouso({
       <button className="repouso__link botao--quieto" onClick={aoAbrirCerimonia}>
         Cadastrar mais um crachá
       </button>
+
+      {/* No Chrome isto não é sobre perder dados — com pasta, nada se perde. É
+          sobre o Adsum ter janela própria e abrir num clique, em vez de virar
+          mais uma aba entre vinte numa manhã de aula. Por isso é convite e não
+          aviso, e some para sempre ao ser recusado. */}
+      {convidarApp && (
+        <div className="convite">
+          <span className="convite__texto">
+            <strong>Instalar o Adsum</strong>
+            <small>Janela própria, e abre num clique — sem procurar a aba</small>
+          </span>
+          <span className="convite__acoes">
+            <button className="botao--quieto" onClick={aoDispensarApp}>
+              Agora não
+            </button>
+            <button className="botao--acento" onClick={aoInstalarApp}>
+              Instalar
+            </button>
+          </span>
+        </div>
+      )}
     </section>
   )
 }

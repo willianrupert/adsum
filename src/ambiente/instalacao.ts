@@ -21,7 +21,7 @@
 // Onde há seletor de pasta, nada disso é urgente — lá os arquivos são arquivos.
 
 import { pastaDisponivel } from './pasta.ts'
-import { conselhoDispensado } from './preferencias.ts'
+import { conselhoDispensado, conviteDeAppDispensado, dispensarConviteDeApp } from './preferencias.ts'
 
 export type Plataforma = 'mac' | 'ios' | 'outra'
 
@@ -105,4 +105,59 @@ export function conselho(temPasta: boolean = pastaDisponivel()): Conselho | unde
   if (temPasta || conselhoDispensado()) return undefined
   const caminho = riscoDeApagar() ? comoInstalar() : undefined
   return caminho ? { tipo: 'instalar', ...caminho } : { tipo: 'trocar' }
+}
+
+/**
+ * O convite de instalar no Chrome.
+ *
+ * Aqui não é sobre perder dados — com pasta, nada se perde. É sobre o Adsum ter
+ * janela própria e abrir num clique, em vez de virar mais uma aba entre vinte
+ * numa manhã de aula.
+ *
+ * O `beforeinstallprompt` chega cedo e **uma vez só**: o navegador dispara, e se
+ * ninguém guardar o evento a chance passou. Por isso o ouvinte é de módulo, e
+ * não de componente — quando o React monta, o evento já pode ter acontecido.
+ *
+ * `prompt()` exige gesto do usuário, então o evento fica guardado esperando o
+ * clique. É também por isso que o app não pode instalar sozinho, e nem deveria.
+ */
+let guardado: BeforeInstallPromptEvent | undefined
+const ouvintes = new Set<() => void>()
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (evento) => {
+    // Segurar o padrão é o que troca a barra do navegador por um convite nosso,
+    // na hora que a tela escolher.
+    evento.preventDefault()
+    guardado = evento
+    for (const avisar of ouvintes) avisar()
+  })
+}
+
+/** Avisa quando o navegador oferece instalar. Devolve o cancelamento. */
+export function aoPoderInstalar(escuta: () => void): () => void {
+  ouvintes.add(escuta)
+  return () => ouvintes.delete(escuta)
+}
+
+export function podeInstalarApp(): boolean {
+  return guardado !== undefined && !instalado() && !conviteDeAppDispensado()
+}
+
+/** Devolve se ele aceitou. O evento vale uma vez — depois some. */
+export async function instalarApp(): Promise<boolean> {
+  const evento = guardado
+  if (!evento) return false
+  guardado = undefined
+  await evento.prompt()
+  const { outcome } = await evento.userChoice
+  // Recusar também dispensa: insistir a cada abertura é como um convite vira
+  // incômodo, e o Adsum funciona igual sem instalar.
+  dispensarConviteDeApp()
+  return outcome === 'accepted'
+}
+
+export function dispensarConvite(): void {
+  dispensarConviteDeApp()
+  for (const avisar of ouvintes) avisar()
 }

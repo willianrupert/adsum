@@ -171,6 +171,19 @@ export function Vitrine() {
         />
       </Cena>
 
+      <Cena titulo="Convite de instalar" quando="Chrome, uma vez só">
+        <Repouso
+          turmas={1}
+          pendencias={[]}
+          convidarApp
+          aoInstalarApp={() => {}}
+          aoDispensarApp={() => {}}
+          aoIniciar={() => {}}
+          aoSalvar={() => {}}
+          aoAbrirCerimonia={() => {}}
+        />
+      </Cena>
+
       <Cena titulo="Repouso com grade" quando="a aula abre sozinha; a tela só espera">
         <Repouso
           turmas={2}
