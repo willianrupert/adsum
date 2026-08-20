@@ -218,8 +218,7 @@ describe('a grade abre a chamada sozinha', () => {
 // crachá desconhecido depois da cerimônia, e `P` não fazia nada nem dizia nada
 // enquanto o professor não tivesse crachá.
 describe('as teclas de ensaio', () => {
-  const comEnsaio = () => window.localStorage.removeItem('adsum.modoDev') ||
-    window.localStorage.setItem('adsum.modoDev', 'sim')
+  const comEnsaio = () => window.localStorage.setItem('adsum.modoDev', 'sim')
 
   it('N produz um crachá que o app nunca viu, e abre a busca', async () => {
     const usuario = userEvent.setup()
