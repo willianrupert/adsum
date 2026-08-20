@@ -47,10 +47,16 @@ async function comCrachaDaAna() {
   })
 }
 
-function montar(pendentes: Matriculado[], alunos = 2) {
+function montar(pendentes: Matriculado[], alunos = 2, daTurma = [ANA, BRENO]) {
   return renderizarCom(
     bancada,
-    <TelaAula sessao={SESSAO} pendentes={pendentes} alunosDaTurma={alunos} aoMudarBase={() => {}} />,
+    <TelaAula
+      sessao={SESSAO}
+      pendentes={pendentes}
+      daTurma={daTurma}
+      alunosDaTurma={alunos}
+      aoMudarBase={() => {}}
+    />,
   )
 }
 
@@ -193,6 +199,7 @@ describe('o fim da aula', () => {
       <TelaAula
         sessao={SESSAO}
         pendentes={[BRENO]}
+        daTurma={[ANA, BRENO]}
         alunosDaTurma={2}
         aoMudarBase={() => {}}
         aoEncerrar={aoEncerrar}
@@ -256,5 +263,34 @@ describe('dois crachás de uma vez', () => {
     expect(recusa?.uidHash).toBe(
       await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_NOVO)),
     )
+  })
+})
+
+// O caso do dia a dia que não tinha resposta: quem perdeu o crachá e trouxe
+// outro **já tem** vínculo, logo não está na fila de pendentes — e a busca só
+// procurava entre eles. O professor via uma linha vermelha e nada a fazer ali.
+describe('crachá desconhecido depois que a turma toda já cadastrou', () => {
+  it('abre a busca mesmo sem ninguém pendente', async () => {
+    await comCrachaDaAna()
+    montar([])
+
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+
+    expect(await screen.findByText('Crachá novo')).toBeInTheDocument()
+    expect(screen.getByText('De quem é?')).toBeInTheDocument()
+  })
+
+  it('acha quem já tem crachá — é a segunda via', async () => {
+    const usuario = userEvent.setup()
+    await comCrachaDaAna()
+    montar([])
+
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+    await screen.findByText('Crachá novo')
+    await usuario.click(await screen.findByText(ANA.nomeCompleto))
+
+    // Dois crachás para a mesma pessoa, que é o que o app sempre aceitou.
+    const vinculos = await bancada.repositorio.listarVinculos()
+    expect(vinculos.filter((v) => v.matricula === ANA.matricula)).toHaveLength(2)
   })
 })

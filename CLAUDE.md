@@ -217,6 +217,11 @@ Específicas do app:
   como se descobre tarde que a tela e o adaptador discordavam, e os defeitos
   achados até aqui (botão morto, `<td>` com `display:flex`, corrida de
   presença) eram todos desse tipo.
+- **Crachá desconhecido sempre abre a busca**, sobre a turma inteira e não só
+  a fila de pendentes. Quem perdeu o crachá e trouxe outro **já tem** vínculo,
+  logo não está na fila — e antes disto não havia como encontrá-lo no dia em
+  que aparecia com o cartão novo. Pendentes vêm primeiro, que é o caso provável.
+  Desistir continua sendo um clique fora, e aí fica como não cadastrado.
 - **Leitura de CSV nunca descarta linha em silêncio.** Toda função devolve
   `{ itens, problemas }`, e a tela mostra linha, conteúdo e motivo. É a mesma
   regra da recusa muda: 46 alunos onde deveria haver 48, sem explicação, é bug.

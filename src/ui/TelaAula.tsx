@@ -10,7 +10,7 @@
 // saber quantos deveriam vir, que é justamente o que ninguém deve precisar
 // declarar.
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import { decidir, eventoDe, proximoEventoId, type Decisao, type Sessao } from '../nucleo/sessao.ts'
 import type { Evento, Matriculado } from '../nucleo/tipos.ts'
@@ -36,6 +36,7 @@ function hhmm(d: Date) {
 export function TelaAula({
   sessao,
   pendentes,
+  daTurma,
   alunosDaTurma,
   aoMudarBase,
   aoRegistrar,
@@ -44,6 +45,14 @@ export function TelaAula({
   sessao: Sessao
   /** Quem está na turma e ainda não tem crachá. Vira a fila de cadastro. */
   pendentes: Matriculado[]
+  /**
+   * A turma inteira, para a busca do crachá desconhecido.
+   *
+   * Não são só os pendentes, e a diferença importa: quem perdeu o crachá e
+   * trouxe outro **já tem** vínculo, logo não está na fila — e antes disto não
+   * havia como encontrá-lo, nem no dia em que ele aparecia com o cartão novo.
+   */
+  daTurma: Matriculado[]
   /** Quantos alunos a turma tem. Diz se hoje é o primeiro dia. */
   alunosDaTurma: number
   aoMudarBase: () => void
@@ -98,6 +107,19 @@ export function TelaAula({
    * fazia a faixa desaparecer no primeiro aluno cadastrado — que é exatamente o
    * momento em que ela mais serve.
    */
+  /**
+   * Pendentes primeiro, o resto depois.
+   *
+   * A pessoa mais provável num crachá desconhecido é quem ainda não cadastrou,
+   * e ela deve estar a zero tecla de distância. Quem já tem crachá continua
+   * alcançável logo abaixo — é a segunda via, e o app aceita mais de um crachá
+   * por aluno de propósito.
+   */
+  const ordemDaBusca = useMemo(() => {
+    const naFila = new Set(pendentes.map((p) => p.chave))
+    return [...pendentes, ...daTurma.filter((p) => p.papel === 'aluno' && !naFila.has(p.chave))]
+  }, [pendentes, daTurma])
+
   const primeiroDia = useRef(pendentes.length > 0 && pendentes.length === alunosDaTurma).current
   const aCadastrar = primeiroDia
     ? pendentes[Math.min(armado, Math.max(0, pendentes.length - 1))]
@@ -190,7 +212,14 @@ export function TelaAula({
         // é o aluno que faltou no primeiro dia. Em vez de recusar e cobrar
         // depois, o app pergunta de quem é — ali, na hora, com a pessoa na
         // frente. Nada é gravado enquanto ele não responder.
-        if (decisao.tipo === 'desconhecido' && pendentes.length > 0) {
+        // Antes: só abria se ainda houvesse gente sem cadastro. Isso deixava de
+        // fora justamente o caso corriqueiro do dia a dia — segunda via, crachá
+        // trocado — e o professor via só uma linha vermelha, sem nada a fazer
+        // ali. A correção sobrava para depois, à mão, a partir de um hash.
+        //
+        // Desistir continua sendo um clique fora: quem não quiser vincular
+        // agora fecha, e o registro fica como crachá não cadastrado.
+        if (decisao.tipo === 'desconhecido') {
           setProcurando(uidHash)
           tocar('desconhecido')
           return
@@ -383,7 +412,7 @@ export function TelaAula({
 
       {procurando && (
         <Busca
-          pessoas={pendentes}
+          pessoas={ordemDaBusca}
           aoDesistir={() => {
             void (async () => {
               const uidHash = procurando

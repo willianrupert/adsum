@@ -50,21 +50,28 @@ function Cena({ titulo, quando, children }: { titulo: string; quando: string; ch
  * armadilha: sem `aoDesistir` de verdade, não havia como sair dela. Aqui ela
  * abre e fecha por conta.
  */
+/**
+ * Aberta de saída.
+ *
+ * Antes ela começava fechada, atrás de um botão "Abrir a busca" — e quem
+ * percorria a vitrine passava reto, sem nunca ver a tela. Numa vitrine, a tela
+ * que não aparece sozinha é a tela que não existe.
+ *
+ * Dá para fechar e reabrir porque desistir também é parte do desenho: quem não
+ * quiser vincular na hora fecha, e a leitura fica como crachá não cadastrado.
+ */
 function BuscaDeMentira() {
-  const [aberta, setAberta] = useState(false)
-  return (
-    <>
-      <button className="botao--acento pasta__botao" onClick={() => setAberta(true)}>
-        Abrir a busca
-      </button>
-      {aberta && (
-        <Busca
-          pessoas={PENDENTES}
-          aoEscolher={() => setAberta(false)}
-          aoDesistir={() => setAberta(false)}
-        />
-      )}
-    </>
+  const [aberta, setAberta] = useState(true)
+  return aberta ? (
+    <Busca
+      pessoas={PENDENTES}
+      aoEscolher={() => setAberta(false)}
+      aoDesistir={() => setAberta(false)}
+    />
+  ) : (
+    <button className="repouso__link botao--quieto" onClick={() => setAberta(true)}>
+      Abrir a busca de novo
+    </button>
   )
 }
 
@@ -115,6 +122,7 @@ export function Vitrine() {
         <TelaAula
           sessao={{ turma: TURMA, abertaEm: new Date(Date.now() - 22 * 60000).toISOString(), uidHashProfessor: 'x' }}
           pendentes={PENDENTES}
+          daTurma={PENDENTES}
           alunosDaTurma={47}
           aoMudarBase={() => {}}
         />
@@ -124,12 +132,13 @@ export function Vitrine() {
         <TelaAula
           sessao={{ turma: TURMA, abertaEm: new Date(Date.now() - 4 * 60000).toISOString(), uidHashProfessor: 'x' }}
           pendentes={PENDENTES}
+          daTurma={PENDENTES}
           alunosDaTurma={PENDENTES.length}
           aoMudarBase={() => {}}
         />
       </Cena>
 
-      <Cena titulo="Crachá novo" quando="alguém que faltou no primeiro dia chega">
+      <Cena titulo="Crachá novo" quando="crachá desconhecido: quem faltou, ou segunda via">
         <BuscaDeMentira />
       </Cena>
 

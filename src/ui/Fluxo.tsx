@@ -470,6 +470,7 @@ export function Fluxo() {
         <TelaAula
           sessao={sessao}
           pendentes={pendentesDaTurma.filter((p) => p.turma === sessao.turma)}
+          daTurma={matriculadosTodos.filter((p) => p.turma === sessao.turma)}
           alunosDaTurma={
             matriculadosTodos.filter((p) => p.turma === sessao.turma && p.papel === 'aluno').length
           }
