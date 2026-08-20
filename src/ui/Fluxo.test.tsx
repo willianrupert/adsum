@@ -254,8 +254,9 @@ describe('a tela da pasta tem saída', () => {
       configurable: true,
     })
 
+  // Devolve o jsdom ao que ele era: `showDirectoryPicker` é opcional no tipo,
+  // então apagar não precisa de escape nenhum.
   afterEach(() => {
-    // @ts-expect-error — devolvendo o jsdom ao que ele era
     delete window.showDirectoryPicker
   })
 
