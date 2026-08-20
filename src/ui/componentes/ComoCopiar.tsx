@@ -73,8 +73,8 @@ export function ComoCopiar() {
         </li>
         <li>
           Confira o número. A página diz <code>Docentes (2)</code> e{' '}
-          <code>Discentes (47)</code>, e o Adsum compara com o que leu — se faltar gente,
-          ele avisa em vez de seguir com a lista curta.
+          <code>Discentes (47)</code>, e o Adsum compara com o que leu. Se faltar gente, ele
+          avisa em vez de seguir com a lista curta.
         </li>
       </ol>
 

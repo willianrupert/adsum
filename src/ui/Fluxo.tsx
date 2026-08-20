@@ -540,7 +540,7 @@ export function Fluxo() {
         <div className="aviso aviso--grave">
           <strong>A pasta não recebeu a última gravação.</strong>
           <p>
-            {falhaNaPasta}. Nada se perdeu — está tudo aqui no navegador. Conserte e o
+            {falhaNaPasta}. Nada se perdeu: está tudo aqui no navegador. Conserte e o
             Adsum regrava.
           </p>
           <button onClick={() => void consertarPasta()}>Gravar de novo</button>
@@ -618,8 +618,8 @@ export function Fluxo() {
                   ? 'Nenhum leitor ativo'
                   : estadoDaPasta === 'indisponivel'
                     ? riscoDeApagar()
-                      ? 'Sem pasta — o Safari pode apagar a base sozinho'
-                      : 'Sem pasta neste navegador — exporte uma cópia'
+                      ? 'Sem pasta. O Safari pode apagar a base sozinho'
+                      : 'Sem pasta neste navegador. Exporte uma cópia'
                     : 'Os dados só existem neste navegador'}
           </span>
         )}

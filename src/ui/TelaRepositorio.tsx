@@ -612,7 +612,7 @@ export function TelaRepositorio({
         }
       >
         <p className="ferramentas__nota">
-          O arquivo leva os {vinculos.length} crachás e o segredo que os liga aos nomes — sem
+          O arquivo leva os {vinculos.length} crachás e o segredo que os liga aos nomes. Sem
           ele, a lista chega inútil do outro lado. Quem receber passa a reconhecer os mesmos
           crachás, e os alunos não encostam duas vezes. Trate o arquivo com o mesmo cuidado
           que a lista da turma.

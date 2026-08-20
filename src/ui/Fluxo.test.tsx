@@ -501,7 +501,7 @@ describe('o conselho de navegador vem antes da turma', () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
 
-    expect(await screen.findByText(/o Safari pode apagar a base sozinho/)).toBeInTheDocument()
+    expect(await screen.findByText(/O Safari pode apagar a base sozinho/)).toBeInTheDocument()
   })
 
   // A tela da base dizia só "os dados ficam no navegador", como se fosse
