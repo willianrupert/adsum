@@ -287,6 +287,37 @@ lista e cair num painel de nove capacidades era eu quebrando a regra que este
 arquivo já tinha. `ui/TelaProblema.tsx` tem uma frase e uma ação; o diagnóstico
 fica a um clique, que é a diferença entre estar disponível e estar no caminho.
 
+## Achados na validação de 20/08/2026 — a fazer
+
+O autor percorreu o fluxo do zero, com a pasta esvaziada. Sete coisas, e a
+primeira metade é a mesma doença: **a cerimônia foi desenhada como uma tela de
+lista com um modo escondido dentro.**
+
+1. **A barra "Encoste o crachá de" deve aparecer de saída.** Hoje exige clicar em
+   "Cadastrar crachás" primeiro. É um clique para chegar onde a tela já deveria
+   estar: acabou de cadastrar a turma, o passo seguinte é dar crachá a ela.
+2. **Não há "encerrar o cadastro inicial".** O professor cadastra alguns e não
+   sabe como sair, nem onde reencontrar a lista depois.
+3. **"Cadastrar crachás" fica morto** enquanto a barra está aberta — clicar não
+   faz nada. Ou muda de função, ou some.
+4. **"Voltar" não diz para onde.** Voltar de quê, para quê.
+5. **Os Ajustes estão poluídos.** Tudo o que há ali é necessário, mas aparece de
+   uma vez. Quer seções recolhíveis, no estilo dos Ajustes da Apple.
+6. **A grade nos Ajustes deve ser a mesma grade visual** de `TelaCronograma`,
+   com um seletor horizontal de turma em cima — e não a lista de campos atual.
+7. **`N` não abre a lupa durante a cerimônia, e isso confundiu.** Não é bug: a
+   busca (`Busca`) vive em `TelaAula`, e a cerimônia é `TelaVinculo`, onde um
+   crachá desconhecido é o cadastro da pessoa chamada. Só que o ensaio não deixa
+   isso claro, e não há como chegar na lupa sem antes ter turma cadastrada **e**
+   a chamada aberta. **Ensaio que não explica o estado em que está não valida
+   fluxo** — é o mesmo defeito do `P`, que já foi corrigido uma vez.
+
+O item 7 aponta para a raiz dos outros: **a cerimônia e a chamada fazem a mesma
+coisa com telas diferentes.** `TelaVinculo` chama nome e espera crachá;
+`TelaAula` também, e ainda tem a lupa. Vale considerar se a cerimônia não deveria
+ser a própria `TelaAula` com a fila cheia — o `CLAUDE.md` já diz que "a cerimônia
+é a primeira chamada", e o código ainda tem duas telas para isso.
+
 ## Palavras que não se usam
 
 **"Armar" e "armado" saíram em 20/08/2026.** O autor tinha pedido a troca antes,
