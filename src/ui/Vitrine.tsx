@@ -15,6 +15,7 @@ import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { TelaVinculo } from './TelaVinculo.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
+import { TelaProblema } from './TelaProblema.tsx'
 import { Busca } from './componentes/Busca.tsx'
 import { Baixar } from './componentes/Simbolos.tsx'
 import type { Matriculado } from '../nucleo/tipos.ts'
@@ -113,6 +114,10 @@ export function Vitrine() {
 
       <Cena titulo="Use o Chrome" quando="Firefox: sem pasta e sem o que instalar">
         <TelaNavegador conselho={{ tipo: 'trocar' }} aoDispensar={() => {}} />
+      </Cena>
+
+      <Cena titulo="Sem leitor" quando="o dongle não respondeu: uma frase e uma ação">
+        <TelaProblema aoAbrirAjustes={() => {}} />
       </Cena>
 
       <Cena titulo="A turma" quando="nenhuma turma cadastrada">

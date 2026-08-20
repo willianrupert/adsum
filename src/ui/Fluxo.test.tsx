@@ -213,6 +213,35 @@ describe('a grade abre a chamada sozinha', () => {
   })
 })
 
+// Regressão de desenho: colar a lista da turma e cair num painel de nove
+// capacidades do navegador. O professor não pediu diagnóstico, ele quer saber o
+// que fazer agora — e o CLAUDE.md já dizia que diagnóstico é item discreto
+// atrás da engrenagem, não a tela em que se para.
+describe('quando o leitor não está lendo', () => {
+  it('mostra uma frase e uma ação, não o diagnóstico inteiro', async () => {
+    await turmaInteiraComCracha()
+    await bancada.leitor.parar()
+    renderizarCom(bancada, <Fluxo />)
+
+    expect(await screen.findByText('Ligue o leitor de crachá')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeInTheDocument()
+    // O painel de capacidades não pertence a esta tela.
+    expect(screen.queryByText('Contexto seguro (HTTPS)')).not.toBeInTheDocument()
+    expect(screen.queryByText('Últimas leituras')).not.toBeInTheDocument()
+  })
+
+  it('tentar de novo religa o leitor e devolve a tela ao lugar', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    await bancada.leitor.parar()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Ligue o leitor de crachá')
+
+    await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+    expect(await screen.findByText('Tudo pronto')).toBeInTheDocument()
+  })
+})
+
 // O ensaio precisa alcançar **todos** os estados, senão não serve para validar
 // o fluxo. Faltavam dois, e o autor achou os dois: não havia como produzir um
 // crachá desconhecido depois da cerimônia, e `P` não fazia nada nem dizia nada

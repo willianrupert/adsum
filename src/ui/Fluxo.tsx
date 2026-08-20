@@ -52,6 +52,7 @@ import { levantarCapacidades } from '../ambiente/capacidades.ts'
 import { marcarAte, naoSalvos, totalNaoSalvo, type Pendencia } from '../nucleo/pendencias.ts'
 import { useAdsum } from './adsum.ts'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
+import { TelaProblema } from './TelaProblema.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaVinculo } from './TelaVinculo.tsx'
 
@@ -484,7 +485,7 @@ export function Fluxo() {
 
   return (
     <>
-      {rota === 'problema' && <TelaDiagnostico />}
+      {rota === 'problema' && <TelaProblema aoAbrirAjustes={() => setFolha('ajustes')} />}
       {rota === 'pasta' && (
         <TelaPasta
           precisaDePermissao={estadoDaPasta === 'sem_permissao'}
