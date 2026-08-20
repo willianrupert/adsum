@@ -161,3 +161,16 @@ export function dispensarConvite(): void {
   dispensarConviteDeApp()
   for (const avisar of ouvintes) avisar()
 }
+
+/**
+ * Por que o convite não apareceu — em uma palavra, para o diagnóstico.
+ *
+ * "Não apareceu" é uma reclamação que não dá para investigar. Cada motivo tem
+ * conserto diferente, e o professor (ou eu) precisa saber qual é sem abrir o
+ * console.
+ */
+export function estadoDoConvite(): 'oferecido' | 'ja_instalado' | 'dispensado' | 'nao_oferecido' {
+  if (instalado()) return 'ja_instalado'
+  if (conviteDeAppDispensado()) return 'dispensado'
+  return guardado ? 'oferecido' : 'nao_oferecido'
+}

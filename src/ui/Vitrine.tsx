@@ -171,17 +171,17 @@ export function Vitrine() {
         />
       </Cena>
 
-      <Cena titulo="Convite de instalar" quando="Chrome, uma vez só">
-        <Repouso
-          turmas={1}
-          pendencias={[]}
-          convidarApp
-          aoInstalarApp={() => {}}
-          aoDispensarApp={() => {}}
-          aoIniciar={() => {}}
-          aoSalvar={() => {}}
-          aoAbrirCerimonia={() => {}}
-        />
+      <Cena titulo="Convite de instalar" quando="Chrome, uma vez só, em qualquer tela">
+        <div className="convite">
+          <span className="convite__texto">
+            <strong>Instalar o Adsum</strong>
+            <small>Janela própria, e abre num clique — sem procurar a aba</small>
+          </span>
+          <span className="convite__acoes">
+            <button className="botao--quieto">Agora não</button>
+            <button className="botao--acento">Instalar</button>
+          </span>
+        </div>
       </Cena>
 
       <Cena titulo="Repouso com grade" quando="a aula abre sozinha; a tela só espera">

@@ -630,7 +630,9 @@ button:focus-visible {
   gap: 20px;
   width: 100%;
   max-width: 560px;
-  margin: 40px 0 0;
+  /* Centrado e no fim da página: mora na casca do app, não dentro de uma tela.
+     `auto` nas laterais porque aqui o pai não centraliza nada. */
+  margin: 40px auto 0;
   padding: 16px 20px;
   border-radius: var(--raio);
   background: var(--fundo-alt);

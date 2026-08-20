@@ -523,12 +523,6 @@ export function Fluxo() {
           turmas={turmas}
           pendencias={pasta ? [] : pendencias}
           proxima={proxima}
-          convidarApp={convidarApp}
-          aoInstalarApp={() => void instalarApp().finally(() => setConvidarApp(false))}
-          aoDispensarApp={() => {
-            dispensarConvite()
-            setConvidarApp(false)
-          }}
           aoIniciar={() => void iniciarChamada()}
           aoSalvar={(turma) => void salvarCopia(turma)}
           aoAbrirCerimonia={() => setCadastrando(true)}
@@ -561,6 +555,40 @@ export function Fluxo() {
           O aviso ao lado **não é botão**: com a engrenagem a oito pixels dele,
           dois caminhos para o mesmo lugar só fazem duvidar de qual é o certo.
           Ele informa; ela abre. */}
+      {/* Fora de qualquer tela, de propósito.
+          Ele morava só no repouso, e quem abre o Adsum pela primeira vez vai de
+          "escolha a pasta" para "cole sua turma" para a cerimônia — pode levar
+          uma aula inteira até parar no repouso, e o convite chegava tarde ou
+          nunca. Um convite que depende de a pessoa passar por uma tela
+          específica é um convite que não existe.
+
+          Some durante a chamada: ali a tela é da fila, e nada mais. */}
+      {convidarApp && rota !== 'chamada' && (
+        <div className="convite">
+          <span className="convite__texto">
+            <strong>Instalar o Adsum</strong>
+            <small>Janela própria, e abre num clique — sem procurar a aba</small>
+          </span>
+          <span className="convite__acoes">
+            <button
+              className="botao--quieto"
+              onClick={() => {
+                dispensarConvite()
+                setConvidarApp(false)
+              }}
+            >
+              Agora não
+            </button>
+            <button
+              className="botao--acento"
+              onClick={() => void instalarApp().finally(() => setConvidarApp(false))}
+            >
+              Instalar
+            </button>
+          </span>
+        </div>
+      )}
+
       <div className="canto">
         {(falhaNaPasta || porSalvar > 0 || !lendo || !pasta) && (
           <span
@@ -639,9 +667,6 @@ export function Repouso({
   turmas,
   pendencias,
   proxima,
-  convidarApp,
-  aoInstalarApp,
-  aoDispensarApp,
   aoIniciar,
   aoSalvar,
   aoAbrirCerimonia,
@@ -649,9 +674,6 @@ export function Repouso({
   turmas: number
   pendencias: Pendencia[]
   proxima?: { turma: string; quando: Date }
-  convidarApp?: boolean
-  aoInstalarApp?: () => void
-  aoDispensarApp?: () => void
   aoIniciar: () => void
   aoSalvar: (turma: string) => void
   aoAbrirCerimonia: () => void
@@ -737,26 +759,7 @@ export function Repouso({
         Cadastrar mais um crachá
       </button>
 
-      {/* No Chrome isto não é sobre perder dados — com pasta, nada se perde. É
-          sobre o Adsum ter janela própria e abrir num clique, em vez de virar
-          mais uma aba entre vinte numa manhã de aula. Por isso é convite e não
-          aviso, e some para sempre ao ser recusado. */}
-      {convidarApp && (
-        <div className="convite">
-          <span className="convite__texto">
-            <strong>Instalar o Adsum</strong>
-            <small>Janela própria, e abre num clique — sem procurar a aba</small>
-          </span>
-          <span className="convite__acoes">
-            <button className="botao--quieto" onClick={aoDispensarApp}>
-              Agora não
-            </button>
-            <button className="botao--acento" onClick={aoInstalarApp}>
-              Instalar
-            </button>
-          </span>
-        </div>
-      )}
+
     </section>
   )
 }

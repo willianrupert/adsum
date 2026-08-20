@@ -16,6 +16,7 @@ import { podeApagar, type DiagnosticoRepositorio } from '../portas/Repositorio.t
 import { descreverAmbiente, levantarCapacidades } from '../ambiente/capacidades.ts'
 import { leitoresVisiveis, useAdsum } from './adsum.ts'
 import { definirModoDev, modoDev } from '../ambiente/preferencias.ts'
+import { estadoDoConvite } from '../ambiente/instalacao.ts'
 import { Linha, Painel, Selo } from './componentes/Painel.tsx'
 
 interface LeituraNaTela {
@@ -463,6 +464,20 @@ export function TelaDiagnostico() {
         </Linha>
         <Linha rotulo="espaço usado">
           {formatarBytes(diagRepo?.usoEstimado)} de {formatarBytes(diagRepo?.cotaEstimada)}
+        </Linha>
+        {/* "Não apareceu" é uma reclamação que não dá para investigar: cada
+            motivo tem conserto diferente. Aqui ela vira um fato. */}
+        <Linha rotulo="convite de instalar">
+          <Selo tom={estadoDoConvite() === 'oferecido' ? 'ok' : 'neutro'}>
+            {
+              {
+                oferecido: 'o navegador ofereceu',
+                ja_instalado: 'já está instalado',
+                dispensado: 'você dispensou',
+                nao_oferecido: 'o navegador não ofereceu',
+              }[estadoDoConvite()]
+            }
+          </Selo>
         </Linha>
         <Linha rotulo="instalação">
           <code>{config.instalacaoId}</code>

@@ -304,6 +304,32 @@ describe('o convite de instalar no Chrome', () => {
     window.dispatchEvent(evento)
   }
 
+  // Ele morava só no repouso, e quem abre o Adsum pela primeira vez vai de
+  // "escolha a pasta" para "cole sua turma" — podia levar uma aula inteira até
+  // parar no repouso. Convite que depende de passar por uma tela específica é
+  // convite que não existe.
+  it('aparece também antes de haver turma cadastrada', async () => {
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Cole sua turma')
+
+    await act(async () => oferecer())
+    expect(await screen.findByText('Instalar o Adsum')).toBeInTheDocument()
+  })
+
+  it('some durante a chamada — ali a tela é da fila', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Tudo pronto')
+
+    await act(async () => oferecer())
+    await screen.findByText('Instalar o Adsum')
+
+    await usuario.click(screen.getByRole('button', { name: 'Começar a chamada' }))
+    await screen.findByRole('button', { name: 'Encerrar a chamada' })
+    expect(screen.queryByText('Instalar o Adsum')).not.toBeInTheDocument()
+  })
+
   it('aparece no repouso, e some para sempre ao ser recusado', async () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
