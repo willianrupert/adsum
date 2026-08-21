@@ -13,6 +13,7 @@ import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { podeApagar } from '../portas/Repositorio.ts'
 import { eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
 import { abrirSozinho, escolherTurma, proximaAula, DIAS , type Aula } from '../nucleo/grade.ts'
+import { saudacao } from '../nucleo/horarios.ts'
 import type { Matriculado, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { escolherPasta, pastaDisponivel, permissao } from '../ambiente/pasta.ts'
@@ -103,6 +104,8 @@ export function Fluxo() {
   //
   // 'inicial' é a cerimônia do primeiro dia, aberta pela própria rota.
   // 'extra' é "Cadastrar mais um crachá", aberta por escolha no repouso.
+  // 'nova' é "Cadastrar nova turma": mesma tela, sem `turmaInicial` nenhum —
+  // cai na colagem, de propósito, porque a turma ainda não existe.
   //
   // Por que isto não é só ler a rota a cada render: o crachá do próprio
   // professor, tocado no meio da cerimônia, muda `professorSemCracha` e a
@@ -111,7 +114,19 @@ export function Fluxo() {
   // repositório, não a intenção de quem está com a mão no leitor. Só um gesto
   // explícito ("Concluir") deve tirar a cerimônia da tela; a base mudando por
   // baixo, não.
-  const [modoCadastro, setModoCadastro] = useState<'nenhum' | 'inicial' | 'extra'>('nenhum')
+  const [modoCadastro, setModoCadastro] = useState<'nenhum' | 'inicial' | 'extra' | 'nova'>(
+    'nenhum',
+  )
+  /**
+   * Quantas turmas existiam quando "Cadastrar nova turma" foi aberto.
+   *
+   * `turmaInicial` fica `undefined` só em 'nova' — é o que força a colagem em
+   * vez de reabrir a primeira turma. Mas colar salva a turma na hora, e o
+   * cronograma pode entrar no meio (turma nova nunca tem horário ainda):
+   * sem trocar de modo depois disso, a tela recém-cadastrada reabriria em
+   * branco de novo ao voltar do cronograma, como se nada tivesse sido colado.
+   */
+  const [turmasAntesDaNova, setTurmasAntesDaNova] = useState(0)
   const [resumo, setResumo] = useState<{ sessao: Sessao; presentes: number }>()
   const [escolhendo, setEscolhendo] = useState<{
     opcoes: string[]
@@ -513,6 +528,14 @@ export function Fluxo() {
     if (rota === 'cerimonia') setModoCadastro((m) => (m === 'nenhum' ? 'inicial' : m))
   }, [rota])
 
+  // 'nova' vira 'inicial' assim que a turma colada é salva — ver o comentário
+  // de `turmasAntesDaNova`. Sem isto, voltar do cronograma da turma recém
+  // criada reabria a colagem em branco, como se a lista nunca tivesse sido
+  // colada.
+  useEffect(() => {
+    if (modoCadastro === 'nova' && turmas > turmasAntesDaNova) setModoCadastro('inicial')
+  }, [modoCadastro, turmas, turmasAntesDaNova])
+
   // A tela de cadastro fica no ar por `modoCadastro`, não pela rota crua —
   // ver o comentário dele. `rota === 'cerimonia'` continua na conta para não
   // haver um frame em branco antes do efeito acima rodar.
@@ -612,10 +635,16 @@ export function Fluxo() {
       {rota === 'turma' && <TelaVinculo aoMudarBase={mudou} />}
       {!resumo && naTelaDeCadastro && (
         <TelaVinculo
-          // `turmaPendente` é de aluno pendente — se só o professor falta
-          // (todo o resto já com crachá), ele fica indefinido, e cair para
-          // `turmasAbertas[0]` é o que evita reabrir em branco.
-          turmaInicial={modoCadastro === 'extra' ? turmasAbertas[0] : (turmaPendente ?? turmasAbertas[0])}
+          // `turmaPendente` é de aluno pendente, de qualquer turma — e é ele
+          // que "Cadastrar mais um crachá" deve seguir: com duas turmas, uma
+          // completa e outra recém-colada, o botão reabria sempre a primeira
+          // (`turmasAbertas[0]`), mesmo com a segunda inteira esperando
+          // crachá. Sem pendente nenhum (só falta o professor, ou nada
+          // falta), cair para `turmasAbertas[0]` evita reabrir em branco.
+          // `undefined` força a tela de colar — ver `modoCadastro === 'nova'`.
+          turmaInicial={
+            modoCadastro === 'nova' ? undefined : (turmaPendente ?? turmasAbertas[0])
+          }
           primeiroDia={modoCadastro !== 'extra'}
           aoMudarBase={mudou}
           aoSair={() => {
@@ -695,6 +724,10 @@ export function Fluxo() {
             esquecerDispensaDoCadastro()
             setSemCadastro(false)
             setModoCadastro(professorSemCracha ? 'inicial' : 'extra')
+          }}
+          aoNovaTurma={() => {
+            setTurmasAntesDaNova(turmas)
+            setModoCadastro('nova')
           }}
         />
       )}
@@ -880,6 +913,7 @@ export function Repouso({
   aoIniciar,
   aoSalvar,
   aoAbrirCerimonia,
+  aoNovaTurma,
 }: {
   turmas: number
   pendencias: Pendencia[]
@@ -887,6 +921,7 @@ export function Repouso({
   aoIniciar: () => void
   aoSalvar: (turma: string) => void
   aoAbrirCerimonia: () => void
+  aoNovaTurma: () => void
 }) {
   const dia = (iso: string) =>
     new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
@@ -939,10 +974,12 @@ export function Repouso({
         </>
       ) : (
         <>
-          {/* Título é estado, botão é ação. Antes o título dizia "Começar a
-              chamada" e o botão dizia "Iniciar a aula": duas tentativas de
-              nomear o mesmo gesto, uma em cima da outra. */}
-          <p className="repouso__turma">Tudo pronto</p>
+          {/* Sem próxima aula conhecida — sem grade, ou grade que já acabou
+              por hoje —, "Tudo pronto" soava a convite pro crachá quando não
+              há aula nenhuma por perto. Um cumprimento é o que cabe fora do
+              horário, e continua sendo hora do dia mesmo sem grade nenhuma
+              cadastrada. */}
+          <p className="repouso__turma">{saudacao(new Date())}</p>
           <p className="repouso__acao">
             {turmas === 1 ? 'Sua turma está cadastrada' : `${turmas} turmas cadastradas`}
           </p>
@@ -969,6 +1006,12 @@ export function Repouso({
           e tela de espera com dois azuis embaixo pede para ser clicada. */}
       <button className="repouso__link botao--quieto" onClick={aoAbrirCerimonia}>
         Cadastrar mais um crachá
+      </button>
+      {/* Sem isto não havia como começar uma turma nova depois da primeira:
+          a tela de colar só aparecia com `turmas === 0`, e "mais um crachá"
+          sempre mirava numa turma que já existe. */}
+      <button className="repouso__link botao--quieto" onClick={aoNovaTurma}>
+        Cadastrar nova turma
       </button>
     </section>
   )

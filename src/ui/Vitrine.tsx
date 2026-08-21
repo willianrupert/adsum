@@ -189,6 +189,7 @@ export function Vitrine() {
           aoIniciar={() => {}}
           aoSalvar={() => {}}
           aoAbrirCerimonia={() => {}}
+          aoNovaTurma={() => {}}
         />
       </Cena>
 
@@ -216,6 +217,7 @@ export function Vitrine() {
           aoIniciar={() => {}}
           aoSalvar={() => {}}
           aoAbrirCerimonia={() => {}}
+          aoNovaTurma={() => {}}
         />
       </Cena>
 
@@ -229,6 +231,7 @@ export function Vitrine() {
           aoIniciar={() => {}}
           aoSalvar={() => {}}
           aoAbrirCerimonia={() => {}}
+          aoNovaTurma={() => {}}
         />
       </Cena>
 

@@ -134,3 +134,16 @@ export function duracaoEmMinutos(bloco: Bloco): number {
 export function ehCurto(bloco: Bloco): boolean {
   return duracaoEmMinutos(bloco) < 60
 }
+
+/**
+ * "Tudo pronto" fora do horário de aula soa a convite pro crachá, quando não
+ * há aula nenhuma por perto. Fora de uma próxima aula conhecida, o repouso
+ * cumprimenta em vez de anunciar — mesmo sem grade nenhuma cadastrada, porque
+ * a hora do dia continua sendo a hora do dia.
+ */
+export function saudacao(agora: Date): 'Bom dia' | 'Boa tarde' | 'Boa noite' {
+  const hora = agora.getHours()
+  if (hora >= 5 && hora < 12) return 'Bom dia'
+  if (hora >= 12 && hora < 18) return 'Boa tarde'
+  return 'Boa noite'
+}

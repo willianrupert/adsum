@@ -414,9 +414,9 @@ export function TelaDiagnostico() {
       </Painel>
 
       <Painel
-        titulo="Repositório"
+        titulo="Estado do app"
         recolhivel
-        legenda="O que está guardado."
+        legenda="Armazenamento, versão e instalação — não presença."
         acoes={
           <>
             {/* Semear inventa gente e presença. No app publicado seria um botão

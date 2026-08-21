@@ -423,6 +423,14 @@ export function TelaVinculo({
             <button className="botao--acento pasta__botao" onClick={() => void interpretar()}>
               Continuar
             </button>
+            {/* Só existe quando há repouso pra onde voltar. Na primeira turma
+                de todas (`turmas === 0`) esta tela é a única que existe, e
+                cancelar não levaria a lugar nenhum. */}
+            {aoSair && (
+              <button className="botao--quieto" onClick={aoSair}>
+                Cancelar
+              </button>
+            )}
           </div>
 
           {/* Onde não há seletor de diretório — Safari, Firefox — o app não tem

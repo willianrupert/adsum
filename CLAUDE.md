@@ -688,3 +688,68 @@ Mushroom cards) e o corte de texto das telas de vínculo e base.
 - encurtar nome por legibilidade (o conceito, não os números)
 
 **Nascido aqui:** rota é o estado, orçamento de toques, o cofre em `docs/01`.
+
+## Varredura de 21/08/2026 — feita
+
+O autor pediu para varrer sete pontos de uma vez: calendário de turmas nos
+Ajustes, o CSV de entrada do SIGAA, duas telas de chamada que divergem, se
+Ajustes tem redundância, um leitor de presenças por turma, o que fazer fora do
+horário de aula, e um botão para cadastrar turma nova. Três já existiam e
+estavam só escondidos; dois eram redundância real; um foi resolvido; um fica
+para combinar antes de mexer.
+
+**Já existia:** o seletor de turma na grade de Ajustes (`GradeDeAjustes`, com
+`.segmentado--turmas`) — só não aparece com uma turma só, e o painel começa
+fechado, então é fácil não notar. **Não existe CSV de entrada** — o SIGAA
+entra como texto colado (`nucleo/sigaa.ts`), e a leitura já confere o número
+declarado contra o extraído.
+
+**Redundância real, achada:** existiam **duas coisas chamadas "Repositório"**.
+Uma era o painel "Registros" em `TelaRepositorio.tsx` — só exportava, não
+deixava ver nada. A outra era um painel *também* chamado "Repositório", dentro
+de `TelaDiagnostico.tsx`, misturando cota de armazenamento, carimbo de build e
+ID de instalação com uma tabelinha de últimos eventos — a única coisa no app
+que já se parecia com "ver presenças", enterrada no lugar errado. Renomeado
+para **"Estado do app"**, que é o que ele de fato mostra.
+
+**Leitor de presenças, feito:** `TabelaDeRegistros`, em `TelaRepositorio.tsx`,
+mesmo padrão de seletor da grade — turma em cima, tabela embaixo, mais recente
+primeiro. Filtra `origem === 'cracha'`: abertura e encerramento de aula ficam
+de fora, mesma escolha que `TelaAula` já fazia na própria lista rolante.
+Continua sendo `registros/<turma>.csv` por trás — um arquivo por turma, sem
+calendário, porque não há o que navegar além disso.
+
+**Fora do horário de aula, feito:** o repouso dizia "Tudo pronto" mesmo às três
+da manhã, como se fosse hora de encostar um crachá. `nucleo/horarios.ts` ganhou
+`saudacao(agora)` — Bom dia, Boa tarde, Boa noite — que substitui o título
+sempre que não há próxima aula conhecida, com ou sem grade cadastrada.
+
+**"Cadastrar nova turma", feito, e com um bug atrás dele.** Não havia caminho
+nenhum para uma turma nova depois da primeira: a tela de colar só aparecia com
+`turmas === 0`, e "Cadastrar mais um crachá" sempre mirava a primeira turma
+existente (`turmasAbertas[0]`), mesmo com uma segunda turma inteira esperando
+crachá — corrigido para preferir `turmaPendente`, de qualquer turma, com
+`turmasAbertas[0]` só de último recurso.
+
+O botão novo entra num terceiro modo, `modoCadastro === 'nova'`, que força
+`turmaInicial` a `undefined` — cai na colagem, de propósito. Mas turma nova
+nunca tem horário ainda, então o cronograma sempre entra no meio — e a
+primeira versão disto reabria a colagem **em branco de novo** ao voltar do
+cronograma, como se a lista colada nunca tivesse sido salva. `turmasAntesDaNova`
+guarda quantas turmas existiam ao abrir o modo, e um efeito troca 'nova' por
+'inicial' assim que `turmas` cresce — a partir daí `turmaPendente` já resolve
+para a turma certa. Achado testando ao vivo, e coberto por teste agora: "cai
+na turma nova, chamando quem falta" e não "cai na tela de colar outra vez".
+
+A tela de colar ganhou um **Cancelar**, visível só quando há `aoSair` — na
+primeira turma de todas (`turmas === 0`) esta tela é a única que existe, e
+cancelar não levaria a lugar nenhum.
+
+**Fica para combinar antes de mexer:** as duas telas de chamada divergem de
+verdade. `TelaVinculo` (cerimônia) tem uma tabela completa sempre visível,
+editável, com "Chamar" em qualquer linha, e não grava presença — só vínculos.
+`TelaAula` (chamada do dia a dia) tem contador e últimas leituras, e só quando
+é literalmente o primeiro dia mostra uma barra "Faltam N crachás" no rodapé,
+sem tabela nenhuma. É a duplicação que este arquivo já apontava como pendente.
+Unificar mexe na regra de "um nome por vez" — a mais protegida do projeto — e
+por isso não entrou nesta varredura sem ser combinado primeiro.

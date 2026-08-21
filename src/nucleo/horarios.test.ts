@@ -6,6 +6,7 @@ import {
   ehCurto,
   horasPorSemana,
   marcadosDe,
+  saudacao,
 } from './horarios.ts'
 
 describe('a grade como o professor a enxerga', () => {
@@ -79,5 +80,15 @@ describe('os blocos são os do CIn, não os que eu supus', () => {
     const sabado = BLOCOS.filter((b) => b.soSabado)
     expect(sabado.map((b) => `${b.inicio}-${b.fim}`)).toEqual(['07:00-11:50', '13:00-17:50'])
     expect(DIAS_UTEIS).toContain(6)
+  })
+
+  it('cumprimenta pela hora', () => {
+    const emHora = (h: number) => new Date(2026, 0, 1, h, 0)
+    expect(saudacao(emHora(6))).toBe('Bom dia')
+    expect(saudacao(emHora(11))).toBe('Bom dia')
+    expect(saudacao(emHora(12))).toBe('Boa tarde')
+    expect(saudacao(emHora(17))).toBe('Boa tarde')
+    expect(saudacao(emHora(18))).toBe('Boa noite')
+    expect(saudacao(emHora(2))).toBe('Boa noite')
   })
 })

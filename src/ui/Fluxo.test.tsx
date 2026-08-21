@@ -118,7 +118,7 @@ describe('a rota decide a tela', () => {
     // Com todo mundo vinculado, o botão agora conclui de verdade — e só agora.
     const concluir = await screen.findByRole('button', { name: 'Concluir' })
     await usuario.click(concluir)
-    expect(await screen.findByText('Tudo pronto')).toBeInTheDocument()
+    expect(await screen.findByText(/Bom dia|Boa tarde|Boa noite/)).toBeInTheDocument()
   })
 
   // Regressão irmã da anterior, achada testando-a ao vivo: o docente não tem
@@ -164,7 +164,7 @@ describe('a rota decide a tela', () => {
     await act(async () => bancada.leitor.simular('04a23b92'))
 
     await usuario.click(await screen.findByRole('button', { name: 'Concluir' }))
-    await screen.findByText('Tudo pronto')
+    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
 
     // Reabre para dar o crachá de quem faltou.
     await usuario.click(screen.getByRole('button', { name: 'Cadastrar mais um crachá' }))
@@ -205,6 +205,40 @@ describe('a rota decide a tela', () => {
 
     const sessao = await bancada.repositorio.sessaoAberta()
     expect(sessao?.uidHashProfessor).toBe(vinculos[0].uidHash)
+  })
+
+  // Regressão: `modoCadastro === 'nova'` mantinha `turmaInicial` indefinido
+  // pra sempre, não só até a turma ser colada. Turma nova nunca tem horário
+  // ainda, então o cronograma sempre entra no meio — e ao voltar dele, a
+  // tela reabria a colagem em branco de novo, como se a lista nunca tivesse
+  // sido salva. `turmasAntesDaNova`, em Fluxo.tsx, é o conserto.
+  it('"Cadastrar nova turma" sobrevive ao desvio do cronograma', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await usuario.click(await screen.findByRole('button', { name: 'Cadastrar nova turma' }))
+
+    await usuario.type(screen.getByLabelText('turma'), 'IF999 · T02')
+    await usuario.click(screen.getByLabelText('lista da turma'))
+    await usuario.paste(
+      [
+        '\tUsuário Off-Line no SIGAA CARLA REGINA DO NASCIMENTO  (Perfil)',
+        'Curso: CIÊNCIA DA COMPUTAÇÃO/CIN',
+        'Matrícula: 20250000099',
+        'Usuário: carla.nascimento',
+        'E-mail: c@g.com\tEnviar Mensagem',
+      ].join('\n'),
+    )
+    await usuario.click(screen.getByRole('button', { name: 'Continuar' }))
+
+    // Turma nova, sem horário: o cronograma entra no meio.
+    await usuario.click(await screen.findByRole('button', { name: 'Depois' }))
+
+    // Volta chamando Carla na turma nova — não a colagem em branco de novo,
+    // nem o professor de IF685 · T01.
+    expect(await screen.findByText('Carla Regina')).toBeInTheDocument()
+    expect(screen.getByText('Primeiro dia · IF999 · T02')).toBeInTheDocument()
+    expect(screen.queryByText('Cole sua turma')).not.toBeInTheDocument()
   })
 
   it('a engrenagem abre os ajustes e clicar fora fecha', async () => {
@@ -524,7 +558,7 @@ describe('quando o leitor não está lendo', () => {
     await screen.findByText('Ligue o leitor de crachá')
 
     await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
-    expect(await screen.findByText('Tudo pronto')).toBeInTheDocument()
+    expect(await screen.findByText(/Bom dia|Boa tarde|Boa noite/)).toBeInTheDocument()
   })
 })
 
@@ -575,7 +609,7 @@ describe('os Ajustes se recolhem', () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Tudo pronto')
+    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
 
     const vinculos = await screen.findByRole('button', { name: /Vínculos/ })
@@ -593,11 +627,52 @@ describe('os Ajustes se recolhem', () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Tudo pronto')
+    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
 
     await screen.findByRole('button', { name: /Registros/ })
     expect(screen.queryByRole('button', { name: 'Zerar registros' })).not.toBeInTheDocument()
+  })
+
+  // Regressão: "Registros" só exportava, sem deixar ver nada — e havia dois
+  // painéis chamados "Repositório" (este, e um dentro de Diagnóstico), com
+  // conteúdo diferente atrás do mesmo nome. `TabelaDeRegistros` é a leitura
+  // de verdade, com seletor de turma como o da grade.
+  it('"Registros" deixa ver as presenças, por turma', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    adiarHorario('IF999 · T02')
+    await bancada.repositorio.salvarTurma('IF999 · T02', [
+      {
+        turma: 'IF999 · T02',
+        chave: '99',
+        matricula: '99',
+        nome: 'Carla Regina',
+        nomeCompleto: 'CARLA REGINA DA SILVA',
+        papel: 'aluno',
+      },
+    ])
+    await bancada.repositorio.acrescentarEvento({
+      eventoId: 'web-aaaa-20260819-0001',
+      quando: '2026-08-19T10:00:00.000Z',
+      turma: 'IF685 · T01',
+      matricula: '2',
+      nome: 'Breno Oliveira',
+      origem: 'cracha',
+      resultado: 'ok',
+      uidHash: 'bbbb000000000000',
+    })
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
+    await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
+
+    await usuario.click(await screen.findByRole('button', { name: /Registros/ }))
+    expect(screen.getByText('Breno Oliveira')).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'turma dos registros' })).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'IF999 · T02' }))
+    expect(screen.queryByText('Breno Oliveira')).not.toBeInTheDocument()
+    expect(screen.getByText(/Nenhum registro ainda para IF999 · T02/)).toBeInTheDocument()
   })
 
   // A mesma grade do cronograma, e não a lista de campos que existia aqui.
@@ -605,7 +680,7 @@ describe('os Ajustes se recolhem', () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Tudo pronto')
+    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
 
     // Todos começam fechados, sem exceção: regra com exceção é regra que o
@@ -630,7 +705,7 @@ describe('recomeçar do zero', () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Tudo pronto')
+    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
 
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
     await usuario.click(await screen.findByRole('button', { name: /Recomeçar do zero/ }))
@@ -673,7 +748,7 @@ describe('as teclas de ensaio', () => {
     comEnsaio()
     await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('1', 'Ana Paula')])
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText(/Encoste o crachá de|Cole sua turma|Tudo pronto/)
+    await screen.findByText(/Encoste o crachá de|Cole sua turma|Bom dia|Boa tarde|Boa noite/)
 
     await usuario.keyboard('p')
     expect(await screen.findByText(/Ainda não há crachá de professor/)).toBeInTheDocument()
@@ -735,12 +810,12 @@ describe('a tela da pasta tem saída', () => {
 
     await screen.findByText('Escolha onde guardar')
     await usuario.click(screen.getByRole('button', { name: 'Seguir sem pasta por enquanto' }))
-    expect(await screen.findByText('Tudo pronto')).toBeInTheDocument()
+    expect(await screen.findByText(/Bom dia|Boa tarde|Boa noite/)).toBeInTheDocument()
 
     // Sem gravar a escolha, a tela voltaria a prender no recarregamento.
     unmount()
     renderizarCom(bancada, <Fluxo />)
-    expect(await screen.findByText('Tudo pronto')).toBeInTheDocument()
+    expect(await screen.findByText(/Bom dia|Boa tarde|Boa noite/)).toBeInTheDocument()
   })
 
   // Seguir sem pasta não é seguir sem aviso.
@@ -787,7 +862,7 @@ describe('o convite de instalar no Chrome', () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Tudo pronto')
+    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
 
     await act(async () => oferecer())
     await screen.findByText('O Adsum em janela própria')
@@ -801,7 +876,7 @@ describe('o convite de instalar no Chrome', () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     const { unmount } = renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Tudo pronto')
+    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
 
     await act(async () => oferecer())
     expect(await screen.findByText('O Adsum em janela própria')).toBeInTheDocument()
@@ -814,7 +889,7 @@ describe('o convite de instalar no Chrome', () => {
     // Insistir a cada abertura é como um convite vira incômodo.
     unmount()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Tudo pronto')
+    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
     expect(screen.queryByText('O Adsum em janela própria')).not.toBeInTheDocument()
   })
 })
