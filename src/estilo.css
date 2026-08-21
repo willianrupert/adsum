@@ -141,6 +141,30 @@ code {
   padding: 26px 28px 28px;
 }
 
+/* Divisória simples entre grupos de Ajustes — "Sua turma", "Este
+   computador", "Diagnóstico". Não é painel, não colapsa: onze painéis
+   empilhados sem agrupamento nenhum é a parede que fazia "eu me perco lá". */
+.ajustes__secao {
+  margin: 0;
+  font-size: var(--t-nota);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+}
+
+.ajustes__secao:not(:first-child) {
+  margin-top: 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--separador);
+}
+
+.ajustes__legenda {
+  margin: 2px 0 0;
+  font-size: var(--t-menor);
+  color: var(--tinta-fraca);
+}
+
 /* Fechado encolhe: sem isto o painel guardaria a altura do conteúdo escondido,
    e recolher não teria devolvido espaço nenhum. */
 .painel--fechado {

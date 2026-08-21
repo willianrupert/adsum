@@ -823,3 +823,23 @@ já tem saída própria (`Encerrar a chamada`, mesmo com zero presença). O
 contrato de `rota.ts` não mudou por causa disso, só o comportamento ficou
 sempre "abre sozinho".
 
+**Ajustes ganhou três seções.** Onze painéis empilhados numa folha só, todos
+com o mesmo peso visual, era a parede indiferenciada por trás do "eu me
+perco lá" — e a resposta não pediu fundir `TelaRepositorio.tsx` com
+`TelaDiagnostico.tsx`: o agrupamento certo já caía exatamente na borda dos
+dois componentes.
+
+- **Sua turma** — o que se mexe durante o semestre: os cartões de resumo,
+  Registros (agora primeiro — é a leitura de presença, o que mais se
+  consulta), Vínculos, Grade horária.
+- **Este computador** — mexido uma vez, ou raramente: Onde os dados ficam,
+  Passar os crachás a outro professor, Recomeçar do zero.
+- **Diagnóstico** — `TelaDiagnostico.tsx` inteiro, sem reordenar nada por
+  dentro (a ordem de lá já ia do geral ao específico, e não era isso que
+  confundia). Título e legenda simples, dizendo o que já era regra do
+  projeto: diagnóstico é para quando algo não funciona, não para o dia a
+  dia.
+
+`Secao`, em `componentes/Painel.tsx`, é a divisória — não é `Painel`, não
+colapsa, é só o título. Nenhum painel mudou de conteúdo, só de posição.
+

@@ -56,6 +56,7 @@ import { TelaNavegador } from './TelaNavegador.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
 import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { Baixar, Cadeado, Engrenagem, Ondas } from './componentes/Simbolos.tsx'
+import { Secao } from './componentes/Painel.tsx'
 import { levantarCapacidades } from '../ambiente/capacidades.ts'
 import { marcarAte, naoSalvos, totalNaoSalvo, type Pendencia } from '../nucleo/pendencias.ts'
 import { useAdsum } from './adsum.ts'
@@ -855,6 +856,10 @@ export function Fluxo() {
               await recontar()
               return resumo
             }}
+          />
+          <Secao
+            titulo="Diagnóstico"
+            legenda="Para quando algo não funciona. Não é uso do dia a dia."
           />
           <TelaDiagnostico />
         </Sheet>

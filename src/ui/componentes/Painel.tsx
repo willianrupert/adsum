@@ -91,3 +91,18 @@ export function Selo({
 }) {
   return <span className={`selo selo--${tom}`}>{children}</span>
 }
+
+/**
+ * Divisória entre grupos de painéis em Ajustes — "Sua turma", "Este
+ * computador", "Diagnóstico". Não colapsa e não é um `Painel`: é só o
+ * agrupamento visual que faltava numa folha de onze painéis empilhados sem
+ * hierarquia nenhuma.
+ */
+export function Secao({ titulo, legenda }: { titulo: string; legenda?: string }) {
+  return (
+    <div className="ajustes__secao">
+      {titulo}
+      {legenda && <p className="ajustes__legenda">{legenda}</p>}
+    </div>
+  )
+}

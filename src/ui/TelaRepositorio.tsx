@@ -18,7 +18,7 @@ import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.t
 import { pastaDisponivel } from '../ambiente/pasta.ts'
 import { comoInstalar, ehWebKit, instalado } from '../ambiente/instalacao.ts'
 import { useAdsum } from './adsum.ts'
-import { Linha, Painel, Selo } from './componentes/Painel.tsx'
+import { Linha, Painel, Secao, Selo } from './componentes/Painel.tsx'
 import { Cartao } from './componentes/Cartao.tsx'
 import { GradeDaSemana, aulasDe } from './componentes/GradeDaSemana.tsx'
 import { marcadosDe } from '../nucleo/horarios.ts'
@@ -352,104 +352,7 @@ export function TelaRepositorio({
 
   return (
     <div className="diagnostico">
-      {/* Sem pasta escolhida, os dados existem **num navegador**, não num
-          computador: o mesmo Mac com Chrome e Safari tem duas bases separadas,
-          e cada uma some se aquele navegador limpar os dados do site. Dizer
-          "neste computador" seria promessa maior do que a verdade. */}
-      {/* Onde os dados estão. O navegador entrega só o **nome** da pasta — o
-          caminho completo fica fora do alcance da página de propósito, e é uma
-          proteção, não uma limitação a contornar. */}
-      <Painel
-        titulo="Onde os dados ficam"
-        recolhivel
-        acoes={
-          // Sem seletor de diretório, não existe botão: oferecer uma ação que o
-          // navegador não pode executar é pior que não oferecer nada.
-          aoTrocarPasta &&
-          pastaDisponivel() && (
-            <>
-              {/* O único caminho manual de **puxar** da pasta. O outro conserto
-                  empurra cache → pasta, e o automático só dispara com a base
-                  vazia — então uma pasta no iCloud atualizada por outra máquina
-                  nunca entrava, apesar de "a pasta é a dona". Não apaga nada:
-                  vínculos entram por chave e eventos por `evento_id`, então
-                  reler duas vezes dá no mesmo. */}
-              {pasta && aoDesconectarPasta && (
-                <button
-                  className="botao--grave"
-                  onClick={tentar('Desconectar', async () => {
-                    if (
-                      !confirm(
-                        'Desconectar a pasta? Os arquivos continuam onde estão, e a base continua neste navegador. O Adsum só para de gravar nela.',
-                      )
-                    ) {
-                      throw new Error('cancelado')
-                    }
-                    await aoDesconectarPasta()
-                    return 'a pasta não recebe mais gravação.'
-                  })}
-                >
-                  Desconectar
-                </button>
-              )}
-              {pasta && aoRelerPasta && (
-                <button
-                  onClick={tentar('Reler a pasta', async () => {
-                    const { arquivos, problemas } = await aoRelerPasta()
-                    if (problemas.length > 0) throw new Error(problemas[0])
-                    return `${arquivos.length} arquivos.`
-                  })}
-                >
-                  Reler a pasta
-                </button>
-              )}
-              <button className={pasta ? undefined : 'botao--acento'} onClick={aoTrocarPasta}>
-                {pasta ? 'Trocar de pasta' : 'Escolher pasta'}
-              </button>
-            </>
-          )
-        }
-      >
-        {pasta ? (
-          <>
-            <Linha rotulo="pasta">
-              <strong>{pasta.name}</strong>
-            </Linha>
-            <Linha rotulo="dentro dela">
-              <code>config.json · vinculos.json · turmas/ · registros/</code>
-            </Linha>
-            <p className="ferramentas__nota">
-              Gravado a cada mudança. O navegador não revela o caminho completo, então
-              procure a pasta pelo nome, onde você a escolheu. O <code>LEIA-ME.txt</code> lá dentro
-              explica cada arquivo e como recuperar tudo.
-            </p>
-            {/* O que surpreendeu o autor: esvaziar a pasta pela mão não muda
-                nada na tela, e a gravação seguinte a reenche. É de propósito —
-                pasta no iCloud que ainda não sincronizou, ou volume
-                desmontado, aparecem vazios, e apagar a base local por causa
-                disso seria perder a turma por um problema de rede. A pasta é a
-                dona do que ela **tem**, não do que falta nela. */}
-            <p className="ferramentas__nota">
-              Esvaziar a pasta pela mão não apaga a base daqui, e a próxima
-              gravação a reenche. Para parar de gravar nela, use{' '}
-              <strong>Desconectar</strong>. Para apagar a base, os botões de zerar
-              abaixo.
-            </p>
-            <p className="ferramentas__nota">
-              <strong>Reler a pasta</strong> traz de volta o que estiver lá e não estiver
-              aqui. Útil se a pasta fica no iCloud e outra máquina gravou nela, e não apaga
-              nada.
-            </p>
-          </>
-        ) : pastaDisponivel() ? (
-          <p className="ferramentas__nota">
-            Nenhuma pasta escolhida: os dados existem só neste navegador, e somem se você
-            limpar os dados do site.
-          </p>
-        ) : (
-          <SemPasta />
-        )}
-      </Painel>
+      <Secao titulo="Sua turma" legenda="O que se mexe durante o semestre." />
 
       <div className="cartoes">
         <Cartao
@@ -474,6 +377,53 @@ export function TelaRepositorio({
 
       {recado && <div className={`aviso aviso--${recado.tom}`}>{recado.texto}</div>}
       {importacao && <Importacao resultado={importacao} />}
+
+      <Painel
+        titulo="Registros"
+        recolhivel
+        legenda="Quem esteve presente, e o que a planilha consome."
+        acoes={
+          <>
+            <button onClick={importarRegistros}>Importar</button>
+            <button
+              onClick={tentar('Exportar registros', async () => {
+                const eventos = await repositorio.listarEventos()
+                // O login não fica no evento: fica no vínculo, que é onde ele
+                // pertence. A coluna é preenchida na saída, com o vínculo de
+                // hoje — assim corrigir um login corrige as exportações futuras
+                // sem reescrever uma linha sequer do log.
+                const vinculos = await repositorio.listarVinculos()
+                const matriculaPorHash = new Map(vinculos.map((v) => [v.uidHash, v.matricula]))
+                const ordenados = [...eventos]
+                  .reverse()
+                  .map((e) => ({ ...e, matricula: e.matricula ?? matriculaPorHash.get(e.uidHash) }))
+
+                // Um arquivo por turma: cada turma vira uma planilha, e turma
+                // nova não mexe em arquivo de turma antiga.
+                const turmas = porTurma(ordenados)
+                if (turmas.size === 0) throw new Error('nenhum registro para exportar')
+                const nomes: string[] = []
+                for (const [turma, linhas] of turmas) {
+                  const alvo = nomeDoArquivo(turma)
+                  const salvou = await salvarTexto(alvo, paraCsv(linhas))
+                  if (salvou === 'cancelado') break
+                  nomes.push(alvo)
+                }
+                return nomes.length > 0 ? `${nomes.join(', ')}.` : 'cancelado.'
+              })}
+            >
+              Exportar
+            </button>
+          </>
+        }
+      >
+        <Linha rotulo="linhas gravadas">{totalEventos}</Linha>
+        <Linha rotulo="colunas">
+          <code>evento_id;quando;turma;matricula;nome;origem;resultado;uid_hash</code>
+        </Linha>
+
+        <TabelaDeRegistros turmas={turmas} eventos={eventos} />
+      </Painel>
 
       <Painel
         titulo="Vínculos"
@@ -616,99 +566,106 @@ export function TelaRepositorio({
         />
       </Painel>
 
-      <Painel
-        titulo="Registros"
-        recolhivel
-        legenda="Quem esteve presente, e o que a planilha consome."
-        acoes={
-          <>
-            <button onClick={importarRegistros}>Importar</button>
-            <button
-              onClick={tentar('Exportar registros', async () => {
-                const eventos = await repositorio.listarEventos()
-                // O login não fica no evento: fica no vínculo, que é onde ele
-                // pertence. A coluna é preenchida na saída, com o vínculo de
-                // hoje — assim corrigir um login corrige as exportações futuras
-                // sem reescrever uma linha sequer do log.
-                const vinculos = await repositorio.listarVinculos()
-                const matriculaPorHash = new Map(vinculos.map((v) => [v.uidHash, v.matricula]))
-                const ordenados = [...eventos]
-                  .reverse()
-                  .map((e) => ({ ...e, matricula: e.matricula ?? matriculaPorHash.get(e.uidHash) }))
+      <Secao titulo="Este computador" legenda="Mexido uma vez, ou raramente." />
 
-                // Um arquivo por turma: cada turma vira uma planilha, e turma
-                // nova não mexe em arquivo de turma antiga.
-                const turmas = porTurma(ordenados)
-                if (turmas.size === 0) throw new Error('nenhum registro para exportar')
-                const nomes: string[] = []
-                for (const [turma, linhas] of turmas) {
-                  const alvo = nomeDoArquivo(turma)
-                  const salvou = await salvarTexto(alvo, paraCsv(linhas))
-                  if (salvou === 'cancelado') break
-                  nomes.push(alvo)
-                }
-                return nomes.length > 0 ? `${nomes.join(', ')}.` : 'cancelado.'
-              })}
-            >
-              Exportar
-            </button>
-          </>
+      {/* Sem pasta escolhida, os dados existem **num navegador**, não num
+          computador: o mesmo Mac com Chrome e Safari tem duas bases separadas,
+          e cada uma some se aquele navegador limpar os dados do site. Dizer
+          "neste computador" seria promessa maior do que a verdade. */}
+      {/* Onde os dados estão. O navegador entrega só o **nome** da pasta — o
+          caminho completo fica fora do alcance da página de propósito, e é uma
+          proteção, não uma limitação a contornar. */}
+      <Painel
+        titulo="Onde os dados ficam"
+        recolhivel
+        acoes={
+          // Sem seletor de diretório, não existe botão: oferecer uma ação que o
+          // navegador não pode executar é pior que não oferecer nada.
+          aoTrocarPasta &&
+          pastaDisponivel() && (
+            <>
+              {/* O único caminho manual de **puxar** da pasta. O outro conserto
+                  empurra cache → pasta, e o automático só dispara com a base
+                  vazia — então uma pasta no iCloud atualizada por outra máquina
+                  nunca entrava, apesar de "a pasta é a dona". Não apaga nada:
+                  vínculos entram por chave e eventos por `evento_id`, então
+                  reler duas vezes dá no mesmo. */}
+              {pasta && aoDesconectarPasta && (
+                <button
+                  className="botao--grave"
+                  onClick={tentar('Desconectar', async () => {
+                    if (
+                      !confirm(
+                        'Desconectar a pasta? Os arquivos continuam onde estão, e a base continua neste navegador. O Adsum só para de gravar nela.',
+                      )
+                    ) {
+                      throw new Error('cancelado')
+                    }
+                    await aoDesconectarPasta()
+                    return 'a pasta não recebe mais gravação.'
+                  })}
+                >
+                  Desconectar
+                </button>
+              )}
+              {pasta && aoRelerPasta && (
+                <button
+                  onClick={tentar('Reler a pasta', async () => {
+                    const { arquivos, problemas } = await aoRelerPasta()
+                    if (problemas.length > 0) throw new Error(problemas[0])
+                    return `${arquivos.length} arquivos.`
+                  })}
+                >
+                  Reler a pasta
+                </button>
+              )}
+              <button className={pasta ? undefined : 'botao--acento'} onClick={aoTrocarPasta}>
+                {pasta ? 'Trocar de pasta' : 'Escolher pasta'}
+              </button>
+            </>
+          )
         }
       >
-        <Linha rotulo="linhas gravadas">{totalEventos}</Linha>
-        <Linha rotulo="colunas">
-          <code>evento_id;quando;turma;matricula;nome;origem;resultado;uid_hash</code>
-        </Linha>
-
-        <TabelaDeRegistros turmas={turmas} eventos={eventos} />
-      </Painel>
-
-      {/* Recomeçar do zero.
-          Existia só no modo de ensaio, e o professor real também precisa: fim
-          de semestre, máquina que muda de dono, ou simplesmente querer refazer
-          o cadastro sem resíduo.
-
-          O texto importa mais que o botão. "Apagar tudo" não diz **o quê**, e
-          aqui há duas coisas com destinos diferentes: a base deste navegador
-          some, os arquivos da pasta ficam onde estão. Quem não souber disso
-          apaga achando que apagou os dois, ou não apaga achando que apagaria. */}
-      {aoResetar && (
-        <Painel
-          titulo="Recomeçar do zero"
-          recolhivel
-          legenda="Devolve este navegador ao estado de quem nunca abriu o Adsum."
-        >
+        {pasta ? (
+          <>
+            <Linha rotulo="pasta">
+              <strong>{pasta.name}</strong>
+            </Linha>
+            <Linha rotulo="dentro dela">
+              <code>config.json · vinculos.json · turmas/ · registros/</code>
+            </Linha>
+            <p className="ferramentas__nota">
+              Gravado a cada mudança. O navegador não revela o caminho completo, então
+              procure a pasta pelo nome, onde você a escolheu. O <code>LEIA-ME.txt</code> lá dentro
+              explica cada arquivo e como recuperar tudo.
+            </p>
+            {/* O que surpreendeu o autor: esvaziar a pasta pela mão não muda
+                nada na tela, e a gravação seguinte a reenche. É de propósito —
+                pasta no iCloud que ainda não sincronizou, ou volume
+                desmontado, aparecem vazios, e apagar a base local por causa
+                disso seria perder a turma por um problema de rede. A pasta é a
+                dona do que ela **tem**, não do que falta nela. */}
+            <p className="ferramentas__nota">
+              Esvaziar a pasta pela mão não apaga a base daqui, e a próxima
+              gravação a reenche. Para parar de gravar nela, use{' '}
+              <strong>Desconectar</strong>. Para apagar a base, os botões de zerar
+              abaixo.
+            </p>
+            <p className="ferramentas__nota">
+              <strong>Reler a pasta</strong> traz de volta o que estiver lá e não estiver
+              aqui. Útil se a pasta fica no iCloud e outra máquina gravou nela, e não apaga
+              nada.
+            </p>
+          </>
+        ) : pastaDisponivel() ? (
           <p className="ferramentas__nota">
-            Apaga <strong>deste navegador</strong>: turmas, crachás vinculados, grade
-            horária, registros de presença e as preferências (leitor escolhido, avisos
-            dispensados). O segredo desta instalação some junto, e com ele os crachás
-            deixam de ser reconhecíveis.
+            Nenhuma pasta escolhida: os dados existem só neste navegador, e somem se você
+            limpar os dados do site.
           </p>
-          <p className="ferramentas__nota ferramentas__nota--forte">
-            Não apaga os arquivos da pasta. Eles continuam onde estão, e reescolher a
-            pasta depois traz tudo de volta — inclusive o segredo. Para apagar de
-            verdade, apague a pasta você mesmo, no Finder.
-          </p>
-          <div className="ferramentas">
-            <button
-              className="botao--grave"
-              onClick={tentar('Recomeçar', async () => {
-                if (
-                  !confirm(
-                    'Apagar a base deste navegador? Os arquivos da pasta continuam onde estão.',
-                  )
-                ) {
-                  throw new Error('cancelado')
-                }
-                await aoResetar()
-                return 'pronto. O Adsum vai recomeçar.'
-              })}
-            >
-              Apagar a base deste navegador
-            </button>
-          </div>
-        </Painel>
-      )}
+        ) : (
+          <SemPasta />
+        )}
+      </Painel>
 
       <Painel
         titulo="Passar os crachás a outro professor"
@@ -767,6 +724,53 @@ export function TelaRepositorio({
           que a lista da turma.
         </p>
       </Painel>
+
+      {/* Recomeçar do zero.
+          Existia só no modo de ensaio, e o professor real também precisa: fim
+          de semestre, máquina que muda de dono, ou simplesmente querer refazer
+          o cadastro sem resíduo.
+
+          O texto importa mais que o botão. "Apagar tudo" não diz **o quê**, e
+          aqui há duas coisas com destinos diferentes: a base deste navegador
+          some, os arquivos da pasta ficam onde estão. Quem não souber disso
+          apaga achando que apagou os dois, ou não apaga achando que apagaria. */}
+      {aoResetar && (
+        <Painel
+          titulo="Recomeçar do zero"
+          recolhivel
+          legenda="Devolve este navegador ao estado de quem nunca abriu o Adsum."
+        >
+          <p className="ferramentas__nota">
+            Apaga <strong>deste navegador</strong>: turmas, crachás vinculados, grade
+            horária, registros de presença e as preferências (leitor escolhido, avisos
+            dispensados). O segredo desta instalação some junto, e com ele os crachás
+            deixam de ser reconhecíveis.
+          </p>
+          <p className="ferramentas__nota ferramentas__nota--forte">
+            Não apaga os arquivos da pasta. Eles continuam onde estão, e reescolher a
+            pasta depois traz tudo de volta — inclusive o segredo. Para apagar de
+            verdade, apague a pasta você mesmo, no Finder.
+          </p>
+          <div className="ferramentas">
+            <button
+              className="botao--grave"
+              onClick={tentar('Recomeçar', async () => {
+                if (
+                  !confirm(
+                    'Apagar a base deste navegador? Os arquivos da pasta continuam onde estão.',
+                  )
+                ) {
+                  throw new Error('cancelado')
+                }
+                await aoResetar()
+                return 'pronto. O Adsum vai recomeçar.'
+              })}
+            >
+              Apagar a base deste navegador
+            </button>
+          </div>
+        </Painel>
+      )}
 
     </div>
   )
