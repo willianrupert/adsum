@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { Fluxo } from './Fluxo.tsx'
@@ -604,11 +604,14 @@ describe('os Ajustes se recolhem', () => {
 
     const vinculos = await screen.findByRole('button', { name: /Vínculos/ })
     expect(vinculos).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.queryByPlaceholderText('filtrar por nome ou hash')).not.toBeInTheDocument()
+    // O conteúdo fica montado para a transição poder encolher em vez de
+    // sumir — mas `inert` tira um campo escondido do alcance do Tab, o
+    // mesmo problema que "sumir de vez" também resolvia.
+    expect(screen.getByPlaceholderText('filtrar por nome ou hash').closest('[inert]')).toBeTruthy()
 
     await usuario.click(vinculos)
     expect(vinculos).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByPlaceholderText('filtrar por nome ou hash')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('filtrar por nome ou hash').closest('[inert]')).toBeFalsy()
   })
 
   // Botão de zerar ao lado de um título recolhido é convite a clicar sem ver
@@ -657,12 +660,16 @@ describe('os Ajustes se recolhem', () => {
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
 
     await usuario.click(await screen.findByRole('button', { name: /Registros/ }))
-    expect(screen.getByText('Breno Oliveira')).toBeInTheDocument()
-    expect(screen.getByRole('group', { name: 'turma dos registros' })).toBeInTheDocument()
+    // Os painéis ficam montados mesmo fechados agora (é o que permite a
+    // transição encolher em vez de sumir num corte seco) — "Estado do app",
+    // em Diagnóstico, também lista eventos recentes, e "Breno Oliveira"
+    // apareceria lá também. `within` restringe a busca a este painel.
+    const painel = screen.getByRole('group', { name: 'turma dos registros' }).closest('section')!
+    expect(within(painel).getByText('Breno Oliveira')).toBeInTheDocument()
 
-    await usuario.click(screen.getByRole('button', { name: 'IF999 · T02' }))
-    expect(screen.queryByText('Breno Oliveira')).not.toBeInTheDocument()
-    expect(screen.getByText(/Nenhum registro ainda para IF999 · T02/)).toBeInTheDocument()
+    await usuario.click(within(painel).getByRole('button', { name: 'IF999 · T02' }))
+    expect(within(painel).queryByText('Breno Oliveira')).not.toBeInTheDocument()
+    expect(within(painel).getByText(/Nenhum registro ainda para IF999 · T02/)).toBeInTheDocument()
   })
 
   // A mesma grade do cronograma, e não a lista de campos que existia aqui.

@@ -139,6 +139,7 @@ code {
   background: var(--fundo-alt);
   border-radius: var(--raio);
   padding: 26px 28px 28px;
+  transition: padding-bottom var(--medio) var(--curva);
 }
 
 /* Divisória simples entre grupos de Ajustes — "Sua turma", "Este
@@ -171,8 +172,31 @@ code {
   padding-bottom: 22px;
 }
 
+.painel__topo {
+  transition: margin-bottom var(--medio) var(--curva);
+}
+
 .painel--fechado .painel__topo {
   margin-bottom: 0;
+}
+
+/* Abrir e fechar deslizam em vez de aparecer e sumir. `grid-template-rows`
+   de 0fr a 1fr anima pra uma altura que ninguém precisa medir em JS — o
+   truque de largura de coluna aplicado à altura de linha. O `overflow:
+   hidden` de dentro é quem corta o conteúdo durante a transição; sem ele,
+   o texto vazaria por cima da borda enquanto a linha ainda está encolhendo. */
+.painel__corpo {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--medio) var(--curva);
+}
+
+.painel__corpo--aberto {
+  grid-template-rows: 1fr;
+}
+
+.painel__corpo-interno {
+  overflow: hidden;
 }
 
 /* O cabeçalho inteiro é o alvo. Alvo grande é o que faz recolher parecer
@@ -987,6 +1011,10 @@ button:focus-visible {
   border-radius: var(--raio);
   padding: 44px 28px 32px;
   text-align: center;
+  /* Embaixo dele, quando há gente pendente, vem a tabela "Quem falta" — o
+     mesmo cinza de fundo. Sem respiro, os dois viram um bloco só, e o corte
+     entre eles só aparece pelo canto arredondado, quase invisível. */
+  margin-bottom: 16px;
 }
 
 .chamado__voltar {

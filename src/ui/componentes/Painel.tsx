@@ -68,7 +68,21 @@ export function Painel({
             um título recolhido é convite a clicar sem ver no quê. */}
         {acoes && mostrando && <div className="painel__acoes">{acoes}</div>}
       </header>
-      {mostrando && children}
+      {/* O conteúdo fica montado sempre — é o que dá para `grid-template-rows`
+          animar de 0fr a 1fr em vez de aparecer e sumir num corte seco. Montar
+          e desmontar a cada clique é mais barato, mas "nada brusco" foi o
+          pedido, e o conteúdo de um painel de Ajustes é leve o bastante para
+          o custo não aparecer.
+
+          `inert` fechado: sem ele, um campo ou botão dentro do painel
+          recolhido continuaria alcançável pelo Tab, escondido mas focável —
+          o mesmo tipo de defeito que "as ações somem com o painel fechado"
+          já existia para proteger, só que no corpo em vez do cabeçalho. */}
+      <div className={mostrando ? 'painel__corpo painel__corpo--aberto' : 'painel__corpo'}>
+        <div className="painel__corpo-interno" inert={mostrando ? undefined : true}>
+          {children}
+        </div>
+      </div>
     </section>
   )
 }
