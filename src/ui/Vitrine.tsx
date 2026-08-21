@@ -12,7 +12,7 @@ import { TelaPasta } from './TelaPasta.tsx'
 import { TelaNavegador } from './TelaNavegador.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
 import { EscolherTurma } from './componentes/EscolherTurma.tsx'
-import { TelaVinculo } from './TelaVinculo.tsx'
+import { TelaColarTurma } from './TelaColarTurma.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
 import { TelaProblema } from './TelaProblema.tsx'
@@ -135,25 +135,23 @@ export function Vitrine() {
       </Cena>
 
       <Cena titulo="A turma" quando="nenhuma turma cadastrada">
-        <TelaVinculo />
+        <TelaColarTurma />
       </Cena>
 
-      <Cena titulo="A aula" quando="dia comum: sem cobrança de crachá">
+      <Cena titulo="A aula, sem ninguém pendente" quando="dia comum: sem fila de crachá">
         <TelaAula
           sessao={{ turma: TURMA, abertaEm: new Date(Date.now() - 22 * 60000).toISOString(), uidHashProfessor: 'x' }}
-          pendentes={PENDENTES}
+          pendentes={[]}
           daTurma={PENDENTES}
-          alunosDaTurma={47}
           aoMudarBase={() => {}}
         />
       </Cena>
 
-      <Cena titulo="A aula, primeiro dia" quando="ninguém tem crachá: a cerimônia é a chamada">
+      <Cena titulo="A aula, com gente pendente" quando="a cerimônia é a chamada: a mesma tela chama e vincula">
         <TelaAula
           sessao={{ turma: TURMA, abertaEm: new Date(Date.now() - 4 * 60000).toISOString(), uidHashProfessor: 'x' }}
           pendentes={PENDENTES}
           daTurma={PENDENTES}
-          alunosDaTurma={PENDENTES.length}
           aoMudarBase={() => {}}
         />
       </Cena>
@@ -188,7 +186,6 @@ export function Vitrine() {
           pendencias={[]}
           aoIniciar={() => {}}
           aoSalvar={() => {}}
-          aoAbrirCerimonia={() => {}}
           aoNovaTurma={() => {}}
         />
       </Cena>
@@ -216,7 +213,6 @@ export function Vitrine() {
           proxima={{ turma: TURMA, quando: new Date(Date.now() + 3 * 3600_000) }}
           aoIniciar={() => {}}
           aoSalvar={() => {}}
-          aoAbrirCerimonia={() => {}}
           aoNovaTurma={() => {}}
         />
       </Cena>
@@ -230,7 +226,6 @@ export function Vitrine() {
           ]}
           aoIniciar={() => {}}
           aoSalvar={() => {}}
-          aoAbrirCerimonia={() => {}}
           aoNovaTurma={() => {}}
         />
       </Cena>

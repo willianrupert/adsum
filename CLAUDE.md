@@ -753,3 +753,73 @@ editável, com "Chamar" em qualquer linha, e não grava presença — só víncu
 sem tabela nenhuma. É a duplicação que este arquivo já apontava como pendente.
 Unificar mexe na regra de "um nome por vez" — a mais protegida do projeto — e
 por isso não entrou nesta varredura sem ser combinado primeiro.
+
+## A cerimônia e a chamada viraram uma coisa só — 21/08/2026
+
+"São duas telas para uma coisa só" foi dito duas vezes neste arquivo antes de
+ser feito. O autor pediu para resolver, com liberdade para melhorar a UX de
+Ajustes também — os dois pedaços deste registro.
+
+**A decisão central: não existe mais um modo "só vínculo, sem sessão".**
+Chamar um nome pendente e encostar o crachá dele é sempre `decidir()` →
+`'cadastro'`, que já grava vínculo **e** presença no mesmo gesto —
+"quem se cadastra já está presente" deixou de ser só uma frase. E não é
+perda: a cerimônia antiga não passava por `decidir()`, então não tinha
+proteção nenhuma contra dois crachás rápidos demais — bem no momento de
+maior risco, a fila inteira formada no primeiro dia. Unificar estende essa
+proteção para lá.
+
+`TelaAula.tsx` trocou a condição estreita `primeiroDia` (100% da turma
+pendente, e só nesse caso a barrinha aparecia) por `pendentes.length > 0` —
+a mesma que `TelaVinculo` sempre usou. Com gente pendente, ela mostra o
+cartão "Encoste o crachá de X" e, abaixo, a tabela completa portada de lá:
+"Chamar" em qualquer linha (não só a próxima), nome e papel editáveis
+antes do crachá chegar, "Pular", "Nome repetido" quando dois nomes exibidos
+colidem — calculado na hora, porque `Matriculado` não guarda a dica que o
+SIGAA deu. `aCadastrar` busca em `daTurma`, não em `pendentes`: "Mais um
+crachá" chama alguém que **já** tem vínculo, e essa pessoa não está na
+lista de pendentes.
+
+**`'cerimonia'` deixou de ser uma tela.** `decidirRota` continua devolvendo
+exatamente o mesmo valor no mesmo lugar — o contrato de `rota.ts` não mudou,
+nem os testes dele — só que `Fluxo.tsx` não renderiza mais nada para esse
+valor. Em vez disso, um efeito chama `iniciarChamada()` — a mesma função que
+"Começar a chamada" já usava, com `garantirProfessor()` sintetizando o
+vínculo do professor se for preciso —, e a rota recalcula para `'chamada'`
+no instante seguinte. A classe inteira de bug que motivou a suspeita original
+("o crachá do professor no meio da fila expulsa a cerimônia antes da hora")
+ficou **estruturalmente impossível**: `decidirRota` verifica
+`chamadaAberta` antes de sequer olhar `professorSemCracha`, então uma vez
+que a sessão está aberta, nenhuma mudança de vínculo tira a tela do lugar.
+
+**O que muda de comportamento, e precisa ficar dito:** crachá já vinculado a
+**outra** pessoa, encostado enquanto alguém **X** está chamado — antes,
+`TelaVinculo` recusava, dizendo "já é de {dono}, X continua chamado". Agora
+`decidir()` simplesmente marca presença para o dono de verdade, do jeito que
+`TelaAula` sempre fez fora do primeiro dia. Não é falha de dado — a pessoa
+dona do crachá está mesma ali —, é uma regra a menos para duas
+implementações manterem sincronizada.
+
+`TelaVinculo.tsx` virou `TelaColarTurma.tsx`, e encolheu para só a colagem:
+nome da turma, texto do SIGAA, "Continuar", e um "Cancelar" que só existe
+quando há `aoSair` (ou seja, quando há repouso pra onde voltar — na primeira
+turma de todas, `turmas === 0`, esta tela é a única que existe). Os botões
+"Abrir `{turma}`" saíram: duplicavam o que "Começar a chamada" já oferece
+via `EscolherTurma` quando a turma é ambígua.
+
+**"Cadastrar mais um crachá" saiu do repouso.** Com a unificação, "Começar a
+chamada" já abre a turma certa — pelo horário, ou perguntando quando
+ambíguo (`escolherTurma` só devolve `'sem_turma'` com zero turmas, o que
+nunca acontece no repouso) — e a tabela de pendentes aparece sozinha se
+houver alguém. Manter os dois botões seria a mesma redundância que este
+projeto já cortou noutro lugar. Custa um clique a mais num caso específico:
+duas turmas, nenhuma com horário batendo agora, querendo cadastrar a
+segunda — antes ia direto, agora pergunta qual turma. Aceitável pelo que se
+ganha.
+
+`cadastroDispensado` fica, sem gatilho de UI que o acione: a cerimônia que
+ele adiava não trava mais nada — abrir sozinho leva direto a `TelaAula`, que
+já tem saída própria (`Encerrar a chamada`, mesmo com zero presença). O
+contrato de `rota.ts` não mudou por causa disso, só o comportamento ficou
+sempre "abre sozinho".
+

@@ -56,29 +56,12 @@ describe('a rota decide a tela', () => {
 
   // Regressão: este botão existia e não fazia nada — a rota decide pelo estado,
   // e "quero cadastrar mais um" é intenção que nenhum dado expressa.
-  it('"Cadastrar mais um crachá" leva à tela de cadastro e volta', async () => {
-    const usuario = userEvent.setup()
-    await turmaInteiraComCracha()
-    renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Começar a chamada')
-
-    await usuario.click(screen.getByRole('button', { name: 'Cadastrar mais um crachá' }))
-    expect(await screen.findByRole('button', { name: 'Concluir' })).toBeInTheDocument()
-
-    await usuario.click(screen.getByRole('button', { name: 'Concluir' }))
-    expect(await screen.findByText('Começar a chamada')).toBeInTheDocument()
-  })
-
-  // Regressão: `professorSemCracha` é lido de novo a cada vínculo gravado, e a
-  // rota decidia por ele a cada render. O crachá do professor, tocado no meio
-  // da própria cerimônia, mudava esse estado e a rota recalculava para
-  // 'pronto' na hora — a tela sumia debaixo do professor antes de ele poder
-  // chamar o próximo aluno da fila. Isto é o "não sei o que eu faço depois de
-  // cadastrar alguns" relatado ao vivo: o professor seguiu a instrução
-  // "comece pelo seu crachá" e foi ejetado da cerimônia sem completar mais
-  // ninguém.
-  it('o crachá do professor no meio da fila não expulsa a cerimônia antes da hora', async () => {
-    const usuario = userEvent.setup()
+  // A cerimônia deixou de ser uma tela à parte: `'cerimonia'` é só o sinal
+  // para abrir sozinho, com `TelaAula` mostrando a turma inteira pendente.
+  // O crachá do professor, tocado no meio da fila, não pode mais expulsar a
+  // tela — `rota === 'chamada'` é decidido só por `chamadaAberta`, antes de
+  // `decidirRota` sequer olhar para `professorSemCracha`.
+  it('a sessão abre sozinha com gente pendente, e o crachá do professor no meio não expulsa a tela', async () => {
     adiarHorario('IF685 · T01')
     await bancada.repositorio.salvarTurma('IF685 · T01', [
       {
@@ -100,33 +83,33 @@ describe('a rota decide a tela', () => {
     ])
     renderizarCom(bancada, <Fluxo />)
 
-    // A cerimônia abre sozinha chamando o docente primeiro.
+    // Abre sozinha, sem clique nenhum. O docente ganha vínculo sintético no
+    // mesmo gesto que abre a sessão — por isso quem a tabela chama primeiro
+    // é Breno, o único genuinamente pendente.
     await screen.findByText('Encoste o crachá de')
-    expect(await screen.findByText('Ana Paula')).toBeInTheDocument()
+    expect(await screen.findByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
+    await waitFor(async () => {
+      const vinculos = await bancada.repositorio.listarVinculos()
+      expect(vinculos).toMatchObject([{ papel: 'professor', nome: 'Ana Paula' }])
+    })
 
-    // O crachá do professor: em qualquer outra tela, é o que abre a aula.
-    // Aqui, no meio da própria cerimônia, ele só deveria registrar o vínculo.
+    // O crachá de verdade da professora, encostado no meio da fila: em
+    // qualquer outra tela ele abriria ou encerraria a aula. Aqui, com Breno
+    // chamado, ele vira o crachá dele — "um só nome chamado por vez" vale
+    // para qualquer crachá, inclusive o do professor.
     await act(async () => bancada.leitor.simular('04a23b91'))
-
-    // A tela continua na cerimônia, chamando quem sobrou — não pulou para o
-    // repouso por baixo do professor.
-    expect(await screen.findByText('Breno Oliveira')).toBeInTheDocument()
-    expect(screen.getByText('Encoste o crachá de')).toBeInTheDocument()
-
-    await act(async () => bancada.leitor.simular('04a23b92'))
-
-    // Com todo mundo vinculado, o botão agora conclui de verdade — e só agora.
-    const concluir = await screen.findByRole('button', { name: 'Concluir' })
-    await usuario.click(concluir)
-    expect(await screen.findByText(/Bom dia|Boa tarde|Boa noite/)).toBeInTheDocument()
+    await waitFor(async () => expect(await bancada.repositorio.listarVinculos()).toHaveLength(2))
+    // A tela continua na chamada — não pulou para o repouso por baixo de
+    // ninguém, nem por causa do crachá do professor tocado no meio da fila.
+    expect(screen.getByRole('button', { name: 'Encerrar a chamada' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('Quem falta')).not.toBeInTheDocument())
   })
 
-  // Regressão irmã da anterior, achada testando-a ao vivo: o docente não tem
-  // matrícula na página do SIGAA, e `abrirTurma` só reconhecia "já tem
-  // crachá" por matrícula. Reabrir "mais um crachá" chamava o professor de
-  // novo, sempre — mesmo bug que `recontar()` já tinha corrigido para a
-  // contagem de pendentes, só que não aqui.
-  it('reabrir "mais um crachá" não chama o professor de novo', async () => {
+  // Regressão irmã da anterior: o docente não tem matrícula na página do
+  // SIGAA, e o reconhecimento de "já tem crachá" só olhava matrícula.
+  // Reabrir a chamada da turma chamava o professor de novo, sempre — mesmo
+  // bug que `recontar()` já tinha corrigido para a contagem de pendentes.
+  it('reabrir a chamada não chama o professor de novo', async () => {
     const usuario = userEvent.setup()
     adiarHorario('IF685 · T01')
     await bancada.repositorio.salvarTurma('IF685 · T01', [
@@ -157,20 +140,20 @@ describe('a rota decide a tela', () => {
     ])
     renderizarCom(bancada, <Fluxo />)
 
-    // Professor e Breno chegam; Carla ainda não — é o "só alguns" da sala.
-    await screen.findByText('Ana Paula')
+    // O docente ganha vínculo sintético ao abrir; Breno é quem a tabela
+    // chama primeiro. Carla ainda não chegou — é o "só alguns" da sala.
+    await screen.findByText('Breno Oliveira', { selector: '.chamado__nome' })
     await act(async () => bancada.leitor.simular('04a23b91'))
-    await screen.findByText('Breno Oliveira')
-    await act(async () => bancada.leitor.simular('04a23b92'))
+    await waitFor(async () => expect(await bancada.repositorio.listarVinculos()).toHaveLength(2))
 
-    await usuario.click(await screen.findByRole('button', { name: 'Concluir' }))
-    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
+    await usuario.click(screen.getByRole('button', { name: 'Encerrar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Concluir sem salvar' }))
 
-    // Reabre para dar o crachá de quem faltou.
-    await usuario.click(screen.getByRole('button', { name: 'Cadastrar mais um crachá' }))
+    // Reabre para dar o crachá de quem faltou — só uma turma, sem perguntar.
+    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
 
     // Chama Carla, não Ana Paula de novo.
-    expect(await screen.findByText('Carla Regina')).toBeInTheDocument()
+    expect(await screen.findByText('Carla Regina', { selector: '.chamado__nome' })).toBeInTheDocument()
     expect(screen.queryByText('Ana Paula', { selector: '.chamado__nome' })).not.toBeInTheDocument()
   })
 
@@ -234,11 +217,18 @@ describe('a rota decide a tela', () => {
     // Turma nova, sem horário: o cronograma entra no meio.
     await usuario.click(await screen.findByRole('button', { name: 'Depois' }))
 
-    // Volta chamando Carla na turma nova — não a colagem em branco de novo,
-    // nem o professor de IF685 · T01.
-    expect(await screen.findByText('Carla Regina')).toBeInTheDocument()
-    expect(screen.getByText('Primeiro dia · IF999 · T02')).toBeInTheDocument()
+    // Volta ao repouso — não à colagem em branco de novo. IF685 · T01 já tem
+    // professor, então não há sessão para abrir sozinha; com duas turmas
+    // sem horário, "Começar a chamada" pergunta qual.
+    expect(await screen.findByText(/Bom dia|Boa tarde|Boa noite/)).toBeInTheDocument()
     expect(screen.queryByText('Cole sua turma')).not.toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: 'IF999 · T02' }))
+
+    // Chama Carla, na turma nova — o professor já reconhecido, sem crachá
+    // físico nenhum de novo.
+    expect(await screen.findByText('Carla Regina', { selector: '.chamado__nome' })).toBeInTheDocument()
   })
 
   it('a engrenagem abre os ajustes e clicar fora fecha', async () => {
@@ -724,14 +714,13 @@ describe('recomeçar do zero', () => {
 describe('as teclas de ensaio', () => {
   const comEnsaio = () => window.localStorage.setItem('adsum.modoDev', 'sim')
 
+  // Só abre a busca sem ninguém pendente: com gente na fila, `decidir()` já
+  // sabe a quem atribuir um crachá desconhecido, e "N" cadastraria o chamado
+  // direto — outro teste já cobre esse caminho.
   it('N produz um crachá que o app nunca viu, e abre a busca', async () => {
     const usuario = userEvent.setup()
     comEnsaio()
     await turmaInteiraComCracha()
-    await bancada.repositorio.salvarTurma('IF685 · T01', [
-      pessoa('1', 'Ana Paula'),
-      pessoa('2', 'Breno Oliveira'),
-    ])
     renderizarCom(bancada, <Fluxo />)
 
     await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))

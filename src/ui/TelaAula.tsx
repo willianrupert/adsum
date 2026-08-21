@@ -1,10 +1,14 @@
 // A aula acontecendo — e o cadastro junto.
 //
-// **Uma tela só durante a coleta.** Estados viram valores e cores dentro dela,
-// nunca telas diferentes: com fila, uma confirmação de dois segundos seria
-// interrompida pelo próximo antes de terminar — ou trunca, e o primeiro não
-// viu, ou enfileira, e a tela fica atrasada. Sem transição, o problema não
-// existe.
+// **Uma tela só durante a coleta**, e agora também a única que chama nomes.
+// Cerimônia e chamada eram duas telas para uma coisa só: chamar um nome e
+// esperar um crachá. A cerimônia não passava por `decidir()` — nenhuma
+// proteção contra dois crachás rápidos demais, nenhuma busca em spotlight
+// para crachá desconhecido — e cada regra vivia em dois lugares que podiam
+// divergir sem ninguém notar. Aqui só existe um caminho: crachá desconhecido
+// com alguém chamado é `decidir()` → `'cadastro'`, que grava vínculo **e**
+// presença no mesmo gesto. "Quem se cadastra já está presente" deixou de ser
+// só uma frase.
 //
 // O contador não tem denominador. `41/60` cria moldura de expectativa e exige
 // saber quantos deveriam vir, que é justamente o que ninguém deve precisar
@@ -13,7 +17,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import { decidir, eventoDe, proximoEventoId, type Decisao, type Sessao } from '../nucleo/sessao.ts'
-import type { Evento, Matriculado } from '../nucleo/tipos.ts'
+import type { Evento, Matriculado, Papel } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { useAdsum } from './adsum.ts'
@@ -21,6 +25,7 @@ import { modoDev } from '../ambiente/preferencias.ts'
 import { Busca } from './componentes/Busca.tsx'
 import { Ondas } from './componentes/Simbolos.tsx'
 import { Contador } from './componentes/Contador.tsx'
+import { Painel, Selo } from './componentes/Painel.tsx'
 
 interface Linha {
   chave: string
@@ -37,24 +42,22 @@ export function TelaAula({
   sessao,
   pendentes,
   daTurma,
-  alunosDaTurma,
   aoMudarBase,
   aoRegistrar,
   aoEncerrar,
 }: {
   sessao: Sessao
-  /** Quem está na turma e ainda não tem crachá. Vira a fila de cadastro. */
+  /** Quem está na turma e ainda não tem crachá. Vira a fila de chamada. */
   pendentes: Matriculado[]
   /**
-   * A turma inteira, para a busca do crachá desconhecido.
+   * A turma inteira, para a tabela e para a busca do crachá desconhecido.
    *
    * Não são só os pendentes, e a diferença importa: quem perdeu o crachá e
    * trouxe outro **já tem** vínculo, logo não está na fila — e antes disto não
    * havia como encontrá-lo, nem no dia em que ele aparecia com o cartão novo.
+   * É também quem já tem crachá e pode receber uma segunda via.
    */
   daTurma: Matriculado[]
-  /** Quantos alunos a turma tem. Diz se hoje é o primeiro dia. */
-  alunosDaTurma: number
   aoMudarBase: () => void
   /** Grava a linha na pasta. Acontece antes do bipe: som é "está salvo". */
   aoRegistrar?: (evento: Evento) => Promise<void>
@@ -93,20 +96,75 @@ export function TelaAula({
   const jaPresentes = useRef<Set<string>>(new Set())
   const [linhas, setLinhas] = useState<Linha[]>([])
   const [recado, setRecado] = useState<string>()
-  const [chamado, setChamado] = useState(0)
   const [procurando, setProcurando] = useState<string>()
   const sequencia = useRef(0)
 
   /**
-   * A faixa de cadastro só aparece **no primeiro dia** — quando nenhum aluno da
-   * turma tem crachá ainda e a cerimônia é a própria chamada. Depois disso ela
-   * some: ficar avisando que faltam três crachás é cobrança sobre gente que
-   * pode ter trancado, e o caso se resolve sozinho quando a pessoa aparece.
-   *
-   * Decidido **uma vez, quando a aula abre**, e não a cada leitura: recalcular
-   * fazia a faixa desaparecer no primeiro aluno cadastrado — que é exatamente o
-   * momento em que ela mais serve.
+   * Quem está chamado agora, por `chave` — não por índice: a ordem de
+   * `pendentes` muda a cada crachá vinculado, e um índice apontaria para a
+   * pessoa errada no render seguinte.
    */
+  const [chamadoChave, setChamadoChave] = useState<string>()
+  /** Edição de nome/papel antes do crachá chegar. Só local — vira o que é
+      gravado no vínculo quando o crachá encosta, e não sobrevive a um
+      recarregamento se ninguém chamou essa pessoa. Mesmo comportamento de
+      sempre: edição não é decisão de guardar sozinha. */
+  const [edicoes, setEdicoes] = useState<Map<string, { nome: string; papel: Papel }>>(new Map())
+  /** Pulado é "não agora", não "nunca" — por isso é local e não persiste. */
+  const [pulados, setPulados] = useState<Set<string>>(new Set())
+
+  // Chama o primeiro pendente assim que a fila deixa de estar vazia. Não
+  // briga com quem já escolheu alguém: só define quando ainda não há ninguém.
+  useEffect(() => {
+    if (chamadoChave === undefined && pendentes.length > 0) setChamadoChave(pendentes[0].chave)
+  }, [pendentes, chamadoChave])
+
+  const efetivo = useCallback(
+    (p: Matriculado): Matriculado => {
+      const edicao = edicoes.get(p.chave)
+      return edicao ? { ...p, nome: edicao.nome, papel: edicao.papel } : p
+    },
+    [edicoes],
+  )
+
+  /** A pessoa chamada, com a edição local aplicada — é isto que `decidir()`
+      recebe como `ctx.chamado`, e é isto que vira o vínculo gravado. */
+  // `daTurma`, não `pendentes`: "Mais um crachá" chama alguém que já tem
+  // vínculo, e essa pessoa não está na lista de pendentes — só na turma
+  // inteira. Segunda via depende de achá-la aqui.
+  const aCadastrar = useMemo(() => {
+    const p = daTurma.find((x) => x.chave === chamadoChave)
+    return p ? efetivo(p) : undefined
+  }, [daTurma, chamadoChave, efetivo])
+
+  const proximoPendente = useCallback(
+    (apartirDe: number) => {
+      for (let i = apartirDe; i < pendentes.length; i++) {
+        if (!pulados.has(pendentes[i].chave)) return pendentes[i].chave
+      }
+      return undefined
+    },
+    [pendentes, pulados],
+  )
+
+  // Setas andam pela fila de pendentes. Quem opera está com a mão no teclado e
+  // um aluno na frente.
+  useEffect(() => {
+    if (pendentes.length === 0) return
+    const andar = (evento: KeyboardEvent) => {
+      if (evento.key !== 'ArrowRight' && evento.key !== 'ArrowLeft') return
+      const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
+      const proximo = Math.min(
+        pendentes.length - 1,
+        Math.max(0, (indice < 0 ? 0 : indice) + (evento.key === 'ArrowRight' ? 1 : -1)),
+      )
+      setChamadoChave(pendentes[proximo]?.chave)
+      evento.preventDefault()
+    }
+    window.addEventListener('keydown', andar)
+    return () => window.removeEventListener('keydown', andar)
+  }, [pendentes, chamadoChave])
+
   /**
    * Pendentes primeiro, o resto depois.
    *
@@ -119,24 +177,6 @@ export function TelaAula({
     const naFila = new Set(pendentes.map((p) => p.chave))
     return [...pendentes, ...daTurma.filter((p) => p.papel === 'aluno' && !naFila.has(p.chave))]
   }, [pendentes, daTurma])
-
-  const primeiroDia = useRef(pendentes.length > 0 && pendentes.length === alunosDaTurma).current
-  const aCadastrar = primeiroDia
-    ? pendentes[Math.min(chamado, Math.max(0, pendentes.length - 1))]
-    : undefined
-
-  // Setas andam pela fila de cadastro. Quem opera está com a mão no teclado e
-  // um aluno na frente.
-  useEffect(() => {
-    if (pendentes.length === 0) return
-    const andar = (evento: KeyboardEvent) => {
-      if (evento.key !== 'ArrowRight' && evento.key !== 'ArrowLeft') return
-      setChamado((i) => Math.min(pendentes.length - 1, Math.max(0, i + (evento.key === 'ArrowRight' ? 1 : -1))))
-      evento.preventDefault()
-    }
-    window.addEventListener('keydown', andar)
-    return () => window.removeEventListener('keydown', andar)
-  }, [pendentes.length])
 
   // Reabrir o app no meio da aula tem que reencontrar quem já passou. A fonte
   // é o log, não a memória da tela — fechar o notebook não pode zerar a chamada.
@@ -236,6 +276,13 @@ export function TelaAula({
             matricula: decisao.pessoa.matricula || undefined,
             criadoEm: leitura.em.toISOString(),
           })
+          // Avança sozinho para o próximo pendente, pulando quem já foi
+          // marcado como pulado — mesmo gesto de sempre: chamar um nome não
+          // deveria custar um clique a mais para "próximo".
+          setChamadoChave((atual) => {
+            const indice = pendentes.findIndex((p) => p.chave === atual)
+            return proximoPendente(indice + 1)
+          })
         }
 
         const evento = eventoDe(decisao, {
@@ -267,7 +314,19 @@ export function TelaAula({
         aoMudarBase()
       })()
     })
-  }, [leitor, repositorio, config, sessao, recarregar, aoMudarBase, aoRegistrar, aoEncerrar, aCadastrar])
+  }, [
+    leitor,
+    repositorio,
+    config,
+    sessao,
+    recarregar,
+    aoMudarBase,
+    aoRegistrar,
+    aoEncerrar,
+    aCadastrar,
+    pendentes,
+    proximoPendente,
+  ])
 
   /**
    * Encerrar sem crachá.
@@ -349,6 +408,8 @@ export function TelaAula({
     }
   }
 
+  const chamadoAtual = aCadastrar
+
   return (
     <section className="coleta">
       <header className="coleta__topo">
@@ -381,33 +442,148 @@ export function TelaAula({
         <Ondas tamanho={52} animado />
       </div>
 
-      {aCadastrar && (
-        <section className="fila">
-          <button
-            className="fila__seta"
-            onClick={() => setChamado((i) => Math.max(0, i - 1))}
-            aria-label="Anterior"
-            disabled={chamado === 0}
-          >
-            ‹
-          </button>
-
-          <div className="fila__centro">
-            <p className="fila__rotulo">
-              {pendentes.length === 1 ? 'Falta um crachá' : `Faltam ${pendentes.length} crachás`}
-            </p>
-            <p className="fila__nome">{aCadastrar.nome}</p>
+      {/* A fila de chamada só aparece com gente pendente — e é a mesma tela
+          da cerimônia, não uma versão menor dela. Um só nome chamado por vez
+          continua sendo a garantia; o que muda é que chamar alguém agora
+          passa pelo mesmo `decidir()` de qualquer outro crachá, com a mesma
+          proteção contra dois crachás rápidos demais. */}
+      {pendentes.length > 0 && chamadoAtual && (
+        <section className="chamado">
+          <Ondas tamanho={54} animado />
+          <p className="chamado__rotulo">Encoste o crachá de</p>
+          <p className="chamado__nome">{chamadoAtual.nome}</p>
+          <p className="chamado__completo">
+            {chamadoAtual.nomeCompleto} · {chamadoAtual.papel}
+          </p>
+          <div className="chamado__acoes">
+            <button
+              onClick={() => {
+                const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
+                setChamadoChave(pendentes[Math.max(0, indice - 1)]?.chave)
+              }}
+              aria-label="anterior"
+              disabled={pendentes.findIndex((p) => p.chave === chamadoChave) <= 0}
+            >
+              ←
+            </button>
+            <button
+              onClick={() => {
+                setPulados((antes) => new Set(antes).add(chamadoAtual.chave))
+                const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
+                setChamadoChave(proximoPendente(indice + 1))
+              }}
+            >
+              Pular
+            </button>
+            <button
+              onClick={() => {
+                const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
+                setChamadoChave(pendentes[Math.min(pendentes.length - 1, indice + 1)]?.chave)
+              }}
+              aria-label="próximo"
+              disabled={pendentes.findIndex((p) => p.chave === chamadoChave) >= pendentes.length - 1}
+            >
+              →
+            </button>
           </div>
+          <p className="chamado__atalho">← e → andam pela fila</p>
 
-          <button
-            className="fila__seta"
-            onClick={() => setChamado((i) => Math.min(pendentes.length - 1, i + 1))}
-            aria-label="Próximo"
-            disabled={chamado >= pendentes.length - 1}
-          >
-            ›
-          </button>
+          {ensaio && ehSimulavel(leitor) && (
+            <div className="chamado__acoes">
+              <button
+                onClick={() => {
+                  try {
+                    leitor.encostarProximo()
+                  } catch (erro) {
+                    setRecado((erro as Error).message)
+                  }
+                }}
+              >
+                Simular um crachá
+              </button>
+            </div>
+          )}
         </section>
+      )}
+
+      {pendentes.length > 0 && (
+        <Painel titulo="Quem falta" legenda={`${pendentes.length} de ${daTurma.length} sem crachá`}>
+          <table className="tabela">
+            <thead>
+              <tr>
+                <th>Nome exibido</th>
+                <th>Papel</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {daTurma.map((p) => {
+                const vinculado = !pendentes.some((x) => x.chave === p.chave)
+                const e = efetivo(p)
+                const repetido = daTurma.filter((x) => efetivo(x).nome === e.nome).length > 1
+                return (
+                  <tr key={p.chave} className={p.chave === chamadoChave ? 'linha--chamada' : ''}>
+                    <td>
+                      {vinculado ? (
+                        e.nome
+                      ) : (
+                        <input
+                          className="entrada--celula"
+                          value={e.nome}
+                          onChange={(evento) =>
+                            setEdicoes((antes) => {
+                              const novo = new Map(antes)
+                              novo.set(p.chave, { nome: evento.target.value, papel: e.papel })
+                              return novo
+                            })
+                          }
+                          aria-label={`nome de ${p.nomeCompleto}`}
+                        />
+                      )}
+                    </td>
+                    <td className="celula--estado">
+                      {vinculado ? (
+                        e.papel
+                      ) : (
+                        <select
+                          value={e.papel}
+                          onChange={(evento) =>
+                            setEdicoes((antes) => {
+                              const novo = new Map(antes)
+                              novo.set(p.chave, { nome: e.nome, papel: evento.target.value as Papel })
+                              return novo
+                            })
+                          }
+                          aria-label={`papel de ${p.nomeCompleto}`}
+                        >
+                          <option value="aluno">Aluno</option>
+                          <option value="professor">Professor</option>
+                        </select>
+                      )}
+                      {repetido && <Selo tom="grave">Nome repetido</Selo>}
+                    </td>
+                    {/* Chamar continua disponível depois de vinculado: um aluno
+                        com dois crachás é permitido de propósito, porque segunda
+                        via existe. A relação é muitos-para-um. */}
+                    <td className="celula--estado">
+                      {p.chave === chamadoChave ? (
+                        <Selo tom="ok">Chamando</Selo>
+                      ) : (
+                        <>
+                          {vinculado && <Selo tom="ok">Vinculado</Selo>}
+                          {!vinculado && pulados.has(p.chave) && <Selo tom="neutro">Pulado</Selo>}
+                          <button onClick={() => setChamadoChave(p.chave)}>
+                            {vinculado ? 'Mais um crachá' : 'Chamar'}
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </Painel>
       )}
 
       {procurando && (

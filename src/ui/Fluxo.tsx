@@ -34,7 +34,6 @@ import {
   esquecerPreferencias,
   pastaDispensada,
   cadastroDispensado,
-  dispensarCadastro,
   esquecerDispensaDoCadastro,
   encerradas,
   esquecerEncerramento,
@@ -64,7 +63,7 @@ import { TelaDiagnostico } from './TelaDiagnostico.tsx'
 import { TelaProblema } from './TelaProblema.tsx'
 import { TelaCronograma } from './TelaCronograma.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
-import { TelaVinculo } from './TelaVinculo.tsx'
+import { TelaColarTurma } from './TelaColarTurma.tsx'
 
 type Folha = 'ajustes'
 
@@ -74,10 +73,8 @@ export function Fluxo() {
   const [lendo, setLendo] = useState(leitor.estado() === 'lendo')
   const [turmas, setTurmas] = useState(0)
   const [pendentes, setPendentes] = useState(0)
-  const [turmaPendente, setTurmaPendente] = useState<string>()
   const [pendentesDaTurma, setPendentesDaTurma] = useState<Matriculado[]>([])
   const [matriculadosTodos, setMatriculadosTodos] = useState<Matriculado[]>([])
-  const [turmasAbertas, setTurmasAbertas] = useState<string[]>([])
   const [professorSemCracha, setProfessorSemCracha] = useState(false)
   const [sessao, setSessao] = useState<Sessao>()
   const [pasta, setPasta] = useState<FileSystemDirectoryHandle>()
@@ -88,6 +85,11 @@ export function Fluxo() {
   // clique. Dispensar troca o estado, não a leitura.
   const [conselhoDoNavegador, setConselho] = useState(conselho)
   const [semPasta, setSemPasta] = useState(pastaDispensada)
+  // `cadastroDispensado` era o "sigo sem, por agora" de uma cerimônia que
+  // travava a tela. Ela não trava mais nada — abrir sozinho leva direto a
+  // `TelaAula`, que já tem saída própria ("Encerrar a chamada"), mesmo com
+  // zero presença. Fica como leitura, sem gatilho de UI que a acione: se um
+  // dia fizer sentido "não abra sozinho agora" de novo, o lugar já existe.
   const [semCadastro, setSemCadastro] = useState(cadastroDispensado)
   /** Recado das teclas de ensaio. Some sozinho: é resposta a um toque. */
   const [dicaDeEnsaio, setDicaDeEnsaio] = useState<string>()
@@ -99,32 +101,21 @@ export function Fluxo() {
   const [semHorario, setSemHorario] = useState<{ turma: string; aulas: Aula[] }>()
   const [uidDoProfessor, setUidDoProfessor] = useState('')
   const [folha, setFolha] = useState<Folha>()
-  // A rota decide sozinha, mas "estou cadastrando crachás" é uma intenção que
-  // nenhum dado expressa sozinha.
-  //
-  // 'inicial' é a cerimônia do primeiro dia, aberta pela própria rota.
-  // 'extra' é "Cadastrar mais um crachá", aberta por escolha no repouso.
-  // 'nova' é "Cadastrar nova turma": mesma tela, sem `turmaInicial` nenhum —
-  // cai na colagem, de propósito, porque a turma ainda não existe.
-  //
-  // Por que isto não é só ler a rota a cada render: o crachá do próprio
-  // professor, tocado no meio da cerimônia, muda `professorSemCracha` e a
-  // rota recalcula para 'pronto' na hora — e sem este estado a tela sumia
-  // debaixo dele no meio de chamar o próximo aluno, porque a rota é o
-  // repositório, não a intenção de quem está com a mão no leitor. Só um gesto
-  // explícito ("Concluir") deve tirar a cerimônia da tela; a base mudando por
-  // baixo, não.
-  const [modoCadastro, setModoCadastro] = useState<'nenhum' | 'inicial' | 'extra' | 'nova'>(
-    'nenhum',
-  )
+  /**
+   * "Estou colando uma turma nova" — a única intenção que ainda precisa de
+   * estado próprio. Chamar nomes deixou de ser um modo à parte: com gente
+   * pendente, `TelaAula` já mostra a fila sozinha, dentro da própria aula.
+   * Colar uma turma nova é diferente — ela ainda não existe, então não há
+   * aula nenhuma para abrir até a colagem terminar.
+   */
+  const [colandoNova, setColandoNova] = useState(false)
   /**
    * Quantas turmas existiam quando "Cadastrar nova turma" foi aberto.
    *
-   * `turmaInicial` fica `undefined` só em 'nova' — é o que força a colagem em
-   * vez de reabrir a primeira turma. Mas colar salva a turma na hora, e o
-   * cronograma pode entrar no meio (turma nova nunca tem horário ainda):
-   * sem trocar de modo depois disso, a tela recém-cadastrada reabriria em
-   * branco de novo ao voltar do cronograma, como se nada tivesse sido colado.
+   * Colar salva a turma na hora, e o cronograma pode entrar no meio (turma
+   * nova nunca tem horário ainda): sem isto, a tela recém-cadastrada
+   * reabriria em branco de novo ao voltar do cronograma, como se nada
+   * tivesse sido colado.
    */
   const [turmasAntesDaNova, setTurmasAntesDaNova] = useState(0)
   const [resumo, setResumo] = useState<{ sessao: Sessao; presentes: number }>()
@@ -204,19 +195,20 @@ export function Fluxo() {
     // matrícula na página (docente), pelo nome. Sem esta segunda via o
     // professor contava como pendente para sempre: `!m.matricula` era verdade
     // toda vez, e isso quebrava a conta do primeiro dia.
+    //
+    // Sem filtrar por papel: uma turma pode ter mais de um docente, e só o
+    // primeiro ganha vínculo sintético (`garantirProfessor`). O segundo
+    // continua pendente de verdade, e precisa aparecer na tabela de `TelaAula`
+    // como qualquer outra pessoa sem crachá — não some por ser professor.
     const porMatricula = new Set(vinculos.map((v) => v.matricula).filter(Boolean))
     const porNome = new Set(vinculos.map((v) => v.nome))
-    const faltando = matriculados.filter(
-      (m) =>
-        // A fila de cadastro é de aluno: o crachá do professor vem da cerimônia.
-        m.papel === 'aluno' &&
-        (m.matricula ? !porMatricula.has(m.matricula) : !porNome.has(m.nome)),
+    const faltando = matriculados.filter((m) =>
+      m.matricula ? !porMatricula.has(m.matricula) : !porNome.has(m.nome),
     )
     setTurmas(listaDeTurmas.length)
     setPendentes(faltando.length)
     setPendentesDaTurma(faltando)
     setMatriculadosTodos(matriculados)
-    setTurmaPendente(faltando[0]?.turma)
     const temProfessor = vinculos.some((v) => v.papel === 'professor')
     setProfessorSemCracha(!temProfessor)
     // A dispensa é "por agora": assim que o professor tem crachá, não há mais
@@ -226,7 +218,6 @@ export function Fluxo() {
       esquecerDispensaDoCadastro()
       setSemCadastro(false)
     }
-    setTurmasAbertas(listaDeTurmas)
   }, [repositorio])
 
   useEffect(() => {
@@ -521,25 +512,24 @@ export function Fluxo() {
     cadastroDispensado: semCadastro,
   })
 
-  // Entra em cadastro 'inicial' assim que a rota chega em 'cerimonia' — e só
-  // sai por um gesto explícito (ver o comentário de `modoCadastro`), não por a
-  // rota ter mudado de ideia.
+  // 'cerimonia' deixou de ser uma tela própria: é o sinal de "abra sozinho",
+  // com as mesmas funções que "Começar a chamada" já usa — inclusive
+  // sintetizando o crachá do professor se for preciso. A sessão abre, a rota
+  // recalcula para 'chamada' no instante seguinte, e é `TelaAula` — com a
+  // turma inteira pendente — quem aparece, não uma tela à parte.
   useEffect(() => {
-    if (rota === 'cerimonia') setModoCadastro((m) => (m === 'nenhum' ? 'inicial' : m))
-  }, [rota])
+    if (rota === 'cerimonia') void iniciarChamada()
+  }, [rota, iniciarChamada])
 
-  // 'nova' vira 'inicial' assim que a turma colada é salva — ver o comentário
-  // de `turmasAntesDaNova`. Sem isto, voltar do cronograma da turma recém
+  // Sai da colagem assim que a turma colada é salva — ver o comentário de
+  // `turmasAntesDaNova`. Sem isto, voltar do cronograma da turma recém
   // criada reabria a colagem em branco, como se a lista nunca tivesse sido
   // colada.
   useEffect(() => {
-    if (modoCadastro === 'nova' && turmas > turmasAntesDaNova) setModoCadastro('inicial')
-  }, [modoCadastro, turmas, turmasAntesDaNova])
+    if (colandoNova && turmas > turmasAntesDaNova) setColandoNova(false)
+  }, [colandoNova, turmas, turmasAntesDaNova])
 
-  // A tela de cadastro fica no ar por `modoCadastro`, não pela rota crua —
-  // ver o comentário dele. `rota === 'cerimonia'` continua na conta para não
-  // haver um frame em branco antes do efeito acima rodar.
-  const naTelaDeCadastro = rota === 'cerimonia' || (rota === 'pronto' && modoCadastro !== 'nenhum')
+  const naColagem = rota === 'turma' || (rota === 'pronto' && colandoNova)
 
   /**
    * A grade abre a aula sozinha.
@@ -632,31 +622,17 @@ export function Fluxo() {
           }}
         />
       )}
-      {rota === 'turma' && <TelaVinculo aoMudarBase={mudou} />}
-      {!resumo && naTelaDeCadastro && (
-        <TelaVinculo
-          // `turmaPendente` é de aluno pendente, de qualquer turma — e é ele
-          // que "Cadastrar mais um crachá" deve seguir: com duas turmas, uma
-          // completa e outra recém-colada, o botão reabria sempre a primeira
-          // (`turmasAbertas[0]`), mesmo com a segunda inteira esperando
-          // crachá. Sem pendente nenhum (só falta o professor, ou nada
-          // falta), cair para `turmasAbertas[0]` evita reabrir em branco.
-          // `undefined` força a tela de colar — ver `modoCadastro === 'nova'`.
-          turmaInicial={
-            modoCadastro === 'nova' ? undefined : (turmaPendente ?? turmasAbertas[0])
-          }
-          primeiroDia={modoCadastro !== 'extra'}
+      {naColagem && (
+        <TelaColarTurma
           aoMudarBase={mudou}
-          aoSair={() => {
-            // Sair sem o crachá do professor ainda registrado é "por agora",
-            // não "nunca mais": a rota volta a cobrar sozinha assim que ele
-            // encostar, em qualquer tela. Ver `cadastroDispensado`.
-            if (professorSemCracha) {
-              dispensarCadastro()
-              setSemCadastro(true)
-            }
-            setModoCadastro('nenhum')
-          }}
+          // Só existe quando há repouso pra onde voltar: com `turmas === 0`
+          // esta tela é a única que existe, e cancelar não levaria a lugar
+          // nenhum.
+          aoSair={
+            rota === 'turma'
+              ? undefined
+              : () => setColandoNova(false)
+          }
         />
       )}
       {rota === 'chamada' && sessao && (
@@ -664,9 +640,6 @@ export function Fluxo() {
           sessao={sessao}
           pendentes={pendentesDaTurma.filter((p) => p.turma === sessao.turma)}
           daTurma={matriculadosTodos.filter((p) => p.turma === sessao.turma)}
-          alunosDaTurma={
-            matriculadosTodos.filter((p) => p.turma === sessao.turma && p.papel === 'aluno').length
-          }
           aoMudarBase={mudou}
           aoRegistrar={gravarLinha}
           aoEncerrar={(presentes) => {
@@ -712,22 +685,16 @@ export function Fluxo() {
         />
       )}
 
-      {!resumo && rota === 'pronto' && modoCadastro === 'nenhum' && (
+      {!resumo && rota === 'pronto' && !colandoNova && (
         <Repouso
           turmas={turmas}
           pendencias={pasta ? [] : pendencias}
           proxima={proxima}
           aoIniciar={() => void iniciarChamada()}
           aoSalvar={(turma) => void salvarCopia(turma)}
-          aoAbrirCerimonia={() => {
-            // Voltar a cadastrar desfaz a dispensa: ele mudou de ideia.
-            esquecerDispensaDoCadastro()
-            setSemCadastro(false)
-            setModoCadastro(professorSemCracha ? 'inicial' : 'extra')
-          }}
           aoNovaTurma={() => {
             setTurmasAntesDaNova(turmas)
-            setModoCadastro('nova')
+            setColandoNova(true)
           }}
         />
       )}
@@ -823,23 +790,21 @@ export function Fluxo() {
         )}
 
         {/* As teclas de ensaio, e **o que cada uma faz aqui**.
-            O `N` produz um crachá desconhecido em qualquer tela, mas só na
-            chamada isso abre a lupa: na cerimônia, crachá desconhecido é o
-            cadastro de quem está sendo chamado. O autor apertou `N` na
-            cerimônia esperando a busca, e a tag dizia sempre a mesma coisa.
-            Ensaio que não diz em que estado está não valida fluxo nenhum. */}
+            O `N` produz um crachá desconhecido em qualquer tela, mas o que
+            ele faz depende de haver alguém chamado: com gente pendente,
+            `decidir()` já sabe a quem atribuir — é cadastro direto. Sem
+            ninguém chamado, ele não tem a quem atribuir — é a lupa. A
+            distinção não é mais de rota, é de ter ou não ter fila. */}
         {ensaio && ehSimulavel(leitor) && (
           <span className="selo-status" title="Modo de ensaio, com leitor simulado">
             <kbd>espaço</kbd> crachá
             {rota === 'chamada' ? (
               <>
                 {' · '}
-                <kbd>N</kbd> abre a busca
-              </>
-            ) : naTelaDeCadastro ? (
-              <>
-                {' · '}
-                <kbd>N</kbd> cadastra o chamado
+                <kbd>N</kbd>{' '}
+                {pendentesDaTurma.some((p) => p.turma === sessao?.turma)
+                  ? 'cadastra o chamado'
+                  : 'abre a busca'}
               </>
             ) : null}
             {' · '}
@@ -912,7 +877,6 @@ export function Repouso({
   proxima,
   aoIniciar,
   aoSalvar,
-  aoAbrirCerimonia,
   aoNovaTurma,
 }: {
   turmas: number
@@ -920,7 +884,6 @@ export function Repouso({
   proxima?: { turma: string; quando: Date }
   aoIniciar: () => void
   aoSalvar: (turma: string) => void
-  aoAbrirCerimonia: () => void
   aoNovaTurma: () => void
 }) {
   const dia = (iso: string) =>
@@ -999,17 +962,17 @@ export function Repouso({
       {/* O crachá continua abrindo, e a tela **não** diz isso. Anunciar dois
           caminhos para a mesma coisa é a decisão que se queria evitar: quem lê
           "ou encoste o crachá" para para escolher, e escolher é o custo. Quem
-          precisa do atalho descobre encostando. */}
+          precisa do atalho descobre encostando.
 
-      {/* Terciário, e por isso quieto. A regra do repouso: o único acento é
-          "Iniciar a aula", e só quando não há grade. Com grade a tela é espera —
-          e tela de espera com dois azuis embaixo pede para ser clicada. */}
-      <button className="repouso__link botao--quieto" onClick={aoAbrirCerimonia}>
-        Cadastrar mais um crachá
-      </button>
-      {/* Sem isto não havia como começar uma turma nova depois da primeira:
-          a tela de colar só aparecia com `turmas === 0`, e "mais um crachá"
-          sempre mirava numa turma que já existe. */}
+          "Cadastrar mais um crachá" saiu daqui: com a cerimônia unificada à
+          chamada, "Começar a chamada" já abre a turma certa (pelo horário, ou
+          perguntando quando ambíguo) e a fila de pendentes aparece sozinha se
+          houver alguém. Manter os dois botões seria a mesma redundância que
+          este app já cortou noutro lugar. */}
+
+      {/* Terciário, e por isso quieto. Sem isto não havia como começar uma
+          turma nova depois da primeira: a tela de colar só aparecia com
+          `turmas === 0`. */}
       <button className="repouso__link botao--quieto" onClick={aoNovaTurma}>
         Cadastrar nova turma
       </button>
