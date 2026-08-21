@@ -14,6 +14,7 @@ import { TelaResumo } from './TelaResumo.tsx'
 import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { TelaColarTurma } from './TelaColarTurma.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
+import { TelaPresencas } from './TelaPresencas.tsx'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
 import { TelaProblema } from './TelaProblema.tsx'
 import { TelaCronograma } from './TelaCronograma.tsx'
@@ -186,6 +187,7 @@ export function Vitrine() {
           pendencias={[]}
           aoIniciar={() => {}}
           aoSalvar={() => {}}
+          aoVerPresencas={() => {}}
           aoNovaTurma={() => {}}
         />
       </Cena>
@@ -213,6 +215,7 @@ export function Vitrine() {
           proxima={{ turma: TURMA, quando: new Date(Date.now() + 3 * 3600_000) }}
           aoIniciar={() => {}}
           aoSalvar={() => {}}
+          aoVerPresencas={() => {}}
           aoNovaTurma={() => {}}
         />
       </Cena>
@@ -226,6 +229,7 @@ export function Vitrine() {
           ]}
           aoIniciar={() => {}}
           aoSalvar={() => {}}
+          aoVerPresencas={() => {}}
           aoNovaTurma={() => {}}
         />
       </Cena>
@@ -251,6 +255,14 @@ export function Vitrine() {
         </Cena>
       )}
 
+      {/* Mesmo motivo de "Base": mostra as presenças de verdade de quem abrir
+          a vitrine, não dado inventado. Fica só em desenvolvimento. */}
+      {ehDesenvolvimento && (
+        <Cena titulo="Presenças" quando="repouso fora do horário, sem grade à vista">
+          <TelaPresencas aoFechar={() => {}} />
+        </Cena>
+      )}
+
       <Cena titulo="Qual turma" quando="duas aulas no mesmo horário">
         <EscolherTurma
           opcoes={['IF685 · T01', 'IF669 · T02']}
@@ -266,9 +278,10 @@ export function Vitrine() {
         </Cena>
       ) : (
         <p className="vitrine__aviso">
-          Faltam duas: <strong>Ajustes</strong> e <strong>Diagnóstico</strong>. Elas não
-          aparecem aqui porque mexem na base de verdade de quem abrir. No Adsum, você as
-          encontra pela engrenagem no canto.
+          Faltam três: <strong>Ajustes</strong>, <strong>Diagnóstico</strong> e{' '}
+          <strong>Presenças</strong>. Elas não aparecem aqui porque mostram ou mexem na
+          base de verdade de quem abrir. No Adsum, você as encontra pela engrenagem no
+          canto e pelo repouso fora do horário de aula.
         </p>
       )}
     </div>

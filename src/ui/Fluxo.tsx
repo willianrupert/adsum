@@ -5,7 +5,7 @@
 // inteira quando não está. Ninguém deve saber que existe uma tela de
 // diagnóstico até precisar dela.
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { decidirRota } from '../nucleo/rota.ts'
 import { calcularUidHash, uidHashSintetico } from '../nucleo/hash.ts'
 import { uidInedito, hexParaUid } from '../nucleo/uid.ts'
@@ -57,6 +57,7 @@ import { TelaResumo } from './TelaResumo.tsx'
 import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { Baixar, Cadeado, Engrenagem, Ondas } from './componentes/Simbolos.tsx'
 import { Secao } from './componentes/Painel.tsx'
+import { Sheet } from './componentes/Sheet.tsx'
 import { levantarCapacidades } from '../ambiente/capacidades.ts'
 import { marcarAte, naoSalvos, totalNaoSalvo, type Pendencia } from '../nucleo/pendencias.ts'
 import { useAdsum } from './adsum.ts'
@@ -65,8 +66,9 @@ import { TelaProblema } from './TelaProblema.tsx'
 import { TelaCronograma } from './TelaCronograma.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaColarTurma } from './TelaColarTurma.tsx'
+import { TelaPresencas } from './TelaPresencas.tsx'
 
-type Folha = 'ajustes'
+type Folha = 'ajustes' | 'presencas'
 
 export function Fluxo() {
   const { leitor, repositorio, config } = useAdsum()
@@ -693,6 +695,7 @@ export function Fluxo() {
           proxima={proxima}
           aoIniciar={() => void iniciarChamada()}
           aoSalvar={(turma) => void salvarCopia(turma)}
+          aoVerPresencas={() => setFolha('presencas')}
           aoNovaTurma={() => {
             setTurmasAntesDaNova(turmas)
             setColandoNova(true)
@@ -823,7 +826,9 @@ export function Fluxo() {
         </button>
       </div>
 
-      {folha && (
+      {folha === 'presencas' && <TelaPresencas aoFechar={() => setFolha(undefined)} />}
+
+      {folha === 'ajustes' && (
         <Sheet titulo="Ajustes" aoFechar={() => setFolha(undefined)}>
           <TelaRepositorio
             pasta={pasta}
@@ -882,6 +887,7 @@ export function Repouso({
   proxima,
   aoIniciar,
   aoSalvar,
+  aoVerPresencas,
   aoNovaTurma,
 }: {
   turmas: number
@@ -889,6 +895,7 @@ export function Repouso({
   proxima?: { turma: string; quando: Date }
   aoIniciar: () => void
   aoSalvar: (turma: string) => void
+  aoVerPresencas: () => void
   aoNovaTurma: () => void
 }) {
   const dia = (iso: string) =>
@@ -954,16 +961,28 @@ export function Repouso({
         </>
       )}
 
-      {/* Com grade, o botão é a exceção — aula fora do horário, reposição — e
-          por isso perde o acento. Sem grade, é a única ação da tela. Funciona
-          de cara, mesmo sem crachá de professor nenhum ainda: ver
-          `garantirProfessor`, em `Fluxo.tsx`. */}
-      <button
-        className={proxima ? 'repouso__link botao--quieto' : 'botao--acento pasta__botao'}
-        onClick={aoIniciar}
-      >
-        {proxima ? 'Começar a chamada agora' : 'Começar a chamada'}
-      </button>
+      {proxima ? (
+        // Com grade e aula à vista, o gesto óbvio é abrir a chamada — a
+        // pergunta "quero ver presença" pode esperar a aula acabar.
+        <button className="botao--acento pasta__botao" onClick={aoIniciar}>
+          Começar a chamada agora
+        </button>
+      ) : (
+        <>
+          {/* Fora do horário, "Começar a chamada" deixou de ser o convite:
+              o software sabe que não há aula agora, e sugerir mesmo assim
+              era empurrar pro crachá numa hora em que ele não faz sentido.
+              "Ver presenças" — a pergunta mais comum fora de aula — vira o
+              acento; começar continua possível, só que quieto, para
+              reposição ou aula fora do horário cadastrado. */}
+          <button className="botao--acento pasta__botao" onClick={aoVerPresencas}>
+            Ver presenças
+          </button>
+          <button className="repouso__link botao--quieto" onClick={aoIniciar}>
+            Começar a chamada
+          </button>
+        </>
+      )}
       {/* O crachá continua abrindo, e a tela **não** diz isso. Anunciar dois
           caminhos para a mesma coisa é a decisão que se queria evitar: quem lê
           "ou encoste o crachá" para para escolher, e escolher é o custo. Quem
@@ -985,27 +1004,3 @@ export function Repouso({
   )
 }
 
-function Sheet({
-  titulo,
-  aoFechar,
-  children,
-}: {
-  titulo: string
-  aoFechar: () => void
-  children: ReactNode
-}) {
-  // Sem Esc: no Safari em tela cheia ele sai da tela cheia. Sair daqui é
-  // clicar fora ou no botão — dois gestos que funcionam em todo lugar.
-
-  return (
-    <div className="folha__fundo" onClick={aoFechar}>
-      <div className="folha" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={titulo}>
-        <header className="folha__topo">
-          <h2>{titulo}</h2>
-          <button onClick={aoFechar}>Fechar</button>
-        </header>
-        <div className="folha__corpo">{children}</div>
-      </div>
-    </div>
-  )
-}

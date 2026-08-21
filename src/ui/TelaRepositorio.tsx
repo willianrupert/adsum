@@ -13,14 +13,15 @@ import {
   paraJsonGrade,
   paraJsonVinculos,
 } from '../nucleo/cofre.ts'
-import type { Aula, Evento, Papel, Resultado as ResultadoDeEvento, Vinculo } from '../nucleo/tipos.ts'
+import type { Aula, Evento, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.ts'
 import { pastaDisponivel } from '../ambiente/pasta.ts'
 import { comoInstalar, ehWebKit, instalado } from '../ambiente/instalacao.ts'
 import { useAdsum } from './adsum.ts'
-import { Linha, Painel, Secao, Selo } from './componentes/Painel.tsx'
+import { Linha, Painel, Secao } from './componentes/Painel.tsx'
 import { Cartao } from './componentes/Cartao.tsx'
 import { GradeDaSemana, aulasDe } from './componentes/GradeDaSemana.tsx'
+import { TabelaDeRegistros } from './componentes/TabelaDeRegistros.tsx'
 import { marcadosDe } from '../nucleo/horarios.ts'
 import { Importacao, type Resultado } from './componentes/Importacao.tsx'
 
@@ -145,92 +146,6 @@ function GradeDeAjustes({
           Nenhum vínculo de professor ainda. A grade não tem por onde ser indexada até
           existir um.
         </p>
-      )}
-    </>
-  )
-}
-
-function tomDoResultado(r: ResultadoDeEvento): 'ok' | 'neutro' | 'grave' | 'alerta' {
-  if (r === 'ok') return 'ok'
-  if (r === 'duplicado') return 'neutro'
-  if (r === 'rapido_demais') return 'alerta'
-  return 'grave'
-}
-
-const NOME_DO_RESULTADO: Record<ResultadoDeEvento, string> = {
-  ok: 'presente',
-  duplicado: 'repetido',
-  desconhecido: 'não cadastrado',
-  rapido_demais: 'rápido demais',
-}
-
-/**
- * As presenças de uma turma, mais recente primeiro.
- *
- * Um seletor em cima porque pode haver mais de uma turma — mesmo padrão de
- * `GradeDeAjustes`, que já resolveu esse problema. Abertura e encerramento
- * de aula ficam de fora: `TelaAula` também os esconde da própria lista, e
- * aqui é sobre presença de aluno, não sobre operação da sessão.
- */
-function TabelaDeRegistros({ turmas, eventos }: { turmas: string[]; eventos: Evento[] }) {
-  const [escolhida, setEscolhida] = useState<string>()
-  const turma = escolhida && turmas.includes(escolhida) ? escolhida : turmas[0]
-
-  const daTurma = useMemo(
-    () => eventos.filter((e) => e.turma === turma && e.origem === 'cracha'),
-    [eventos, turma],
-  )
-
-  if (turmas.length === 0) {
-    return <p className="ferramentas__nota">Nenhuma turma cadastrada ainda.</p>
-  }
-
-  return (
-    <>
-      {turmas.length > 1 && (
-        <div className="segmentado segmentado--turmas" role="group" aria-label="turma dos registros">
-          {turmas.map((t) => (
-            <button
-              key={t}
-              className={t === turma ? 'segmento segmento--ativo' : 'segmento'}
-              onClick={() => setEscolhida(t)}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {daTurma.length === 0 ? (
-        <p className="ferramentas__nota">Nenhum registro ainda para {turma}.</p>
-      ) : (
-        <table className="tabela">
-          <thead>
-            <tr>
-              <th>Quando</th>
-              <th>Nome</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {daTurma.map((e) => (
-              <tr key={e.eventoId}>
-                <td>
-                  {new Date(e.quando).toLocaleString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </td>
-                <td>{e.nome || 'Crachá não cadastrado'}</td>
-                <td className="celula--estado">
-                  <Selo tom={tomDoResultado(e.resultado)}>{NOME_DO_RESULTADO[e.resultado]}</Selo>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       )}
     </>
   )

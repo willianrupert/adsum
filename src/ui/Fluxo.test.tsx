@@ -54,6 +54,50 @@ describe('a rota decide a tela', () => {
     expect(await screen.findByText('Começar a chamada')).toBeInTheDocument()
   })
 
+  // "Por que sugerir chamada, se o software sabe que estamos fora do
+  // horário?" Sem grade cadastrada — ou grade que já acabou por hoje —,
+  // sugerir "Começar a chamada" como ação principal é empurrar pro crachá
+  // numa hora em que não há aula nenhuma. "Ver presenças" — a pergunta mais
+  // comum fora de aula — vira o acento; começar continua ali, só que quieto,
+  // para reposição.
+  it('fora do horário, "Ver presenças" é a ação principal, e "Começar a chamada" fica quieto', async () => {
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+
+    const verPresencas = await screen.findByRole('button', { name: 'Ver presenças' })
+    expect(verPresencas.className).toContain('botao--acento')
+
+    const comecar = screen.getByRole('button', { name: 'Começar a chamada' })
+    expect(comecar.className).not.toContain('botao--acento')
+  })
+
+  it('"Ver presenças" abre o popup com a tabela de registros', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+
+    await usuario.click(await screen.findByRole('button', { name: 'Ver presenças' }))
+    expect(await screen.findByRole('dialog', { name: 'Presenças' })).toBeInTheDocument()
+  })
+
+  // Com aula à vista, o gesto óbvio é abrir a chamada — "ver presença" pode
+  // esperar a aula acabar, então não compete pelo mesmo destaque.
+  it('com aula à vista, só "Começar a chamada agora" aparece — sem "Ver presenças"', async () => {
+    await turmaInteiraComCracha()
+    const amanha = new Date(Date.now() + 24 * 3600_000)
+    await bancada.repositorio.gravarAula({
+      uidHashProfessor: 'aaaa000000000000',
+      dia: amanha.getDay(),
+      inicio: '13:00',
+      fim: '14:50',
+      turma: 'IF685 · T01',
+    })
+    renderizarCom(bancada, <Fluxo />)
+
+    expect(await screen.findByRole('button', { name: 'Começar a chamada agora' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ver presenças' })).not.toBeInTheDocument()
+  })
+
   // Regressão: este botão existia e não fazia nada — a rota decide pelo estado,
   // e "quero cadastrar mais um" é intenção que nenhum dado expressa.
   // A cerimônia deixou de ser uma tela à parte: `'cerimonia'` é só o sinal

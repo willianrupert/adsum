@@ -284,6 +284,10 @@ button {
   font-size: var(--t-menor);
   font-weight: 400;
   letter-spacing: -0.016em;
+  /* Sem isto, o `line-height: 1.47` do corpo (bom para parágrafo, ruim
+     dentro de uma pílula) sobra mais embaixo do texto que em cima — o texto
+     lê como fora do centro vertical mesmo com o padding simétrico. */
+  line-height: 1;
   color: var(--acao);
   background: transparent;
   border: none;
@@ -977,6 +981,117 @@ button:focus-visible {
 
 .painel .cronograma__bloco {
   height: 42px;
+}
+
+/* ── Planilha de presenças ───────────────────────────────────────────────── */
+
+/* Rola sozinha na horizontal — a folha não deve, mesmo com um semestre
+   inteiro de colunas. */
+.planilha__rolagem {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 4px;
+}
+
+.planilha {
+  border-collapse: collapse;
+  font-size: var(--t-nota);
+}
+
+.planilha__nome,
+.planilha__contagem {
+  position: sticky;
+  background: var(--fundo);
+  text-align: left;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.planilha__nome {
+  left: 0;
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px 14px 6px 0;
+  font-size: var(--t-menor);
+  letter-spacing: -0.014em;
+  z-index: 1;
+}
+
+.planilha__contagem {
+  left: 160px;
+  padding: 6px 16px 6px 4px;
+  color: var(--tinta-fraca);
+  border-right: 1px solid var(--separador);
+  z-index: 1;
+}
+
+.planilha__nome--cabecalho,
+.planilha__contagem--cabecalho {
+  color: var(--tinta-fraca);
+  font-weight: 400;
+  z-index: 2;
+}
+
+.planilha__dia {
+  padding: 0 3px 6px;
+  min-width: 26px;
+  text-align: center;
+  font-weight: 400;
+  color: var(--tinta-tenue);
+}
+
+.planilha__dia-semana,
+.planilha__dia-numero {
+  display: block;
+  line-height: 1.3;
+}
+
+.planilha__dia-semana {
+  text-transform: capitalize;
+}
+
+.planilha__celula {
+  padding: 2px 3px;
+  text-align: center;
+}
+
+.quadrado {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--tinta) 7%, transparent);
+}
+
+.quadrado--presente {
+  background: var(--acao);
+}
+
+.quadrado--repetido {
+  background: color-mix(in srgb, var(--acao) 42%, var(--fundo-alt));
+}
+
+.planilha__legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 14px;
+  font-size: var(--t-nota);
+  color: var(--tinta-fraca);
+}
+
+.planilha__legenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.planilha__legenda .quadrado {
+  width: 10px;
+  height: 10px;
 }
 
 .painel .cronograma__bloco--curto {

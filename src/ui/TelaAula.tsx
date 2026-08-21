@@ -416,6 +416,14 @@ export function TelaAula({
         <span>{hhmm(new Date())}</span>
         <strong>{sessao.turma}</strong>
         <span>desde {hhmm(new Date(sessao.abertaEm))}</span>
+        {/* Mesmo motivo do "Concluir" da cerimônia: com "Quem falta" mostrando
+            a turma inteira, o rodapé fica longe — numa turma de 49, é rolar a
+            tela toda pra encontrar o único jeito de encerrar. Este não troca
+            de lugar quando o recado aparece embaixo; o de baixo continua ali,
+            porque terminar no fim do gesto também faz sentido. */}
+        <button className="botao--quieto coleta__encerrar-topo" onClick={() => aoEncerrarAgora()}>
+          Encerrar
+        </button>
       </header>
 
       <div className="coleta__corpo">

@@ -252,6 +252,24 @@ describe('o fim da aula', () => {
     await waitFor(() => expect(aoEncerrar).toHaveBeenCalledWith(1))
     expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
   })
+
+  // "Concluir" morava no rodapé de uma tabela que podia ter 49 linhas, e
+  // virou o cabeçalho por causa disso — mesma regressão aqui: "Quem falta"
+  // mostra a turma inteira, e o rodapé com "Encerrar a chamada" fica longe.
+  // Este, no topo, é a mesma ação alcançável sem rolar a tela toda.
+  it('"Encerrar" no topo funciona igual ao do rodapé', async () => {
+    const usuario = userEvent.setup()
+    const aoEncerrar = vi.fn()
+    renderizarCom(
+      bancada,
+      <TelaAula sessao={SESSAO} pendentes={[BRENO]} daTurma={[ANA, BRENO]} aoMudarBase={() => {}} aoEncerrar={aoEncerrar} />,
+    )
+
+    await usuario.click(screen.getByRole('button', { name: 'Encerrar' }))
+
+    await waitFor(() => expect(aoEncerrar).toHaveBeenCalled())
+    expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
+  })
 })
 
 // Pedido pelo Prof. Paulo. Dois crachás empilhados numa mão são lidos em
