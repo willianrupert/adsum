@@ -20,7 +20,8 @@ import { TelaProblema } from './TelaProblema.tsx'
 import { TelaCronograma } from './TelaCronograma.tsx'
 import { Busca } from './componentes/Busca.tsx'
 import { Baixar } from './componentes/Simbolos.tsx'
-import type { Matriculado } from '../nucleo/tipos.ts'
+import { GradeDePresencas } from './componentes/GradeDePresencas.tsx'
+import type { Evento, Matriculado } from '../nucleo/tipos.ts'
 
 const TURMA = 'IF685 · T01'
 
@@ -77,6 +78,60 @@ function BuscaDeMentira() {
       Abrir a busca de novo
     </button>
   )
+}
+
+/**
+ * A planilha precisa de gente e de aulas espalhadas em vários dias — o que
+ * `PENDENTES` não tem, porque aquela lista é gente que ainda não se
+ * cadastrou. Inventada aqui, não lida do repositório de verdade: ao contrário
+ * de "Presenças" (que mostra a base de quem abre a vitrine e por isso fica
+ * só em desenvolvimento), esta é uma cena pública, e cena pública não mostra
+ * dado de ninguém.
+ */
+function planilhaDeMentira(): { turmas: string[]; eventos: Evento[]; matriculados: Matriculado[] } {
+  const nomes = ['Beatriz Lopes', 'Caio Ramalho', 'Débora Nunes', 'Enzo Barreto', 'Fernanda Melo']
+  const matriculados: Matriculado[] = nomes.map((nome, i) => ({
+    turma: TURMA,
+    chave: `80000${i}`,
+    matricula: `80000${i}`,
+    nomeCompleto: nome.toUpperCase(),
+    nome,
+    papel: 'aluno' as const,
+  }))
+
+  const diasAtras = [16, 14, 9, 7, 2, 0]
+  const eventos: Evento[] = []
+  let seq = 1
+  for (const atras of diasAtras) {
+    const base = new Date(Date.now() - atras * 86_400_000)
+    base.setHours(13, 5, 0, 0)
+    eventos.push({
+      eventoId: `mentira-${atras}-${seq++}`,
+      quando: base.toISOString(),
+      turma: TURMA,
+      uidHash: 'professor-mentira',
+      nome: '',
+      origem: 'professor',
+      resultado: 'ok',
+    })
+    matriculados.forEach((aluno, i) => {
+      const faltou = (atras === 9 && i === 2) || (atras === 2 && i === 4) || (atras === 16 && i === 0)
+      if (faltou) return
+      const quando = new Date(base.getTime() + (i + 1) * 60_000)
+      eventos.push({
+        eventoId: `mentira-${atras}-${seq++}`,
+        quando: quando.toISOString(),
+        turma: TURMA,
+        uidHash: `aluno-mentira-${i}`,
+        matricula: aluno.matricula,
+        nome: aluno.nome,
+        origem: 'cracha',
+        resultado: atras === 7 && i === 1 ? 'duplicado' : 'ok',
+      })
+    })
+  }
+
+  return { turmas: [TURMA], eventos, matriculados }
 }
 
 const ehDesenvolvimento = import.meta.env.DEV
@@ -232,6 +287,10 @@ export function Vitrine() {
           aoVerPresencas={() => {}}
           aoNovaTurma={() => {}}
         />
+      </Cena>
+
+      <Cena titulo="A planilha do curso" quando="atrás de 'Ver presenças', fora do horário de aula">
+        <GradeDePresencas {...planilhaDeMentira()} />
       </Cena>
 
       <Cena titulo="Falha na pasta" quando="permissão caiu no meio da aula">
