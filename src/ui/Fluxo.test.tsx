@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
+import { baterCrachasEmSequencia, comRelogioSimulado, gerarBaralho } from '../testes/simular.ts'
 import { Fluxo } from './Fluxo.tsx'
 import { adiarHorario, dispensarCadastro } from '../ambiente/preferencias.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
@@ -45,7 +46,7 @@ async function turmaInteiraComCracha() {
 describe('a rota decide a tela', () => {
   it('sem turma, pede a turma', async () => {
     renderizarCom(bancada, <Fluxo />)
-    expect(await screen.findByText('Cole sua turma')).toBeInTheDocument()
+    expect(await screen.findByText('Cole sua primeira turma')).toBeInTheDocument()
   })
 
   it('com tudo pronto, espera o crachá', async () => {
@@ -245,6 +246,9 @@ describe('a rota decide a tela', () => {
     renderizarCom(bancada, <Fluxo />)
     await usuario.click(await screen.findByRole('button', { name: 'Cadastrar nova turma' }))
 
+    // "Sua primeira" seria falso aqui — já existe IF685 · T01.
+    expect(await screen.findByText('Cole mais uma turma')).toBeInTheDocument()
+
     await usuario.type(screen.getByLabelText('turma'), 'IF999 · T02')
     await usuario.click(screen.getByLabelText('lista da turma'))
     await usuario.paste(
@@ -265,7 +269,7 @@ describe('a rota decide a tela', () => {
     // professor, então não há sessão para abrir sozinha; com duas turmas
     // sem horário, "Começar a chamada" pergunta qual.
     expect(await screen.findByText(/Bom dia|Boa tarde|Boa noite/)).toBeInTheDocument()
-    expect(screen.queryByText('Cole sua turma')).not.toBeInTheDocument()
+    expect(screen.queryByText('Cole sua primeira turma')).not.toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Começar a chamada' }))
     await usuario.click(await screen.findByRole('button', { name: 'IF999 · T02' }))
@@ -357,13 +361,14 @@ describe('a grade abre a chamada sozinha', () => {
     })
   }
 
-  it('abre sem ninguém tocar em nada', async () => {
+  it('abre sem ninguém tocar em nada, e avisa que foi a grade quem abriu', async () => {
     await turmaInteiraComCracha()
     await aulaAgora()
     renderizarCom(bancada, <Fluxo />)
 
     expect(await screen.findByRole('button', { name: 'Encerrar a chamada' })).toBeInTheDocument()
     expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: 'IF685 · T01' })
+    expect(await screen.findByText(/grade horária abriu esta aula sozinha/)).toBeInTheDocument()
   })
 
   // Fechar às 9h30 uma aula que vai até as 10h não pode ser desfeito pelo
@@ -422,6 +427,89 @@ describe('a grade abre a chamada sozinha', () => {
     expect(await screen.findByText('Começar a chamada')).toBeInTheDocument()
     expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
   })
+})
+
+// Antes disto, um crachá que não era do professor, encostado sem aula
+// aberta, não produzia nada — nem som, nem texto. Indistinguível de um leitor
+// quebrado.
+describe('crachá fora de aula aberta', () => {
+  it('avisa em vez de ficar mudo', async () => {
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Começar a chamada')
+
+    await act(async () => bancada.leitor.simular('04e05f1a'))
+
+    expect(await screen.findByText(/Nenhuma aula aberta agora/)).toBeInTheDocument()
+  })
+})
+
+// O dongle é HID de teclado (ver `nucleo/digitacao.ts`): para o app, um
+// crachá é só uma rajada de dígitos. Não existe "simular NFC" — simular a
+// leitura já é o mesmo efeito, porque é exatamente onde a diferença entre
+// hardware e software deixa de importar. Passa pelo `Fluxo` de verdade, não
+// só por `TelaAula` isolada: é ele quem reconta pendentes a cada toque, e é
+// essa recontagem — não o componente sozinho — que prova que "Quem falta"
+// encolhe até sumir numa turma de 49+ pessoas, sem um crachá pisar no outro.
+describe('uma turma grande, crachá por crachá', () => {
+  const TAMANHO = 50
+
+  function turmaGrande(): Matriculado[] {
+    return Array.from({ length: TAMANHO }, (_, i) =>
+      pessoa(String(20250000100 + i), `Aluno ${String(i + 1).padStart(2, '0')}`),
+    )
+  }
+
+  it('cinquenta crachás distintos registram cinquenta presenças, sem um se sobrepor ao outro', async () => {
+    // Cinquenta idas reais ao IndexedDB, com a suíte inteira competindo pelo
+    // mesmo CPU: o limite padrão de 5s (o terceiro argumento abaixo) é do
+    // teste em si, não de cada espera dentro dele.
+    const usuario = userEvent.setup()
+    adiarHorario('IF685 · T01')
+    await bancada.repositorio.salvarTurma('IF685 · T01', turmaGrande())
+    renderizarCom(bancada, <Fluxo />)
+
+    // Sem crachá de professor nenhum: "Começar a chamada" sintetiza um, como
+    // já provado em '"Começar a chamada" funciona mesmo sem crachá de
+    // professor nenhum'. É o caminho que qualquer teste de ponta a ponta vai
+    // usar de verdade.
+    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await screen.findByText('Quem falta')
+
+    await comRelogioSimulado(() =>
+      baterCrachasEmSequencia(bancada.leitor, gerarBaralho(TAMANHO), async (_, restam) => {
+        // A cadeia de um toque não termina na gravação do evento: só depois
+        // dela vem `aoMudarBase` → `recontar()`, no `Fluxo` de verdade, que
+        // recalcula quem ainda falta e passa a lista nova pra baixo — e é só
+        // com essa lista nova que `TelaAula` sabe quem chamar em seguida.
+        // Esperar pelo texto que a tela mostra é esperar pelo estado que
+        // `TelaAula` realmente está usando — esperar só o evento gravar
+        // deixava o próximo toque do laço disparar contra o **chamado
+        // antigo**.
+        await waitFor(() => {
+          if (restam > 0) {
+            expect(screen.getByText(`${restam} de ${TAMANHO} sem crachá`)).toBeInTheDocument()
+          } else {
+            expect(screen.queryByText('Quem falta')).not.toBeInTheDocument()
+          }
+        })
+      }),
+    )
+
+    // `Contador` é um odômetro: cada casa empilha os dez algarismos e desliza
+    // por `transform`, então não existe um nó de texto "50" — o valor certo
+    // mora no `aria-label`, que é a própria razão de ele existir ali.
+    await waitFor(() => expect(screen.getByLabelText(String(TAMANHO))).toBeInTheDocument())
+    expect(screen.queryByText('Quem falta')).not.toBeInTheDocument()
+    expect(screen.getByText(/Turma completa/)).toBeInTheDocument()
+
+    const vinculos = await bancada.repositorio.listarVinculos()
+    expect(vinculos.filter((v) => v.papel === 'aluno')).toHaveLength(TAMANHO)
+    expect(new Set(vinculos.map((v) => v.uidHash)).size).toBe(TAMANHO + 1) // +1 é o professor sintético
+
+    const eventos = await bancada.repositorio.listarEventos()
+    expect(eventos.filter((e) => e.resultado === 'ok' && e.origem === 'cracha')).toHaveLength(TAMANHO)
+  }, 20_000)
 })
 
 // A grade existia só como três campos nos Ajustes, e ninguém preenche três
@@ -788,10 +876,54 @@ describe('as teclas de ensaio', () => {
     comEnsaio()
     await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('1', 'Ana Paula')])
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText(/Encoste o crachá de|Cole sua turma|Bom dia|Boa tarde|Boa noite/)
+    await screen.findByText(/Encoste o crachá de|Cole sua primeira turma|Bom dia|Boa tarde|Boa noite/)
 
     await usuario.keyboard('p')
     expect(await screen.findByText(/Ainda não há crachá de professor/)).toBeInTheDocument()
+  })
+})
+
+// A rota nunca aparecia em lugar nenhum da tela — nem aqui, nem no
+// diagnóstico. "Por que a tela está assim" só se respondia lendo código.
+describe('a etiqueta de estado', () => {
+  const comEnsaio = () => window.localStorage.setItem('adsum.modoDev', 'sim')
+
+  it('mostra a rota, só em modo de ensaio', async () => {
+    comEnsaio()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+
+    await screen.findByText('Começar a chamada')
+    expect(screen.getByTitle('Estado da rota, para depuração')).toHaveTextContent('pronto')
+  })
+
+  it('não aparece sem modo de ensaio', async () => {
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+
+    await screen.findByText('Começar a chamada')
+    expect(screen.queryByTitle('Estado da rota, para depuração')).not.toBeInTheDocument()
+  })
+
+  // `resumo` é sobreposição — vive fora de `decidirRota`, em estado local do
+  // Fluxo. Uma etiqueta que mostrasse só a rota mentiria aqui: a rota já
+  // voltou a 'pronto', mas quem está na tela é `TelaResumo`, esperando um
+  // clique em "Concluir".
+  it('mostra as sobreposições que a rota sozinha não revela', async () => {
+    const usuario = userEvent.setup()
+    comEnsaio()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+
+    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Encerrar a chamada' }))
+
+    // `TelaResumo` está na tela agora, esperando "Concluir sem salvar" — a
+    // rota já voltou a 'pronto' por baixo dela.
+    await screen.findByRole('button', { name: 'Concluir sem salvar' })
+    expect(screen.getByTitle('Estado da rota, para depuração')).toHaveTextContent(
+      'pronto · resumo aberto',
+    )
   })
 })
 
@@ -887,12 +1019,12 @@ describe('o convite de instalar no Chrome', () => {
   }
 
   // Ele morava só no repouso, e quem abre o Adsum pela primeira vez vai de
-  // "escolha a pasta" para "cole sua turma" — podia levar uma aula inteira até
+  // "escolha a pasta" para "cole sua primeira turma" — podia levar uma aula inteira até
   // parar no repouso. Convite que depende de passar por uma tela específica é
   // convite que não existe.
   it('aparece também antes de haver turma cadastrada', async () => {
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Cole sua turma')
+    await screen.findByText('Cole sua primeira turma')
 
     await act(async () => oferecer())
     expect(await screen.findByText('O Adsum em janela própria')).toBeInTheDocument()
@@ -1031,7 +1163,7 @@ describe('o conselho de navegador vem antes da turma', () => {
     expect(await screen.findByText('Use o Chrome ou o Edge')).toBeInTheDocument()
     expect(screen.getByText('Vai ficar no Safari?')).toBeInTheDocument()
     expect(screen.getByText('Adicionar ao Dock')).toBeInTheDocument()
-    expect(screen.queryByText('Cole sua turma')).not.toBeInTheDocument()
+    expect(screen.queryByText('Cole sua primeira turma')).not.toBeInTheDocument()
   })
 
   // A pasta grava no ato; instalar só tira o prazo de sete dias e continua
@@ -1048,7 +1180,7 @@ describe('o conselho de navegador vem antes da turma', () => {
 
   // O Firefox não tem pasta, não apaga sozinho e não tem o que instalar: o
   // único ganho real é trocar de navegador, e por isso ele é a ação da tela.
-  // Antes disto o Firefox caía direto em "cole sua turma", sem aviso nenhum.
+  // Antes disto o Firefox caía direto em "cole sua primeira turma", sem aviso nenhum.
   it('no Firefox a ação é trocar, porque não há conserto no lugar', async () => {
     fingirSer(
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
@@ -1070,11 +1202,11 @@ describe('o conselho de navegador vem antes da turma', () => {
     await screen.findByText('Use o Chrome ou o Edge')
 
     await usuario.click(screen.getByRole('button', { name: 'Continuar sem instalar' }))
-    expect(await screen.findByText('Cole sua turma')).toBeInTheDocument()
+    expect(await screen.findByText('Cole sua primeira turma')).toBeInTheDocument()
 
     unmount()
     renderizarCom(bancada, <Fluxo />)
-    expect(await screen.findByText('Cole sua turma')).toBeInTheDocument()
+    expect(await screen.findByText('Cole sua primeira turma')).toBeInTheDocument()
   })
 
   it('o aviso do canto passa a falar do prazo, não só da falta de pasta', async () => {

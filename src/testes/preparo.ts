@@ -4,9 +4,18 @@
 import 'fake-indexeddb/auto'
 import '@testing-library/jest-dom/vitest'
 import { afterEach } from 'vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 
 afterEach(cleanup)
+
+// O padrão de `waitFor`/`findBy*` é 1s, medido isolado. Com a suíte inteira
+// competindo pelo mesmo CPU — em especial os testes que batem dezenas de
+// crachás em sequência, cada um uma ida real ao IndexedDB —, 1s deixou de
+// bastar e virou falha intermitente. Não é lógica errada: rodar o arquivo
+// sozinho sempre passou. 5s dá folga sem esconder um travamento de verdade —
+// quem passa em 50ms continua passando em 50ms, só quem for genuinamente
+// lento ganha mais tempo antes de ser acusado de quebrado.
+configure({ asyncUtilTimeout: 5000 })
 
 // O jsdom diz que `http://localhost` não é contexto seguro. Navegador nenhum
 // concorda — localhost é contexto seguro por definição —, e sem corrigir isso
