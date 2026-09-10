@@ -709,9 +709,11 @@ button:focus-visible {
   font-weight: 600;
 }
 
-/* Resposta a uma tecla de ensaio. Fica onde os olhos já estão — perto do canto
-   das teclas — e some sozinha: recado que exige fechar é recado que atrapalha. */
-.dica-ensaio {
+/* Resposta a uma tecla de ensaio, ou a um crachá lido sem aula aberta, ou à
+   grade abrindo uma aula sozinha. Fica onde os olhos já estão — perto do
+   canto — e some sozinha: recado que exige fechar é recado que atrapalha. */
+.dica-ensaio,
+.aviso-leitura {
   position: fixed;
   top: 62px;
   right: 22px;

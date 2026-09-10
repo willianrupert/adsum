@@ -92,9 +92,10 @@ describe('quem falta', () => {
     expect(screen.getByText(/1 de 2 sem crachá/)).toBeInTheDocument()
   })
 
-  it('some quando ninguém está pendente', () => {
+  it('some quando ninguém está pendente, e diz que o cadastro terminou', () => {
     montar([])
     expect(screen.queryByText('Quem falta')).not.toBeInTheDocument()
+    expect(screen.getByText(/Turma completa/)).toBeInTheDocument()
   })
 
   it('chama o primeiro pendente sozinha, sem clique nenhum', () => {

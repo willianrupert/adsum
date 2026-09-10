@@ -96,6 +96,17 @@ export function Fluxo() {
   const [semCadastro, setSemCadastro] = useState(cadastroDispensado)
   /** Recado das teclas de ensaio. Some sozinho: é resposta a um toque. */
   const [dicaDeEnsaio, setDicaDeEnsaio] = useState<string>()
+  /**
+   * Recado sobre um crachá lido fora de aula aberta, ou sobre a aula que a
+   * grade abriu sozinha. Some sozinho, mesma forma de `dicaDeEnsaio`.
+   *
+   * Antes, um crachá encostado sem sessão aberta e sem ser o do professor não
+   * produzia nada — nem som, nem texto. Quem encostasse ficava sem saber se o
+   * leitor estava quebrado ou se aquilo era esperado. E a aula que abre
+   * sozinha pela grade trocava a tela inteira sem nenhuma explicação de por
+   * que ela mudou sem ninguém tocar em nada.
+   */
+  const [avisoLeitura, setAvisoLeitura] = useState<string>()
   const [convidarApp, setConvidarApp] = useState(podeInstalarApp)
   const [falhaNaPasta, setFalhaNaPasta] = useState<string>()
   // Sem pasta, isto é a única memória de que existe trabalho fora do disco.
@@ -163,6 +174,12 @@ export function Fluxo() {
     const relogio = setTimeout(() => setDicaDeEnsaio(undefined), 6000)
     return () => clearTimeout(relogio)
   }, [dicaDeEnsaio])
+
+  useEffect(() => {
+    if (!avisoLeitura) return
+    const relogio = setTimeout(() => setAvisoLeitura(undefined), 6000)
+    return () => clearTimeout(relogio)
+  }, [avisoLeitura])
 
   const recontar = useCallback(async () => {
     const [listaDeTurmas, matriculados, vinculos, aberta, eventos, atual] = await Promise.all([
@@ -323,7 +340,7 @@ export function Fluxo() {
   }, [recontar, gravarNaPasta])
 
   const abrirChamada = useCallback(
-    async (turma: string, uidHash: string, em: Date) => {
+    async (turma: string, uidHash: string, em: Date, automatico = false) => {
       const total = await repositorio.contarEventos()
       const evento = eventoDe(
         { tipo: 'abrir', turma },
@@ -340,6 +357,10 @@ export function Fluxo() {
       }
       await repositorio.abrirSessao({ turma, abertaEm: em.toISOString(), uidHashProfessor: uidHash })
       tocar('abertura')
+      // Sem isto, a tela trocava inteira sem ninguém ter tocado em nada — e
+      // quem não sabia que a grade abre aula sozinha lia isso como bug, não
+      // como o comportamento pretendido.
+      if (automatico) setAvisoLeitura('A grade horária abriu esta aula sozinha.')
       await mudou()
     },
     [repositorio, config.instalacaoId, gravarLinha, mudou],
@@ -426,8 +447,12 @@ export function Fluxo() {
       void (async () => {
         const uidHash = await calcularUidHash(config.salHex, leitura.uid)
         const vinculo = await repositorio.vinculoPorHash(uidHash)
-        if (vinculo?.papel !== 'professor') return
-        await abrirComProfessor(uidHash, leitura.em)
+        if (vinculo?.papel === 'professor') return await abrirComProfessor(uidHash, leitura.em)
+        // Um crachá que não é do professor, encostado sem aula aberta, não
+        // tem o que fazer — mas ficar mudo sobre isso é indistinguível de um
+        // leitor quebrado. Dizer o que aconteceu é mais barato que a dúvida.
+        tocar('desconhecido')
+        setAvisoLeitura('Nenhuma aula aberta agora. Peça ao professor para começar.')
       })()
     })
   }, [leitor, repositorio, config, sessao, abrirComProfessor])
@@ -535,6 +560,25 @@ export function Fluxo() {
   const naColagem = rota === 'turma' || (rota === 'pronto' && colandoNova)
 
   /**
+   * O que está na tela, para depuração — só em modo de ensaio.
+   *
+   * `rota` sozinha não basta: `resumo`, `escolhendo`, `colandoNova` e `folha`
+   * são sobreposições que vivem fora de `decidirRota`, em estado local daqui.
+   * É possível estar em `rota === 'pronto'` com `TelaResumo` na tela, e uma
+   * etiqueta que mostrasse só a rota mentiria nesse caso. A ordem aqui segue
+   * a ordem em que o JSX abaixo de fato decide o que aparece.
+   */
+  const camadas = [
+    rota,
+    colandoNova && 'colando turma nova',
+    escolhendo && 'escolhendo turma',
+    resumo && 'resumo aberto',
+    folha && `folha: ${folha}`,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
+  /**
    * A grade abre a aula sozinha.
    *
    * É o fim da linha do "menos decisões": com o horário cadastrado, o professor
@@ -561,7 +605,7 @@ export function Fluxo() {
 
       const agora = new Date()
       const turma = abrirSozinho(aulas, professor.uidHash, agora, encerradas())
-      if (turma) await abrirChamada(turma, professor.uidHash, agora)
+      if (turma) await abrirChamada(turma, professor.uidHash, agora, true)
     }
 
     void olhar()
@@ -724,7 +768,7 @@ export function Fluxo() {
           Ele informa; ela abre. */}
       {/* Fora de qualquer tela, de propósito.
           Ele morava só no repouso, e quem abre o Adsum pela primeira vez vai de
-          "escolha a pasta" para "cole sua turma" para a cerimônia — pode levar
+          "escolha a pasta" para "cole sua primeira turma" para a cerimônia — pode levar
           uma aula inteira até parar no repouso, e o convite chegava tarde ou
           nunca. Um convite que depende de a pessoa passar por uma tela
           específica é um convite que não existe.
@@ -760,6 +804,7 @@ export function Fluxo() {
       )}
 
       {dicaDeEnsaio && <p className="dica-ensaio">{dicaDeEnsaio}</p>}
+      {avisoLeitura && <p className="aviso-leitura">{avisoLeitura}</p>}
 
       <div className="canto">
         {(falhaNaPasta || porSalvar > 0 || !lendo || !pasta) && (
@@ -813,6 +858,18 @@ export function Fluxo() {
             ) : null}
             {' · '}
             <kbd>P</kbd> professor
+          </span>
+        )}
+
+        {/* A rota nunca aparecia em lugar nenhum — nem aqui, nem no
+            diagnóstico. Sem isso, "por que a tela está assim" só se responde
+            lendo código. Fica atrás do ensaio pelo mesmo motivo das teclas:
+            é ferramenta de quem testa, e o professor de verdade nunca deve
+            ver estado interno na tela — é a regra de "nenhuma configuração à
+            vista" deste projeto. */}
+        {ensaio && (
+          <span className="selo-status" title="Estado da rota, para depuração">
+            {camadas}
           </span>
         )}
 

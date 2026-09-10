@@ -514,6 +514,13 @@ export function TelaAula({
         </section>
       )}
 
+      {/* Sem crachá pendente, o painel some — e "some" e "nunca existiu" lêem
+          igual, sem essa frase. O professor precisa saber que o cadastro
+          inicial acabou, não só deixar de ver um aviso. */}
+      {pendentes.length === 0 && daTurma.length > 0 && (
+        <p className="ferramentas__nota">Turma completa: todo mundo já tem crachá.</p>
+      )}
+
       {pendentes.length > 0 && (
         <Painel titulo="Quem falta" legenda={`${pendentes.length} de ${daTurma.length} sem crachá`}>
           <table className="tabela">
