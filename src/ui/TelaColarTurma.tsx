@@ -110,7 +110,11 @@ export function TelaColarTurma({
       )}
 
       <section className="colagem">
-        <h1 className="colagem__titulo">Cole sua turma</h1>
+        {/* "Sua turma", no singular, lia como "só uma, para sempre" — e nada
+            aqui dizia que dava para voltar depois. `aoSair` já é o sinal de
+            "existe repouso pra onde voltar" (ver o comentário na prop, acima):
+            é exatamente "isto não é a primeira nem a única". */}
+        <h1 className="colagem__titulo">{aoSair ? 'Cole mais uma turma' : 'Cole sua primeira turma'}</h1>
         <p className="colagem__nota">
           No SIGAA, abra Turma › Participantes e copie a página.
         </p>
