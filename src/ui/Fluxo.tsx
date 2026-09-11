@@ -202,7 +202,26 @@ export function Fluxo() {
 
     // A primeira turma sem horário que ele ainda não adiou. Uma por vez: a tela
     // pergunta de uma turma, e enfileirar cinco de uma vez seria formulário.
-    const todasAsAulas = await repositorio.listarAulas()
+    let todasAsAulas = await repositorio.listarAulas()
+
+    // Autocorreção de uma grade salva antes de existir crachá de professor —
+    // ver o comentário em `aoSalvar` do cronograma, abaixo. `uidHashProfessor`
+    // vazio nunca se reconciliava sozinho com o vínculo criado depois, e
+    // `aulasAgora`/`proximaAula` comparam hash por igualdade: a aula existia,
+    // no dia e hora certos, e nada a achava. Assim que existe um professor de
+    // verdade, escrever o hash certo por cima é a mesma correção que o
+    // cronograma passou a fazer na origem — só que para quem já tinha
+    // salvado antes disso existir.
+    if (professor) {
+      const quebradas = todasAsAulas.filter((a) => !a.uidHashProfessor)
+      if (quebradas.length > 0) {
+        for (const aula of quebradas) {
+          await repositorio.gravarAula({ ...aula, uidHashProfessor: professor.uidHash })
+        }
+        todasAsAulas = await repositorio.listarAulas()
+      }
+    }
+
     const adiadas = new Set(horariosAdiados())
     const semGrade = listaDeTurmas.find(
       (t) => !adiadas.has(t) && !todasAsAulas.some((a) => a.turma === t),
@@ -411,6 +430,12 @@ export function Fluxo() {
    * primeiro. O vínculo criado aqui é tão de professor quanto qualquer
    * outro: abre e fecha aula, e a grade reconhece ele igual. O nome vem do
    * docente que o SIGAA já apontou, se a turma tiver um.
+   *
+   * `sintetico: true` marca que este `uidHash` não veio de toque nenhum —
+   * sorteado, não lido. Sem a marca, "Vínculos" em Ajustes mostrava esse
+   * hash igual a um de verdade, e a leitura era "encostei um crachá e ele
+   * tá aqui" quando ninguém tinha encostado nada. Ver o comentário em
+   * `Vinculo`, em `nucleo/tipos.ts`.
    */
   const garantirProfessor = useCallback(async (): Promise<Vinculo> => {
     const existente = (await repositorio.listarVinculos()).find((v) => v.papel === 'professor')
@@ -423,6 +448,7 @@ export function Fluxo() {
       nome: docente?.nome ?? 'Professor',
       matricula: docente?.matricula || undefined,
       criadoEm: new Date().toISOString(),
+      sintetico: true,
     }
     await repositorio.gravarVinculo(vinculo)
     await mudou()
@@ -668,7 +694,23 @@ export function Fluxo() {
           uidHashProfessor={uidDoProfessor}
           aoSalvar={(novas) => {
             void (async () => {
-              await repositorio.definirHorarioDaTurma(semHorario.turma, novas)
+              // A grade é indexada pelo professor — e o cronograma aparece
+              // **antes** de existir qualquer crachá dele (é a primeira turma
+              // colada, o repouso ainda nem existe). `uidHashProfessor` chega
+              // vazio nesse instante, e as aulas eram salvas com ele. O vazio
+              // nunca se reconciliava sozinho com o vínculo criado depois —
+              // sintético, ao clicar "Começar a chamada", ou de um crachá de
+              // verdade — porque são hashes diferentes: `aulasAgora` compara
+              // por igualdade e nunca achava a aula certa, mesmo no horário
+              // certo. `garantirProfessor` já resolve exatamente isso para o
+              // botão de iniciar; usar o mesmo aqui fecha o mesmo buraco na
+              // origem, não só quando o professor aparece depois.
+              const professor = await garantirProfessor()
+              const comProfessorCerto = novas.map((a) => ({
+                ...a,
+                uidHashProfessor: professor.uidHash,
+              }))
+              await repositorio.definirHorarioDaTurma(semHorario.turma, comProfessorCerto)
               // Salvar sem marcar nada é o mesmo que adiar: sem isto a tela
               // voltaria na hora, porque a turma continua sem horário.
               if (novas.length === 0) adiarHorario(semHorario.turma)
@@ -933,6 +975,7 @@ export function Fluxo() {
               await recontar()
               return resumo
             }}
+            aoVerPresencas={() => setFolha('presencas')}
           />
           {/* Diagnóstico virou folha própria — ver o comentário no topo do
               arquivo. Cinco painéis de coisa que "não é uso do dia a dia"

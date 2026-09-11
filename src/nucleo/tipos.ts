@@ -25,6 +25,21 @@ export interface Vinculo {
   matricula?: string
   /** Quando o crachá foi encostado. É o timestamp do vínculo. */
   criadoEm: string
+  /**
+   * Não veio de crachá nenhum — `uidHash` é sorteado, não lido. Existe para o
+   * botão "Começar a chamada" poder abrir sem exigir o crachá físico do
+   * professor primeiro (`garantirProfessor`, em `Fluxo.tsx`): a sessão
+   * precisa de um `uidHash` pra saber quem pode encerrá-la, e o botão é
+   * gesto explícito o bastante pra dispensar o toque.
+   *
+   * A marca é o que evita a leitura errada "encostei um crachá e ele tá
+   * aqui, vinculado, mesmo sem eu ter feito nada": sem ela, um vínculo
+   * sintético é indistinguível de um real em qualquer lugar que mostre
+   * `uidHash` — mesmo formato, mesmo tamanho, nascido do mesmo sorteio de
+   * bytes que o hash de verdade usa. Continua um vínculo de verdade pra
+   * tudo o mais: conta presença, encerra a sessão, aparece em "Quem falta".
+   */
+  sintetico?: boolean
 }
 
 /**

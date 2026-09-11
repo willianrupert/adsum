@@ -53,7 +53,7 @@ export function EscolherTurma({
         <p className="busca__nota">
           {motivo === 'varias'
             ? 'Duas aulas suas estão neste horário.'
-            : 'Não há aula sua na grade agora — tudo bem começar mesmo assim, é só para saber qual turma.'}
+            : 'Não há aula sua na grade agora, deseja registrar em que turma?'}
         </p>
 
         <ul className="busca__lista">

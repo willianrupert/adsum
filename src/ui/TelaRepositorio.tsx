@@ -20,7 +20,7 @@ import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.t
 import { pastaDisponivel } from '../ambiente/pasta.ts'
 import { comoInstalar, ehWebKit, instalado } from '../ambiente/instalacao.ts'
 import { useAdsum } from './adsum.ts'
-import { Linha, Painel, Secao } from './componentes/Painel.tsx'
+import { Linha, Painel, Secao, Selo } from './componentes/Painel.tsx'
 import { Cartao } from './componentes/Cartao.tsx'
 import { GradeDaSemana, aulasDe } from './componentes/GradeDaSemana.tsx'
 import { marcadosDe } from '../nucleo/horarios.ts'
@@ -168,6 +168,7 @@ export function TelaRepositorio({
   aoRelerPasta,
   aoDesconectarPasta,
   aoResetar,
+  aoVerPresencas,
 }: {
   pasta?: FileSystemDirectoryHandle
   aoTrocarPasta?: () => void
@@ -177,6 +178,9 @@ export function TelaRepositorio({
   aoDesconectarPasta?: () => Promise<void>
   /** Apaga a base deste navegador. Os arquivos da pasta ficam. */
   aoResetar?: () => Promise<void>
+  /** Abre a planilha de presenças — a mesma folha do repouso, alcançável
+      também daqui, que é onde o professor já está olhando turma por turma. */
+  aoVerPresencas?: () => void
 } = {}) {
   const { repositorio, config, recarregarConfig } = useAdsum()
 
@@ -224,6 +228,10 @@ export function TelaRepositorio({
   }
 
   const professores = useMemo(() => vinculos.filter((v) => v.papel === 'professor'), [vinculos])
+  /** Sem crachá de verdade, não deveria contar como um — ver o comentário em
+      `tipos.ts` sobre `Vinculo.sintetico`. */
+  const sinteticos = useMemo(() => vinculos.filter((v) => v.sintetico).length, [vinculos])
+  const comCracha = vinculos.length - sinteticos
 
   /**
    * Quem falta cadastrar, por turma — a única pergunta que antes só se
@@ -291,9 +299,13 @@ export function TelaRepositorio({
       <div className="cartoes">
         <Cartao
           icone="◎"
-          tom={vinculos.length > 0 ? 'ok' : 'neutro'}
-          titulo={plural(vinculos.length, 'crachá', 'crachás')}
-          apoio={`${professores.length} de professor`}
+          tom={comCracha > 0 ? 'ok' : 'neutro'}
+          titulo={plural(comCracha, 'crachá', 'crachás')}
+          apoio={
+            sinteticos > 0
+              ? `${professores.length} de professor · ${sinteticos} sem crachá`
+              : `${professores.length} de professor`
+          }
         />
         <Cartao
           icone="☰"
@@ -328,6 +340,12 @@ export function TelaRepositorio({
             ))}
           </div>
         </>
+      )}
+
+      {aoVerPresencas && (
+        <button className="botao--quieto" onClick={aoVerPresencas}>
+          Ver presenças
+        </button>
       )}
 
       {recado && <div className={`aviso aviso--${recado.tom}`}>{recado.texto}</div>}
@@ -439,7 +457,8 @@ export function TelaRepositorio({
             className="entrada--larga"
           />
           <span className="ferramentas__ou">
-            {vinculos.length} crachás · {professores.length} de professor
+            {comCracha} {comCracha === 1 ? 'crachá' : 'crachás'} · {professores.length} de professor
+            {sinteticos > 0 && ` · ${sinteticos} sem crachá`}
           </span>
         </div>
 
@@ -489,7 +508,16 @@ export function TelaRepositorio({
                     </select>
                   </td>
                   <td>
-                    <code>{v.uidHash}</code>
+                    {/* O hash sintético tem o mesmo formato do de um crachá
+                        de verdade — mostrá-lo aqui diria "isto veio de um
+                        toque", que é justamente a leitura errada que o
+                        professor teve: ninguém encostou nada, o botão
+                        "Começar a chamada" que vinculou sozinho. */}
+                    {v.sintetico ? (
+                      <Selo tom="alerta">sem crachá — pelo botão</Selo>
+                    ) : (
+                      <code>{v.uidHash}</code>
+                    )}
                   </td>
                   <td>
                     <button

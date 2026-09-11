@@ -169,11 +169,21 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
     await usuario.click(screen.getByRole('button', { name: 'Cadastrar nova turma' }))
     await screen.findByText('Cole mais uma turma')
     await colarTurma(usuario, TURMA_B, paginaDoSigaa(ALUNOS_B))
-    await usuario.click(await screen.findByRole('button', { name: 'Depois' }))
 
-    // Com A tendo horário real e B sem nenhum, "Começar a chamada" só sabe
-    // sozinho se A ainda bater com agora — nesse caso pergunta qual das duas.
-    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    // Se A ainda bate com agora (mesmo bloco de antes — a grade dela agora
+    // reconcilia com o professor certo, ver Fluxo.test.tsx "cronograma"),
+    // clicar "Começar a chamada" sem mais nada abriria A de novo, sozinha e
+    // sem perguntar — um só nome bate, e "nunca perguntar o que dá pra
+    // saber" vale pra ela também. Dar o mesmo bloco pra B é o que garante a
+    // pergunta que este teste quer exercitar, em vez de torcer pro relógio.
+    if (agoraA) {
+      await usuario.click(await screen.findByRole('button', { name: agoraA.aria }))
+      await usuario.click(await screen.findByRole('button', { name: 'Salvar horário' }))
+    } else {
+      await usuario.click(await screen.findByRole('button', { name: 'Depois' }))
+    }
+
+    await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
     const talvezPergunta = screen.queryByText('Qual turma?')
     if (talvezPergunta) {
       await usuario.click(screen.getByRole('button', { name: TURMA_B }))
@@ -211,9 +221,12 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
     // a busca — a contagem já prova a associação certa. ===
     await usuario.click(await screen.findByRole('button', { name: 'Ajustes' }))
     expect(await screen.findByText('1 de 4 sem crachá')).toBeInTheDocument()
-    await usuario.click(screen.getByRole('button', { name: 'Fechar' }))
 
-    // === Ver presenças: cada turma mostra só a sua gente. ===
+    // === Ver presenças, de dentro dos Ajustes: com uma próxima aula
+    // conhecida (a de A, agora que a grade reconcilia com o professor certo)
+    // o repouso mostra só "Começar a chamada agora" — o link daqui é o
+    // caminho que continua sempre alcançável. Cada turma mostra só a sua
+    // gente. ===
     await usuario.click(await screen.findByRole('button', { name: 'Ver presenças' }))
     const popup = await screen.findByRole('dialog', { name: 'Presenças' })
 

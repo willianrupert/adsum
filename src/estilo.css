@@ -1119,6 +1119,14 @@ button:focus-visible {
   text-align: center;
 }
 
+/* Guia de linha: um traço claro sob cada aluno, atravessando nome e blocos
+   de chamada juntos — sem ele, achar de novo a linha certa numa turma de 50,
+   depois de olhar pra longe, custa contar de novo a partir do topo. */
+.planilha tbody th,
+.planilha tbody td {
+  border-bottom: 1px solid var(--separador);
+}
+
 /* O número dentro do quadrado é o que vai para a instituição — a cor é
    leitura de relance, o dígito é o dado de verdade. Um sem o outro seria
    metade da informação. */
@@ -1255,25 +1263,56 @@ button:focus-visible {
   margin-bottom: 16px;
 }
 
-.chamado__voltar {
+/* Um interruptor só, onde antes havia dois botões em dois lugares — "Chamar
+   nomes" (um cartão) e "Voltar à chamada comum" (outro, só quando o primeiro
+   já tinha sumido). O modo é um estado só, e um estado só merece um controle
+   só: a mesma pergunta ("ligado ou desligado") em vez de "qual dos dois
+   botões existe agora". */
+.chamado__interruptor {
   position: absolute;
-  top: 14px;
-  left: 12px;
-}
-
-/* O convite pra entrar no modo de chamar nomes — mais quieto que o cartão de
-   quem já está chamado, porque aqui ainda não há ninguém sendo observado, só
-   um número e um botão. */
-.chamado--convite {
+  top: 16px;
+  left: 18px;
+  right: 18px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 14px;
-  padding: 32px 28px;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.chamado--convite .chamado__rotulo {
-  color: var(--tinta);
+.chamado__interruptor-rotulo {
+  font-size: var(--t-menor);
+  color: var(--tinta-fraca);
+}
+
+.interruptor {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  padding: 0;
+  border-radius: 13px;
+  background: var(--separador);
+  flex-shrink: 0;
+  transition: background var(--rapido) var(--curva);
+}
+
+.interruptor[aria-checked='true'] {
+  background: var(--acao);
+}
+
+.interruptor__bolinha {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform var(--rapido) var(--curva);
+}
+
+.interruptor[aria-checked='true'] .interruptor__bolinha {
+  transform: translateX(18px);
 }
 
 .chamado__rotulo {
@@ -1821,6 +1860,14 @@ button:focus-visible {
   align-items: center;
   gap: 18px;
   margin-top: 24px;
+}
+
+/* `.pasta__botao` carrega `margin-top` pensado para ficar sozinho embaixo de
+   um parágrafo — aqui ele está numa linha ao lado do campo de turma e do
+   Cancelar, e a margem empurrava só ele pra baixo, torto contra os outros
+   dois. O espaço de cima já é do `.colagem__acoes` como um todo. */
+.colagem__acoes .pasta__botao {
+  margin-top: 0;
 }
 
 /* ── Manual ──────────────────────────────────────────────────────────────── */

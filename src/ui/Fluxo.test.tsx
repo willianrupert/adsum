@@ -133,7 +133,7 @@ describe('a rota decide a tela', () => {
     // mesmo gesto que abre a sessão. Ninguém fica chamado sozinho (modo
     // comum, o padrão) — o professor entra no modo de chamar nomes de
     // propósito, e é aí que Breno, o único genuinamente pendente, é chamado.
-    await usuario.click(await screen.findByRole('button', { name: 'Chamar nomes' }))
+    await usuario.click(await screen.findByRole('switch', { name: 'Chamar nomes' }))
     expect(await screen.findByText('Encoste o crachá de')).toBeInTheDocument()
     expect(screen.getByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
     await waitFor(async () => {
@@ -191,7 +191,7 @@ describe('a rota decide a tela', () => {
     // O docente ganha vínculo sintético ao abrir. Carla ainda não chegou — é
     // o "só alguns" da sala. O professor entra no modo de chamar nomes para
     // ir atrás de Breno, o primeiro pendente.
-    await usuario.click(await screen.findByRole('button', { name: 'Chamar nomes' }))
+    await usuario.click(await screen.findByRole('switch', { name: 'Chamar nomes' }))
     await screen.findByText('Breno Oliveira', { selector: '.chamado__nome' })
     await act(async () => bancada.leitor.simular('04a23b91'))
     await waitFor(async () => expect(await bancada.repositorio.listarVinculos()).toHaveLength(2))
@@ -201,7 +201,7 @@ describe('a rota decide a tela', () => {
 
     // Reabre para dar o crachá de quem faltou — só uma turma, sem perguntar.
     await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
-    await usuario.click(await screen.findByRole('button', { name: 'Chamar nomes' }))
+    await usuario.click(await screen.findByRole('switch', { name: 'Chamar nomes' }))
 
     // Chama Carla, não Ana Paula de novo.
     expect(await screen.findByText('Carla Regina', { selector: '.chamado__nome' })).toBeInTheDocument()
@@ -279,7 +279,7 @@ describe('a rota decide a tela', () => {
 
     await usuario.click(screen.getByRole('button', { name: 'Começar a chamada' }))
     await usuario.click(await screen.findByRole('button', { name: 'IF999 · T02' }))
-    await usuario.click(await screen.findByRole('button', { name: 'Chamar nomes' }))
+    await usuario.click(await screen.findByRole('switch', { name: 'Chamar nomes' }))
 
     // Chama Carla, na turma nova — o professor já reconhecido, sem crachá
     // físico nenhum de novo.
@@ -622,6 +622,61 @@ describe('o cronograma da turma', () => {
       expect(aulas).toHaveLength(1)
       expect(aulas[0]).toMatchObject({ dia: 3, inicio: '13:00', fim: '14:50', turma: 'IF685 · T01' })
     })
+  })
+
+  // Regressão: o cronograma é a primeira tela depois de colar a turma — não
+  // existe crachá de professor nenhum ainda, nem sintético. Salvar aqui
+  // gravava `uidHashProfessor: ''`, e esse vazio nunca se reconciliava com o
+  // vínculo criado depois por "Começar a chamada": `aulasAgora` compara hash
+  // por igualdade, então a aula existia no dia e hora certos e "Qual turma?"
+  // aparecia dizendo que não havia aula nenhuma. Reproduzido de verdade pelo
+  // autor: cadastrou 13:00–14:50 e, às 13:58, o app não achou a turma.
+  it('salvar o primeiro horário, sem crachá de professor ainda, grava com o hash certo', async () => {
+    const usuario = userEvent.setup()
+    await comTurma()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('Quando esta turma tem aula')
+
+    // Nenhum vínculo de professor existe neste ponto — é a primeira tela.
+    expect(await bancada.repositorio.listarVinculos()).toHaveLength(0)
+
+    await usuario.click(screen.getByRole('button', { name: 'QUA, 13:00 às 14:50' }))
+    await usuario.click(screen.getByRole('button', { name: 'Salvar horário' }))
+
+    await waitFor(async () => {
+      const vinculos = await bancada.repositorio.listarVinculos()
+      const aulas = await bancada.repositorio.listarAulas()
+      const professor = vinculos.find((v) => v.papel === 'professor')
+      expect(professor).toBeDefined()
+      expect(aulas[0]?.uidHashProfessor).toBe(professor!.uidHash)
+      expect(aulas[0]?.uidHashProfessor).not.toBe('')
+    })
+  })
+
+  // A autocorreção para quem já tinha uma grade quebrada salva antes deste
+  // conserto: assim que o professor ganha um vínculo de verdade, `recontar`
+  // reescreve por cima as aulas com hash vazio.
+  it('uma aula salva antes de existir professor se autocorrige assim que ele aparece', async () => {
+    await comTurma()
+    await bancada.repositorio.gravarAula({
+      uidHashProfessor: '',
+      dia: 3,
+      inicio: '13:00',
+      fim: '14:50',
+      turma: 'IF685 · T01',
+    })
+    renderizarCom(bancada, <Fluxo />)
+
+    // O cronograma nem aparece — a turma já tem horário (quebrado).
+    expect(screen.queryByText('Quando esta turma tem aula')).not.toBeInTheDocument()
+
+    await waitFor(async () => {
+      const aulas = await bancada.repositorio.listarAulas()
+      expect(aulas[0]?.uidHashProfessor).not.toBe('')
+    })
+    const vinculos = await bancada.repositorio.listarVinculos()
+    const aulas = await bancada.repositorio.listarAulas()
+    expect(aulas[0]?.uidHashProfessor).toBe(vinculos.find((v) => v.papel === 'professor')!.uidHash)
   })
 
   // Salvar sem marcar nada é o mesmo que adiar: sem isto a tela voltaria na

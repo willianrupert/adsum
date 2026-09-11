@@ -122,3 +122,63 @@ describe('exportar faltas', () => {
     expect(linhas).toContain('BRENO OLIVEIRA;2')
   })
 })
+
+describe('ver presenças', () => {
+  it('sem aoVerPresencas, não existe o link', async () => {
+    renderizarCom(bancada, <TelaRepositorio />)
+    expect(screen.queryByRole('button', { name: 'Ver presenças' })).not.toBeInTheDocument()
+  })
+
+  it('com aoVerPresencas, o link chama de volta', async () => {
+    const usuario = userEvent.setup()
+    const aoVerPresencas = vi.fn()
+    renderizarCom(bancada, <TelaRepositorio aoVerPresencas={aoVerPresencas} />)
+
+    await usuario.click(await screen.findByRole('button', { name: 'Ver presenças' }))
+    expect(aoVerPresencas).toHaveBeenCalled()
+  })
+})
+
+// Regressão: um vínculo sintético (criado por "Começar a chamada", sem
+// crachá nenhum) tinha o mesmo formato de `uid_hash` que um de verdade — a
+// leitura era "encostei um crachá e ele tá aqui", quando ninguém encostou
+// nada. Ver o comentário em `Vinculo.sintetico`, em `nucleo/tipos.ts`.
+describe('vínculo sintético', () => {
+  it('mostra "sem crachá — pelo botão" no lugar do uid_hash', async () => {
+    const usuario = userEvent.setup()
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'aaaa1111bbbb2222',
+      papel: 'professor',
+      nome: 'Paulo Araújo',
+      criadoEm: new Date().toISOString(),
+      sintetico: true,
+    })
+
+    renderizarCom(bancada, <TelaRepositorio />)
+    await usuario.click(await screen.findByRole('button', { name: /Vínculos/ }))
+
+    expect(await screen.findByText('sem crachá — pelo botão')).toBeInTheDocument()
+    expect(screen.queryByText('aaaa1111bbbb2222')).not.toBeInTheDocument()
+  })
+
+  it('não conta como crachá no resumo — só quem foi lido de verdade', async () => {
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'aaaa1111bbbb2222',
+      papel: 'professor',
+      nome: 'Paulo Araújo',
+      criadoEm: new Date().toISOString(),
+      sintetico: true,
+    })
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'ccccddddeeeeffff',
+      papel: 'aluno',
+      nome: 'Bruno Cardoso',
+      matricula: '1',
+      criadoEm: new Date().toISOString(),
+    })
+
+    renderizarCom(bancada, <TelaRepositorio />)
+
+    expect(await screen.findByText('1 crachá')).toBeInTheDocument()
+  })
+})

@@ -97,11 +97,13 @@ export async function baterCrachasEmSequencia(
   contarEventos: () => Promise<number>,
   aposCadaToque?: (indice: number, restam: number) => Promise<void> | void,
 ): Promise<void> {
-  // Entra no modo de chamar nomes se o convite estiver na tela — sem isso, o
+  // Liga o modo de chamar nomes se ainda estiver desligado — sem isso, o
   // modo comum (padrão) abriria a busca a cada crachá desconhecido, e nada
-  // aqui responderia por ela.
-  const convite = screen.queryByRole('button', { name: 'Chamar nomes' })
-  if (convite) fireEvent.click(convite)
+  // aqui responderia por ela. `aria-checked` importa: o interruptor existe
+  // sempre que há gente pendente, então clicar sem checar o estado desligaria
+  // por engano um modo que já estava ligado.
+  const interruptor = screen.queryByRole('switch', { name: 'Chamar nomes' })
+  if (interruptor?.getAttribute('aria-checked') === 'false') fireEvent.click(interruptor)
 
   for (let i = 0; i < baralho.length; i++) {
     const antes = await contarEventos()

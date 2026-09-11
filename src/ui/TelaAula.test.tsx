@@ -103,15 +103,23 @@ describe('quem falta', () => {
   it('não chama ninguém sozinha — mostra o convite para chamar nomes', () => {
     montar([ANA, BRENO])
     expect(screen.queryByText('Ana Paula', { selector: '.chamado__nome' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Chamar nomes' })).toBeInTheDocument()
-    expect(screen.getByText('2 pessoas sem crachá')).toBeInTheDocument()
+    expect(screen.getByRole('switch', { name: 'Chamar nomes' })).toBeInTheDocument()
+    expect(screen.getByText('0 de 2 com crachá')).toBeInTheDocument()
+  })
+
+  // Progresso, não pendência: o convite conta quem já tem crachá, não quem
+  // falta — o mesmo "Quem falta" já diz isso de outro jeito, logo abaixo.
+  it('o convite mostra quantos já têm crachá, não quantos faltam', async () => {
+    await comCrachaDaAna()
+    montar([BRENO])
+    expect(screen.getByText('1 de 2 com crachá')).toBeInTheDocument()
   })
 
   it('"Chamar nomes" entra no modo de chamar, no primeiro pendente', async () => {
     const usuario = userEvent.setup()
     montar([ANA, BRENO])
 
-    await usuario.click(screen.getByRole('button', { name: 'Chamar nomes' }))
+    await usuario.click(screen.getByRole('switch', { name: 'Chamar nomes' }))
     expect(await screen.findByText('Ana Paula', { selector: '.chamado__nome' })).toBeInTheDocument()
   })
 
@@ -137,7 +145,7 @@ describe('quem falta', () => {
     expect(eventos[0]).toMatchObject({ nome: 'Ana Paula', resultado: 'ok', origem: 'cracha' })
     // Confirmar na busca não chama Breno sozinho — o convite continua ali.
     expect(screen.queryByText('Breno Oliveira', { selector: '.chamado__nome' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Chamar nomes' })).toBeInTheDocument()
+    expect(screen.getByRole('switch', { name: 'Chamar nomes' })).toBeInTheDocument()
   })
 
   // O caso que motivou a busca existir: turma com muita gente ainda sem
@@ -161,7 +169,7 @@ describe('quem falta', () => {
   it('modo de chamar nomes: crachá desconhecido cadastra direto no chamado, e avança para o próximo', async () => {
     const usuario = userEvent.setup()
     montar([ANA, BRENO])
-    await usuario.click(screen.getByRole('button', { name: 'Chamar nomes' }))
+    await usuario.click(screen.getByRole('switch', { name: 'Chamar nomes' }))
     expect(await screen.findByText('Ana Paula', { selector: '.chamado__nome' })).toBeInTheDocument()
 
     await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
@@ -221,7 +229,7 @@ describe('quem falta', () => {
   it('pular marca como pulado, avança, e continua alcançável pela tabela', async () => {
     const usuario = userEvent.setup()
     montar([ANA, BRENO])
-    await usuario.click(screen.getByRole('button', { name: 'Chamar nomes' }))
+    await usuario.click(screen.getByRole('switch', { name: 'Chamar nomes' }))
     await screen.findByText('Ana Paula', { selector: '.chamado__nome' })
 
     await usuario.click(screen.getByRole('button', { name: 'Pular' }))
@@ -233,17 +241,21 @@ describe('quem falta', () => {
   })
 
   // Sair do modo de chamar nomes é tão explícito quanto entrar — o resto da
-  // turma chega sozinho, sem crachá trocado, pelo modo comum.
-  it('"Voltar à chamada comum" sai do modo de chamar nomes', async () => {
+  // turma chega sozinho, sem crachá trocado, pelo modo comum. Um interruptor
+  // só, ligado e desligado com o mesmo gesto.
+  it('o interruptor liga e desliga o modo de chamar nomes', async () => {
     const usuario = userEvent.setup()
     montar([ANA, BRENO])
-    await usuario.click(screen.getByRole('button', { name: 'Chamar nomes' }))
-    await screen.findByText('Ana Paula', { selector: '.chamado__nome' })
+    const interruptor = screen.getByRole('switch', { name: 'Chamar nomes' })
+    expect(interruptor).toHaveAttribute('aria-checked', 'false')
 
-    await usuario.click(screen.getByRole('button', { name: 'Voltar à chamada comum' }))
+    await usuario.click(interruptor)
+    expect(await screen.findByText('Ana Paula', { selector: '.chamado__nome' })).toBeInTheDocument()
+    expect(interruptor).toHaveAttribute('aria-checked', 'true')
 
+    await usuario.click(interruptor)
     expect(screen.queryByText('Ana Paula', { selector: '.chamado__nome' })).not.toBeInTheDocument()
-    expect(await screen.findByRole('button', { name: 'Chamar nomes' })).toBeInTheDocument()
+    expect(interruptor).toHaveAttribute('aria-checked', 'false')
   })
 
   it('editar o nome antes do crachá chegar grava o nome editado', async () => {
@@ -296,7 +308,7 @@ describe('quem falta', () => {
     const usuario = userEvent.setup()
     await comCrachaDaAna()
     montar([BRENO])
-    await usuario.click(screen.getByRole('button', { name: 'Chamar nomes' }))
+    await usuario.click(screen.getByRole('switch', { name: 'Chamar nomes' }))
     expect(await screen.findByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
 
     await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))

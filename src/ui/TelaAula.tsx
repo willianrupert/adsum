@@ -535,94 +535,99 @@ export function TelaAula({
         </p>
       )}
 
-      {/* O convite para entrar no modo de chamar nomes — não o modo em si.
-          Sem alguém chamado, o app não sabe (nem deveria adivinhar) se quem
-          vai encostar o próximo crachá é alguém específico; só sabe que
-          existe gente sem crachá. Um clique aqui é o professor decidindo
-          começar a chamar — o mesmo gesto de clicar "Chamar" numa linha da
-          tabela abaixo, só que para quem está no topo da fila. */}
-      {pendentes.length > 0 && !chamadoAtual && (
-        <section className="chamado chamado--convite">
-          <Ondas tamanho={54} />
-          <p className="chamado__rotulo">
-            {pendentes.length === 1 ? '1 pessoa sem crachá' : `${pendentes.length} pessoas sem crachá`}
-          </p>
-          <button
-            className="botao--acento"
-            onClick={() => setChamadoChave(proximoPendente(0))}
-          >
-            Chamar nomes
-          </button>
-        </section>
-      )}
-
-      {/* A fila de chamada só aparece com alguém chamado — e é a mesma tela
-          da cerimônia, não uma versão menor dela. Um só nome chamado por vez
-          continua sendo a garantia; o que muda é que chamar alguém agora
-          passa pelo mesmo `decidir()` de qualquer outro crachá, com a mesma
-          proteção contra dois crachás rápidos demais. */}
-      {pendentes.length > 0 && chamadoAtual && (
+      {/* Um interruptor só, sempre no mesmo lugar, alterna entre os dois
+          modos — não dois botões em dois lugares diferentes. Desligado é o
+          modo comum: o app não sabe (nem deveria adivinhar) se quem vai
+          encostar o próximo crachá é alguém específico, só sabe quantos já
+          têm crachá. Ligado, o professor está de propósito observando o
+          próximo da fila — mesmo gesto de clicar "Chamar" numa linha da
+          tabela abaixo, só que pelo topo. */}
+      {pendentes.length > 0 && (
         <section className="chamado">
-          <Ondas tamanho={54} animado />
-          <p className="chamado__rotulo">Encoste o crachá de</p>
-          <p className="chamado__nome">{chamadoAtual.nome}</p>
-          <p className="chamado__completo">
-            {chamadoAtual.nomeCompleto} · {chamadoAtual.papel}
-          </p>
-          <div className="chamado__acoes">
+          <div className="chamado__interruptor">
+            <span className="chamado__interruptor-rotulo">Chamar nomes</span>
             <button
-              onClick={() => {
-                const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
-                setChamadoChave(pendentes[Math.max(0, indice - 1)]?.chave)
-              }}
-              aria-label="anterior"
-              disabled={pendentes.findIndex((p) => p.chave === chamadoChave) <= 0}
+              role="switch"
+              aria-checked={!!chamadoAtual}
+              aria-label="Chamar nomes"
+              className="interruptor"
+              onClick={() =>
+                setChamadoChave(chamadoAtual ? undefined : proximoPendente(0))
+              }
             >
-              ←
-            </button>
-            <button
-              onClick={() => {
-                setPulados((antes) => new Set(antes).add(chamadoAtual.chave))
-                const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
-                setChamadoChave(proximoPendente(indice + 1))
-              }}
-            >
-              Pular
-            </button>
-            <button
-              onClick={() => {
-                const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
-                setChamadoChave(pendentes[Math.min(pendentes.length - 1, indice + 1)]?.chave)
-              }}
-              aria-label="próximo"
-              disabled={pendentes.findIndex((p) => p.chave === chamadoChave) >= pendentes.length - 1}
-            >
-              →
+              <span className="interruptor__bolinha" aria-hidden="true" />
             </button>
           </div>
-          <p className="chamado__atalho">← e → andam pela fila</p>
 
-          {/* Sair é tão explícito quanto entrar. Sem isto, quem chamou dois
-              nomes e quer parar (o resto chega sozinho, sem crachá trocado)
-              só tinha o caminho de pular todo mundo até a fila acabar. */}
-          <button className="botao--quieto chamado__voltar" onClick={() => setChamadoChave(undefined)}>
-            Voltar à chamada comum
-          </button>
+          {chamadoAtual ? (
+            <>
+              <Ondas tamanho={54} animado />
+              <p className="chamado__rotulo">Encoste o crachá de</p>
+              <p className="chamado__nome">{chamadoAtual.nome}</p>
+              <p className="chamado__completo">
+                {chamadoAtual.nomeCompleto} · {chamadoAtual.papel}
+              </p>
+              <div className="chamado__acoes">
+                <button
+                  onClick={() => {
+                    const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
+                    setChamadoChave(pendentes[Math.max(0, indice - 1)]?.chave)
+                  }}
+                  aria-label="anterior"
+                  disabled={pendentes.findIndex((p) => p.chave === chamadoChave) <= 0}
+                >
+                  ←
+                </button>
+                <button
+                  onClick={() => {
+                    setPulados((antes) => new Set(antes).add(chamadoAtual.chave))
+                    const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
+                    setChamadoChave(proximoPendente(indice + 1))
+                  }}
+                >
+                  Pular
+                </button>
+                <button
+                  onClick={() => {
+                    const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
+                    setChamadoChave(pendentes[Math.min(pendentes.length - 1, indice + 1)]?.chave)
+                  }}
+                  aria-label="próximo"
+                  disabled={pendentes.findIndex((p) => p.chave === chamadoChave) >= pendentes.length - 1}
+                >
+                  →
+                </button>
+              </div>
+              <p className="chamado__atalho">← e → andam pela fila</p>
 
-          {ensaio && ehSimulavel(leitor) && (
-            <div className="chamado__acoes">
-              <button
-                onClick={() => {
-                  try {
-                    leitor.encostarProximo()
-                  } catch (erro) {
-                    setRecado((erro as Error).message)
-                  }
-                }}
-              >
-                Simular um crachá
-              </button>
-            </div>
+              {ensaio && ehSimulavel(leitor) && (
+                <div className="chamado__acoes">
+                  <button
+                    onClick={() => {
+                      try {
+                        leitor.encostarProximo()
+                      } catch (erro) {
+                        setRecado((erro as Error).message)
+                      }
+                    }}
+                  >
+                    Simular um crachá
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <Ondas tamanho={54} />
+              {/* Quantos já têm crachá, não quantos faltam — o mesmo número
+                  visto de progresso, não de pendência. Numa turma de 56, "56
+                  sem crachá" no início da aula é só o tamanho da turma dito
+                  de propósito assustador; "3 de 56 com crachá" é o mesmo
+                  dado contando o que já aconteceu. */}
+              <p className="chamado__rotulo">
+                {daTurma.length - pendentes.length} de {daTurma.length} com crachá
+              </p>
+            </>
           )}
         </section>
       )}
