@@ -15,12 +15,16 @@ afterEach(cleanup)
 // sozinho sempre passou.
 //
 // 5s bastava local (dez rodadas seguidas, todas limpas) e mesmo assim falhou
-// no GitHub Actions: o log de lá mostra a suíte inteira levando 37,6s, contra
-// 13s aqui — quase 3× mais devagar, runner compartilhado de 2 vCPUs. 15s dá
-// folga pra essa máquina mais lenta sem esconder um travamento de verdade —
-// quem passa em 50ms continua passando em 50ms, só quem for genuinamente
-// lento ganha mais tempo antes de ser acusado de quebrado.
-configure({ asyncUtilTimeout: 15_000 })
+// no GitHub Actions duas vezes seguidas — a segunda até com 15s de folga. O
+// log de lá mostra só a execução dos testes (sem contar `npm ci`, build etc.)
+// levando 37s numa tentativa, e ainda mais na outra — contra ~5s aqui. Não é
+// um fator fixo de "3× mais devagar": o runner é compartilhado, e o quanto
+// ele varia de uma vez pra outra é maior do que dava pra estimar de uma
+// medição só. 30s é generoso de propósito — quem passa em 50ms continua
+// passando em 50ms, só quem for genuinamente lento ganha mais tempo antes de
+// ser acusado de quebrado, e a alternativa (ficar ajustando aos poucos a cada
+// falha) já se provou pior.
+configure({ asyncUtilTimeout: 30_000 })
 
 // O jsdom diz que `http://localhost` não é contexto seguro. Navegador nenhum
 // concorda — localhost é contexto seguro por definição —, e sem corrigir isso
