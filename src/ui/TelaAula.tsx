@@ -567,21 +567,31 @@ export function TelaAula({
                 return (
                   <tr key={p.chave} className={p.chave === chamadoChave ? 'linha--chamada' : ''}>
                     <td>
+                      {/* O nome curto continua sendo o que se chama em voz
+                          alta — e o que se edita aqui, viraria o vínculo. O
+                          completo só entra como apoio, pra achar quem é na
+                          lista sem depender de decorar o apelido de tela. */}
                       {vinculado ? (
-                        e.nome
+                        <>
+                          {e.nome}
+                          <span className="tabela__apoio">{p.nomeCompleto}</span>
+                        </>
                       ) : (
-                        <input
-                          className="entrada--celula"
-                          value={e.nome}
-                          onChange={(evento) =>
-                            setEdicoes((antes) => {
-                              const novo = new Map(antes)
-                              novo.set(p.chave, { nome: evento.target.value, papel: e.papel })
-                              return novo
-                            })
-                          }
-                          aria-label={`nome de ${p.nomeCompleto}`}
-                        />
+                        <>
+                          <input
+                            className="entrada--celula"
+                            value={e.nome}
+                            onChange={(evento) =>
+                              setEdicoes((antes) => {
+                                const novo = new Map(antes)
+                                novo.set(p.chave, { nome: evento.target.value, papel: e.papel })
+                                return novo
+                              })
+                            }
+                            aria-label={`nome de ${p.nomeCompleto}`}
+                          />
+                          <span className="tabela__apoio">{p.nomeCompleto}</span>
+                        </>
                       )}
                     </td>
                     <td className="celula--estado">

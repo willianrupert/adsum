@@ -15,9 +15,14 @@ function rotuloDia(dia: string): { semana: string; numero: string } {
 // muda o que a instituição precisa saber, e uma terceira cor só para isso
 // era categoria que ninguém ia usar para decidir nada. O detalhe continua
 // no tooltip, para quem quiser auditar fundo, só não vira cor própria.
+//
+// Falta é falta, também sem gradação de cor: mesmo um bloco de duas aulas é
+// uma chamada só, e o professor decide como um todo — a diferença entre
+// "faltou uma" e "faltou duas" já está no número, não precisa duplicar em
+// tom de vermelho. Cor grave para as duas seria alarmar por um número que o
+// próprio bloco explica.
 function classeDaCelula(c: CelulaDeFalta): string {
-  if (c.faltas === 0) return 'quadrado--presente'
-  return c.faltas === 1 ? 'quadrado--ausente' : 'quadrado--ausente-grave'
+  return c.faltas === 0 ? 'quadrado--presente' : 'quadrado--ausente'
 }
 
 function rotuloDaCelula(nome: string, dia: string, c: CelulaDeFalta): string {
@@ -168,7 +173,11 @@ export function GradeDePresencas({
                               </button>
                             ) : (
                               <span className={`quadrado ${classeDaCelula(c)}`}>
-                                {c.faltas}
+                                {/* Presença é só a bola azul — "0" ali lia como
+                                    ambíguo (falta zero? presença?). A falta
+                                    mostra o número porque é o dado que importa:
+                                    quantos períodos aquele dia valeu. */}
+                                {c.faltas > 0 && c.faltas}
                                 {c.manual && <i className="quadrado__manual" aria-hidden="true" />}
                               </span>
                             )}
@@ -184,13 +193,10 @@ export function GradeDePresencas({
 
           <div className="planilha__legenda">
             <span>
-              <span className="quadrado quadrado--presente">0</span> presente
+              <span className="quadrado quadrado--presente" /> presente
             </span>
             <span>
-              <span className="quadrado quadrado--ausente">1</span> falta
-            </span>
-            <span>
-              <span className="quadrado quadrado--ausente-grave">2</span> faltas
+              <span className="quadrado quadrado--ausente">1</span> falta — 2 se o bloco for de duas aulas
             </span>
           </div>
         </>

@@ -67,8 +67,9 @@ describe('a planilha com dois dias de aula', () => {
     // a instituição, não a forma curta usada na chamada.
     const linhaAna = screen.getByText('ANA PAULA DA SILVA').closest('tr')!
     expect(within(linhaAna).getByText('2/2')).toBeInTheDocument()
-    // Presente é 0, com destaque de cor — não célula vazia.
-    expect(within(linhaAna).getAllByText('0')).toHaveLength(2)
+    // Presente é só a bola azul, sem número — "0" ali lia como ambíguo.
+    expect(linhaAna.querySelectorAll('.quadrado--presente')).toHaveLength(2)
+    expect(linhaAna.textContent).not.toContain('0')
 
     const linhaBreno = screen.getByText('BRENO OLIVEIRA FILHO').closest('tr')!
     expect(within(linhaBreno).getByText('1/2')).toBeInTheDocument()
@@ -107,7 +108,9 @@ describe('a planilha com dois dias de aula', () => {
 
     render(<GradeDePresencas turmas={[TURMA]} eventos={eventos} matriculados={[ANA]} aulas={aulas} />)
 
-    const celula = document.querySelector('.quadrado--ausente-grave')
+    // A cor é a mesma de qualquer falta — o "2" no número é quem diz que o
+    // bloco era duplo, a cor não precisa repetir isso.
+    const celula = document.querySelector('.quadrado--ausente')
     expect(celula).toBeInTheDocument()
     expect(celula).toHaveTextContent('2')
   })

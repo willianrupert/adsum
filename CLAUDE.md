@@ -187,9 +187,13 @@ ui/           telas
 **O dongle é HID de teclado.** Ele "digita" o UID, e por isso o adaptador não
 precisa de permissão, driver nem API experimental — funciona igual em Chrome,
 Safari e Firefox. A separação entre o dongle e quem digita é pelo **ritmo**:
-ver `nucleo/digitacao.ts`. Qual formato ele imprime (hexadecimal ou decimal) só
-se sabe com ele na mão, e o diagnóstico mostra a última rajada crua para
-responder isso no primeiro toque.
+ver `nucleo/digitacao.ts`. **Conferido com o dongle de verdade, 10/09/2026:**
+decimal de 10 dígitos, big-endian — `0930148883` → `37 70 f2 13`, `2367396804`
+→ `8d 1b 9b c4`. O parser continua aceitando hexadecimal também, sem escolher
+um formato de antemão: outro dongle, ou uma unidade de outro lote, pode
+imprimir diferente, e é para isso que a detecção por formato existe.
+`LeitorTeclado.test.ts` prova os dois UIDs medidos passando pelo teclado de
+verdade, não só pela função de decodificação isolada.
 
 **A rota é o estado.** `nucleo/rota.ts` decide a tela a partir do estado do
 app (`decidirRota`), e `ui/Fluxo.tsx` monta o que ela devolve — nenhuma tela

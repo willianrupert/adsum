@@ -570,6 +570,18 @@ button:focus-visible {
   vertical-align: middle;
 }
 
+/* Nome completo, como apoio abaixo do nome curto — não troca um pelo outro.
+   O curto continua sendo o que se chama em voz alta e o que se edita; o
+   completo é só para achar a pessoa certa na lista, como no SIGAA. */
+.tabela__apoio {
+  display: block;
+  font-size: var(--t-nota);
+  color: var(--tinta-fraca);
+  font-weight: 400;
+  margin-top: 2px;
+  white-space: normal;
+}
+
 /* `display: flex` numa <td> a tira do layout de tabela: as colunas somem e o
    conteúdo empilha. O arranjo horizontal vai num contêiner interno. */
 .celula--estado > * {
@@ -1119,12 +1131,9 @@ button:focus-visible {
   color: white;
 }
 
+/* Vermelho, não âmbar: falta é falta, sem meio-termo — o número já diz se
+   foi um período ou dois, a cor não precisa repetir a gravidade. */
 .quadrado--ausente {
-  background: var(--alerta-fraca);
-  color: var(--alerta);
-}
-
-.quadrado--ausente-grave {
   background: var(--grave-fraca);
   color: var(--grave);
 }
