@@ -30,8 +30,12 @@
 //    pioraram, sinal de que a fresta depende de escalonamento do sistema
 //    operacional, não só do React. A saída que sobrou: perguntar ao banco.
 //    Se o evento não aparecer logo depois do toque, ninguém estava ouvindo, e
-//    bater o mesmo crachá de novo é seguro — nada foi gravado na primeira
-//    tentativa, então a segunda não duplica nada.
+//    bater o mesmo crachá de novo é seguro — nada foi gravado na tentativa
+//    perdida, então a próxima não duplica nada. Uma tentativa extra bastava
+//    quase sempre; num teste de jornada mais longa (`JornadaDuasTurmas`,
+//    turma colada pela UI de verdade em vez de gravada direto), duas
+//    tentativas seguidas caíram na mesma fresta — daí o loop de
+//    `TENTATIVAS_POR_TOQUE`, em vez de uma tentativa só.
 
 import { act } from '@testing-library/react'
 import { INTERVALO_MINIMO_MS } from '../nucleo/sessao.ts'
@@ -68,6 +72,16 @@ async function esperarAte(condicao: () => Promise<boolean>, prazoMs: number): Pr
  * `contarEventos` é como o teste sabe que o toque foi mesmo ouvido: se o
  * total não mudar depressa, bate o mesmo crachá de novo.
  */
+/**
+ * Quantas vezes insistir num toque que não foi ouvido, antes de aceitar que
+ * algo está mesmo errado em vez de só ter caído na fresta da resubscrição.
+ * Uma tentativa só (a versão anterior) bastava quase sempre, mas "quase" um
+ * teste que trava numa asserção que nunca mais bate — insistir mais é seguro
+ * pelo mesmo motivo de sempre: nada foi gravado na tentativa perdida, então
+ * bater de novo não duplica nada.
+ */
+const TENTATIVAS_POR_TOQUE = 5
+
 export async function baterCrachasEmSequencia(
   leitor: LeitorSimulado,
   baralho: readonly string[],
@@ -76,10 +90,10 @@ export async function baterCrachasEmSequencia(
 ): Promise<void> {
   for (let i = 0; i < baralho.length; i++) {
     const antes = await contarEventos()
-    await act(async () => leitor.simular(baralho[i]))
-    const ouvido = await esperarAte(async () => (await contarEventos()) > antes, 1000)
-    if (!ouvido) {
+    for (let tentativa = 0; tentativa < TENTATIVAS_POR_TOQUE; tentativa++) {
       await act(async () => leitor.simular(baralho[i]))
+      const ouvido = await esperarAte(async () => (await contarEventos()) > antes, 1000)
+      if (ouvido) break
     }
     await aposCadaToque?.(i, baralho.length - i - 1)
     await esperar(INTERVALO_MINIMO_MS + 50)
