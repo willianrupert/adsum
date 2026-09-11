@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { JANELA_MINIMA_MS, decidir, eventoDe, proximoEventoId, type Contexto } from './sessao.ts'
-import type { Vinculo } from './tipos.ts'
+import {
+  JANELA_MINIMA_MS,
+  SILENCIO_SUSPEITO_MS,
+  decidir,
+  eventoDe,
+  leitorSuspeito,
+  proximoEventoId,
+  quemFalta,
+  type Contexto,
+} from './sessao.ts'
+import type { Matriculado, Vinculo } from './tipos.ts'
 
 const PROFESSOR: Vinculo = {
   uidHash: 'aaaa000000000000',
@@ -234,5 +243,56 @@ describe('dois crachás quase juntos', () => {
       { eventoId: 'web-aaaa-20260820-0009', quando: em(0), turma: SESSAO.turma, uidHash: BRENO.uidHash },
     )
     expect(evento).toMatchObject({ resultado: 'rapido_demais', uidHash: BRENO.uidHash })
+  })
+})
+
+describe('leitorSuspeito', () => {
+  const base = new Date('2026-08-18T10:00:00.000Z')
+
+  it('não desconfia enquanto o silêncio é curto', () => {
+    const ha1min = new Date(base.getTime() + 60_000)
+    expect(leitorSuspeito(ha1min, base, 5)).toBe(false)
+  })
+
+  it('desconfia depois de SILENCIO_SUSPEITO_MS sem nada, com gente pendente', () => {
+    const depois = new Date(base.getTime() + SILENCIO_SUSPEITO_MS + 1)
+    expect(leitorSuspeito(depois, base, 5)).toBe(true)
+  })
+
+  it('não desconfia se não sobra ninguém pendente — silêncio é o esperado', () => {
+    const depois = new Date(base.getTime() + SILENCIO_SUSPEITO_MS + 1)
+    expect(leitorSuspeito(depois, base, 0)).toBe(false)
+  })
+})
+
+describe('quemFalta', () => {
+  const aluno = (matricula: string, nome: string): Matriculado => ({
+    turma: 'IF685 · T01',
+    chave: matricula,
+    matricula,
+    nome,
+    nomeCompleto: `${nome.toUpperCase()} DA SILVA`,
+    papel: 'aluno',
+  })
+
+  it('reconhece quem já tem crachá pela matrícula', () => {
+    const ana = aluno('1', 'Ana')
+    const beto = aluno('2', 'Beto')
+    const vinculo: Vinculo = { ...ALUNA, matricula: '1', nome: 'Ana' }
+    expect(quemFalta([ana, beto], [vinculo])).toEqual([beto])
+  })
+
+  // Docente não tem matrícula na página do SIGAA — sem esta segunda via ele
+  // contaria como pendente para sempre.
+  it('reconhece o docente sem matrícula pelo nome', () => {
+    const professor: Matriculado = {
+      turma: 'IF685 · T01',
+      chave: 'ana paula',
+      matricula: '',
+      nome: 'Ana Paula',
+      nomeCompleto: 'ANA PAULA MENDES',
+      papel: 'professor',
+    }
+    expect(quemFalta([professor], [PROFESSOR])).toEqual([])
   })
 })

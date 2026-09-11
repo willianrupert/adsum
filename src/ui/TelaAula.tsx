@@ -16,7 +16,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { calcularUidHash } from '../nucleo/hash.ts'
-import { decidir, eventoDe, proximoEventoId, type Decisao, type Sessao } from '../nucleo/sessao.ts'
+import {
+  decidir,
+  eventoDe,
+  leitorSuspeito,
+  proximoEventoId,
+  type Decisao,
+  type Sessao,
+} from '../nucleo/sessao.ts'
 import type { Evento, Matriculado, Papel } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
@@ -112,6 +119,15 @@ export function TelaAula({
   const [edicoes, setEdicoes] = useState<Map<string, { nome: string; papel: Papel }>>(new Map())
   /** Pulado é "não agora", não "nunca" — por isso é local e não persiste. */
   const [pulados, setPulados] = useState<Set<string>>(new Set())
+  /** Última vez que o leitor entregou alguma coisa — leitura aceita, recusa,
+      qualquer uma. Ver `leitorSuspeito` em `nucleo/sessao.ts`. */
+  const [ultimaAtividadeEm, setUltimaAtividadeEm] = useState(() => new Date())
+  const [agora, setAgora] = useState(() => new Date())
+
+  useEffect(() => {
+    const relogio = setInterval(() => setAgora(new Date()), 15_000)
+    return () => clearInterval(relogio)
+  }, [])
 
   // Chama o primeiro pendente assim que a fila deixa de estar vazia. Não
   // briga com quem já escolheu alguém: só define quando ainda não há ninguém.
@@ -218,6 +234,7 @@ export function TelaAula({
 
   useEffect(() => {
     return leitor.aoLer((leitura) => {
+      setUltimaAtividadeEm(leitura.em)
       void (async () => {
         const minha = ++geracao.current
         const uidHash = await calcularUidHash(config.salHex, leitura.uid)
@@ -409,6 +426,7 @@ export function TelaAula({
   }
 
   const chamadoAtual = aCadastrar
+  const suspeito = leitorSuspeito(agora, ultimaAtividadeEm, pendentes.length)
 
   return (
     <section className="coleta">
@@ -449,6 +467,16 @@ export function TelaAula({
             texto repetido. Movimento lento não compete com a linha que chega. */}
         <Ondas tamanho={52} animado />
       </div>
+
+      {/* Palpite, não detecção — ver `leitorSuspeito` em `nucleo/sessao.ts`. O app não sabe
+          se o dongle caiu; só sabe que faz tempo que ninguém foi lido com
+          gente ainda esperando, e é a melhor pista que existe para isso. */}
+      {suspeito && (
+        <p className="ferramentas__nota">
+          Nenhuma leitura há alguns minutos. Se alguém tentou encostar o crachá e nada
+          aconteceu, confira se o leitor está conectado.
+        </p>
+      )}
 
       {/* A fila de chamada só aparece com gente pendente — e é a mesma tela
           da cerimônia, não uma versão menor dela. Um só nome chamado por vez

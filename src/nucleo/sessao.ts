@@ -8,6 +8,23 @@
 import type { Evento, Matriculado, Papel, Vinculo } from './tipos.ts'
 
 /**
+ * Quem, de uma lista de matriculados, ainda não tem crachá.
+ *
+ * A pessoa é reconhecida pela matrícula — e, para quem não tem matrícula na
+ * página do SIGAA (docente), pelo nome. Sem esta segunda via o professor
+ * contaria como pendente para sempre: `!m.matricula` seria verdade toda vez.
+ * Sem filtrar por papel: uma turma pode ter mais de um docente, e só o
+ * primeiro ganha vínculo sintético (`garantirProfessor`, em `Fluxo.tsx`) — o
+ * segundo continua pendente de verdade, e precisa aparecer como qualquer
+ * outra pessoa sem crachá, não sumir por ser professor.
+ */
+export function quemFalta(matriculados: Matriculado[], vinculos: Vinculo[]): Matriculado[] {
+  const porMatricula = new Set(vinculos.map((v) => v.matricula).filter(Boolean))
+  const porNome = new Set(vinculos.map((v) => v.nome))
+  return matriculados.filter((m) => (m.matricula ? !porMatricula.has(m.matricula) : !porNome.has(m.nome)))
+}
+
+/**
  * Janela mínima antes de aceitar o fechamento.
  *
  * O professor encosta duas vezes sem querer com facilidade — e sem esta janela
@@ -140,6 +157,27 @@ export function decidir(uidHash: string, ctx: Contexto): Decisao {
   if (!vinculo) return ctx.chamado ? { tipo: 'cadastro', pessoa: ctx.chamado } : { tipo: 'desconhecido' }
   if (jaPresentes.has(uidHash)) return { tipo: 'repetido', vinculo }
   return { tipo: 'presenca', vinculo }
+}
+
+/**
+ * Quanto tempo de silêncio do leitor soa suspeito, em `TelaAula`.
+ *
+ * `LeitorTeclado` não é WebHID — é um ouvinte de teclado, e puxar o cabo do
+ * dongle não dispara evento nenhum. O app não tem como saber que ele caiu; o
+ * máximo que dá para fazer é notar que está quieto demais para o contexto e
+ * perguntar, não afirmar.
+ */
+export const SILENCIO_SUSPEITO_MS = 3 * 60_000
+
+/**
+ * Se o silêncio do leitor já é suspeito.
+ *
+ * Só incomoda quando ainda falta gente: com todo mundo vinculado, silêncio é
+ * o esperado, não um sintoma. Função pura para não depender de relógio de
+ * verdade correndo dentro de um teste — ver `SILENCIO_SUSPEITO_MS`.
+ */
+export function leitorSuspeito(agora: Date, ultimaAtividadeEm: Date, pendentes: number): boolean {
+  return pendentes > 0 && agora.getTime() - ultimaAtividadeEm.getTime() > SILENCIO_SUSPEITO_MS
 }
 
 /** `<origem>-<AAAAMMDD>-<sequência>` — ver `docs/02_formato.md`. */

@@ -11,8 +11,8 @@ import { calcularUidHash, uidHashSintetico } from '../nucleo/hash.ts'
 import { uidInedito, hexParaUid } from '../nucleo/uid.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { podeApagar } from '../portas/Repositorio.ts'
-import { eventoDe, proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
-import { abrirSozinho, escolherTurma, proximaAula, DIAS , type Aula } from '../nucleo/grade.ts'
+import { eventoDe, proximoEventoId, quemFalta, type Sessao } from '../nucleo/sessao.ts'
+import { abrirSozinho, aulasAgora, escolherTurma, proximaAula, DIAS, type Aula } from '../nucleo/grade.ts'
 import { saudacao } from '../nucleo/horarios.ts'
 import type { Matriculado, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
@@ -211,20 +211,7 @@ export function Fluxo() {
     const aulas = professor ? todasAsAulas : []
     const vem = professor ? proximaAula(aulas, professor.uidHash, new Date()) : undefined
     setProxima(vem && { turma: vem.aula.turma, quando: vem.quando })
-    // Quem já tem crachá é reconhecido pela matrícula — e, para quem não tem
-    // matrícula na página (docente), pelo nome. Sem esta segunda via o
-    // professor contava como pendente para sempre: `!m.matricula` era verdade
-    // toda vez, e isso quebrava a conta do primeiro dia.
-    //
-    // Sem filtrar por papel: uma turma pode ter mais de um docente, e só o
-    // primeiro ganha vínculo sintético (`garantirProfessor`). O segundo
-    // continua pendente de verdade, e precisa aparecer na tabela de `TelaAula`
-    // como qualquer outra pessoa sem crachá — não some por ser professor.
-    const porMatricula = new Set(vinculos.map((v) => v.matricula).filter(Boolean))
-    const porNome = new Set(vinculos.map((v) => v.nome))
-    const faltando = matriculados.filter((m) =>
-      m.matricula ? !porMatricula.has(m.matricula) : !porNome.has(m.nome),
-    )
+    const faltando = quemFalta(matriculados, vinculos)
     setTurmas(listaDeTurmas.length)
     setPendentes(faltando.length)
     setPendentesDaTurma(faltando)
@@ -338,6 +325,28 @@ export function Fluxo() {
     await recontar()
     await gravarNaPasta()
   }, [recontar, gravarNaPasta])
+
+  /**
+   * A sessão é única no app inteiro — não por turma. O crachá do professor
+   * sempre encerra a que já está aberta, nunca abre outra por cima; quem
+   * esquece de encerrar a aula das 8h e chega às 10h vê o próprio crachá
+   * "fechar a errada" sem entender por quê. Sem aviso, a segunda turma
+   * esperaria em silêncio um crachá que já foi encostado uma vez.
+   */
+  const avisarSeOutraTurmaEsperava = useCallback(
+    async (encerrada: Sessao) => {
+      const aulas = await repositorio.listarAulas()
+      const outra = aulasAgora(aulas, encerrada.uidHashProfessor, new Date()).find(
+        (a) => a.turma !== encerrada.turma,
+      )
+      if (outra) {
+        setAvisoLeitura(
+          `A grade diz que ${outra.turma} deveria estar rodando agora. Encoste o crachá de novo para abri-la.`,
+        )
+      }
+    },
+    [repositorio],
+  )
 
   const abrirChamada = useCallback(
     async (turma: string, uidHash: string, em: Date, automatico = false) => {
@@ -695,6 +704,7 @@ export function Fluxo() {
             // Sem esta marca o relógio reabriria a aula que acabou de fechar.
             marcarEncerrada(sessao.turma, new Date().toISOString())
             setResumo({ sessao, presentes })
+            void avisarSeOutraTurmaEsperava(sessao)
           }}
         />
       )}

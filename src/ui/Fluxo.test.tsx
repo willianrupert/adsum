@@ -429,6 +429,66 @@ describe('a grade abre a chamada sozinha', () => {
   })
 })
 
+// A sessão é única no app inteiro, não por turma: o crachá do professor
+// sempre encerra a que já está aberta, nunca abre outra por cima. Sem aviso,
+// quem esquece de encerrar a aula das 8h só descobre o motivo do "nada
+// aconteceu" às 10h depois de encostar o crachá de novo, sem entender por quê.
+describe('duas turmas se encavalam no horário', () => {
+  const aulaEm = async (turma: string, deltaInicio: number, deltaFim: number) => {
+    const agora = new Date()
+    const hhmm = (delta: number) => {
+      const d = new Date(agora.getTime() + delta * 60_000)
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    }
+    await bancada.repositorio.gravarAula({
+      uidHashProfessor: 'aaaa000000000000',
+      dia: agora.getDay(),
+      inicio: hhmm(deltaInicio),
+      fim: hhmm(deltaFim),
+      turma,
+    })
+  }
+
+  it('avisa que outra turma deveria estar rodando, em vez de fechar em silêncio', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    await bancada.repositorio.salvarTurma('IF969 · T02', [
+      { turma: 'IF969 · T02', chave: '99', matricula: '99', nome: 'Beto', nomeCompleto: 'BETO DA SILVA', papel: 'aluno' },
+    ])
+    adiarHorario('IF969 · T02')
+    await aulaEm('IF685 · T01', -30, 30)
+    renderizarCom(bancada, <Fluxo />)
+
+    // Só existe uma aula "agora" no momento em que a tela monta — a mesma
+    // grade que abre sozinha (ver acima) já abre esta, sem clique nenhum.
+    await screen.findByRole('button', { name: 'Encerrar a chamada' })
+    expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: 'IF685 · T01' })
+
+    // A segunda turma só passa a "estar acontecendo agora" depois que a
+    // primeira já está aberta — como o professor esquecendo de encerrar e o
+    // relógio chegando na hora da aula seguinte.
+    await aulaEm('IF969 · T02', -5, 55)
+
+    await usuario.click(screen.getByRole('button', { name: 'Encerrar a chamada' }))
+
+    expect(
+      await screen.findByText(/A grade diz que IF969 · T02 deveria estar rodando agora/),
+    ).toBeInTheDocument()
+  })
+
+  it('sem outra turma no horário, não avisa nada', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    await aulaEm('IF685 · T01', -30, 30)
+    renderizarCom(bancada, <Fluxo />)
+
+    await usuario.click(await screen.findByRole('button', { name: 'Encerrar a chamada' }))
+    await screen.findByRole('button', { name: 'Concluir sem salvar' })
+
+    expect(screen.queryByText(/deveria estar rodando agora/)).not.toBeInTheDocument()
+  })
+})
+
 // Antes disto, um crachá que não era do professor, encostado sem aula
 // aberta, não produzia nada — nem som, nem texto. Indistinguível de um leitor
 // quebrado.

@@ -13,7 +13,8 @@ import {
   paraJsonGrade,
   paraJsonVinculos,
 } from '../nucleo/cofre.ts'
-import type { Aula, Evento, Papel, Vinculo } from '../nucleo/tipos.ts'
+import type { Aula, Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
+import { quemFalta } from '../nucleo/sessao.ts'
 import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.ts'
 import { pastaDisponivel } from '../ambiente/pasta.ts'
 import { comoInstalar, ehWebKit, instalado } from '../ambiente/instalacao.ts'
@@ -184,23 +185,26 @@ export function TelaRepositorio({
   const [turmas, setTurmas] = useState<string[]>([])
   const [totalEventos, setTotalEventos] = useState(0)
   const [eventos, setEventos] = useState<Evento[]>([])
+  const [matriculados, setMatriculados] = useState<Matriculado[]>([])
   const [busca, setBusca] = useState('')
   const [importacao, setImportacao] = useState<Resultado>()
   const [recado, setRecado] = useState<{ tom: 'ok' | 'grave'; texto: string }>()
 
   const carregar = useCallback(async () => {
-    const [v, a, e, t, ev] = await Promise.all([
+    const [v, a, e, t, ev, m] = await Promise.all([
       repositorio.listarVinculos(),
       repositorio.listarAulas(),
       repositorio.contarEventos(),
       repositorio.listarTurmas(),
       repositorio.listarEventos(),
+      repositorio.listarMatriculados(),
     ])
     setVinculos(v)
     setAulas(a)
     setTotalEventos(e)
     setTurmas(t)
     setEventos(ev)
+    setMatriculados(m)
   }, [repositorio])
 
   useEffect(() => {
@@ -220,6 +224,21 @@ export function TelaRepositorio({
   }
 
   const professores = useMemo(() => vinculos.filter((v) => v.papel === 'professor'), [vinculos])
+
+  /**
+   * Quem falta cadastrar, por turma — a única pergunta que antes só se
+   * respondia abrindo a chamada daquela turma. Com mais de uma turma, abrir
+   * uma chamada só para espiar quem falta pode custar fechar outra sem
+   * querer (a sessão é única no app inteiro); aqui é leitura, sem abrir nada.
+   */
+  const faltamPorTurma = useMemo(
+    () =>
+      turmas.map((turma) => {
+        const daTurma = matriculados.filter((m) => m.turma === turma)
+        return { turma, total: daTurma.length, faltam: quemFalta(daTurma, vinculos).length }
+      }),
+    [turmas, matriculados, vinculos],
+  )
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase()
     if (!termo) return vinculos
@@ -289,6 +308,27 @@ export function TelaRepositorio({
           apoio="nunca reescritos"
         />
       </div>
+
+      {/* Quem falta cadastrar, turma por turma — sem abrir a chamada de
+          nenhuma delas. Antes só dava para saber isso de dentro da própria
+          chamada, e com a sessão sendo única no app inteiro, abrir uma só
+          para espiar quem falta podia custar fechar outra por engano. */}
+      {faltamPorTurma.length > 0 && (
+        <>
+          <p className="ferramentas__nota">Quem falta cadastrar, por turma</p>
+          <div className="cartoes">
+            {faltamPorTurma.map(({ turma, total, faltam }) => (
+              <Cartao
+                key={turma}
+                icone="◉"
+                tom={faltam > 0 ? 'alerta' : 'ok'}
+                titulo={turma}
+                apoio={faltam > 0 ? `${faltam} de ${total} sem crachá` : `${total} de ${total} com crachá`}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       {recado && <div className={`aviso aviso--${recado.tom}`}>{recado.texto}</div>}
       {importacao && <Importacao resultado={importacao} />}
