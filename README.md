@@ -61,6 +61,8 @@ se a assinatura não existe, o bug não se escreve.
 hora da aula, é a chamada. E com a grade preenchida a chamada **abre sozinha** —
 nem clique, nem crachá.
 
+<div align="center"><img src="docs/mapa-estados.png" alt="problema → pasta → navegador → turma → cronograma → chamada ⇄ pronto" width="820"></div>
+
 ## Arquitetura
 
 <div align="center"><img src="docs/arquitetura.png" alt="ui → portas → nucleo, com adaptadores trocáveis" width="820"></div>
