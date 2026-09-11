@@ -15,6 +15,7 @@ import {
 } from '../nucleo/cofre.ts'
 import type { Aula, Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { quemFalta } from '../nucleo/sessao.ts'
+import { nomeDoArquivoDeFaltas, paraCsvDeFaltas, planilhaDeFaltas } from '../nucleo/faltas.ts'
 import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.ts'
 import { pastaDisponivel } from '../ambiente/pasta.ts'
 import { comoInstalar, ehWebKit, instalado } from '../ambiente/instalacao.ts'
@@ -368,6 +369,30 @@ export function TelaRepositorio({
               })}
             >
               Exportar
+            </button>
+            {/* Pedido do Prof. Paulo, para a v1: nome completo por linha, um
+                dia por coluna, e na célula quantas faltas aquele dia vale —
+                0 presente, senão os períodos do bloco na grade. Arquivo
+                separado do registro de verdade: este nasce recalculado a
+                cada exportação, o registro nunca perde uma linha. */}
+            <button
+              onClick={tentar('Exportar faltas', async () => {
+                const planilhas = turmas
+                  .map((turma) => ({ turma, planilha: planilhaDeFaltas(eventos, matriculados, aulas, turma) }))
+                  .filter(({ planilha }) => planilha.dias.length > 0 && planilha.linhas.length > 0)
+                if (planilhas.length === 0) throw new Error('nenhuma turma com aula registrada ainda')
+
+                const nomes: string[] = []
+                for (const { turma, planilha } of planilhas) {
+                  const alvo = nomeDoArquivoDeFaltas(turma)
+                  const salvou = await salvarTexto(alvo, paraCsvDeFaltas(planilha))
+                  if (salvou === 'cancelado') break
+                  nomes.push(alvo)
+                }
+                return nomes.length > 0 ? `${nomes.join(', ')}.` : 'cancelado.'
+              })}
+            >
+              Exportar faltas
             </button>
           </>
         }
