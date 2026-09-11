@@ -12,7 +12,14 @@
 
 import type { Uid } from './tipos.ts'
 
-/** Acima disto, é gente digitando. Um leitor HID fica bem abaixo de 20 ms. */
+/**
+ * Acima disto, é gente digitando.
+ *
+ * Medido com o dongle de verdade, 10/09/2026: cinco rajadas do mesmo crachá,
+ * maior intervalo entre caracteres em cada uma — 16, 32, 17, 17, 17 ms. O
+ * palpite anterior ("bem abaixo de 20 ms") errou o pico por 12 ms; 60 ms
+ * continua certo, com folga confortável mesmo no pior caso medido.
+ */
 export const INTERVALO_MAXIMO_MS = 60
 
 /** Menos que isto não é UID nenhum, é tecla solta. */
