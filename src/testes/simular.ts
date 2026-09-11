@@ -6,20 +6,32 @@
 // **é** o mesmo efeito, porque é exatamente onde a diferença entre hardware e
 // software deixa de importar.
 //
-// Existe por dois achados de verdade:
+// Existe por três achados de verdade, os três só reproduzíveis sob Node 22
+// (o do CI) — sob uma versão mais nova, sumiam sozinhos, o que escondeu os
+// dois primeiros por várias rodadas de ajuste às cegas via GitHub Actions:
 //
 // 1. Disparar o próximo toque assim que o evento grava no banco não basta —
 //    o `Fluxo` ainda precisa recontar quem falta e repassar isso pra tela, e
 //    sem esperar esse sinal um aluno recebia dois crachás (segunda via)
 //    enquanto outro nunca era chamado. `aposCadaToque` existe pra isso.
 // 2. A espera entre toques era um relógio falso (`vi.setSystemTime`), não
-//    tempo de verdade — mais rápido aqui, mas o GitHub Actions travava sem
-//    nunca resolver, mesmo com um minuto de prazo. Relógio falso ligado o
-//    teste inteiro mexe em algo que essa máquina não gosta, e nenhuma
-//    quantidade de prazo consertava, porque não era demora — era travamento.
-//    Espera real (`setTimeout` de verdade) custa alguns segundos a mais e
-//    funciona igual em qualquer máquina, porque não depende de nada além do
-//    relógio já existir.
+//    tempo de verdade — mais rápido, mas o GitHub Actions travava sem nunca
+//    resolver, mesmo com um minuto de prazo. Relógio falso ligado o teste
+//    inteiro mexe em algo que essa máquina não gosta, e nenhum prazo
+//    consertava, porque não era demora — era travamento. Espera real
+//    (`setTimeout` de verdade) resolveu esse.
+// 3. O `useEffect` que assina `leitor.aoLer`, em `TelaAula`, depende de
+//    `pendentes` — desliga e assina de novo a cada toque que muda quem
+//    falta, não só na montagem. Um toque simulado bem na fresta entre o
+//    efeito antigo já desligado e o novo ainda não religado não tem quem
+//    escute: o emissor não guarda leitura nenhuma pra entregar depois, e
+//    nenhuma quantidade de `act()` ou de prazo trouxe isso de volta com
+//    certeza — tentativas de forçar o efeito a assentar ora ajudaram, ora
+//    pioraram, sinal de que a fresta depende de escalonamento do sistema
+//    operacional, não só do React. A saída que sobrou: perguntar ao banco.
+//    Se o evento não aparecer logo depois do toque, ninguém estava ouvindo, e
+//    bater o mesmo crachá de novo é seguro — nada foi gravado na primeira
+//    tentativa, então a segunda não duplica nada.
 
 import { act } from '@testing-library/react'
 import { INTERVALO_MINIMO_MS } from '../nucleo/sessao.ts'
@@ -38,30 +50,37 @@ function esperar(ms: number): Promise<void> {
   return new Promise((resolver) => setTimeout(resolver, ms))
 }
 
+/** Repete `condicao` até ela ser verdadeira ou o prazo acabar. Devolve se deu certo. */
+async function esperarAte(condicao: () => Promise<boolean>, prazoMs: number): Promise<boolean> {
+  const fim = Date.now() + prazoMs
+  while (Date.now() < fim) {
+    if (await condicao()) return true
+    await esperar(20)
+  }
+  return await condicao()
+}
+
 /**
  * Bate cada crachá do baralho, esperando `aposCadaToque` entre um e outro
  * antes de esperar acima de `INTERVALO_MINIMO_MS` de verdade e seguir pro
  * próximo — é o que evita "rápido demais" entre crachás diferentes.
+ *
+ * `contarEventos` é como o teste sabe que o toque foi mesmo ouvido: se o
+ * total não mudar depressa, bate o mesmo crachá de novo.
  */
 export async function baterCrachasEmSequencia(
   leitor: LeitorSimulado,
   baralho: readonly string[],
+  contarEventos: () => Promise<number>,
   aposCadaToque?: (indice: number, restam: number) => Promise<void> | void,
 ): Promise<void> {
   for (let i = 0; i < baralho.length; i++) {
-    // O `useEffect` que assina `leitor.aoLer`, em `TelaAula`, depende de
-    // `pendentes` — a cada toque que muda quem falta, ele desliga e assina de
-    // novo. Esperar tempo de verdade fora de um `act()` não força esse efeito
-    // pendente a rodar: `act()` só libera o que ficou pra trás **na própria
-    // volta**, depois do corpo do callback — não antes. Sem uma volta de
-    // act() vazia logo antes do toque, `leitor.simular()` podia disparar
-    // bem na fresta entre o efeito antigo já desligado e o novo ainda não
-    // religado, e a leitura ia pro vazio: nenhum ouvinte pra recebê-la, e
-    // nenhum prazo de espera trazia ela de volta. Achado rodando a suíte sob
-    // Node 22 repetidas vezes — a corrida existe em qualquer toque da fila,
-    // não só no primeiro, porque o efeito religa a cada um.
-    await act(async () => esperar(0))
+    const antes = await contarEventos()
     await act(async () => leitor.simular(baralho[i]))
+    const ouvido = await esperarAte(async () => (await contarEventos()) > antes, 1000)
+    if (!ouvido) {
+      await act(async () => leitor.simular(baralho[i]))
+    }
     await aposCadaToque?.(i, baralho.length - i - 1)
     await esperar(INTERVALO_MINIMO_MS + 50)
   }
