@@ -48,17 +48,19 @@ export async function baterCrachasEmSequencia(
   baralho: readonly string[],
   aposCadaToque?: (indice: number, restam: number) => Promise<void> | void,
 ): Promise<void> {
-  // O texto que prova que a tela de chamada montou (`Quem falta`) pinta antes
-  // de o `useEffect` que assina `leitor.aoLer` necessariamente já ter rodado
-  // — commit e efeito passivo não são a mesma volta do laço de eventos. Um
-  // toque simulado bem no meio dessa fresta não tem quem escute: o emissor
-  // não guarda leitura nenhuma pra entregar depois, e o `aria-label="0"` do
-  // contador nunca muda, por mais que se espere. Achado batendo a suíte
-  // inteira sob Node 22 repetidas vezes — some sob Node mais novo, mas a
-  // corrida sempre esteve lá. Uma volta de act() vazia força os efeitos
-  // pendentes a assentar antes do primeiro toque.
-  await act(async () => esperar(0))
   for (let i = 0; i < baralho.length; i++) {
+    // O `useEffect` que assina `leitor.aoLer`, em `TelaAula`, depende de
+    // `pendentes` — a cada toque que muda quem falta, ele desliga e assina de
+    // novo. Esperar tempo de verdade fora de um `act()` não força esse efeito
+    // pendente a rodar: `act()` só libera o que ficou pra trás **na própria
+    // volta**, depois do corpo do callback — não antes. Sem uma volta de
+    // act() vazia logo antes do toque, `leitor.simular()` podia disparar
+    // bem na fresta entre o efeito antigo já desligado e o novo ainda não
+    // religado, e a leitura ia pro vazio: nenhum ouvinte pra recebê-la, e
+    // nenhum prazo de espera trazia ela de volta. Achado rodando a suíte sob
+    // Node 22 repetidas vezes — a corrida existe em qualquer toque da fila,
+    // não só no primeiro, porque o efeito religa a cada um.
+    await act(async () => esperar(0))
     await act(async () => leitor.simular(baralho[i]))
     await aposCadaToque?.(i, baralho.length - i - 1)
     await esperar(INTERVALO_MINIMO_MS + 50)
