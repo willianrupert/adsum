@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { baterCrachasEmSequencia, gerarBaralho } from '../testes/simular.ts'
@@ -107,6 +107,7 @@ describe('a rota decide a tela', () => {
   // tela — `rota === 'chamada'` é decidido só por `chamadaAberta`, antes de
   // `decidirRota` sequer olhar para `professorSemCracha`.
   it('a sessão abre sozinha com gente pendente, e o crachá do professor no meio não expulsa a tela', async () => {
+    const usuario = userEvent.setup()
     adiarHorario('IF685 · T01')
     await bancada.repositorio.salvarTurma('IF685 · T01', [
       {
@@ -129,10 +130,12 @@ describe('a rota decide a tela', () => {
     renderizarCom(bancada, <Fluxo />)
 
     // Abre sozinha, sem clique nenhum. O docente ganha vínculo sintético no
-    // mesmo gesto que abre a sessão — por isso quem a tabela chama primeiro
-    // é Breno, o único genuinamente pendente.
-    await screen.findByText('Encoste o crachá de')
-    expect(await screen.findByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
+    // mesmo gesto que abre a sessão. Ninguém fica chamado sozinho (modo
+    // comum, o padrão) — o professor entra no modo de chamar nomes de
+    // propósito, e é aí que Breno, o único genuinamente pendente, é chamado.
+    await usuario.click(await screen.findByRole('button', { name: 'Chamar nomes' }))
+    expect(await screen.findByText('Encoste o crachá de')).toBeInTheDocument()
+    expect(screen.getByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
     await waitFor(async () => {
       const vinculos = await bancada.repositorio.listarVinculos()
       expect(vinculos).toMatchObject([{ papel: 'professor', nome: 'Ana Paula' }])
@@ -185,8 +188,10 @@ describe('a rota decide a tela', () => {
     ])
     renderizarCom(bancada, <Fluxo />)
 
-    // O docente ganha vínculo sintético ao abrir; Breno é quem a tabela
-    // chama primeiro. Carla ainda não chegou — é o "só alguns" da sala.
+    // O docente ganha vínculo sintético ao abrir. Carla ainda não chegou — é
+    // o "só alguns" da sala. O professor entra no modo de chamar nomes para
+    // ir atrás de Breno, o primeiro pendente.
+    await usuario.click(await screen.findByRole('button', { name: 'Chamar nomes' }))
     await screen.findByText('Breno Oliveira', { selector: '.chamado__nome' })
     await act(async () => bancada.leitor.simular('04a23b91'))
     await waitFor(async () => expect(await bancada.repositorio.listarVinculos()).toHaveLength(2))
@@ -196,6 +201,7 @@ describe('a rota decide a tela', () => {
 
     // Reabre para dar o crachá de quem faltou — só uma turma, sem perguntar.
     await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Chamar nomes' }))
 
     // Chama Carla, não Ana Paula de novo.
     expect(await screen.findByText('Carla Regina', { selector: '.chamado__nome' })).toBeInTheDocument()
@@ -273,6 +279,7 @@ describe('a rota decide a tela', () => {
 
     await usuario.click(screen.getByRole('button', { name: 'Começar a chamada' }))
     await usuario.click(await screen.findByRole('button', { name: 'IF999 · T02' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Chamar nomes' }))
 
     // Chama Carla, na turma nova — o professor já reconhecido, sem crachá
     // físico nenhum de novo.
@@ -846,51 +853,6 @@ describe('os Ajustes se recolhem', () => {
 
     await screen.findByRole('button', { name: /Registros/ })
     expect(screen.queryByRole('button', { name: 'Zerar registros' })).not.toBeInTheDocument()
-  })
-
-  // Regressão: "Registros" só exportava, sem deixar ver nada — e havia dois
-  // painéis chamados "Repositório" (este, e um dentro de Diagnóstico), com
-  // conteúdo diferente atrás do mesmo nome. `TabelaDeRegistros` é a leitura
-  // de verdade, com seletor de turma como o da grade.
-  it('"Registros" deixa ver as presenças, por turma', async () => {
-    const usuario = userEvent.setup()
-    await turmaInteiraComCracha()
-    adiarHorario('IF999 · T02')
-    await bancada.repositorio.salvarTurma('IF999 · T02', [
-      {
-        turma: 'IF999 · T02',
-        chave: '99',
-        matricula: '99',
-        nome: 'Carla Regina',
-        nomeCompleto: 'CARLA REGINA DA SILVA',
-        papel: 'aluno',
-      },
-    ])
-    await bancada.repositorio.acrescentarEvento({
-      eventoId: 'web-aaaa-20260819-0001',
-      quando: '2026-08-19T10:00:00.000Z',
-      turma: 'IF685 · T01',
-      matricula: '2',
-      nome: 'Breno Oliveira',
-      origem: 'cracha',
-      resultado: 'ok',
-      uidHash: 'bbbb000000000000',
-    })
-    renderizarCom(bancada, <Fluxo />)
-    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
-    await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
-
-    await usuario.click(await screen.findByRole('button', { name: /Registros/ }))
-    // Os painéis ficam montados mesmo fechados agora (é o que permite a
-    // transição encolher em vez de sumir num corte seco) — "Estado do app",
-    // em Diagnóstico, também lista eventos recentes, e "Breno Oliveira"
-    // apareceria lá também. `within` restringe a busca a este painel.
-    const painel = screen.getByRole('group', { name: 'turma dos registros' }).closest('section')!
-    expect(within(painel).getByText('Breno Oliveira')).toBeInTheDocument()
-
-    await usuario.click(within(painel).getByRole('button', { name: 'IF999 · T02' }))
-    expect(within(painel).queryByText('Breno Oliveira')).not.toBeInTheDocument()
-    expect(within(painel).getByText(/Nenhum registro ainda para IF999 · T02/)).toBeInTheDocument()
   })
 
   // A mesma grade do cronograma, e não a lista de campos que existia aqui.

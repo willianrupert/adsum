@@ -40,13 +40,14 @@ export function TelaPresencas({ aoFechar }: { aoFechar: () => void }) {
   }, [carregar])
 
   /**
-   * Marcar presença à mão. Não apaga nem troca o que já existe — grava um
-   * evento novo, `origem: 'manual'`, no meio-dia daquele dia (não houve
-   * toque real, então não há hora real para registrar). O log continua
-   * só-acréscimo; `planilhaDeFaltas` já sabe dar peso igual a um crachá.
+   * Marcar ou tirar presença à mão. Nunca apaga nem troca o que já existe —
+   * grava um evento novo, `origem: 'manual'`, no meio-dia daquele dia (não
+   * houve toque real, então não há hora real para registrar). O log continua
+   * só-acréscimo; `planilhaDeFaltas` decide a célula pelo evento manual mais
+   * recente daquele dia, e cai para o crachá quando não existe nenhum.
    */
-  const corrigir = useCallback(
-    async (aluno: Matriculado, dia: string) => {
+  const gravar = useCallback(
+    async (aluno: Matriculado, dia: string, resultado: Evento['resultado']) => {
       const evento: Evento = {
         eventoId: proximoEventoId(config.instalacaoId, new Date(), ++sequencia.current),
         quando: `${dia}T12:00:00.000Z`,
@@ -54,7 +55,7 @@ export function TelaPresencas({ aoFechar }: { aoFechar: () => void }) {
         matricula: aluno.matricula || undefined,
         nome: aluno.nome,
         origem: 'manual',
-        resultado: 'ok',
+        resultado,
         uidHash: uidHashSintetico(),
       }
       await repositorio.acrescentarEvento(evento)
@@ -70,7 +71,8 @@ export function TelaPresencas({ aoFechar }: { aoFechar: () => void }) {
         eventos={eventos}
         matriculados={matriculados}
         aulas={aulas}
-        aoCorrigir={corrigir}
+        aoCorrigir={(aluno, dia) => gravar(aluno, dia, 'ok')}
+        aoRemover={(aluno, dia) => gravar(aluno, dia, 'removido')}
       />
     </Sheet>
   )

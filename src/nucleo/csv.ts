@@ -30,7 +30,7 @@ export const COLUNAS = [
 export const CABECALHO = COLUNAS.join(SEP)
 
 const ORIGENS: Origem[] = ['cracha', 'professor', 'manual']
-const RESULTADOS: Resultado[] = ['ok', 'duplicado', 'desconhecido', 'rapido_demais']
+const RESULTADOS: Resultado[] = ['ok', 'duplicado', 'desconhecido', 'rapido_demais', 'removido']
 
 export interface Problema {
   linha: number

@@ -177,8 +177,9 @@ code {
 }
 
 /* Divisória simples entre grupos de Ajustes — "Sua turma", "Este
-   computador", "Diagnóstico". Não é painel, não colapsa: onze painéis
-   empilhados sem agrupamento nenhum é a parede que fazia "eu me perco lá". */
+   computador". Não é painel, não colapsa: os painéis empilhados sem
+   agrupamento nenhum é a parede que fazia "eu me perco lá". Diagnóstico
+   saiu daqui — é folha própria agora, ver `Fluxo.tsx`. */
 .ajustes__secao {
   margin: 0;
   font-size: var(--t-nota);
@@ -198,6 +199,16 @@ code {
   margin: 2px 0 0;
   font-size: var(--t-menor);
   color: var(--tinta-fraca);
+}
+
+/* O link para a folha de Diagnóstico — mesmo espírito da divisória acima:
+   separado do resto, sem competir por atenção. */
+.ajustes__diagnostico {
+  margin-top: 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--separador);
+  font-size: var(--t-menor);
+  align-self: flex-start;
 }
 
 /* Fechado encolhe: sem isto o painel guardaria a altura do conteúdo escondido,
@@ -1250,6 +1261,21 @@ button:focus-visible {
   left: 12px;
 }
 
+/* O convite pra entrar no modo de chamar nomes — mais quieto que o cartão de
+   quem já está chamado, porque aqui ainda não há ninguém sendo observado, só
+   um número e um botão. */
+.chamado--convite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 32px 28px;
+}
+
+.chamado--convite .chamado__rotulo {
+  color: var(--tinta);
+}
+
 .chamado__rotulo {
   margin: 0;
   font-size: var(--t-corpo);
@@ -1463,18 +1489,20 @@ button:focus-visible {
   color: var(--tinta-fraca);
 }
 
-/* Discreto **de verdade**: o padrão dos botões é o azul da ação, e sem tirá-lo
-   daqui a única coisa colorida na tela de aula era o botão de encerrar — o
-   acento apontando para a saída, numa tela cujo assunto é a fila. Encerrar é o
-   que se faz uma vez, no fim; a cor pertence ao que muda a cada crachá. */
+/* Era discreto de propósito — cor reservada ao que muda a cada crachá, não ao
+   que se faz uma vez, no fim. Pedido do professor: numa turma de 49, encerrar
+   é um botão que precisa ser achado rápido, na cabeça da fila e no rodapé, sem
+   caçar entre o cinza. Os dois ganham o mesmo acento azul de "Começar a
+   chamada" — o mesmo peso visual de quando a aula abre. */
 .coleta__encerrar {
-  padding: 7px 16px;
-  font-size: var(--t-menor);
-  color: var(--tinta-fraca);
+  padding: 9px 18px;
+  font-weight: 600;
 }
 
-.coleta__encerrar:hover {
-  color: var(--tinta);
+.coleta__encerrar-topo {
+  padding: 6px 14px;
+  font-size: var(--t-menor);
+  font-weight: 600;
 }
 
 .coleta__recado {

@@ -23,7 +23,6 @@ import { useAdsum } from './adsum.ts'
 import { Linha, Painel, Secao } from './componentes/Painel.tsx'
 import { Cartao } from './componentes/Cartao.tsx'
 import { GradeDaSemana, aulasDe } from './componentes/GradeDaSemana.tsx'
-import { TabelaDeRegistros } from './componentes/TabelaDeRegistros.tsx'
 import { marcadosDe } from '../nucleo/horarios.ts'
 import { Importacao, type Resultado } from './componentes/Importacao.tsx'
 
@@ -398,11 +397,6 @@ export function TelaRepositorio({
         }
       >
         <Linha rotulo="linhas gravadas">{totalEventos}</Linha>
-        <Linha rotulo="colunas">
-          <code>evento_id;quando;turma;matricula;nome;origem;resultado;uid_hash</code>
-        </Linha>
-
-        <TabelaDeRegistros turmas={turmas} eventos={eventos} />
       </Painel>
 
       <Painel

@@ -145,8 +145,9 @@ describe('corrigir à mão', () => {
     expect(aoCorrigir).toHaveBeenCalledWith(ANA, '2026-03-02')
   })
 
-  // Ausência não se corrige aqui — só falta (>0) vira botão em modo Editar.
-  it('uma célula já presente não vira botão, mesmo em modo Editar', async () => {
+  // Sem `aoRemover`, uma célula presente continua sem botão — só `aoCorrigir`
+  // não basta para tirar presença.
+  it('sem aoRemover, uma célula já presente não vira botão, mesmo em modo Editar', async () => {
     const usuario = userEvent.setup()
     const eventos: Evento[] = [
       evento({ quando: '2026-03-02T13:00:00.000Z', origem: 'professor' }),
@@ -158,7 +159,85 @@ describe('corrigir à mão', () => {
     )
 
     await usuario.click(screen.getByRole('button', { name: 'Editar' }))
-    expect(screen.queryByRole('button', { name: /marcar presença/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /tirar presença/ })).not.toBeInTheDocument()
+  })
+
+  // Quem manda é o professor: com `aoRemover`, uma célula presente também
+  // vira botão — e confirma antes de gravar, porque tirar presença é mais
+  // fácil de lamentar do que marcar.
+  it('com aoRemover, tocar numa presença confirma e chama aoRemover com o aluno e o dia certos', async () => {
+    const usuario = userEvent.setup()
+    const aoRemover = vi.fn().mockResolvedValue(undefined)
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const eventos: Evento[] = [
+      evento({ quando: '2026-03-02T13:00:00.000Z', origem: 'professor' }),
+      evento({ quando: '2026-03-02T13:05:00.000Z', origem: 'cracha', matricula: '1', nome: 'Ana Paula' }),
+    ]
+
+    render(
+      <GradeDePresencas
+        turmas={[TURMA]}
+        eventos={eventos}
+        matriculados={[ANA]}
+        aoCorrigir={vi.fn()}
+        aoRemover={aoRemover}
+      />,
+    )
+
+    await usuario.click(screen.getByRole('button', { name: 'Editar' }))
+    await usuario.click(screen.getByRole('button', { name: /tirar presença/ }))
+
+    expect(confirmar).toHaveBeenCalled()
+    expect(aoRemover).toHaveBeenCalledWith(ANA, '2026-03-02')
+  })
+
+  // Desistir da confirmação não pode gravar nada — o mesmo cuidado do resto
+  // do app com ações que custam caro errar.
+  it('cancelar a confirmação não chama aoRemover', async () => {
+    const usuario = userEvent.setup()
+    const aoRemover = vi.fn()
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const eventos: Evento[] = [
+      evento({ quando: '2026-03-02T13:00:00.000Z', origem: 'professor' }),
+      evento({ quando: '2026-03-02T13:05:00.000Z', origem: 'cracha', matricula: '1', nome: 'Ana Paula' }),
+    ]
+
+    render(
+      <GradeDePresencas
+        turmas={[TURMA]}
+        eventos={eventos}
+        matriculados={[ANA]}
+        aoRemover={aoRemover}
+      />,
+    )
+
+    await usuario.click(screen.getByRole('button', { name: 'Editar' }))
+    await usuario.click(screen.getByRole('button', { name: /tirar presença/ }))
+
+    expect(aoRemover).not.toHaveBeenCalled()
+  })
+
+  // O evento manual de remoção não some a leitura do crachá do log — só deixa
+  // de contar por si só. `planilhaDeFaltas` (testado à parte em
+  // `nucleo/faltas.test.ts`) é quem decide pelo evento manual mais recente.
+  it('um crachá removido à mão volta a contar como falta', () => {
+    const eventos: Evento[] = [
+      evento({ quando: '2026-03-02T13:00:00.000Z', origem: 'professor' }),
+      evento({ quando: '2026-03-02T13:05:00.000Z', origem: 'cracha', matricula: '1', nome: 'Ana Paula' }),
+      evento({
+        quando: '2026-03-02T12:00:00.000Z',
+        origem: 'manual',
+        matricula: '1',
+        nome: 'Ana Paula',
+        resultado: 'removido',
+      }),
+    ]
+
+    render(<GradeDePresencas turmas={[TURMA]} eventos={eventos} matriculados={[ANA]} />)
+
+    expect(screen.getByText('0/1')).toBeInTheDocument()
+    expect(document.querySelector('.quadrado--ausente')).toBeInTheDocument()
+    expect(document.querySelector('.quadrado__manual')).toBeInTheDocument()
   })
 
   it('uma correção manual fica identificável na célula', () => {

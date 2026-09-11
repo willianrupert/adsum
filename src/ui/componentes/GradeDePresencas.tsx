@@ -27,7 +27,10 @@ function classeDaCelula(c: CelulaDeFalta): string {
 
 function rotuloDaCelula(nome: string, dia: string, c: CelulaDeFalta): string {
   const { numero } = rotuloDia(dia)
-  if (c.faltas > 0) return `${nome} · ${numero} · ${c.faltas === 1 ? '1 falta' : `${c.faltas} faltas`}`
+  if (c.faltas > 0) {
+    const como = c.manual ? ', removida à mão' : ''
+    return `${nome} · ${numero} · ${c.faltas === 1 ? '1 falta' : `${c.faltas} faltas`}${como}`
+  }
   const hora = c.quando
     ? ` às ${new Date(c.quando).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
     : ''
@@ -41,11 +44,16 @@ function rotuloDaCelula(nome: string, dia: string, c: CelulaDeFalta): string {
  * um mural de contribuições, mas o número é o que vai para a instituição, e
  * por isso fica ali, não escondido atrás de uma cor só.
  *
- * `aoCorrigir`, quando existe, liga o modo Editar: só faltas (>0) viram
- * botão — marcar alguém ausente por engano não é o que se corrige aqui, é
- * o crachá dele que decide isso. Corrigir grava um evento novo
- * (`origem: 'manual'`), nunca reescreve o antigo — o log continua
- * só-acréscimo, e a célula corrigida fica identificável depois.
+ * `aoCorrigir`/`aoRemover`, quando existem, ligam o modo Editar: toda célula
+ * vira botão — falta vira presença, presença vira falta. **Quem manda é o
+ * professor, não o software**: até 11/09/2026 só dava para corrigir falta,
+ * porque "o crachá decide presença" — mas na fila de verdade o crachá
+ * desconhecido vai pra pessoa que a busca confirmar, e confirmar errado
+ * marca presença de quem não estava. Sem como tirar isso à mão, o professor
+ * ficava com um dado que sabia estar errado e nenhum jeito de arrumar.
+ * Os dois gravam um evento novo (`origem: 'manual'`), nunca reescrevem o
+ * antigo — o log continua só-acréscimo, e a célula corrigida fica
+ * identificável depois.
  */
 export function GradeDePresencas({
   turmas,
@@ -53,12 +61,16 @@ export function GradeDePresencas({
   matriculados,
   aulas = [],
   aoCorrigir,
+  aoRemover,
 }: {
   turmas: string[]
   eventos: Evento[]
   matriculados: Matriculado[]
   aulas?: Aula[]
+  /** Marca presença confirmada à mão, num dia que estava em falta. */
   aoCorrigir?: (aluno: Matriculado, dia: string) => void | Promise<void>
+  /** Tira uma presença marcada por engano, num dia que estava presente. */
+  aoRemover?: (aluno: Matriculado, dia: string) => void | Promise<void>
 }) {
   const [escolhida, setEscolhida] = useState<string>()
   const [editando, setEditando] = useState(false)
@@ -74,12 +86,14 @@ export function GradeDePresencas({
     return <p className="ferramentas__nota">Nenhuma turma cadastrada ainda.</p>
   }
 
-  const corrigir = async (aluno: Matriculado, dia: string) => {
-    if (!aoCorrigir) return
+  const corrigir = async (aluno: Matriculado, dia: string, presente: boolean) => {
+    const acao = presente ? aoRemover : aoCorrigir
+    if (!acao) return
+    if (presente && !confirm(`Tirar a presença de ${aluno.nomeCompleto} em ${dia}?`)) return
     const chave = `${aluno.chave}-${dia}`
     setCorrigindo(chave)
     try {
-      await aoCorrigir(aluno, dia)
+      await acao(aluno, dia)
     } finally {
       setCorrigindo(undefined)
     }
@@ -101,7 +115,7 @@ export function GradeDePresencas({
             ))}
           </div>
         )}
-        {aoCorrigir && planilha.linhas.length > 0 && (
+        {(aoCorrigir || aoRemover) && planilha.linhas.length > 0 && (
           <button
             className={editando ? 'botao--acento planilha__editar' : 'botao--quieto planilha__editar'}
             onClick={() => setEditando((a) => !a)}
@@ -119,8 +133,8 @@ export function GradeDePresencas({
         <>
           {editando && (
             <p className="ferramentas__nota">
-              Toque numa falta para marcar presença confirmada à mão. Ausência não se corrige aqui — quem
-              decide isso é o crachá.
+              Toque numa falta para marcar presença confirmada à mão, ou numa presença para tirá-la — quem
+              manda aqui é você, não o crachá.
             </p>
           )}
           <div className="planilha__rolagem">
@@ -159,17 +173,19 @@ export function GradeDePresencas({
                         const c = porDia.get(dia)!
                         const rotulo = rotuloDaCelula(matriculado.nomeCompleto, dia, c)
                         const chave = `${matriculado.chave}-${dia}`
-                        const podeCorrigir = editando && aoCorrigir && c.faltas > 0
+                        const presente = c.faltas === 0
+                        const podeCorrigir = editando && (presente ? aoRemover : aoCorrigir)
                         return (
                           <td key={dia} className="planilha__celula" title={rotulo}>
                             {podeCorrigir ? (
                               <button
                                 className={`quadrado quadrado--botao ${classeDaCelula(c)}`}
                                 disabled={corrigindo === chave}
-                                onClick={() => void corrigir(matriculado, dia)}
-                                aria-label={`${rotulo} — marcar presença`}
+                                onClick={() => void corrigir(matriculado, dia, presente)}
+                                aria-label={`${rotulo} — ${presente ? 'tirar presença' : 'marcar presença'}`}
                               >
-                                {c.faltas}
+                                {c.faltas > 0 && c.faltas}
+                                {c.manual && <i className="quadrado__manual" aria-hidden="true" />}
                               </button>
                             ) : (
                               <span className={`quadrado ${classeDaCelula(c)}`}>

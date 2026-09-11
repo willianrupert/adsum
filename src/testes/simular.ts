@@ -36,8 +36,17 @@
 //    turma colada pela UI de verdade em vez de gravada direto), duas
 //    tentativas seguidas caíram na mesma fresta — daí o loop de
 //    `TENTATIVAS_POR_TOQUE`, em vez de uma tentativa só.
+//
+// 4. Desde 11/09/2026, `TelaAula` tem dois modos: comum (padrão, ninguém
+//    chamado, crachá desconhecido abre a busca) e o de chamar nomes
+//    (explícito, "Chamar nomes" ou as setas, crachá desconhecido cadastra
+//    direto no chamado). Bater um baralho inteiro é exatamente o caso do
+//    modo de chamar nomes — o professor está de fato observando cada crachá
+//    encostar —, então esta função entra nele sozinha, uma vez, se o convite
+//    estiver na tela. Dali em diante cada toque cadastra e avança sem
+//    precisar responder busca nenhuma, igual ao gesto de verdade.
 
-import { act } from '@testing-library/react'
+import { act, fireEvent, screen } from '@testing-library/react'
 import { INTERVALO_MINIMO_MS } from '../nucleo/sessao.ts'
 import type { LeitorSimulado } from '../adaptadores/leitor/LeitorSimulado.ts'
 
@@ -88,6 +97,12 @@ export async function baterCrachasEmSequencia(
   contarEventos: () => Promise<number>,
   aposCadaToque?: (indice: number, restam: number) => Promise<void> | void,
 ): Promise<void> {
+  // Entra no modo de chamar nomes se o convite estiver na tela — sem isso, o
+  // modo comum (padrão) abriria a busca a cada crachá desconhecido, e nada
+  // aqui responderia por ela.
+  const convite = screen.queryByRole('button', { name: 'Chamar nomes' })
+  if (convite) fireEvent.click(convite)
+
   for (let i = 0; i < baralho.length; i++) {
     const antes = await contarEventos()
     for (let tentativa = 0; tentativa < TENTATIVAS_POR_TOQUE; tentativa++) {

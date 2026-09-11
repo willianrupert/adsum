@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { TelaAula } from './TelaAula.tsx'
@@ -98,13 +98,71 @@ describe('quem falta', () => {
     expect(screen.getByText(/Turma completa/)).toBeInTheDocument()
   })
 
-  it('chama o primeiro pendente sozinha, sem clique nenhum', () => {
+  // Modo comum é o padrão: ninguém chamado sozinho. O nome grande na tela só
+  // aparece quando o professor pede — ver o comentário no topo do arquivo.
+  it('não chama ninguém sozinha — mostra o convite para chamar nomes', () => {
     montar([ANA, BRENO])
-    expect(screen.getByText('Ana Paula', { selector: '.chamado__nome' })).toBeInTheDocument()
+    expect(screen.queryByText('Ana Paula', { selector: '.chamado__nome' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Chamar nomes' })).toBeInTheDocument()
+    expect(screen.getByText('2 pessoas sem crachá')).toBeInTheDocument()
   })
 
-  it('cadastra e conta presença no mesmo toque, e avança para o próximo pendente', async () => {
+  it('"Chamar nomes" entra no modo de chamar, no primeiro pendente', async () => {
+    const usuario = userEvent.setup()
     montar([ANA, BRENO])
+
+    await usuario.click(screen.getByRole('button', { name: 'Chamar nomes' }))
+    expect(await screen.findByText('Ana Paula', { selector: '.chamado__nome' })).toBeInTheDocument()
+  })
+
+  // Modo comum: crachá desconhecido pergunta de quem é, mesmo sem ninguém
+  // chamado — é o caso mais comum, turma com muita gente ainda sem crachá,
+  // e quem encosta não é necessariamente alguém que o professor está
+  // observando.
+  it('modo comum: crachá desconhecido abre a busca, confirma e conta presença — sem entrar no modo de chamar', async () => {
+    const usuario = userEvent.setup()
+    montar([ANA, BRENO])
+
+    await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+
+    expect(await screen.findByText('Crachá novo')).toBeInTheDocument()
+    await usuario.type(screen.getByLabelText('Buscar na turma'), '{Enter}')
+
+    await waitFor(async () => {
+      const vinculos = await bancada.repositorio.listarVinculos()
+      expect(vinculos.map((v) => v.nome)).toEqual(['Ana Paula'])
+    })
+    // A mesma leitura virou presença, não só cadastro.
+    const eventos = await bancada.repositorio.listarEventos()
+    expect(eventos[0]).toMatchObject({ nome: 'Ana Paula', resultado: 'ok', origem: 'cracha' })
+    // Confirmar na busca não chama Breno sozinho — o convite continua ali.
+    expect(screen.queryByText('Breno Oliveira', { selector: '.chamado__nome' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Chamar nomes' })).toBeInTheDocument()
+  })
+
+  // O caso que motivou a busca existir: turma com muita gente ainda sem
+  // crachá, e quem encosta o crachá pode não ser quem o app palpitaria.
+  it('modo comum: crachá desconhecido vai para quem foi escolhido na busca', async () => {
+    const usuario = userEvent.setup()
+    montar([ANA, BRENO])
+
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+    const dialogo = await screen.findByRole('dialog')
+    await usuario.click(within(dialogo).getByText(BRENO.nomeCompleto))
+
+    await waitFor(async () => {
+      const vinculos = await bancada.repositorio.listarVinculos()
+      expect(vinculos.map((v) => v.nome)).toEqual(['Breno Oliveira'])
+    })
+  })
+
+  // Modo de chamar nomes: o professor pediu explicitamente, está observando
+  // esta pessoa encostar — cadastro direto, sem perguntar de novo.
+  it('modo de chamar nomes: crachá desconhecido cadastra direto no chamado, e avança para o próximo', async () => {
+    const usuario = userEvent.setup()
+    montar([ANA, BRENO])
+    await usuario.click(screen.getByRole('button', { name: 'Chamar nomes' }))
+    expect(await screen.findByText('Ana Paula', { selector: '.chamado__nome' })).toBeInTheDocument()
 
     await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
 
@@ -120,40 +178,51 @@ describe('quem falta', () => {
   })
 
   it('continua depois do primeiro cadastro — não desaparece assim que alguém entra', async () => {
+    const usuario = userEvent.setup()
     montar([ANA, BRENO])
     expect(screen.getByText(/2 de 2 sem crachá/)).toBeInTheDocument()
 
     await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await screen.findByText('Crachá novo')
+    await usuario.type(screen.getByLabelText('Buscar na turma'), '{Enter}')
     await waitFor(async () => expect(await bancada.repositorio.listarVinculos()).toHaveLength(1))
 
     expect(screen.getByText('Quem falta')).toBeInTheDocument()
   })
 
-  it('as setas andam pela fila de pendentes', async () => {
+  // Sem ninguém chamado, a primeira seta pousa no início da fila — não pula
+  // ele. É gesto explícito o bastante para entrar no modo de chamar nomes,
+  // igual a um clique em "Chamar nomes".
+  it('as setas entram no modo de chamar nomes e andam pela fila de pendentes', async () => {
     const usuario = userEvent.setup()
     montar([ANA, BRENO])
-    expect(screen.getByText('Ana Paula', { selector: '.chamado__nome' })).toBeInTheDocument()
 
+    await usuario.keyboard('{ArrowRight}')
+    expect(await screen.findByText('Ana Paula', { selector: '.chamado__nome' })).toBeInTheDocument()
     await usuario.keyboard('{ArrowRight}')
     expect(await screen.findByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
     await usuario.keyboard('{ArrowLeft}')
     expect(await screen.findByText('Ana Paula', { selector: '.chamado__nome' })).toBeInTheDocument()
   })
 
-  // "Chamar" alcança qualquer linha, não só a próxima — é o que a cerimônia
-  // já garantia com a tabela completa, e a fila sozinha não tinha.
-  it('"Chamar" numa linha que não é a próxima muda quem está chamado', async () => {
+  // "Chamar" alcança qualquer linha, não só a primeira — é o que a cerimônia
+  // já garantia com a tabela completa, e a fila sozinha não tinha. Com
+  // ninguém chamado ainda, as duas linhas mostram "Chamar" — por isso o
+  // clique é escopado à linha do Breno.
+  it('"Chamar" numa linha específica entra direto nela', async () => {
     const usuario = userEvent.setup()
     montar([ANA, BRENO])
-    expect(screen.getByText('Ana Paula', { selector: '.chamado__nome' })).toBeInTheDocument()
 
-    await usuario.click(screen.getByRole('button', { name: 'Chamar' }))
+    const linhaBreno = screen.getByText(BRENO.nomeCompleto).closest('tr')!
+    await usuario.click(within(linhaBreno).getByRole('button', { name: 'Chamar' }))
     expect(await screen.findByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
   })
 
   it('pular marca como pulado, avança, e continua alcançável pela tabela', async () => {
     const usuario = userEvent.setup()
     montar([ANA, BRENO])
+    await usuario.click(screen.getByRole('button', { name: 'Chamar nomes' }))
+    await screen.findByText('Ana Paula', { selector: '.chamado__nome' })
 
     await usuario.click(screen.getByRole('button', { name: 'Pular' }))
     expect(await screen.findByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
@@ -161,6 +230,20 @@ describe('quem falta', () => {
 
     await usuario.click(screen.getByRole('button', { name: 'Chamar' }))
     expect(await screen.findByText('Ana Paula', { selector: '.chamado__nome' })).toBeInTheDocument()
+  })
+
+  // Sair do modo de chamar nomes é tão explícito quanto entrar — o resto da
+  // turma chega sozinho, sem crachá trocado, pelo modo comum.
+  it('"Voltar à chamada comum" sai do modo de chamar nomes', async () => {
+    const usuario = userEvent.setup()
+    montar([ANA, BRENO])
+    await usuario.click(screen.getByRole('button', { name: 'Chamar nomes' }))
+    await screen.findByText('Ana Paula', { selector: '.chamado__nome' })
+
+    await usuario.click(screen.getByRole('button', { name: 'Voltar à chamada comum' }))
+
+    expect(screen.queryByText('Ana Paula', { selector: '.chamado__nome' })).not.toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Chamar nomes' })).toBeInTheDocument()
   })
 
   it('editar o nome antes do crachá chegar grava o nome editado', async () => {
@@ -172,6 +255,8 @@ describe('quem falta', () => {
     await usuario.type(campo, 'Aninha')
 
     await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await screen.findByText('Crachá novo')
+    await usuario.type(screen.getByLabelText('Buscar na turma'), '{Enter}')
 
     await waitFor(async () => {
       const vinculos = await bancada.repositorio.listarVinculos()
@@ -194,6 +279,7 @@ describe('quem falta', () => {
     await usuario.click(screen.getByRole('button', { name: 'Mais um crachá' }))
     expect(await screen.findByText('Ana Paula', { selector: '.chamado__nome' })).toBeInTheDocument()
 
+    // Ana está explicitamente chamada — cadastra direto, sem perguntar.
     await act(async () => bancada.leitor.simular(CRACHA_NOVO))
 
     await waitFor(async () => {
@@ -207,9 +293,11 @@ describe('quem falta', () => {
   // de verdade é marcado presente — não é falha de dado, a pessoa está mesmo
   // ali —, e quem estava chamado continua chamado, sem vínculo novo nenhum.
   it('crachá já vinculado a outra pessoa marca presença para o dono, sem mexer em quem está chamado', async () => {
+    const usuario = userEvent.setup()
     await comCrachaDaAna()
     montar([BRENO])
-    expect(screen.getByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Chamar nomes' }))
+    expect(await screen.findByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
 
     await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
 
@@ -217,6 +305,47 @@ describe('quem falta', () => {
     await waitFor(() => expect(screen.getByText('1')).toBeInTheDocument())
     expect(screen.getByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
     expect(await bancada.repositorio.listarVinculos()).toHaveLength(1)
+  })
+})
+
+// A correção de um crachá vinculado à pessoa errada morava só em Ajustes →
+// Vínculos, longe de onde o erro acontece — na fila, com a turma na frente.
+// Existia mesmo antes de 11/09/2026, mas era preciso saber que existia.
+describe('remover crachá', () => {
+  it('desvincula depois de confirmar, e avisa a tela por cima para recontar quem falta', async () => {
+    const usuario = userEvent.setup()
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const aoMudarBase = vi.fn()
+    await comCrachaDaAna()
+    renderizarCom(
+      bancada,
+      <TelaAula sessao={SESSAO} pendentes={[BRENO]} daTurma={[ANA, BRENO]} aoMudarBase={aoMudarBase} />,
+    )
+
+    expect(await screen.findByRole('button', { name: 'Remover crachá' })).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Remover crachá' }))
+
+    expect(confirmar).toHaveBeenCalledWith(expect.stringContaining(ANA.nomeCompleto))
+    await waitFor(async () => expect(await bancada.repositorio.listarVinculos()).toHaveLength(0))
+    // Quem sabe recontar "quem falta" é a tela por cima (`Fluxo`, de verdade)
+    // — esta tela isolada só avisa que algo mudou.
+    await waitFor(() => expect(aoMudarBase).toHaveBeenCalled())
+  })
+
+  it('cancelar a confirmação não mexe no vínculo', async () => {
+    const usuario = userEvent.setup()
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    await comCrachaDaAna()
+    montar([BRENO])
+
+    await usuario.click(await screen.findByRole('button', { name: 'Remover crachá' }))
+
+    expect(await bancada.repositorio.listarVinculos()).toHaveLength(1)
+  })
+
+  it('não aparece para quem ainda não tem crachá', () => {
+    montar([ANA, BRENO])
+    expect(screen.queryByRole('button', { name: 'Remover crachá' })).not.toBeInTheDocument()
   })
 })
 
@@ -302,16 +431,23 @@ describe('dois crachás de uma vez', () => {
   })
 
   it('mesmo com gente pendente na fila, dois crachás rápidos demais recusam o segundo', async () => {
+    const usuario = userEvent.setup()
     // Ana e Breno os dois sem crachá — a cerimônia é exatamente este caso.
     montar([ANA, BRENO])
 
+    // O primeiro abre a busca (nada gravado ainda) e já marca `ultima`, que é
+    // o que o segundo — quase junto — encontra para ser recusado.
     await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await screen.findByText('Crachá novo')
     await act(async () => bancada.leitor.simular(CRACHA_NOVO))
 
     expect(await screen.findByText(/Dois crachás quase juntos/)).toBeInTheDocument()
+    // A busca do primeiro continua aberta — a recusa do segundo não mexe nela.
+    await usuario.type(screen.getByLabelText('Buscar na turma'), '{Enter}')
+
     // Só Ana entrou — o segundo crachá foi recusado, não virou cadastro do
     // Breno chamado.
-    expect(await bancada.repositorio.listarVinculos()).toHaveLength(1)
+    await waitFor(async () => expect(await bancada.repositorio.listarVinculos()).toHaveLength(1))
   })
 
   // Recusa muda é bug: a tentativa fica no log com o hash do crachá recusado.
@@ -331,9 +467,10 @@ describe('dois crachás de uma vez', () => {
   })
 })
 
-// A busca em spotlight só entra quando não há ninguém chamado — com gente
-// pendente, `decidir()` já sabe a quem atribuir um crachá desconhecido, e
-// perguntar seria um clique a mais para uma resposta que a tela já tem.
+// A busca em spotlight abre sempre que um crachá desconhecido encosta, com
+// ou sem ninguém chamado — ver o comentário em `decidir()`. Este bloco cobre
+// o caso sem pendente nenhum (turma completa, alguém trouxe um crachá novo);
+// o caso com pendente está em 'quem falta', acima.
 describe('crachá desconhecido sem ninguém pendente', () => {
   it('abre a busca', async () => {
     await comCrachaDaAna()

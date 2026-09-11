@@ -110,6 +110,23 @@ describe('linhas do log', () => {
     expect(evento).toMatchObject({ nome: '', resultado: 'desconhecido', uidHash: 'bbbb' })
   })
 
+  // Duas origens possíveis para esta decisão, ver 'cadastro e chamada são a
+  // mesma coisa' abaixo: `decidir()` mesmo, com alguém chamado, ou `TelaAula`
+  // montando à mão depois que a busca confirma quem é. A gravação é a mesma
+  // dos dois jeitos — presença e cadastro no mesmo evento.
+  it('cadastro leva nome e matrícula de quem foi confirmado', () => {
+    const pessoa = {
+      turma: 'IF685 · T01',
+      chave: '20250001',
+      matricula: '20250001',
+      nomeCompleto: 'CARLA REGINA DO NASCIMENTO',
+      nome: 'Carla Regina',
+      papel: 'aluno' as const,
+    }
+    const evento = eventoDe({ tipo: 'cadastro', pessoa }, dados)
+    expect(evento).toMatchObject({ nome: 'Carla Regina', matricula: '20250001', resultado: 'ok' })
+  })
+
   it('abrir e encerrar entram como professor, e não como presença', () => {
     expect(eventoDe({ tipo: 'abrir', turma: 'x' }, dados)?.origem).toBe('professor')
     expect(eventoDe({ tipo: 'encerrar' }, dados)?.origem).toBe('professor')
@@ -137,7 +154,11 @@ describe('cadastro e chamada são a mesma coisa', () => {
   }
 
   // Quem encosta o crachá para se cadastrar já está presente naquela aula.
-  // Separar as duas obrigaria a turma a passar duas vezes.
+  // Separar as duas obrigaria a turma a passar duas vezes. `ctx.chamado` só
+  // existe quando `TelaAula` o preenche por ação explícita do professor
+  // (botão "Chamar", "Mais um crachá", as setas) — nunca sozinho. É essa
+  // explicitude, não `decidir()`, que torna seguro confiar nele aqui: ver o
+  // comentário acima de `decidir()`.
   it('crachá novo com nome chamado cadastra e conta presença', () => {
     const decisao = decidir('novo', ctx({ sessao: SESSAO, chamado: PESSOA }))
     expect(decisao).toEqual({ tipo: 'cadastro', pessoa: PESSOA })
@@ -151,9 +172,9 @@ describe('cadastro e chamada são a mesma coisa', () => {
     expect(evento).toMatchObject({ nome: 'Carla Regina', matricula: '20250001', resultado: 'ok' })
   })
 
-  // Sem nome chamado não há a quem pertencer, e adivinhar é o erro que a
-  // cerimônia existe para evitar.
-  it('crachá novo sem nome chamado continua desconhecido', () => {
+  // Sem nome chamado — o modo comum, padrão — não há a quem pertencer, e
+  // adivinhar é o erro que a busca existe para evitar.
+  it('crachá novo sem nome chamado pede confirmação', () => {
     expect(decidir('novo', ctx({ sessao: SESSAO })).tipo).toBe('desconhecido')
   })
 

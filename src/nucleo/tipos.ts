@@ -62,10 +62,12 @@ export interface Aula {
 
 export type Origem = 'cracha' | 'professor' | 'manual'
 /**
- * `rapido_demais` entrou em 20/08/2026 com a regra do intervalo mínimo. Arquivo
- * antigo nunca contém o valor, então ler o passado continua funcionando.
+ * `rapido_demais` entrou em 20/08/2026 com a regra do intervalo mínimo.
+ * `removido` entrou em 11/09/2026: o professor tirando à mão uma presença
+ * marcada por engano (ver `nucleo/faltas.ts`). Arquivo antigo nunca contém
+ * nenhum dos dois, então ler o passado continua funcionando.
  */
-export type Resultado = 'ok' | 'duplicado' | 'desconhecido' | 'rapido_demais'
+export type Resultado = 'ok' | 'duplicado' | 'desconhecido' | 'rapido_demais' | 'removido'
 
 /** Uma linha de `registros/<turma>.csv`. Nunca é reescrita — só acrescentada. */
 export interface Evento {

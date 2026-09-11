@@ -5,10 +5,22 @@
 // esperar um crachá. A cerimônia não passava por `decidir()` — nenhuma
 // proteção contra dois crachás rápidos demais, nenhuma busca em spotlight
 // para crachá desconhecido — e cada regra vivia em dois lugares que podiam
-// divergir sem ninguém notar. Aqui só existe um caminho: crachá desconhecido
-// com alguém chamado é `decidir()` → `'cadastro'`, que grava vínculo **e**
-// presença no mesmo gesto. "Quem se cadastra já está presente" deixou de ser
-// só uma frase.
+// divergir sem ninguém notar.
+//
+// **Dois modos, a mesma tela.** O padrão é o modo comum: ninguém está
+// chamado, o leitor aceita o que vier, e crachá desconhecido pergunta de quem
+// é (a busca). O professor entra no modo de chamar nomes de propósito — botão
+// "Chamar", "Mais um crachá", as setas — e só aí a tela mostra um nome grande
+// e confia nele: crachá desconhecido com alguém chamado cadastra **e** conta
+// presença no mesmo gesto, sem perguntar de novo, porque quem está com o
+// crachá na mão está sendo observado, não só uma sugestão adivinhada. Existia
+// chamado automático — a tela escolhia o primeiro pendente sozinha assim que
+// a chamada abria — e foi tirado por isso: com a turma inteira ainda sem
+// crachá (o caso comum), aquele nome nunca significou "alguém está sendo
+// chamado agora", e confiar nele vinculava o crachá de uma pessoa ao nome de
+// outra sem ninguém ter pedido nada. Sair do modo de chamar nomes ("Voltar à
+// chamada comum") é tão explícito quanto entrar — e nada impede voltar a ele
+// depois, mesmo dias mais tarde, para quem faltou.
 //
 // O contador não tem denominador. `41/60` cria moldura de expectativa e exige
 // saber quantos deveriam vir, que é justamente o que ninguém deve precisar
@@ -24,7 +36,7 @@ import {
   type Decisao,
   type Sessao,
 } from '../nucleo/sessao.ts'
-import type { Evento, Matriculado, Papel } from '../nucleo/tipos.ts'
+import type { Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { useAdsum } from './adsum.ts'
@@ -104,6 +116,8 @@ export function TelaAula({
   const [linhas, setLinhas] = useState<Linha[]>([])
   const [recado, setRecado] = useState<string>()
   const [procurando, setProcurando] = useState<string>()
+  /** Para "Remover crachá" na tabela — o vínculo de cada linha já ligada. */
+  const [vinculos, setVinculos] = useState<Vinculo[]>([])
   const sequencia = useRef(0)
 
   /**
@@ -128,12 +142,6 @@ export function TelaAula({
     const relogio = setInterval(() => setAgora(new Date()), 15_000)
     return () => clearInterval(relogio)
   }, [])
-
-  // Chama o primeiro pendente assim que a fila deixa de estar vazia. Não
-  // briga com quem já escolheu alguém: só define quando ainda não há ninguém.
-  useEffect(() => {
-    if (chamadoChave === undefined && pendentes.length > 0) setChamadoChave(pendentes[0].chave)
-  }, [pendentes, chamadoChave])
 
   const efetivo = useCallback(
     (p: Matriculado): Matriculado => {
@@ -164,7 +172,10 @@ export function TelaAula({
   )
 
   // Setas andam pela fila de pendentes. Quem opera está com a mão no teclado e
-  // um aluno na frente.
+  // um aluno na frente — e é gesto explícito o bastante para entrar no modo
+  // de chamar nomes, igual a um clique em "Chamar": sem ninguém chamado
+  // ainda, `indice` é `-1`, e a primeira seta pousa no início da fila (índice
+  // `0`), não pula ele.
   useEffect(() => {
     if (pendentes.length === 0) return
     const andar = (evento: KeyboardEvent) => {
@@ -172,7 +183,7 @@ export function TelaAula({
       const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
       const proximo = Math.min(
         pendentes.length - 1,
-        Math.max(0, (indice < 0 ? 0 : indice) + (evento.key === 'ArrowRight' ? 1 : -1)),
+        Math.max(0, indice + (evento.key === 'ArrowRight' ? 1 : -1)),
       )
       setChamadoChave(pendentes[proximo]?.chave)
       evento.preventDefault()
@@ -182,22 +193,33 @@ export function TelaAula({
   }, [pendentes, chamadoChave])
 
   /**
-   * Pendentes primeiro, o resto depois.
+   * Pendentes primeiro, o resto depois — com as edições locais aplicadas.
    *
    * A pessoa mais provável num crachá desconhecido é quem ainda não cadastrou,
    * e ela deve estar a zero tecla de distância. Quem já tem crachá continua
    * alcançável logo abaixo — é a segunda via, e o app aceita mais de um crachá
    * por aluno de propósito.
+   *
+   * A busca só abre no modo comum, com ninguém chamado (ver `decidir()`), mas
+   * uma edição de nome feita na tabela antes de qualquer crachá encostar
+   * precisa continuar valendo mesmo assim — daí `efetivo`, não `pendentes` cru.
    */
   const ordemDaBusca = useMemo(() => {
     const naFila = new Set(pendentes.map((p) => p.chave))
-    return [...pendentes, ...daTurma.filter((p) => p.papel === 'aluno' && !naFila.has(p.chave))]
-  }, [pendentes, daTurma])
+    return [
+      ...pendentes.map(efetivo),
+      ...daTurma.filter((p) => p.papel === 'aluno' && !naFila.has(p.chave)),
+    ]
+  }, [pendentes, daTurma, efetivo])
 
   // Reabrir o app no meio da aula tem que reencontrar quem já passou. A fonte
   // é o log, não a memória da tela — fechar o notebook não pode zerar a chamada.
   const recarregar = useCallback(async () => {
-    const eventos = await repositorio.listarEventos()
+    const [eventos, vinculosAtuais] = await Promise.all([
+      repositorio.listarEventos(),
+      repositorio.listarVinculos(),
+    ])
+    setVinculos(vinculosAtuais)
     const daAula = eventos.filter(
       (e) => e.turma === sessao.turma && e.quando >= sessao.abertaEm,
     )
@@ -232,6 +254,43 @@ export function TelaAula({
     void recarregar()
   }, [recarregar])
 
+  /**
+   * O vínculo de uma linha da turma — mesmo critério de sempre: matrícula
+   * quando existe, nome de docente quando não. É por aqui que "Remover
+   * crachá" acha o `uid_hash` a apagar.
+   */
+  const vinculoDe = useCallback(
+    (p: Matriculado): Vinculo | undefined =>
+      vinculos.find((v) => (p.matricula ? v.matricula === p.matricula : v.nome === p.nome)),
+    [vinculos],
+  )
+
+  /**
+   * Desfaz um vínculo errado sem sair da chamada.
+   *
+   * Existia só em Ajustes → Vínculos, longe de onde o erro acontece: crachá
+   * desconhecido confirmado para a pessoa errada, ou crachá de outra pessoa
+   * que encostou por engano na hora certa. Corrigir aqui, com a turma ainda
+   * na tela, é o mesmo gesto de sempre — a correção mora perto do erro.
+   *
+   * Não apaga a presença já gravada: eventos não se apagam. O crachá volta a
+   * ser desconhecido, e a linha volta para "Quem falta" — pronta para o
+   * crachá certo.
+   */
+  const removerCracha = useCallback(
+    (p: Matriculado) => {
+      const vinculo = vinculoDe(p)
+      if (!vinculo) return
+      if (!confirm(`Desvincular o crachá de ${p.nomeCompleto}?`)) return
+      void (async () => {
+        await repositorio.removerVinculo(vinculo.uidHash)
+        await recarregar()
+        aoMudarBase()
+      })()
+    },
+    [vinculoDe, repositorio, recarregar, aoMudarBase],
+  )
+
   useEffect(() => {
     return leitor.aoLer((leitura) => {
       setUltimaAtividadeEm(leitura.em)
@@ -265,14 +324,10 @@ export function TelaAula({
           jaPresentes.current.add(uidHash)
         }
 
-        // Crachá que ninguém reconhece, com gente da turma ainda sem cadastro:
-        // é o aluno que faltou no primeiro dia. Em vez de recusar e cobrar
-        // depois, o app pergunta de quem é — ali, na hora, com a pessoa na
-        // frente. Nada é gravado enquanto ele não responder.
-        // Antes: só abria se ainda houvesse gente sem cadastro. Isso deixava de
-        // fora justamente o caso corriqueiro do dia a dia — segunda via, crachá
-        // trocado — e o professor via só uma linha vermelha, sem nada a fazer
-        // ali. A correção sobrava para depois, à mão, a partir de um hash.
+        // Crachá que ninguém reconhece, sem ninguém chamado (modo comum):
+        // pergunta de quem é, ali, na hora, com a pessoa na frente. Nada é
+        // gravado enquanto ela não responder. Com alguém chamado, ver o
+        // `cadastro` logo abaixo — não passa por aqui.
         //
         // Desistir continua sendo um clique fora: quem não quiser vincular
         // agora fecha, e o registro fica como crachá não cadastrado.
@@ -295,7 +350,9 @@ export function TelaAula({
           })
           // Avança sozinho para o próximo pendente, pulando quem já foi
           // marcado como pulado — mesmo gesto de sempre: chamar um nome não
-          // deveria custar um clique a mais para "próximo".
+          // deveria custar um clique a mais para "próximo". Continua no modo
+          // de chamar nomes; sai dele só quando a fila acaba ou o professor
+          // volta explicitamente.
           setChamadoChave((atual) => {
             const indice = pendentes.findIndex((p) => p.chave === atual)
             return proximoPendente(indice + 1)
@@ -439,7 +496,7 @@ export function TelaAula({
             tela toda pra encontrar o único jeito de encerrar. Este não troca
             de lugar quando o recado aparece embaixo; o de baixo continua ali,
             porque terminar no fim do gesto também faz sentido. */}
-        <button className="botao--quieto coleta__encerrar-topo" onClick={() => aoEncerrarAgora()}>
+        <button className="botao--acento coleta__encerrar-topo" onClick={() => aoEncerrarAgora()}>
           Encerrar
         </button>
       </header>
@@ -478,7 +535,28 @@ export function TelaAula({
         </p>
       )}
 
-      {/* A fila de chamada só aparece com gente pendente — e é a mesma tela
+      {/* O convite para entrar no modo de chamar nomes — não o modo em si.
+          Sem alguém chamado, o app não sabe (nem deveria adivinhar) se quem
+          vai encostar o próximo crachá é alguém específico; só sabe que
+          existe gente sem crachá. Um clique aqui é o professor decidindo
+          começar a chamar — o mesmo gesto de clicar "Chamar" numa linha da
+          tabela abaixo, só que para quem está no topo da fila. */}
+      {pendentes.length > 0 && !chamadoAtual && (
+        <section className="chamado chamado--convite">
+          <Ondas tamanho={54} />
+          <p className="chamado__rotulo">
+            {pendentes.length === 1 ? '1 pessoa sem crachá' : `${pendentes.length} pessoas sem crachá`}
+          </p>
+          <button
+            className="botao--acento"
+            onClick={() => setChamadoChave(proximoPendente(0))}
+          >
+            Chamar nomes
+          </button>
+        </section>
+      )}
+
+      {/* A fila de chamada só aparece com alguém chamado — e é a mesma tela
           da cerimônia, não uma versão menor dela. Um só nome chamado por vez
           continua sendo a garantia; o que muda é que chamar alguém agora
           passa pelo mesmo `decidir()` de qualquer outro crachá, com a mesma
@@ -523,6 +601,13 @@ export function TelaAula({
             </button>
           </div>
           <p className="chamado__atalho">← e → andam pela fila</p>
+
+          {/* Sair é tão explícito quanto entrar. Sem isto, quem chamou dois
+              nomes e quer parar (o resto chega sozinho, sem crachá trocado)
+              só tinha o caminho de pular todo mundo até a fila acabar. */}
+          <button className="botao--quieto chamado__voltar" onClick={() => setChamadoChave(undefined)}>
+            Voltar à chamada comum
+          </button>
 
           {ensaio && ehSimulavel(leitor) && (
             <div className="chamado__acoes">
@@ -628,6 +713,15 @@ export function TelaAula({
                           <button onClick={() => setChamadoChave(p.chave)}>
                             {vinculado ? 'Mais um crachá' : 'Chamar'}
                           </button>
+                          {/* Corrige um crachá vinculado à pessoa errada sem
+                              sair da chamada — ver o comentário de
+                              `removerCracha`, acima. Não apaga presença já
+                              gravada: eventos não se apagam. */}
+                          {vinculado && (
+                            <button className="botao--grave" onClick={() => removerCracha(p)}>
+                              Remover crachá
+                            </button>
+                          )}
                         </>
                       )}
                     </td>
@@ -675,6 +769,12 @@ export function TelaAula({
                 matricula: pessoa.matricula || undefined,
                 criadoEm: quando.toISOString(),
               })
+              // A busca só abre no modo comum, com ninguém chamado (ver
+              // `decidir()`) — então confirmar aqui nunca entra no modo de
+              // chamar nomes sozinho. É a diferença de propósito entre os
+              // dois: aqui alguém chegou sem aviso e o app perguntou quem é;
+              // chamar nomes é o professor decidindo, de propósito, ir atrás
+              // de quem falta.
               const evento = eventoDe(
                 { tipo: 'cadastro', pessoa },
                 {
@@ -704,7 +804,7 @@ export function TelaAula({
         {recado ? (
           <span className="coleta__recado">{recado}</span>
         ) : (
-          <button className="coleta__encerrar" onClick={() => aoEncerrarAgora()}>
+          <button className="botao--acento coleta__encerrar" onClick={() => aoEncerrarAgora()}>
             Encerrar a chamada
           </button>
         )}

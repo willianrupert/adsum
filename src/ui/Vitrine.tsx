@@ -328,6 +328,7 @@ export function Vitrine() {
           motivo="varias"
           aoEscolher={() => {}}
           aoDesistir={() => {}}
+          aoNovaTurma={() => {}}
         />
       </Cena>
 

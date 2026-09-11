@@ -14,11 +14,18 @@ export function EscolherTurma({
   motivo,
   aoEscolher,
   aoDesistir,
+  aoNovaTurma,
 }: {
   opcoes: string[]
   motivo: 'nenhuma' | 'varias'
   aoEscolher: (turma: string) => void
   aoDesistir: () => void
+  /**
+   * "Nenhuma destas" — o crachá do professor é de uma turma que ainda não
+   * está cadastrada. Sem isto, a única saída daqui era desistir e procurar
+   * "Cadastrar nova turma" lá no repouso, um lugar que esta tela nem mostra.
+   */
+  aoNovaTurma?: () => void
 }) {
   const [destacado, setDestacado] = useState(0)
 
@@ -66,6 +73,12 @@ export function EscolherTurma({
         <p className="busca__atalhos">
           <kbd>↑</kbd> <kbd>↓</kbd> andam · <kbd>enter</kbd> confirma
         </p>
+
+        {aoNovaTurma && (
+          <button className="busca__desistir" onClick={aoNovaTurma}>
+            Nenhuma destas — cadastrar nova turma
+          </button>
+        )}
       </div>
     </div>
   )

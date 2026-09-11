@@ -120,6 +120,52 @@ describe('planilhaDeFaltas', () => {
     expect(celula?.faltas).toBe(0)
     expect(celula?.manual).toBe(true)
   })
+
+  // Quem manda é o professor, não o crachá: uma presença marcada por engano
+  // — crachá lido para a pessoa errada, confirmação precipitada — precisa
+  // sair da planilha sem reescrever o log. O evento do crachá continua lá,
+  // só deixa de contar.
+  it('presença removida à mão (resultado removido) volta a contar como falta', () => {
+    const remocao: Evento = {
+      eventoId: 'web-a1-20260817-0009',
+      quando: '2026-08-17T12:00:00.000Z',
+      turma: TURMA,
+      matricula: ana.matricula,
+      nome: ana.nome,
+      origem: 'manual',
+      resultado: 'removido',
+      uidHash: 'manual-x',
+    }
+    // A remoção vem primeiro no array — `eventos` chega mais recente
+    // primeiro de verdade (`Repositorio.listarEventos`), e a leitura do
+    // crachá é sempre mais cedo no dia do que a correção feita depois.
+    const eventos = [abrir('2026-08-17', '08:00'), remocao, presenca('2026-08-17', '08:05', ana)]
+    const { linhas } = planilhaDeFaltas(eventos, [ana], [AULA_DUPLA], TURMA)
+    const celula = linhas.find((l) => l.matriculado === ana)?.porDia.get('2026-08-17')
+    expect(celula?.faltas).toBe(2)
+    expect(celula?.manual).toBe(true)
+  })
+
+  // Depois de remover, marcar presença de novo tem que vencer — é o mesmo
+  // evento manual mais recente que decide, não "alguma vez existiu remoção".
+  it('marcar presença de novo depois de remover volta a zerar a falta', () => {
+    const remocao: Evento = {
+      eventoId: 'web-a1-20260817-0009',
+      quando: '2026-08-17T12:00:00.000Z',
+      turma: TURMA,
+      matricula: ana.matricula,
+      nome: ana.nome,
+      origem: 'manual',
+      resultado: 'removido',
+      uidHash: 'manual-x',
+    }
+    const reconfirmacao: Evento = { ...remocao, eventoId: 'web-a1-20260817-0010', resultado: 'ok' }
+    // A reconfirmação é a ação mais recente, então vem primeiro no array.
+    const eventos = [abrir('2026-08-17', '08:00'), reconfirmacao, remocao]
+    const { linhas } = planilhaDeFaltas(eventos, [ana], [AULA_DUPLA], TURMA)
+    const celula = linhas.find((l) => l.matriculado === ana)?.porDia.get('2026-08-17')
+    expect(celula?.faltas).toBe(0)
+  })
 })
 
 describe('paraCsvDeFaltas', () => {

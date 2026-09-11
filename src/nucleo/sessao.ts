@@ -100,11 +100,12 @@ export interface Contexto {
   sessao?: Sessao
   vinculo?: Vinculo
   /**
-   * Quem está chamado na fila de cadastro, se houver.
+   * Quem está chamado, se houver — ver o comentário em `decidir()`, abaixo.
    *
-   * É o que faz a cerimônia e a chamada serem a mesma coisa: quem encosta o
-   * crachá para se cadastrar já está presente naquela aula, e separar as duas
-   * obrigaria a turma a passar duas vezes.
+   * Só existe quando o professor **escolheu explicitamente** chamar essa
+   * pessoa (botão "Chamar", "Mais um crachá", ou as setas): nunca é
+   * preenchido sozinho pela tela ao abrir a chamada. É essa explicitude que
+   * torna seguro confiar nele aqui — ver `TelaAula`.
    */
   chamado?: Matriculado
   /** `uid_hash` de quem já foi registrado nesta sessão. */
@@ -151,9 +152,25 @@ export function decidir(uidHash: string, ctx: Contexto): Decisao {
     }
   }
 
-  // Crachá desconhecido com nome chamado é cadastro. A garantia contra trocar
-  // aluno continua sendo a de sempre: existe **um só** nome chamado por vez, e
-  // ele está grande na tela para a pessoa conferir antes de encostar.
+  // Crachá desconhecido com nome chamado é cadastro. Chegou a virar sempre
+  // busca, por um dia (11/09/2026): a ideia era que "um só nome chamado por
+  // vez" não bastava, porque a fila física podia não bater com a ordem da
+  // tela. Isso é verdade quando o chamado é automático — a tela escolhendo
+  // sozinha o primeiro pendente assim que a chamada abre, sem o professor ter
+  // pedido nada. Nesse caso o nome na tela não significa "alguém está sendo
+  // chamado agora", só "existe gente sem crachá" — e aí confiar nele é
+  // adivinhação, não confirmação.
+  //
+  // A correção não foi tirar a confiança do chamado — foi parar de setá-lo
+  // sozinho. `TelaAula` só chama alguém por ação explícita do professor
+  // (botão "Chamar", "Mais um crachá", as setas): o modo comum, padrão, não
+  // chama ninguém, e crachá desconhecido nesse modo cai em `desconhecido`
+  // de qualquer jeito — a busca ainda existe, só que para o caso real que
+  // ela resolve (quem chegou sem aviso), não como substituto de uma garantia
+  // que já existia. Quando o professor entra no modo de chamar nomes de
+  // propósito, ele está olhando aquela pessoa encostar — é aí que confiar no
+  // chamado volta a ser seguro, e cadastrar direto sem perguntar de novo é o
+  // gesto certo, não um atalho perigoso.
   if (!vinculo) return ctx.chamado ? { tipo: 'cadastro', pessoa: ctx.chamado } : { tipo: 'desconhecido' }
   if (jaPresentes.has(uidHash)) return { tipo: 'repetido', vinculo }
   return { tipo: 'presenca', vinculo }

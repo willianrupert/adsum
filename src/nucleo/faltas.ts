@@ -76,6 +76,15 @@ export interface PlanilhaDeFaltas {
  * confirmando à mão que alguém estava na sala tem o mesmo peso de um crachá
  * — ver o comentário de `origem` em `tipos.ts`. O log continua só-acréscimo:
  * a correção é um evento novo, nunca a reescrita de um antigo.
+ *
+ * **Quem manda é o professor, não o crachá.** Desde 11/09/2026, um evento
+ * manual com `resultado: 'removido'` tira uma presença marcada por engano —
+ * crachá lido para a pessoa errada, ou confirmação à mão precipitada. `eventos`
+ * chega mais recente primeiro (`Repositorio.listarEventos`), então o evento
+ * manual mais novo para aquele dia decide a célula: `'removido'` é falta,
+ * qualquer outro resultado é presença. Sem manual nenhum, quem decide
+ * continua sendo o crachá, como sempre. O log não perde a leitura do crachá —
+ * ela continua lá, para quem quiser auditar —, só deixa de contar por si só.
  */
 export function planilhaDeFaltas(
   eventos: Evento[],
@@ -105,20 +114,23 @@ export function planilhaDeFaltas(
   const linhas: LinhaDeFaltas[] = alunos.map((aluno) => {
     const porDia = new Map<string, CelulaDeFalta>()
     for (const dia of dias) {
+      // Mais recente primeiro (herdado de `eventos`), então o primeiro manual
+      // encontrado é o último que o professor tocou nesta célula.
       const doDia = daTurma.filter(
         (e) =>
           (e.origem === 'cracha' || e.origem === 'manual') &&
-          (e.resultado === 'ok' || e.resultado === 'duplicado') &&
+          (e.resultado === 'ok' || e.resultado === 'duplicado' || e.resultado === 'removido') &&
           diaLocal(e.quando) === dia &&
           ehDoAluno(e, aluno),
       )
-      const repetido = doDia.filter((e) => e.origem === 'cracha').length > 1
-      const manual = doDia.some((e) => e.origem === 'manual')
-      const presente = doDia.length > 0
+      const doCracha = doDia.filter((e) => e.origem === 'cracha')
+      const ultimoManual = doDia.find((e) => e.origem === 'manual')
+      const repetido = doCracha.length > 1
+      const presente = ultimoManual ? ultimoManual.resultado !== 'removido' : doCracha.length > 0
       porDia.set(dia, {
         faltas: presente ? 0 : (periodosPorDia.get(dia) ?? 1),
         repetido,
-        manual,
+        manual: !!ultimoManual,
         quando: doDia[0]?.quando,
       })
     }

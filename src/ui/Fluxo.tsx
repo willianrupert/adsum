@@ -1,9 +1,11 @@
 // A casca do app. Não há menu: a rota decorre do estado (ver `nucleo/rota.ts`).
 //
 // Diagnóstico e Repositório deixaram de ser abas. Viraram folhas, alcançáveis
-// por dois selos discretos no rodapé — quietos quando está tudo bem, e a tela
-// inteira quando não está. Ninguém deve saber que existe uma tela de
-// diagnóstico até precisar dela.
+// pela engrenagem, no canto — quieta quando está tudo bem, e o aviso na tela
+// inteira quando não está. Diagnóstico é uma folha à parte, atrás de um link
+// discreto dentro de Ajustes: ninguém deve saber que ela existe até precisar
+// dela, e cinco painéis de "não é uso do dia a dia" não deveriam pesar na
+// primeira vista dos Ajustes de verdade.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { decidirRota } from '../nucleo/rota.ts'
@@ -56,7 +58,6 @@ import { TelaNavegador } from './TelaNavegador.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
 import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { Baixar, Cadeado, Engrenagem, Ondas } from './componentes/Simbolos.tsx'
-import { Secao } from './componentes/Painel.tsx'
 import { Sheet } from './componentes/Sheet.tsx'
 import { levantarCapacidades } from '../ambiente/capacidades.ts'
 import { marcarAte, naoSalvos, totalNaoSalvo, type Pendencia } from '../nucleo/pendencias.ts'
@@ -68,7 +69,7 @@ import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaColarTurma } from './TelaColarTurma.tsx'
 import { TelaPresencas } from './TelaPresencas.tsx'
 
-type Folha = 'ajustes' | 'presencas'
+type Folha = 'ajustes' | 'presencas' | 'diagnostico'
 
 export function Fluxo() {
   const { leitor, repositorio, config } = useAdsum()
@@ -718,6 +719,11 @@ export function Fluxo() {
             setEscolhendo(undefined)
             void abrirChamada(turma, pedido.uidHash, pedido.em)
           }}
+          aoNovaTurma={() => {
+            setEscolhendo(undefined)
+            setTurmasAntesDaNova(turmas)
+            setColandoNova(true)
+          }}
         />
       )}
 
@@ -851,21 +857,18 @@ export function Fluxo() {
         )}
 
         {/* As teclas de ensaio, e **o que cada uma faz aqui**.
-            O `N` produz um crachá desconhecido em qualquer tela, mas o que
-            ele faz depende de haver alguém chamado: com gente pendente,
-            `decidir()` já sabe a quem atribuir — é cadastro direto. Sem
-            ninguém chamado, ele não tem a quem atribuir — é a lupa. A
-            distinção não é mais de rota, é de ter ou não ter fila. */}
+            O `N` produz um crachá desconhecido em qualquer tela: cadastra
+            direto se houver alguém chamado (modo de chamar nomes), ou abre a
+            busca se não houver (modo comum, o padrão) — ver `decidir()`, em
+            `nucleo/sessao.ts`. `TelaAula` não expõe isso a `Fluxo`, então a
+            dica aqui descreve os dois em vez de escolher qual vale agora. */}
         {ensaio && ehSimulavel(leitor) && (
           <span className="selo-status" title="Modo de ensaio, com leitor simulado">
             <kbd>espaço</kbd> crachá
             {rota === 'chamada' ? (
               <>
                 {' · '}
-                <kbd>N</kbd>{' '}
-                {pendentesDaTurma.some((p) => p.turma === sessao?.turma)
-                  ? 'cadastra o chamado'
-                  : 'abre a busca'}
+                <kbd>N</kbd> crachá novo
               </>
             ) : null}
             {' · '}
@@ -931,10 +934,21 @@ export function Fluxo() {
               return resumo
             }}
           />
-          <Secao
-            titulo="Diagnóstico"
-            legenda="Para quando algo não funciona. Não é uso do dia a dia."
-          />
+          {/* Diagnóstico virou folha própria — ver o comentário no topo do
+              arquivo. Cinco painéis de coisa que "não é uso do dia a dia"
+              (ambiente, leitor, últimas leituras, estado do app, modo de
+              ensaio) empilhados aqui era metade dos Ajustes sendo ferramenta
+              de quem conserta, não do professor que só quer trocar a pasta
+              ou corrigir a grade. Um link quieto continua alcançável para
+              quem precisa. */}
+          <button className="botao--quieto ajustes__diagnostico" onClick={() => setFolha('diagnostico')}>
+            Diagnóstico
+          </button>
+        </Sheet>
+      )}
+
+      {folha === 'diagnostico' && (
+        <Sheet titulo="Diagnóstico" aoFechar={() => setFolha(undefined)}>
           <TelaDiagnostico />
         </Sheet>
       )}
