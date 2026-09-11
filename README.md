@@ -56,12 +56,27 @@ não.
 linha. A porta `Repositorio` **não tem** `atualizarEvento` nem `removerEvento` —
 se a assinatura não existe, o bug não se escreve.
 
-**A tela não pode pedir decisão.** Não há menu: a rota é função pura do estado
-([`nucleo/rota.ts`](src/nucleo/rota.ts)). Sem turma, a tela é colar a turma; na
-hora da aula, é a chamada. E com a grade preenchida a chamada **abre sozinha** —
-nem clique, nem crachá.
+**Mas o crachá pode errar, e isso precisa de conserto sem mentira.** Confirmar
+um crachá desconhecido para a pessoa errada, ou passar duas vezes na pressa —
+nenhum dos dois se apaga, os dois ganham um evento nascido pra desfazer o
+efeito do outro sem tocar no que já foi escrito: `'Remover crachá'` na
+chamada, `resultado: 'removido'` na planilha, e `rapido_demais` para o par que
+chega a menos de 400 ms um do outro. Só-acréscimo não significa sem correção —
+significa que a correção também vira linha.
 
-<div align="center"><img src="docs/mapa-estados.png" alt="problema → pasta → navegador → turma → cronograma → chamada ⇄ pronto" width="820"></div>
+**A tela não pode pedir decisão — nem fingir que decide sozinha.** Não há
+menu: a rota é função pura do estado ([`nucleo/rota.ts`](src/nucleo/rota.ts)),
+uma cascata de perguntas feitas na ordem em que importam. `'problema'` é
+checada **duas vezes** — navegador quebrado no topo, leitor parado só depois
+de turma e cronograma, porque digitar um horário não pede hardware nenhum. E a
+cascata se resolve **sozinha**, duas vezes: a grade confere o relógio a cada
+30 s e abre a próxima aula sem clique nem crachá, e um leitor que cai no meio
+de uma chamada devolve a tela a `'problema'` sem perder a sessão — ela espera
+no banco e reaparece assim que ele volta. `'cerimônia'`, a rota que sintetiza
+o crachá do professor pro primeiro dia, nunca chega a virar tela: ela mesma se
+resolve no instante seguinte.
+
+<div align="center"><img src="docs/mapa-estados.png" alt="A cascata de decidirRota: problema → pasta → navegador → turma → cronograma → problema outra vez → cerimônia/chamada/pronto, com a grade e o leitor fechando os dois laços sozinhos" width="880"></div>
 
 ## Arquitetura
 
@@ -112,9 +127,11 @@ presença: todos os defeitos achados até aqui eram desse tipo.
 |---|---|
 | [**Manual e LGPD**](docs/Adsum-manual-e-LGPD.docx) | Para o professor e para a instituição. Uso, e a descrição do tratamento de dados campo por campo |
 | [`CLAUDE.md`](CLAUDE.md) | O contrato do projeto: regras que não se quebram, decisões e o que elas custaram |
+| [`docs/00_roadmap.md`](docs/00_roadmap.md) | Os passos do projeto, cada um terminando em algo que já roda no navegador |
 | [`docs/01_cofre.md`](docs/01_cofre.md) | O cofre em pasta, o prazo do Safari, e o bug do sal que perdia as pessoas |
 | [`docs/02_formato.md`](docs/02_formato.md) | O formato dos arquivos, decidido do zero |
 | [`docs/03_visual.md`](docs/03_visual.md) | Os valores medidos da linguagem visual da Apple |
+| [`docs/04_historico.md`](docs/04_historico.md) | Histórico de decisões datado — o porquê de cada mudança, na ordem em que aconteceu |
 
 Comentário aqui explica **por quê**, não o quê — e registra o que a decisão
 custou. Boa parte do raciocínio mora no código, não em documento à parte.

@@ -182,17 +182,27 @@ const doc = new Document({
       p([t('Cadastrar a grade. ', { bold: true }), t('Dia da semana e horário de cada turma. É opcional, mas é o que faz a chamada abrir sozinha na hora da aula.')]),
 
       h2('2.2 O primeiro dia'),
-      p('No primeiro dia ninguém tem crachá vinculado, e é a própria chamada que faz o vínculo. O professor encosta o crachá dele primeiro — é o que abre a aula. Depois, um por vez, os alunos encostam o deles: a tela mostra de quem é a vez, o crachá encostado passa a ser daquela pessoa, e a presença é contada no mesmo gesto. Cadastrar e fazer a chamada são a mesma coisa.'),
-      p('Um aluno pode ter mais de um crachá — segunda via, crachá antigo — e todos valem. Um crachá já vinculado a outra pessoa é recusado dizendo de quem é, e não em silêncio.'),
+      p('No primeiro dia ninguém tem crachá vinculado, e é a própria tela da chamada que faz o vínculo — não existe uma tela de cadastro à parte. O professor liga o interruptor "Chamar nomes" (ou clica numa linha da lista, ou usa as setas do teclado): a tela passa a mostrar um nome grande e a pedir o crachá daquela pessoa.'),
+      item([t('Com alguém chamado, ', { bold: true }), t('o próximo crachá desconhecido é dela — a tela vincula e conta presença no mesmo toque, sem perguntar de novo. Quem está com o crachá na mão está sendo observado, não é um palpite.')]),
+      item([t('Sem ninguém chamado — o padrão —, ', { bold: true }), t('todo crachá desconhecido abre uma busca por nome, ali na hora, mesmo com a turma inteira ainda sem crachá. Um modo em que a tela adivinhava sozinha quem viria a seguir já existiu, e foi tirado por isso: adivinhar errado vincula o crachá de uma pessoa ao nome de outra sem ninguém ter pedido nada.')]),
+      p('Um aluno pode ter mais de um crachá — segunda via, crachá antigo — e todos valem: chama-se o nome de novo e encosta-se o cartão novo. Um crachá já vinculado a outra pessoa é recusado dizendo de quem é, nunca em silêncio.'),
+      p('Um vínculo feito errado — crachá confirmado para a pessoa errada, ou o crachá de um colega que encostou por engano — se desfaz ali mesmo, num botão "Remover crachá" ao lado do nome, sem sair da chamada. O crachá volta a ser desconhecido e a pessoa volta para a fila; a presença que já havia sido gravada continua no registro, porque eventos não se apagam — só a ligação entre o crachá e o nome muda.'),
 
       h2('2.3 Um dia comum'),
       p('Com a grade cadastrada e o Adsum aberto, a chamada abre sozinha no horário. Não há clique nem crachá do professor. Sem grade, há um botão.'),
-      p('Cada crachá encostado conta presença e mostra o nome. Encostar duas vezes não conta duas — a tela diz que já estava registrado. Um crachá que o programa não conhece abre uma busca por nome ali na hora: quem faltou no primeiro dia se cadastra no dia em que aparece, com a pessoa na frente.'),
+      p('Cada crachá encostado conta presença e mostra o nome. Encostar duas vezes não conta duas — a tela diz que já estava registrado. Um crachá que o programa não conhece abre uma busca por nome ali na hora, no modo comum: quem faltou no primeiro dia se cadastra no dia em que aparece, com a pessoa na frente. Quem está reconhecidamente faltando pode também ser chamado de propósito, do mesmo jeito do primeiro dia — inclusive semanas depois.'),
+      p('Dois crachás encostados quase juntos — menos de 400 milissegundos um do outro — não contam dois: o segundo é recusado, e a tela avisa "Dois crachás quase juntos". O limite existe contra passar dois cartões de uma vez, na pressa; ele não distingue fila apressada de má-fé, e não tenta — quem julga o que aconteceu é o professor, que está na sala.'),
       p('A tela responde na hora, e o bipe vem depois de o registro estar salvo. Os dois sinais significam coisas diferentes de propósito: o olho precisa de resposta imediata para a fila não parecer travada, e o som significa está gravado — não eu ouvi.'),
 
       h2('2.4 O fim da aula'),
       p('O professor encerra a chamada pelo botão ou encostando o crachá. A tela mostra quantas presenças foram registradas, em quanto tempo, e onde o arquivo está.'),
       p('Com pasta escolhida, não há passo nenhum: cada presença já foi gravada no disco no momento em que aconteceu. Sem pasta, salvar é a ação da tela — e enquanto houver aula por salvar, o programa cobra, na tela de espera e ao fechar a aba.'),
+
+      h2('2.5 Corrigir depois'),
+      p('A planilha do curso inteiro (Ajustes › Presenças) não é só para ler. No modo Editar, cada quadrado vira botão: uma falta vira presença confirmada à mão, e uma presença vira falta — para quando um crachá desconhecido foi confirmado para a pessoa errada, ou uma presença foi marcada à mão sem querer. As duas correções gravam um evento novo; o registro nunca reescreve uma linha antiga, e o quadrado corrigido continua identificável depois, para quem quiser auditar.'),
+
+      h2('2.6 Mais de uma turma'),
+      p('Uma segunda turma se cadastra pelo mesmo caminho do primeiro dia: "Cadastrar nova turma", na tela de escolher qual turma chamar. Se a grade apontar duas turmas no mesmo horário, o Adsum avisa em vez de abrir uma e esconder a outra — quem falta em cada uma continua visível, e nenhuma fica esquecida por a outra ter chegado primeiro.'),
 
       // ── 3 ─────────────────────────────────────────────────────────────
       new Paragraph({ children: [new PageBreak()] }),
@@ -251,13 +261,14 @@ const doc = new Document({
           [[mono('matricula')], 'Matrícula do aluno', 'É por ela que a chamada fecha na planilha.'],
           [[mono('nome')], 'Nome curto', 'Só para quem abrir o arquivo entender o que vê. Nenhum cálculo depende dele.'],
           [[mono('origem')], [mono('cracha, professor, manual')], 'Distingue presença lida de ação do professor.'],
-          [[mono('resultado')], [mono('ok, duplicado, desconhecido')], 'O que não foi aceito também é registrado, e por quê.'],
+          [[mono('resultado')], [mono('ok, duplicado, desconhecido, rapido_demais, removido')], 'O que não foi aceito também é registrado, e por quê.'],
           [[mono('uid_hash')], 'O resumo do crachá', 'Único jeito de resolver depois um crachá desconhecido.'],
         ],
         [1900, 2900, 4226],
       ),
       p(''),
       p('O arquivo nunca é reescrito: cada presença acrescenta uma linha. Corrigir um nome ou uma matrícula na base corrige as exportações seguintes sem alterar uma linha do que já foi registrado.'),
+      p([t('Dois valores de '), mono('resultado'), t(' são recentes, e os dois são a mesma disciplina: até o crachá sendo recusado, ou uma marcação sendo desfeita, vira linha — nunca silêncio. '), mono('rapido_demais'), t(' é o segundo de dois crachás quase juntos, recusado pela regra dos 400 milissegundos (seção 2.3). '), mono('removido'), t(' é o professor tirando à mão, na planilha, uma presença que não devia ter sido contada — a leitura original do crachá continua no arquivo, só deixa de valer como presença.')]),
 
       h2('4.4 O que o programa deliberadamente não faz'),
       item('Não envia dado nenhum pela rede. Não há telemetria, não há analytics, não há fonte remota e não há CDN. O programa funciona offline, do começo ao fim.'),
@@ -339,13 +350,16 @@ const doc = new Document({
           ['A lista colada não foi entendida por inteiro', 'Ele diz qual linha, com o conteúdo e o motivo. Nunca descarta em silêncio: 46 alunos onde deveria haver 48, sem explicação, é defeito.'],
           ['A pasta não recebeu a gravação', 'Aviso permanente no canto e um caminho de conserto. O dado continua no navegador até a pasta voltar — nada se perde.'],
           ['Há aula por salvar', 'A tela de espera cobra, com turma e quantidade, e o navegador avisa se a aba for fechada.'],
-          ['O leitor não está lendo', 'A tela diz, em vez de esperar um crachá que não vai chegar. O diagnóstico mostra a última leitura crua.'],
+          ['O leitor não está lendo', 'A tela diz, em vez de esperar um crachá que não vai chegar — mesmo no meio de uma chamada aberta, que continua esperando no fundo e reaparece sozinha assim que o leitor volta. Nada se perde.'],
+          ['Dois crachás quase juntos', 'O segundo não conta, e a tela avisa na hora. O programa não distingue fila apressada de má-fé — quem julga é o professor, que está na sala.'],
+          ['Uma presença foi marcada errada', 'Corrige-se na planilha (Ajustes › Presenças), no modo Editar: a presença vira falta com um toque, sem apagar a leitura original do crachá.'],
           ['Trocou de navegador ou limpou os dados', 'Reescolher a pasta reconstrói tudo, inclusive o sal — sem ele, os nomes voltariam e as pessoas não.'],
         ],
         [2600, 6426],
       ),
       p(''),
       p([t('O caminho de recuperação está escrito dentro da própria pasta, no '), mono('LEIA-ME.txt'), t('. Ele é gravado a cada mudança, para que quem abrir a pasta daqui a um ano — ou quem a receber de um colega — não precise deste documento à mão.')]),
+      p([t('Um diagnóstico técnico — capacidades do navegador, estado do leitor, última leitura crua — fica atrás da engrenagem, discreto: ninguém precisa saber que ele existe até precisar dele.')]),
 
       // ── 7 ─────────────────────────────────────────────────────────────
       h1('7. Limites conhecidos'),
