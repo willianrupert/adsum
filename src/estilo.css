@@ -40,6 +40,25 @@
   --grave-fraca: #fdecee;
   --separador: #d2d2d7;
 
+  /* A ilustração do SIGAA (`ComoCopiar.tsx`) imita a página de verdade, que é
+     clara — não a casca do Adsum. Paleta própria, não os tokens acima: no
+     claro ela busca o SIGAA real; no escuro, uma leitura escura dele, não um
+     recorte do app. */
+  --ilu-fundo: #ffffff;
+  --ilu-menu: #eef1f4;
+  --ilu-selecao-fill: rgb(0 113 227 / 8%);
+  --ilu-selecao-stroke: #0071e3;
+  --ilu-foto: #d8dde3;
+  --ilu-titulo-menu: #3d6b8a;
+  --ilu-menu-item: #6b7684;
+  --ilu-menu-ativo: #0071e3;
+  --ilu-secao: #3d6b8a;
+  --ilu-regua: #c8d3db;
+  --ilu-nome: #1d1d1f;
+  --ilu-campo: #6b7684;
+  --ilu-usuario: #0071e3;
+  --ilu-marca: #0071e3;
+
   --fonte:
     -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue',
     Helvetica, Arial, sans-serif;
@@ -80,6 +99,21 @@
     --grave: #ff453a;
     --grave-fraca: #2c1517;
     --separador: #424245;
+
+    --ilu-fundo: #0f1417;
+    --ilu-menu: #16202a;
+    --ilu-selecao-fill: rgb(41 151 255 / 12%);
+    --ilu-selecao-stroke: #2997ff;
+    --ilu-foto: #24323d;
+    --ilu-titulo-menu: #7fa6c4;
+    --ilu-menu-item: #6e8496;
+    --ilu-menu-ativo: #2997ff;
+    --ilu-secao: #7fa6c4;
+    --ilu-regua: #2b4a63;
+    --ilu-nome: #cfe0ec;
+    --ilu-campo: #6e8496;
+    --ilu-usuario: #2997ff;
+    --ilu-marca: #2997ff;
   }
 }
 
@@ -1735,56 +1769,56 @@ button:focus-visible {
   width: 100%;
   margin: 18px 0 0;
   border-radius: var(--raio-pequeno);
-  background: #0f1417;
+  background: var(--ilu-fundo);
 }
 
 .ilu-fundo {
-  fill: #0f1417;
+  fill: var(--ilu-fundo);
 }
 .ilu-menu {
-  fill: #16202a;
+  fill: var(--ilu-menu);
 }
 .ilu-selecao {
-  fill: rgb(41 151 255 / 12%);
-  stroke: #2997ff;
+  fill: var(--ilu-selecao-fill);
+  stroke: var(--ilu-selecao-stroke);
   stroke-dasharray: 4 3;
 }
 .ilu-foto {
-  fill: #24323d;
+  fill: var(--ilu-foto);
 }
 .ilu-titulo-menu {
-  fill: #7fa6c4;
+  fill: var(--ilu-titulo-menu);
   font: 600 9px var(--fonte);
 }
 .ilu-menu-item {
-  fill: #6e8496;
+  fill: var(--ilu-menu-item);
   font: 8px var(--fonte);
 }
 .ilu-menu-ativo {
-  fill: #2997ff;
+  fill: var(--ilu-menu-ativo);
   font: 600 8px var(--fonte);
 }
 .ilu-secao {
-  fill: #7fa6c4;
+  fill: var(--ilu-secao);
   font: 600 11px var(--fonte);
 }
 .ilu-regua {
-  stroke: #2b4a63;
+  stroke: var(--ilu-regua);
 }
 .ilu-nome {
-  fill: #cfe0ec;
+  fill: var(--ilu-nome);
   font: 600 8px var(--fonte);
 }
 .ilu-campo {
-  fill: #6e8496;
+  fill: var(--ilu-campo);
   font: 7.5px var(--fonte);
 }
 .ilu-usuario {
-  fill: #2997ff;
+  fill: var(--ilu-usuario);
   font: 600 7.5px var(--mono);
 }
 .ilu-marca {
-  fill: #2997ff;
+  fill: var(--ilu-marca);
   font: 8px var(--fonte);
 }
 

@@ -694,6 +694,23 @@ describe('quando o leitor não está lendo', () => {
     await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
     expect(await screen.findByText(/Bom dia|Boa tarde|Boa noite/)).toBeInTheDocument()
   })
+
+  // decidirRota checa `!lendo` antes de `chamadaAberta` — então o leitor
+  // caindo no meio de uma aula cai nesta mesma tela, e "Antes da chamada"
+  // seria mentira: a chamada já começou, e tem gente presente esperando.
+  it('com a chamada aberta, diz que ela continua aberta em vez de "Antes da chamada"', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await screen.findByText('Encerrar a chamada')
+
+    await act(async () => bancada.leitor.parar())
+
+    expect(await screen.findByText('IF685 · T01 continua aberta')).toBeInTheDocument()
+    expect(screen.getByText('O leitor caiu no meio da aula')).toBeInTheDocument()
+    expect(screen.queryByText('Antes da chamada')).not.toBeInTheDocument()
+  })
 })
 
 // Encerrar por engano é fácil: o crachá do professor encerra, e ele também é o

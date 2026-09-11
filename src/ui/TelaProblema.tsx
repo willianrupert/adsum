@@ -15,9 +15,25 @@
 import { useEffect, useState } from 'react'
 import { levantarCapacidades } from '../ambiente/capacidades.ts'
 import type { DiagnosticoLeitor } from '../portas/LeitorDeCracha.ts'
+import type { Sessao } from '../nucleo/sessao.ts'
 import { useAdsum } from './adsum.ts'
 
-export function TelaProblema({ aoAbrirAjustes }: { aoAbrirAjustes: () => void }) {
+export function TelaProblema({
+  aoAbrirAjustes,
+  sessao,
+}: {
+  aoAbrirAjustes: () => void
+  /**
+   * A sessão que já estava aberta quando o leitor caiu.
+   *
+   * `decidirRota` checa `!lendo` antes de `chamadaAberta` — então o leitor
+   * caindo no meio de uma aula joga o professor aqui mesmo com a chamada
+   * ainda aberta no banco. Sem saber disso, esta tela dizia "Antes da
+   * chamada" bem no meio dela — a frase errada na hora errada. A sessão
+   * reaparece sozinha assim que o leitor volta; nada se perde.
+   */
+  sessao?: Sessao
+}) {
   const { leitor } = useAdsum()
   const [diag, setDiag] = useState<DiagnosticoLeitor>()
   const [tentando, setTentando] = useState(false)
@@ -59,8 +75,18 @@ export function TelaProblema({ aoAbrirAjustes }: { aoAbrirAjustes: () => void })
 
   return (
     <section className="repouso">
-      <p className="repouso__turma">Antes da chamada</p>
-      <p className="repouso__acao">Ligue o leitor de crachá</p>
+      <p className="repouso__turma">
+        {sessao ? `${sessao.turma} continua aberta` : 'Antes da chamada'}
+      </p>
+      <p className="repouso__acao">
+        {sessao ? 'O leitor caiu no meio da aula' : 'Ligue o leitor de crachá'}
+      </p>
+
+      {sessao && (
+        <p className="pasta__nota">
+          Ninguém foi perdido. Reconecte o leitor e a chamada volta sozinha, do jeito que estava.
+        </p>
+      )}
 
       <p className="pasta__nota">
         {diag?.motivo

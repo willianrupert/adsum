@@ -628,7 +628,9 @@ export function Fluxo() {
 
   return (
     <>
-      {rota === 'problema' && <TelaProblema aoAbrirAjustes={() => setFolha('ajustes')} />}
+      {rota === 'problema' && (
+        <TelaProblema aoAbrirAjustes={() => setFolha('ajustes')} sessao={sessao} />
+      )}
       {rota === 'pasta' && (
         <TelaPasta
           precisaDePermissao={estadoDaPasta === 'sem_permissao'}
