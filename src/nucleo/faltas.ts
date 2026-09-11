@@ -37,10 +37,24 @@ function limpar(campo: string): string {
   return campo.replace(/[;\r\n]+/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
+/**
+ * Uma célula da planilha: quantas faltas, e o que explica o número — a
+ * mesma conta serve à exportação (só o número) e à tela ao vivo (que também
+ * quer dizer a hora e se foi corrigido à mão, para auditoria).
+ */
+export interface CelulaDeFalta {
+  /** `0` é presença. */
+  faltas: number
+  /** O crachá foi lido mais de uma vez naquele dia — ainda é presença única. */
+  repetido: boolean
+  /** Marcado por um professor, não por um crachá — ver `origem: 'manual'`. */
+  manual: boolean
+  quando?: string
+}
+
 export interface LinhaDeFaltas {
   matriculado: Matriculado
-  /** Dia (`AAAA-MM-DD`) → faltas naquele dia. `0` é presença. */
-  porDia: Map<string, number>
+  porDia: Map<string, CelulaDeFalta>
 }
 
 export interface PlanilhaDeFaltas {
@@ -50,13 +64,18 @@ export interface PlanilhaDeFaltas {
 
 /**
  * Um dia de aula é um dia com evento `origem === 'professor'` — a aula
- * abriu —, não todo dia do calendário. Mesma leitura de `GradeDePresencas`.
+ * abriu —, não todo dia do calendário.
  *
  * O valor da falta vem da grade, pelo dia da semana daquele dia: se houver
  * bloco cadastrado para `turma` naquele dia da semana, a falta vale a soma
  * dos períodos de todos os blocos dela (duas aulas seguidas contam duas).
  * Sem bloco na grade — reposição, feriado com aula extra — o padrão é um
  * período: a grade é quem tem autoridade para dizer que vale mais que isso.
+ *
+ * Presença conta por `origem === 'cracha'` **ou** `'manual'`: um professor
+ * confirmando à mão que alguém estava na sala tem o mesmo peso de um crachá
+ * — ver o comentário de `origem` em `tipos.ts`. O log continua só-acréscimo:
+ * a correção é um evento novo, nunca a reescrita de um antigo.
  */
 export function planilhaDeFaltas(
   eventos: Evento[],
@@ -84,16 +103,24 @@ export function planilhaDeFaltas(
   }
 
   const linhas: LinhaDeFaltas[] = alunos.map((aluno) => {
-    const porDia = new Map<string, number>()
+    const porDia = new Map<string, CelulaDeFalta>()
     for (const dia of dias) {
-      const presente = daTurma.some(
+      const doDia = daTurma.filter(
         (e) =>
-          e.origem === 'cracha' &&
+          (e.origem === 'cracha' || e.origem === 'manual') &&
           (e.resultado === 'ok' || e.resultado === 'duplicado') &&
           diaLocal(e.quando) === dia &&
           ehDoAluno(e, aluno),
       )
-      porDia.set(dia, presente ? 0 : (periodosPorDia.get(dia) ?? 1))
+      const repetido = doDia.filter((e) => e.origem === 'cracha').length > 1
+      const manual = doDia.some((e) => e.origem === 'manual')
+      const presente = doDia.length > 0
+      porDia.set(dia, {
+        faltas: presente ? 0 : (periodosPorDia.get(dia) ?? 1),
+        repetido,
+        manual,
+        quando: doDia[0]?.quando,
+      })
     }
     return { matriculado: aluno, porDia }
   })
@@ -108,7 +135,9 @@ export function nomeDoArquivoDeFaltas(turma: string): string {
 export function paraCsvDeFaltas(planilha: PlanilhaDeFaltas): string {
   const cabecalho = ['nome', ...planilha.dias].join(SEP)
   const linhas = planilha.linhas.map((l) =>
-    [limpar(l.matriculado.nomeCompleto), ...planilha.dias.map((d) => String(l.porDia.get(d) ?? 0))].join(SEP),
+    [limpar(l.matriculado.nomeCompleto), ...planilha.dias.map((d) => String(l.porDia.get(d)?.faltas ?? 0))].join(
+      SEP,
+    ),
   )
   return BOM + [cabecalho, ...linhas].join('\n') + '\n'
 }

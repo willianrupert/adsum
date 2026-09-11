@@ -1045,9 +1045,11 @@ button:focus-visible {
 
 .planilha__nome {
   left: 0;
-  width: 160px;
-  min-width: 160px;
-  max-width: 160px;
+  /* Nome completo, como no SIGAA — mais largo que o nome curto de tela,
+     para truncar menos vezes num nome brasileiro comum. */
+  width: 220px;
+  min-width: 220px;
+  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 6px 14px 6px 0;
@@ -1057,7 +1059,7 @@ button:focus-visible {
 }
 
 .planilha__contagem {
-  left: 160px;
+  left: 220px;
   padding: 6px 16px 6px 4px;
   color: var(--tinta-fraca);
   border-right: 1px solid var(--separador);
@@ -1094,20 +1096,84 @@ button:focus-visible {
   text-align: center;
 }
 
+/* O número dentro do quadrado é o que vai para a instituição — a cor é
+   leitura de relance, o dígito é o dado de verdade. Um sem o outro seria
+   metade da informação. */
 .quadrado {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
   background: color-mix(in srgb, var(--tinta) 7%, transparent);
+  color: var(--tinta-fraca);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  position: relative;
 }
 
 .quadrado--presente {
   background: var(--acao);
+  color: white;
 }
 
-.quadrado--repetido {
-  background: color-mix(in srgb, var(--acao) 42%, var(--fundo-alt));
+.quadrado--ausente {
+  background: var(--alerta-fraca);
+  color: var(--alerta);
+}
+
+.quadrado--ausente-grave {
+  background: var(--grave-fraca);
+  color: var(--grave);
+}
+
+/* Só faltas (>0) viram botão em modo Editar — ver `GradeDePresencas`. */
+.quadrado--botao {
+  border: none;
+  cursor: pointer;
+  transition: transform var(--rapido) var(--curva);
+}
+
+.quadrado--botao:hover:not(:disabled) {
+  transform: scale(1.12);
+}
+
+.quadrado--botao:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Marca discreta de correção à mão — não é cor própria, é um detalhe a mais
+   sobre uma célula que já é presença (azul). */
+.quadrado__manual {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--alerta);
+  border: 1.5px solid var(--fundo);
+  font-style: normal;
+}
+
+.planilha__barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.planilha__barra .segmentado--turmas {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.planilha__editar {
+  flex: none;
 }
 
 .planilha__legenda {
@@ -1126,8 +1192,9 @@ button:focus-visible {
 }
 
 .planilha__legenda .quadrado {
-  width: 10px;
-  height: 10px;
+  width: 16px;
+  height: 16px;
+  font-size: 8px;
 }
 
 .painel .cronograma__bloco--curto {

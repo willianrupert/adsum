@@ -100,13 +100,15 @@ describe('jornada completa: turma nova, uma aula inteira, tudo simulado', () => 
     expect(csv.split('\n').filter((l) => l.includes(';cracha;'))).toHaveLength(TAMANHO)
 
     // A planilha depois de encerrar — a mesma leitura que "Ver presenças"
-    // mostra de verdade, um dia só, todo mundo presente.
+    // mostra de verdade, um dia só, todo mundo presente. Nome completo, como
+    // no SIGAA: é o que a instituição reconhece, não a forma curta da tela
+    // de chamada.
     await usuario.click(screen.getByRole('button', { name: 'Concluir sem salvar' }))
     await usuario.click(await screen.findByRole('button', { name: 'Ver presenças' }))
     const popup = await screen.findByRole('dialog', { name: 'Presenças' })
 
     for (const pessoa of turma) {
-      expect(within(popup).getByText(pessoa.nome)).toBeInTheDocument()
+      expect(within(popup).getByText(pessoa.nomeCompleto)).toBeInTheDocument()
     }
     expect(within(popup).getAllByText('1/1')).toHaveLength(TAMANHO)
   }, 60_000)
