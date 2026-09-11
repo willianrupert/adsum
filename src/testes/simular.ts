@@ -48,6 +48,16 @@ export async function baterCrachasEmSequencia(
   baralho: readonly string[],
   aposCadaToque?: (indice: number, restam: number) => Promise<void> | void,
 ): Promise<void> {
+  // O texto que prova que a tela de chamada montou (`Quem falta`) pinta antes
+  // de o `useEffect` que assina `leitor.aoLer` necessariamente já ter rodado
+  // — commit e efeito passivo não são a mesma volta do laço de eventos. Um
+  // toque simulado bem no meio dessa fresta não tem quem escute: o emissor
+  // não guarda leitura nenhuma pra entregar depois, e o `aria-label="0"` do
+  // contador nunca muda, por mais que se espere. Achado batendo a suíte
+  // inteira sob Node 22 repetidas vezes — some sob Node mais novo, mas a
+  // corrida sempre esteve lá. Uma volta de act() vazia força os efeitos
+  // pendentes a assentar antes do primeiro toque.
+  await act(async () => esperar(0))
   for (let i = 0; i < baralho.length; i++) {
     await act(async () => leitor.simular(baralho[i]))
     await aposCadaToque?.(i, baralho.length - i - 1)

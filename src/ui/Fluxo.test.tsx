@@ -476,7 +476,7 @@ describe('uma turma grande, crachá por crachá', () => {
     await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
     await screen.findByText('Quem falta')
 
-    await baterCrachasEmSequencia(bancada.leitor, gerarBaralho(TAMANHO), async (_, restam) => {
+    await baterCrachasEmSequencia(bancada.leitor, gerarBaralho(TAMANHO), async (indice, restam) => {
       // A cadeia de um toque não termina na gravação do evento: só depois
       // dela vem `aoMudarBase` → `recontar()`, no `Fluxo` de verdade, que
       // recalcula quem ainda falta e passa a lista nova pra baixo — e é só
@@ -484,7 +484,16 @@ describe('uma turma grande, crachá por crachá', () => {
       // Esperar pelo texto que a tela mostra é esperar pelo estado que
       // `TelaAula` realmente está usando — esperar só o evento gravar deixava
       // o próximo toque do laço disparar contra o **chamado antigo**.
+      //
+      // O contador de presentes é outra cadeia, decidida dentro da própria
+      // `TelaAula` (`recarregar()`), separada da que atualiza "Quem falta"
+      // (`Fluxo.recontar()`) — as duas partem do mesmo toque, mas nada garante
+      // que terminem juntas. Esperar só uma das duas achou, achado rodando a
+      // suíte sob Node 22 repetidas vezes, um toque que sumia: "Quem falta"
+      // zerava certinho, e o contador ficava um a menos, porque só a metade
+      // certa da corrida tinha sido esperada.
       await waitFor(() => {
+        expect(screen.getByLabelText(String(indice + 1))).toBeInTheDocument()
         if (restam > 0) {
           expect(screen.getByText(`${restam} de ${TAMANHO} sem crachá`)).toBeInTheDocument()
         } else {

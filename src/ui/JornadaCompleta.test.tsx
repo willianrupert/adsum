@@ -61,12 +61,16 @@ describe('jornada completa: turma nova, uma aula inteira, tudo simulado', () => 
     await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
     await screen.findByText('Quem falta')
 
-    await baterCrachasEmSequencia(bancada.leitor, baralho, async (_, restam) => {
+    await baterCrachasEmSequencia(bancada.leitor, baralho, async (indice, restam) => {
       // A cadeia de um toque não termina na gravação do evento: só depois
       // dela vem `aoMudarBase` → `recontar()`, no `Fluxo` de verdade, que
       // recalcula quem ainda falta e passa a lista nova pra baixo — e é só
-      // com essa lista nova que `TelaAula` sabe quem chamar em seguida.
+      // com essa lista nova que `TelaAula` sabe quem chamar em seguida. O
+      // contador de presentes é outra cadeia, decidida dentro da própria
+      // `TelaAula` — as duas partem do mesmo toque, sem garantia de terminar
+      // juntas (ver o mesmo achado em `Fluxo.test.tsx`).
       await waitFor(() => {
+        expect(screen.getByLabelText(String(indice + 1))).toBeInTheDocument()
         if (restam > 0) {
           expect(screen.getByText(`${restam} de ${TAMANHO} sem crachá`)).toBeInTheDocument()
         } else {
