@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
-import { baterCrachasEmSequencia, comRelogioSimulado, gerarBaralho } from '../testes/simular.ts'
+import { baterCrachasEmSequencia, gerarBaralho } from '../testes/simular.ts'
 import { Fluxo } from './Fluxo.tsx'
 import { adiarHorario, dispensarCadastro } from '../ambiente/preferencias.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
@@ -476,25 +476,22 @@ describe('uma turma grande, crachá por crachá', () => {
     await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
     await screen.findByText('Quem falta')
 
-    await comRelogioSimulado(() =>
-      baterCrachasEmSequencia(bancada.leitor, gerarBaralho(TAMANHO), async (_, restam) => {
-        // A cadeia de um toque não termina na gravação do evento: só depois
-        // dela vem `aoMudarBase` → `recontar()`, no `Fluxo` de verdade, que
-        // recalcula quem ainda falta e passa a lista nova pra baixo — e é só
-        // com essa lista nova que `TelaAula` sabe quem chamar em seguida.
-        // Esperar pelo texto que a tela mostra é esperar pelo estado que
-        // `TelaAula` realmente está usando — esperar só o evento gravar
-        // deixava o próximo toque do laço disparar contra o **chamado
-        // antigo**.
-        await waitFor(() => {
-          if (restam > 0) {
-            expect(screen.getByText(`${restam} de ${TAMANHO} sem crachá`)).toBeInTheDocument()
-          } else {
-            expect(screen.queryByText('Quem falta')).not.toBeInTheDocument()
-          }
-        })
-      }),
-    )
+    await baterCrachasEmSequencia(bancada.leitor, gerarBaralho(TAMANHO), async (_, restam) => {
+      // A cadeia de um toque não termina na gravação do evento: só depois
+      // dela vem `aoMudarBase` → `recontar()`, no `Fluxo` de verdade, que
+      // recalcula quem ainda falta e passa a lista nova pra baixo — e é só
+      // com essa lista nova que `TelaAula` sabe quem chamar em seguida.
+      // Esperar pelo texto que a tela mostra é esperar pelo estado que
+      // `TelaAula` realmente está usando — esperar só o evento gravar deixava
+      // o próximo toque do laço disparar contra o **chamado antigo**.
+      await waitFor(() => {
+        if (restam > 0) {
+          expect(screen.getByText(`${restam} de ${TAMANHO} sem crachá`)).toBeInTheDocument()
+        } else {
+          expect(screen.queryByText('Quem falta')).not.toBeInTheDocument()
+        }
+      })
+    })
 
     // `Contador` é um odômetro: cada casa empilha os dez algarismos e desliza
     // por `transform`, então não existe um nó de texto "50" — o valor certo

@@ -11,20 +11,16 @@ afterEach(cleanup)
 // O padrão de `waitFor`/`findBy*` é 1s, medido isolado. Com a suíte inteira
 // competindo pelo mesmo CPU — em especial os testes que batem dezenas de
 // crachás em sequência, cada um uma ida real ao IndexedDB —, 1s deixou de
-// bastar e virou falha intermitente. Não é lógica errada: rodar o arquivo
-// sozinho sempre passou.
+// bastar sob carga. Não é lógica errada: rodar o arquivo sozinho sempre
+// passou. 10s dá folga sem esconder um travamento de verdade — quem passa em
+// 50ms continua passando em 50ms.
 //
-// 5s bastava local (dez rodadas seguidas, todas limpas) e mesmo assim falhou
-// no GitHub Actions duas vezes seguidas — a segunda até com 15s de folga. O
-// log de lá mostra só a execução dos testes (sem contar `npm ci`, build etc.)
-// levando 37s numa tentativa, e ainda mais na outra — contra ~5s aqui. Não é
-// um fator fixo de "3× mais devagar": o runner é compartilhado, e o quanto
-// ele varia de uma vez pra outra é maior do que dava pra estimar de uma
-// medição só. 30s é generoso de propósito — quem passa em 50ms continua
-// passando em 50ms, só quem for genuinamente lento ganha mais tempo antes de
-// ser acusado de quebrado, e a alternativa (ficar ajustando aos poucos a cada
-// falha) já se provou pior.
-configure({ asyncUtilTimeout: 30_000 })
+// (Um susto à parte, que não é mais problema daqui: os mesmos testes também
+// travavam de verdade no GitHub Actions, sem prazo nenhum resolvendo — a
+// causa era um relógio falso ligado por um teste inteiro, não CPU lenta. A
+// correção foi tirar o relógio falso de `testes/simular.ts`, não aumentar
+// prazo. Ver o histórico de `JornadaCompleta.test.tsx`.)
+configure({ asyncUtilTimeout: 10_000 })
 
 // O jsdom diz que `http://localhost` não é contexto seguro. Navegador nenhum
 // concorda — localhost é contexto seguro por definição —, e sem corrigir isso
