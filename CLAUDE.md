@@ -256,20 +256,6 @@ a entender que os dados estão seguros** neles.
 
 ## Pendências abertas
 
-- **Sal de frota.** O campo de importar já existe no Repositório, mas ninguém
-  copiou o sal de um A1 real ainda — o comando `SAL` do protocolo CDC é do
-  passo 5.
-- **O UID do celular pode não ser o UID do PN532.** O Web NFC funciona, mas
-  nada prova ainda que os bytes que o Chromium entrega são os mesmos, **na mesma
-  ordem e no mesmo comprimento**, que o PN532 vai ler do mesmo crachá. Pilhas
-  NFC divergem nisso — cascade tag em UID de 7 bytes, ordem invertida. Se
-  divergirem, vínculo feito pelo celular **não é reconhecido pelo aparelho**
-  nem com sal compartilhado, e o problema aparece na frente da turma.
-
-  O teste, quando a peça chegar: encostar o mesmo crachá nos dois e comparar o
-  UID cru. A tela de diagnóstico já mostra os bytes (`04 a2 3b 91`) justamente
-  para permitir essa comparação a olho. Enquanto não for feito, tratar vínculo
-  do celular e vínculo do aparelho como bases separadas.
 - **`alunos.csv` continua com três colunas** (`uid_hash;papel;nome`), que é o
   que o firmware lê. A matrícula fica na base local e é preenchida **na saída**
   do `registros/<turma>.csv`, a partir do vínculo — assim corrigir uma matrícula
@@ -289,7 +275,7 @@ a entender que os dados estão seguros** neles.
   ocupado por este — o nome natural para ele é `adsum-a1`, que é a nomenclatura
   do próprio projeto: Adsum é o sistema, Adsum A1 é o aparelho.
 - **A passada visual** (tipografia, espaço, claro/escuro, Mushroom cards) e o
-  corte de texto residual nas telas de vínculo e base continuam por fazer.
+  corte de texto residual nas telas de chamada e base continuam por fazer.
 
 **Vale por si, independente de hardware:** ler só o UID público (legitimidade,
 não limitação técnica), hash com sal (privacidade), registro append-only, um
