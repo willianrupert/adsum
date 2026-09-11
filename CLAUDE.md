@@ -260,10 +260,6 @@ a entender que os dados estão seguros** neles.
   que o firmware lê. A matrícula fica na base local e é preenchida **na saída**
   do `registros/<turma>.csv`, a partir do vínculo — assim corrigir uma matrícula
   corrige as exportações seguintes sem reescrever uma linha do log.
-- **Login que é só dígitos.** O SIGAA cai na matrícula, e às vezes no CPF,
-  quando a pessoa não escolheu login. A tela marca com `só número`, mas a
-  decisão é humana: CPF não deveria virar identificador de presença nem chegar
-  à planilha.
 - **Armazenamento persistente costuma ser recusado** enquanto o app não é
   instalado. Sem ele o navegador pode apagar a base sob pressão de espaço — por
   isso o diagnóstico mostra o estado e oferece o botão de pedir.
