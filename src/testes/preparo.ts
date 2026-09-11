@@ -12,10 +12,15 @@ afterEach(cleanup)
 // competindo pelo mesmo CPU — em especial os testes que batem dezenas de
 // crachás em sequência, cada um uma ida real ao IndexedDB —, 1s deixou de
 // bastar e virou falha intermitente. Não é lógica errada: rodar o arquivo
-// sozinho sempre passou. 5s dá folga sem esconder um travamento de verdade —
+// sozinho sempre passou.
+//
+// 5s bastava local (dez rodadas seguidas, todas limpas) e mesmo assim falhou
+// no GitHub Actions: o log de lá mostra a suíte inteira levando 37,6s, contra
+// 13s aqui — quase 3× mais devagar, runner compartilhado de 2 vCPUs. 15s dá
+// folga pra essa máquina mais lenta sem esconder um travamento de verdade —
 // quem passa em 50ms continua passando em 50ms, só quem for genuinamente
 // lento ganha mais tempo antes de ser acusado de quebrado.
-configure({ asyncUtilTimeout: 5000 })
+configure({ asyncUtilTimeout: 15_000 })
 
 // O jsdom diz que `http://localhost` não é contexto seguro. Navegador nenhum
 // concorda — localhost é contexto seguro por definição —, e sem corrigir isso

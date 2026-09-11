@@ -147,5 +147,5 @@ describe('jornada completa: turma nova, dois dias de aula, tudo simulado', () =>
     )
     expect(presentesNosDoisDias).toHaveLength(metade.length)
     expect(presentesSoNoPrimeiro).toHaveLength(TAMANHO - metade.length)
-  }, 20_000)
+  }, 60_000)
 })

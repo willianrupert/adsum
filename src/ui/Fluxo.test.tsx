@@ -509,7 +509,7 @@ describe('uma turma grande, crachá por crachá', () => {
 
     const eventos = await bancada.repositorio.listarEventos()
     expect(eventos.filter((e) => e.resultado === 'ok' && e.origem === 'cracha')).toHaveLength(TAMANHO)
-  }, 20_000)
+  }, 60_000)
 })
 
 // A grade existia só como três campos nos Ajustes, e ninguém preenche três
