@@ -241,6 +241,20 @@ export function Vitrine() {
           turmas={1}
           pendencias={[]}
           aoIniciar={() => {}}
+          aoEscolherOutra={() => {}}
+          aoSalvar={() => {}}
+          aoVerPresencas={() => {}}
+          aoNovaTurma={() => {}}
+        />
+      </Cena>
+
+      <Cena titulo="Repouso com chamada identificada" quando="o relógio achou a aula: um clique abre">
+        <Repouso
+          turmas={2}
+          pendencias={[]}
+          comecarEm={TURMA}
+          aoIniciar={() => {}}
+          aoEscolherOutra={() => {}}
           aoSalvar={() => {}}
           aoVerPresencas={() => {}}
           aoNovaTurma={() => {}}
@@ -269,6 +283,7 @@ export function Vitrine() {
           pendencias={[]}
           proxima={{ turma: TURMA, quando: new Date(Date.now() + 3 * 3600_000) }}
           aoIniciar={() => {}}
+          aoEscolherOutra={() => {}}
           aoSalvar={() => {}}
           aoVerPresencas={() => {}}
           aoNovaTurma={() => {}}
@@ -283,6 +298,7 @@ export function Vitrine() {
             { turma: 'IF969 · T02', quantos: 28, desde: '2026-08-18T14:02:00.000Z' },
           ]}
           aoIniciar={() => {}}
+          aoEscolherOutra={() => {}}
           aoSalvar={() => {}}
           aoVerPresencas={() => {}}
           aoNovaTurma={() => {}}
