@@ -142,7 +142,7 @@ export function GradeDePresencas({
       ) : (
         <>
           {nomeDaPasta && (
-            <p className="ferramentas__nota">
+            <p className="planilha__caminho">
               {nomeDaPasta} ▸ <code>{caminhoDasFaltas(turma)}</code>
             </p>
           )}

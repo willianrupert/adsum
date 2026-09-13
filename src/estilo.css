@@ -1219,6 +1219,17 @@ button:focus-visible {
   flex: none;
 }
 
+/* Não é `.ferramentas__nota`, de propósito: aquela tem `flex: 1 1 100%`,
+   pensado para forçar quebra de linha dentro de uma barra horizontal. Aqui
+   o pai é `.folha__corpo`, coluna — o mesmo `flex-basis: 100%` vira "ocupe
+   toda a altura", e a tabela inteira caía lá embaixo, fora da vista. */
+.planilha__caminho {
+  margin: 0;
+  font-size: var(--t-menor);
+  letter-spacing: -0.016em;
+  color: var(--tinta-fraca);
+}
+
 .planilha__legenda {
   display: flex;
   flex-wrap: wrap;
