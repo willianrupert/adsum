@@ -134,7 +134,7 @@ describe('ver presenças', () => {
     const aoVerPresencas = vi.fn()
     renderizarCom(bancada, <TelaRepositorio aoVerPresencas={aoVerPresencas} />)
 
-    await usuario.click(await screen.findByRole('button', { name: 'Ver presenças' }))
+    await usuario.click(await screen.findByRole('button', { name: /Ver presenças/ }))
     expect(aoVerPresencas).toHaveBeenCalled()
   })
 })

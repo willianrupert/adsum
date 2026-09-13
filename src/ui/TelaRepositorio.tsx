@@ -342,14 +342,17 @@ export function TelaRepositorio({
         </>
       )}
 
-      {aoVerPresencas && (
-        <button className="botao--quieto" onClick={aoVerPresencas}>
-          Ver presenças
-        </button>
-      )}
-
       {recado && <div className={`aviso aviso--${recado.tom}`}>{recado.texto}</div>}
       {importacao && <Importacao resultado={importacao} />}
+
+      {/* Mesma fileira de Registros/Vínculos/Grade horária, na frente delas —
+          era um link quieto entre dois blocos de cartão, e "onde está a
+          planilha?" era a pergunta que ele devia responder sem precisar ser
+          achado primeiro. Sem corpo próprio porque não tem o que abrir
+          aqui dentro: a planilha mora na folha de Presenças, não em Ajustes. */}
+      {aoVerPresencas && (
+        <Painel titulo="Ver presenças" legenda="A planilha do curso, por turma." aoAbrir={aoVerPresencas} />
+      )}
 
       <Painel
         titulo="Registros"

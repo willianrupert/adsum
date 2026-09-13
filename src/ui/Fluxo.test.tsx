@@ -52,7 +52,7 @@ describe('a rota decide a tela', () => {
   it('com tudo pronto, espera o crachá', async () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    expect(await screen.findByText('Começar a chamada')).toBeInTheDocument()
+    expect(await screen.findByText(/Começar a chamada/)).toBeInTheDocument()
   })
 
   // "Por que sugerir chamada, se o software sabe que estamos fora do
@@ -68,7 +68,7 @@ describe('a rota decide a tela', () => {
     const verPresencas = await screen.findByRole('button', { name: 'Ver presenças' })
     expect(verPresencas.className).toContain('botao--acento')
 
-    const comecar = screen.getByRole('button', { name: 'Começar a chamada' })
+    const comecar = screen.getByRole('button', { name: /Começar a chamada/ })
     expect(comecar.className).not.toContain('botao--acento')
   })
 
@@ -200,7 +200,7 @@ describe('a rota decide a tela', () => {
     await usuario.click(await screen.findByRole('button', { name: 'Concluir sem salvar' }))
 
     // Reabre para dar o crachá de quem faltou — só uma turma, sem perguntar.
-    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
     await usuario.click(await screen.findByRole('switch', { name: 'Chamar nomes' }))
 
     // Chama Carla, não Ana Paula de novo.
@@ -229,7 +229,7 @@ describe('a rota decide a tela', () => {
     dispensarCadastro()
 
     renderizarCom(bancada, <Fluxo />)
-    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
 
     // Abriu — e o vínculo criado usa o nome do docente que o SIGAA apontou.
     await screen.findByText('IF685 · T01')
@@ -277,7 +277,7 @@ describe('a rota decide a tela', () => {
     expect(await screen.findByText(/Bom dia|Boa tarde|Boa noite/)).toBeInTheDocument()
     expect(screen.queryByText('Cole sua primeira turma')).not.toBeInTheDocument()
 
-    await usuario.click(screen.getByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(screen.getByRole('button', { name: /Começar a chamada/ }))
     await usuario.click(await screen.findByRole('button', { name: 'IF999 · T02' }))
     await usuario.click(await screen.findByRole('switch', { name: 'Chamar nomes' }))
 
@@ -290,7 +290,7 @@ describe('a rota decide a tela', () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Começar a chamada')
+    await screen.findByText(/Começar a chamada/)
 
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
     expect(await screen.findByRole('dialog', { name: 'Ajustes' })).toBeInTheDocument()
@@ -320,11 +320,11 @@ describe('abrir e encerrar sem crachá', () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Começar a chamada')
+    await screen.findByText(/Começar a chamada/)
 
     expect(screen.queryByText(/encoste/i)).not.toBeInTheDocument()
 
-    await usuario.click(screen.getByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(screen.getByRole('button', { name: /Começar a chamada/ }))
     expect(await screen.findByRole('button', { name: 'Encerrar a chamada' })).toBeInTheDocument()
     expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: 'IF685 · T01' })
   })
@@ -335,9 +335,9 @@ describe('abrir e encerrar sem crachá', () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Começar a chamada')
+    await screen.findByText(/Começar a chamada/)
 
-    await usuario.click(screen.getByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(screen.getByRole('button', { name: /Começar a chamada/ }))
     await usuario.click(await screen.findByRole('button', { name: 'Encerrar a chamada' }))
 
     await waitFor(async () =>
@@ -406,7 +406,7 @@ describe('a grade abre a chamada sozinha', () => {
     try {
       await turmaInteiraComCracha()
       renderizarCom(bancada, <Fluxo />)
-      await screen.findByText('Começar a chamada')
+      await screen.findByText(/Começar a chamada/)
 
       // A aula entra na grade **depois** de a tela já estar montada.
       await aulaAgora()
@@ -431,7 +431,7 @@ describe('a grade abre a chamada sozinha', () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
 
-    expect(await screen.findByText('Começar a chamada')).toBeInTheDocument()
+    expect(await screen.findByText(/Começar a chamada/)).toBeInTheDocument()
     expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
   })
 })
@@ -503,7 +503,7 @@ describe('crachá fora de aula aberta', () => {
   it('avisa em vez de ficar mudo', async () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Começar a chamada')
+    await screen.findByText(/Começar a chamada/)
 
     await act(async () => bancada.leitor.simular('04e05f1a'))
 
@@ -540,7 +540,7 @@ describe('uma turma grande, crachá por crachá', () => {
     // já provado em '"Começar a chamada" funciona mesmo sem crachá de
     // professor nenhum'. É o caminho que qualquer teste de ponta a ponta vai
     // usar de verdade.
-    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
     await screen.findByText('Quem falta')
 
     await baterCrachasEmSequencia(
@@ -824,7 +824,7 @@ describe('quando o leitor não está lendo', () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
     await screen.findByText('Encerrar a chamada')
 
     await act(async () => bancada.leitor.parar())
@@ -844,7 +844,7 @@ describe('reabrir a chamada encerrada por engano', () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
 
-    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
     await usuario.click(await screen.findByRole('button', { name: 'Encerrar a chamada' }))
     await screen.findByText(/Chamada encerrada/)
 
@@ -862,7 +862,7 @@ describe('reabrir a chamada encerrada por engano', () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
 
-    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
     await usuario.click(await screen.findByRole('button', { name: 'Encerrar a chamada' }))
     await usuario.click(
       await screen.findByRole('button', { name: 'Encerrei sem querer, reabrir a chamada' }),
@@ -968,7 +968,7 @@ describe('as teclas de ensaio', () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
 
-    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
     await screen.findByRole('button', { name: 'Encerrar a chamada' })
 
     await usuario.keyboard('n')
@@ -999,7 +999,7 @@ describe('a etiqueta de estado', () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
 
-    await screen.findByText('Começar a chamada')
+    await screen.findByText(/Começar a chamada/)
     expect(screen.getByTitle('Estado da rota, para depuração')).toHaveTextContent('pronto')
   })
 
@@ -1007,7 +1007,7 @@ describe('a etiqueta de estado', () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
 
-    await screen.findByText('Começar a chamada')
+    await screen.findByText(/Começar a chamada/)
     expect(screen.queryByTitle('Estado da rota, para depuração')).not.toBeInTheDocument()
   })
 
@@ -1021,7 +1021,7 @@ describe('a etiqueta de estado', () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
 
-    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
     await usuario.click(await screen.findByRole('button', { name: 'Encerrar a chamada' }))
 
     // `TelaResumo` está na tela agora, esperando "Concluir sem salvar" — a
@@ -1041,7 +1041,7 @@ describe('sem modo de ensaio', () => {
   it('não mostra as teclas de ensaio, mesmo com leitor simulado', async () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Começar a chamada')
+    await screen.findByText(/Começar a chamada/)
 
     expect(screen.queryByText('crachá')).not.toBeInTheDocument()
     expect(document.querySelector('kbd')).toBeNull()
@@ -1052,13 +1052,13 @@ describe('sem modo de ensaio', () => {
     await turmaInteiraComCracha()
     const antes = await bancada.repositorio.contarEventos()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Começar a chamada')
+    await screen.findByText(/Começar a chamada/)
 
     await usuario.keyboard(' ')
     await usuario.keyboard('p')
 
     expect(await bancada.repositorio.contarEventos()).toBe(antes)
-    expect(screen.getByText('Começar a chamada')).toBeInTheDocument()
+    expect(screen.getByText(/Começar a chamada/)).toBeInTheDocument()
   })
 })
 
@@ -1145,7 +1145,7 @@ describe('o convite de instalar no Chrome', () => {
     await act(async () => oferecer())
     await screen.findByText('O Adsum em janela própria')
 
-    await usuario.click(screen.getByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(screen.getByRole('button', { name: /Começar a chamada/ }))
     await screen.findByRole('button', { name: 'Encerrar a chamada' })
     expect(screen.queryByText('O Adsum em janela própria')).not.toBeInTheDocument()
   })
@@ -1214,7 +1214,7 @@ describe('aula que só existe neste navegador', () => {
     // recarregamento e o professor salvaria a mesma aula todo dia.
     unmount()
     renderizarCom(bancada, <Fluxo />)
-    expect(await screen.findByText('Começar a chamada')).toBeInTheDocument()
+    expect(await screen.findByText(/Começar a chamada/)).toBeInTheDocument()
     expect(screen.queryByText('Uma aula existe só neste navegador')).not.toBeInTheDocument()
   })
 
@@ -1333,7 +1333,7 @@ describe('o conselho de navegador vem antes da turma', () => {
     window.localStorage.setItem('adsum.instalacao.dispensada', 'sim')
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText('Começar a chamada')
+    await screen.findByText(/Começar a chamada/)
 
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
     await usuario.click(await screen.findByRole('button', { name: /Onde os dados ficam/ }))

@@ -58,7 +58,7 @@ describe('jornada completa: turma nova, uma aula inteira, tudo simulado', () => 
 
     // Turma inteira sem crachá ainda. "Começar a chamada" sintetiza o crachá
     // do professor sozinho; nenhum vínculo existe antes disto.
-    await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+    await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
     await screen.findByText('Quem falta')
 
     await baterCrachasEmSequencia(

@@ -153,8 +153,24 @@ describe('a próxima aula', () => {
     expect(proxima?.quando.getDay()).toBe(1)
   })
 
+  // Reproduzido de verdade pelo autor: às 13:58, dentro do bloco de 13:00 às
+  // 14:50 de uma turma, "Sua próxima aula" apontava outra — a de hoje, ainda
+  // rolando, tinha sido descartada por comparar só o início (08:00 já
+  // passou), e uma turma mais distante, mas ainda não começada, ganhava por
+  // padrão. O corte certo é o fim: uma aula em andamento continua sendo a de
+  // hoje, não a de semana que vem.
+  it('durante a aula de hoje, continua sendo a de hoje — não pula pra semana que vem', () => {
+    const proxima = proximaAula([SEG, QUA], 'prof', em('09:00'))
+    expect(proxima?.aula.turma).toBe('B')
+    expect(proxima?.quando.getDay()).toBe(3)
+  })
+
+  // 09:00 caiu dentro do próprio bloco (08:00–10:00) — antes do conserto
+  // acima, isso já bastava pra pular pra semana que vem, mesmo com a aula
+  // ainda rolando. `em('11:00')`, depois do fim, é o caso de verdade que
+  // "volta em sete dias" quer testar.
   it('a aula semanal única volta em sete dias', () => {
-    const proxima = proximaAula([QUA], 'prof', em('09:00'))
+    const proxima = proximaAula([QUA], 'prof', em('11:00'))
     expect(proxima?.quando.toISOString().slice(0, 10)).toBe('2026-08-26')
   })
 

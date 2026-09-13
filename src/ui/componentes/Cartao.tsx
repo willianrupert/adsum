@@ -11,14 +11,17 @@ export function Cartao({
   tom = 'neutro',
   titulo,
   apoio,
+  aoClicar,
 }: {
   icone: ReactNode
   tom?: 'ok' | 'alerta' | 'grave' | 'neutro'
   titulo: string
   apoio: string
+  /** Com isto, o cartão vira botão — mesmo visual, mais o convite ao toque. */
+  aoClicar?: () => void
 }) {
-  return (
-    <div className="cartao">
+  const conteudo = (
+    <>
       <span className={`cartao__icone cartao__icone--${tom}`} aria-hidden="true">
         {icone}
       </span>
@@ -26,6 +29,18 @@ export function Cartao({
         <strong>{titulo}</strong>
         <small>{apoio}</small>
       </span>
-    </div>
+    </>
   )
+
+  if (aoClicar) {
+    // Sem isto, o nome acessível do botão vira título e apoio colados — o
+    // apoio é detalhe de leitura, não parte do nome da ação.
+    return (
+      <button className="cartao cartao--botao" onClick={aoClicar} aria-label={titulo}>
+        {conteudo}
+      </button>
+    )
+  }
+
+  return <div className="cartao">{conteudo}</div>
 }

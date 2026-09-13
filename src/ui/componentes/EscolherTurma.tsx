@@ -1,11 +1,12 @@
-// Qual turma, quando o app não pode saber sozinho.
+// Qual turma, quando o app não pode saber sozinho — ou quando o professor
+// quer decidir por conta própria.
 //
-// Aparece em dois casos, e a frase muda para dizer qual é: duas aulas se
-// sobrepõem no horário, ou não há aula nenhuma na grade agora — feriado,
-// reposição, ou grade não cadastrada.
-//
-// Não é configuração: é a única pergunta que sobra depois de o relógio e a
-// grade terem respondido tudo o que podiam.
+// Três casos, e a frase muda para dizer qual é: duas aulas se sobrepõem no
+// horário, não há aula nenhuma na grade agora (feriado, reposição, ou grade
+// não cadastrada), ou o professor pediu "chamada em outra turma" mesmo
+// havendo uma resposta automática — a única pergunta que sobra depois de o
+// relógio e a grade terem respondido tudo o que podiam, ou que ele decidiu
+// não aceitar.
 
 import { useEffect, useState } from 'react'
 
@@ -17,7 +18,7 @@ export function EscolherTurma({
   aoNovaTurma,
 }: {
   opcoes: string[]
-  motivo: 'nenhuma' | 'varias'
+  motivo: 'nenhuma' | 'varias' | 'manual'
   aoEscolher: (turma: string) => void
   aoDesistir: () => void
   /**
@@ -53,7 +54,9 @@ export function EscolherTurma({
         <p className="busca__nota">
           {motivo === 'varias'
             ? 'Duas aulas suas estão neste horário.'
-            : 'Não há aula sua na grade agora, deseja registrar em que turma?'}
+            : motivo === 'manual'
+              ? 'Escolha em qual turma registrar a chamada.'
+              : 'Não há aula sua na grade agora, deseja registrar em que turma?'}
         </p>
 
         <ul className="busca__lista">

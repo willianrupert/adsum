@@ -23,6 +23,7 @@ export function Painel({
   acoes,
   recolhivel = false,
   abertoDeInicio = false,
+  aoAbrir,
   children,
 }: {
   titulo: string
@@ -30,7 +31,16 @@ export function Painel({
   acoes?: ReactNode
   recolhivel?: boolean
   abertoDeInicio?: boolean
-  children: ReactNode
+  /**
+   * Painel vira atalho para outra tela, em vez de abrir aqui dentro — mesmo
+   * cabeçalho, mesma seta, mas o clique troca de tela em vez de revelar
+   * `children`. "Ver presenças" em Ajustes é o primeiro caso: pertence à
+   * mesma fileira de Registros/Vínculos/Grade horária, não a um cartão de
+   * status à parte, mas não tem corpo nenhum pra mostrar aqui — a planilha
+   * mora na própria folha de Presenças.
+   */
+  aoAbrir?: () => void
+  children?: ReactNode
 }) {
   const [aberto, setAberto] = useState(abertoDeInicio)
   const mostrando = !recolhivel || aberto
@@ -39,7 +49,7 @@ export function Painel({
     <div>
       <h2>
         {titulo}
-        {recolhivel && (
+        {(recolhivel || aoAbrir) && (
           <span className={aberto ? 'painel__seta painel__seta--aberta' : 'painel__seta'} aria-hidden="true">
             ›
           </span>
@@ -48,6 +58,18 @@ export function Painel({
       {legenda && <p className="painel__legenda">{legenda}</p>}
     </div>
   )
+
+  if (aoAbrir) {
+    return (
+      <section className="painel">
+        <header className="painel__topo">
+          <button type="button" className="painel__gatilho" onClick={aoAbrir}>
+            {cabecalho}
+          </button>
+        </header>
+      </section>
+    )
+  }
 
   return (
     <section className={mostrando ? 'painel' : 'painel painel--fechado'}>

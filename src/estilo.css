@@ -1651,6 +1651,22 @@ button:focus-visible {
   padding: 18px 20px;
 }
 
+/* O mesmo cartão, convidando ao toque — "Ver presenças" em Ajustes era um
+   link quieto entre dois blocos de cartão, e lia como nota de rodapé, não
+   como ação. Largura cheia e texto à esquerda porque um cartão de ação
+   sozinho, do tamanho de um cartão de leitura, parecia miniatura perto dos
+   outros. */
+.cartao--botao {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cartao--botao:hover {
+  background: color-mix(in srgb, var(--tinta) 4%, var(--fundo-alt));
+  opacity: 1;
+}
+
 .cartao__icone {
   display: grid;
   place-items: center;

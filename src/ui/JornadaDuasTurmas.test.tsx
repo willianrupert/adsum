@@ -28,7 +28,7 @@ import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { baterCrachasEmSequencia, gerarBaralho } from '../testes/simular.ts'
 import { Fluxo } from './Fluxo.tsx'
-import { BLOCOS, SIGLA_DO_DIA } from '../nucleo/horarios.ts'
+import { BLOCOS, DIAS_UTEIS, SIGLA_DO_DIA } from '../nucleo/horarios.ts'
 import { FOLGA_MIN, emMinutos } from '../nucleo/grade.ts'
 import { titulo } from '../nucleo/nomes.ts'
 
@@ -77,6 +77,9 @@ const ALUNOS_B: [string, string][] = [
 /** O botão real que bate com agora, se existir — mesma regra de `aulasAgora`. */
 function blocoDeAgora(): { aria: string } | undefined {
   const agora = new Date()
+  // A grade não oferece domingo (`DIAS_UTEIS`): rodando um domingo, não há
+  // bloco real para clicar, e o professor também não teria "abre sozinho".
+  if (!DIAS_UTEIS.includes(agora.getDay())) return undefined
   const minuto = agora.getHours() * 60 + agora.getMinutes()
   const sabado = agora.getDay() === 6
   const bloco = BLOCOS.find(
@@ -124,7 +127,7 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
       // o professor também não teria "abre sozinho" agora. O caminho real
       // dele aqui é começar com o próprio dedo.
       await usuario.click(await screen.findByRole('button', { name: 'Depois' }))
-      await usuario.click(await screen.findByRole('button', { name: 'Começar a chamada' }))
+      await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
     }
 
     expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: TURMA_A })
@@ -227,7 +230,7 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
     // o repouso mostra só "Começar a chamada agora" — o link daqui é o
     // caminho que continua sempre alcançável. Cada turma mostra só a sua
     // gente. ===
-    await usuario.click(await screen.findByRole('button', { name: 'Ver presenças' }))
+    await usuario.click(await screen.findByRole('button', { name: /Ver presenças/ }))
     const popup = await screen.findByRole('dialog', { name: 'Presenças' })
 
     // A tela mostra o nome completo já em Título — "titulo()", a mesma

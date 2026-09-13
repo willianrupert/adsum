@@ -113,6 +113,21 @@ export function Fluxo() {
   // Sem pasta, isto é a única memória de que existe trabalho fora do disco.
   const [pendencias, setPendencias] = useState<Pendencia[]>([])
   const [proxima, setProxima] = useState<{ turma: string; quando: Date }>()
+  /**
+   * A turma que a grade identificou como acontecendo agora — a mesma conta
+   * de `abrirSozinho`, que decide o auto-abrir do relógio logo abaixo. Não é
+   * a mesma conta de `escolherTurma`: aquela tem a degradação "só existe uma
+   * turma, abre essa" — boa para um clique deliberado, errada aqui, porque
+   * diria "Começar chamada em X" como se o relógio tivesse identificado X,
+   * quando na verdade não havia aula nenhuma agora e X só apareceu por ser a
+   * única opção. Existia "Sua próxima aula", calculada por `proximaAula` (que olha
+   * só o **início** de cada aula): com uma turma em andamento e outra ainda
+   * por vir, a que já começou perdia — o início dela já tinha passado — e a
+   * tela anunciava uma turma diferente da que o clique abria. Reproduzido de
+   * verdade pelo autor: 13:58, dentro do bloco de uma turma, "Sua próxima
+   * aula" apontava outra.
+   */
+  const [comecarEm, setComecarEm] = useState<string>()
   const [semHorario, setSemHorario] = useState<{ turma: string; aulas: Aula[] }>()
   const [uidDoProfessor, setUidDoProfessor] = useState('')
   const [folha, setFolha] = useState<Folha>()
@@ -136,7 +151,8 @@ export function Fluxo() {
   const [resumo, setResumo] = useState<{ sessao: Sessao; presentes: number }>()
   const [escolhendo, setEscolhendo] = useState<{
     opcoes: string[]
-    motivo: 'nenhuma' | 'varias'
+    /** 'manual': o professor pediu para trocar, não é o app perguntando. */
+    motivo: 'nenhuma' | 'varias' | 'manual'
     uidHash: string
     em: Date
   }>()
@@ -231,6 +247,15 @@ export function Fluxo() {
     const aulas = professor ? todasAsAulas : []
     const vem = professor ? proximaAula(aulas, professor.uidHash, new Date()) : undefined
     setProxima(vem && { turma: vem.aula.turma, quando: vem.quando })
+    // A mesma conta de `abrirSozinho` — a mesma que decide o auto-abrir do
+    // relógio, acima. Nada de fallback de "só existe uma turma" (isso é só
+    // para o clique deliberado, em `abrirComProfessor`): aqui a tela só pode
+    // anunciar uma turma se o relógio de fato a identificou. `encerradas()`
+    // importa tanto quanto o horário — sem checá-la, encerrar uma aula e
+    // voltar ao repouso mostrava "Começar chamada em X" de novo, a mesma
+    // turma que acabou de ser fechada, porque o horário dela ainda "bate
+    // agora"; a tela prometia reabrir o que o professor acabou de encerrar.
+    setComecarEm(professor ? abrirSozinho(aulas, professor.uidHash, new Date(), encerradas()) : undefined)
     const faltando = quemFalta(matriculados, vinculos)
     setTurmas(listaDeTurmas.length)
     setPendentes(faltando.length)
@@ -469,6 +494,22 @@ export function Fluxo() {
     await abrirComProfessor(professor.uidHash, new Date())
   }, [garantirProfessor, abrirComProfessor])
 
+  /**
+   * "Não é esta, é outra" — a saída para quando `comecarEm` acertou a turma
+   * errada (duas turmas bem coladas no horário, uma delas sem grade
+   * cadastrada ainda, e por aí vai) ou para quem só quer abrir uma turma
+   * fora do horário dela mesmo. Mesma folha de `EscolherTurma` que a
+   * ambiguidade automática já usa — motivo `'manual'` porque quem está
+   * perguntando aqui é o professor, não o app.
+   */
+  const aoEscolherOutraTurma = useCallback(async () => {
+    const [professor, listaDeTurmas] = await Promise.all([
+      garantirProfessor(),
+      repositorio.listarTurmas(),
+    ])
+    setEscolhendo({ opcoes: listaDeTurmas, motivo: 'manual', uidHash: professor.uidHash, em: new Date() })
+  }, [garantirProfessor, repositorio])
+
   // Não se reconta ao ouvir o crachá: a gravação acontece depois, e contar
   // antes dela devolveria a pendência que acabou de deixar de existir. Quem
   // grava avisa, e é isso que faz a tela sair sozinha da cerimônia para o
@@ -664,6 +705,16 @@ export function Fluxo() {
 
   return (
     <>
+      {/* Uma folha (Ajustes, Presenças, Diagnóstico) cobre a tela, mas o que
+          está por baixo continuava montado — inclusive para quem navega por
+          leitor de tela ou teclado, que podia cair num botão coberto pelo
+          vidro. Ficou visível quando "Ver presenças" passou a existir nas
+          duas camadas ao mesmo tempo: duas opções com o mesmo nome, uma
+          delas inalcançável. `aria-hidden` tira o fundo da árvore de
+          acessibilidade enquanto a folha estiver aberta — o clique já não
+          chegava lá, por causa do `folha__fundo`; agora a busca por nome
+          também não. */}
+      <div aria-hidden={folha ? true : undefined}>
       {rota === 'problema' && (
         <TelaProblema aoAbrirAjustes={() => setFolha('ajustes')} sessao={sessao} />
       )}
@@ -796,8 +847,10 @@ export function Fluxo() {
         <Repouso
           turmas={turmas}
           pendencias={pasta ? [] : pendencias}
+          comecarEm={comecarEm}
           proxima={proxima}
           aoIniciar={() => void iniciarChamada()}
+          aoEscolherOutra={() => void aoEscolherOutraTurma()}
           aoSalvar={(turma) => void salvarCopia(turma)}
           aoVerPresencas={() => setFolha('presencas')}
           aoNovaTurma={() => {
@@ -939,6 +992,7 @@ export function Fluxo() {
           <Engrenagem />
         </button>
       </div>
+      </div>
 
       {folha === 'presencas' && <TelaPresencas aoFechar={() => setFolha(undefined)} />}
 
@@ -1010,16 +1064,24 @@ export function Fluxo() {
 export function Repouso({
   turmas,
   pendencias,
+  comecarEm,
   proxima,
   aoIniciar,
+  aoEscolherOutra,
   aoSalvar,
   aoVerPresencas,
   aoNovaTurma,
 }: {
   turmas: number
   pendencias: Pendencia[]
+  /** A turma que "Começar a chamada" abriria agora — ver o comentário em
+      `Fluxo`, onde é calculada. Quando existe, a tela nunca mais anuncia uma
+      turma diferente da que o clique vai abrir. */
+  comecarEm?: string
   proxima?: { turma: string; quando: Date }
   aoIniciar: () => void
+  /** "Não é esta, é outra" — só existe junto de `comecarEm`. */
+  aoEscolherOutra: () => void
   aoSalvar: (turma: string) => void
   aoVerPresencas: () => void
   aoNovaTurma: () => void
@@ -1064,11 +1126,21 @@ export function Repouso({
 
       <Ondas tamanho={72} animado />
 
-      {proxima ? (
+      {comecarEm ? (
+        <>
+          {/* "Começar chamada em", não "Sua próxima aula": a turma aqui é a
+              mesma que o botão abaixo vai abrir, sempre — nunca uma dita e
+              outra aberta. */}
+          <p className="repouso__turma">Começar chamada em</p>
+          <p className="repouso__acao">{comecarEm}</p>
+        </>
+      ) : proxima ? (
         <>
           {/* Com grade, a turma é o assunto e a hora é o apoio: é a ordem em
               que a pergunta se forma na cabeça de quem olha — "qual aula?" vem
-              antes de "que horas?". */}
+              antes de "que horas?". Só chega aqui quando nem `comecarEm` sabe
+              dizer sozinho — duas turmas bem coladas no horário, por
+              exemplo —, então a hora é a única pista extra que ajuda. */}
           <p className="repouso__turma">Sua próxima aula</p>
           <p className="repouso__acao">{proxima.turma}</p>
           <p className="repouso__quando">{quandoPorExtenso(proxima.quando)}</p>
@@ -1087,7 +1159,19 @@ export function Repouso({
         </>
       )}
 
-      {proxima ? (
+      {comecarEm ? (
+        <>
+          <button className="botao--acento pasta__botao" onClick={aoIniciar}>
+            Começar a chamada agora
+          </button>
+          {/* Terciário, e só aparece quando há uma turma nomeada acima pra
+              corrigir — sem isso não havia como dizer "não é esta" sem
+              esperar o horário dela passar sozinho. */}
+          <button className="repouso__link botao--quieto" onClick={aoEscolherOutra}>
+            Chamada em outra turma
+          </button>
+        </>
+      ) : proxima ? (
         // Com grade e aula à vista, o gesto óbvio é abrir a chamada — a
         // pergunta "quero ver presença" pode esperar a aula acabar.
         <button className="botao--acento pasta__botao" onClick={aoIniciar}>

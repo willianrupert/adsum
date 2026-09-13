@@ -172,7 +172,14 @@ export function proximaAula(
 
       const quando = new Date(dia)
       quando.setHours(0, emMinutos(aula.inicio), 0, 0)
-      if (quando.getTime() <= agora.getTime()) continue
+      // O corte é o **fim**, não o início: uma aula que já começou e ainda
+      // não acabou continua sendo "a de hoje", não "a de semana que vem".
+      // Comparar pelo início empurrava uma aula em andamento pra próxima
+      // semana — e aí outra turma, mais distante mas ainda não começada,
+      // parecia "mais próxima" do que a que está rolando agora mesmo.
+      const fim = new Date(dia)
+      fim.setHours(0, emMinutos(aula.fim), 0, 0)
+      if (fim.getTime() <= agora.getTime()) continue
 
       if (!melhor || quando.getTime() < melhor.quando.getTime()) melhor = { aula, quando }
       break
