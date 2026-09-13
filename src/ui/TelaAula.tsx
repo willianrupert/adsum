@@ -545,7 +545,18 @@ export function TelaAula({
       {pendentes.length > 0 && (
         <section className="chamado">
           <div className="chamado__interruptor">
-            <span className="chamado__interruptor-rotulo">Chamar nomes</span>
+            <span className="chamado__interruptor-textos">
+              <span className="chamado__interruptor-rotulo">Chamar nomes</span>
+              {/* Muda com o estado, de propósito: o toggle sozinho diz "ligado
+                  ou desligado", não "ligado ou desligado **do quê**". Sem
+                  isto, "Chamar nomes" lido frio não diz o que o interruptor
+                  faz — só que existe. */}
+              <span className="chamado__interruptor-estado">
+                {chamadoAtual
+                  ? 'Ligado: o próximo crachá vira desta pessoa'
+                  : 'Desligado: crachá desconhecido abre a busca'}
+              </span>
+            </span>
             <button
               role="switch"
               aria-checked={!!chamadoAtual}

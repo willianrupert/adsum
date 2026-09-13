@@ -59,7 +59,7 @@ export function TelaResumo({
 
       {arquivo ? (
         <p className="resumo__arquivo">
-          Já está gravado em <code>{arquivo}</code>
+          Já está gravado na <code>{arquivo}</code>
         </p>
       ) : salvo === 'baixado' ? (
         // O Safari baixa **sem diálogo**, direto na pasta de downloads. Sem esta

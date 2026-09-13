@@ -211,7 +211,13 @@ export function GradeDePresencas({
               <span className="quadrado quadrado--presente" /> presente
             </span>
             <span>
-              <span className="quadrado quadrado--ausente">1</span> falta — 2 se o bloco for de duas aulas
+              <span className="quadrado quadrado--ausente">1</span> falta: 2 se o bloco for de duas aulas
+            </span>
+            <span>
+              <span className="quadrado quadrado--presente">
+                <i className="quadrado__manual" aria-hidden="true" />
+              </span>{' '}
+              corrigido à mão, não por crachá
             </span>
           </div>
         </>

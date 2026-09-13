@@ -60,8 +60,12 @@ export function Painel({
   )
 
   if (aoAbrir) {
+    // `painel--fechado`, sempre: sem corpo pra mostrar, o padding e a margem
+    // do estado "aberto" sobravam embaixo do cabeçalho — o card ficava maior
+    // que os vizinhos recolhidos, na mesma fileira, por um espaço vazio que
+    // não segurava nada.
     return (
-      <section className="painel">
+      <section className="painel painel--fechado">
         <header className="painel__topo">
           <button type="button" className="painel__gatilho" onClick={aoAbrir}>
             {cabecalho}

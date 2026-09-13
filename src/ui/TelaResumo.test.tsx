@@ -28,7 +28,7 @@ describe('o fim da aula', () => {
     )
 
     expect(acento()).toBe('Concluir')
-    expect(screen.getByText(/Já está gravado em/)).toBeInTheDocument()
+    expect(screen.getByText(/Já está gravado na/)).toBeInTheDocument()
   })
 
   it('sem pasta, a ação é salvar, e sair diz que sai sem salvar', () => {

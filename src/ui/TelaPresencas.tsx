@@ -4,7 +4,7 @@
 // para "quero ver quem veio", a pergunta mais comum fora do horário de aula
 // — por isso mora no repouso, não atrás da engrenagem.
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react'
 import type { Aula } from '../nucleo/grade.ts'
 import { uidHashSintetico } from '../nucleo/hash.ts'
 import { proximoEventoId } from '../nucleo/sessao.ts'
@@ -29,10 +29,19 @@ export function TelaPresencas({ aoFechar }: { aoFechar: () => void }) {
       repositorio.listarAulas(),
     ])
     sequencia.current = e.length
-    setTurmas(t)
-    setEventos(e)
-    setMatriculados(m)
-    setAulas(a)
+    // `startTransition`: montar a planilha recalcula `planilhaDeFaltas` para
+    // cada aluno contra todo o histórico de eventos — pesado o bastante para
+    // competir, no mesmo quadro, com a folha ainda subindo (a animação de
+    // `Sheet`). Marcada como transição, a atualização cede a vez a essa
+    // animação em vez de travá-la — a leve travada que existia ao abrir "Ver
+    // presenças" era exatamente esse recálculo caindo em cima do primeiro
+    // quadro.
+    startTransition(() => {
+      setTurmas(t)
+      setEventos(e)
+      setMatriculados(m)
+      setAulas(a)
+    })
   }, [repositorio])
 
   useEffect(() => {

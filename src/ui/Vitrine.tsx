@@ -220,7 +220,7 @@ export function Vitrine() {
         <TelaResumo
           sessao={{ turma: TURMA, abertaEm: new Date(Date.now() - 47 * 60000).toISOString(), uidHashProfessor: 'x' }}
           presentes={41}
-          arquivo="Adsum ▸ registros/IF685-T01.csv"
+          arquivo="Pasta Adsum ▸ registros/IF685-T01.csv"
           aoSalvarCopia={async () => 'gravado'}
           aoConcluir={() => {}}
           aoReabrir={() => {}}
@@ -326,7 +326,9 @@ export function Vitrine() {
           armadilha, então elas ficam só em desenvolvimento. */}
       {ehDesenvolvimento && (
         <Cena titulo="Base" quando="folha, atrás da engrenagem">
-          <TelaRepositorio />
+          {/* Sem `aoVerPresencas`, o card "Ver presenças" nem aparecia aqui —
+              a vitrine mostraria Ajustes sem a primeira linha da fileira. */}
+          <TelaRepositorio aoVerPresencas={() => {}} />
         </Cena>
       )}
 

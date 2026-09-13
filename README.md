@@ -23,26 +23,86 @@ O aluno encosta o crachá, a presença é registrada, e no fim da aula existe um
 planilha. Feito para o Centro de Informática da UFPE, em parceria com o
 **Prof. Paulo Freitas de Araújo Filho**.
 
-O que torna o problema interessante não é ler um crachá — é que **a promessa de
-"dados 100% locais" é a mesma coisa que a promessa de perder tudo**. Boa parte
-das decisões abaixo nasce dessa tensão.
+O que torna o problema interessante não é ler um crachá. São duas tensões, e
+boa parte das decisões abaixo nasce delas: **a promessa de "dados 100% locais"
+é a mesma coisa que a promessa de perder tudo**, e **a tela que pergunta o que
+já podia saber sozinha não parece pronta**. A primeira decidiu onde o dado
+mora. A segunda decidiu quem decide — e é o que faz o Adsum parecer que
+"funciona sozinho" sem nenhuma configuração para ajustar isso.
 
-## O que se resolveu, e como
+## O que a tela decide sem perguntar
 
-**A base não pode se perder.** Se tudo vive no IndexedDB de um navegador, trocar
-de computador ou limpar os dados do site apaga o cadastro da turma inteira —
-recadastrar 49 alunos é inaceitável. A saída foi inverter a posse: o professor
-escolhe uma **pasta de verdade** ([File System Access][fsa]), e é ela que manda.
-O IndexedDB vira cache. Limpar dados do site apaga o handle, **não a pasta** — o
-professor a reescolhe e a base inteira é reconstruída. Se a pasta estiver no
-iCloud ou no Drive que ele já usa, a cópia fora da máquina vem de graça, sem
-servidor nenhum.
+Não há menu, e a maior parte do que o professor faria por conta própria em
+outro app aqui **já aconteceu antes de ele pensar em fazer**. Nada disso é
+aprendizado de máquina — é o mesmo tipo de regra que um bom atendente segue:
+olhar o que já se sabe antes de perguntar de novo.
+
+**A rota é função pura do estado**, uma cascata de perguntas na ordem em que
+importam ([`nucleo/rota.ts`](src/nucleo/rota.ts)). `'problema'` é checada
+**duas vezes** — navegador quebrado no topo, leitor parado só depois de turma
+e cronograma, porque digitar um horário não pede hardware nenhum. Nenhuma
+tela decide sozinha se deve aparecer; todas são o mesmo cálculo, olhado de
+ângulos diferentes.
+
+<div align="center"><img src="docs/mapa-estados.png" alt="A cascata de decidirRota: problema → pasta → navegador → turma → cronograma → problema outra vez → cerimônia/chamada/pronto, com a grade e o leitor fechando os dois laços sozinhos" width="880"></div>
+
+**A grade abre e fecha a chamada sozinha**, e o cuidado está todo em *quando
+ela tem permissão para adivinhar e quando não tem*. Com uma aula batendo com
+o relógio agora, ela abre — nem clique, nem crachá. Com duas turmas coladas no
+mesmo horário (o CIn tem blocos que terminam e começam no mesmo minuto), ela
+recusa escolher e pergunta, porque **entre duas plausíveis o app não
+adivinha**. E ela nunca reabre, sozinha, uma aula que acabou de ser encerrada
+— fechar às 9h30 uma aula que vai até as 10h não pode ser desfeito pelo
+relógio no segundo seguinte. Achado de uso real, do próprio autor: às 13h58,
+no meio do bloco de uma turma, a tela dizia "sua próxima aula" apontando
+*outra* — o cálculo comparava só o **início** de cada aula, e uma que já
+começara perdia para uma que ainda não. O reparo foi comparar pelo fim, e o
+repouso passou a dizer exatamente a turma que o botão abaixo dele vai abrir,
+nunca uma diferente ([`nucleo/grade.ts`](src/nucleo/grade.ts)).
+
+**Um crachá desconhecido sempre abre a busca — sobre a turma inteira, não só
+sobre quem falta.** Parece pouco até se perceber o caso que ela existe para
+cobrir: quem perdeu o crachá e trouxe outro **já tem** vínculo, então não está
+na fila de pendentes — e sem isto não havia como achar essa pessoa no dia em
+que ela aparecia com o cartão novo. A tela nunca vincula um crachá novo a
+alguém sem confirmação — **exceto** quando o próprio professor está, naquele
+instante, olhando aquela pessoa encostar (o interruptor "Chamar nomes", em
+`TelaAula`): aí a confirmação já aconteceu, e perguntar de novo seria
+desconfiar do que ele acabou de fazer com os próprios olhos
+([`nucleo/sessao.ts`](src/nucleo/sessao.ts), função `decidir`).
+
+**Um professor sem crachá ainda pode dar aula.** "Começar a chamada" sintetiza
+um vínculo na hora — o clique e o crachá são gestos equivalentes, não um
+atalho que depende do outro ter acontecido primeiro. E uma grade salva antes
+de existir qualquer crachá de professor se **autocorrige** assim que um
+aparece: o horário que nunca batia com ninguém passa a bater, sem o professor
+precisar recadastrar nada nem entender por que não batia antes
+([`Fluxo.tsx`](src/ui/Fluxo.tsx), `garantirProfessor` e a reconciliação em
+`recontar`).
+
+**Leitura de CSV nunca descarta linha em silêncio.** Toda função de
+importação devolve o que leu **e** o que não conseguiu ler, com linha,
+conteúdo e motivo — 46 alunos onde a turma tem 48, sem explicação nenhuma, é
+bug, não é "deu para importar a maioria".
+
+## A base não pode se perder
+
+Se tudo vive no IndexedDB de um navegador, trocar de computador ou limpar os
+dados do site apaga o cadastro da turma inteira — recadastrar 49 alunos é
+inaceitável. A saída foi inverter a posse: o professor escolhe uma **pasta de
+verdade** ([File System Access][fsa]), e é ela que manda. O IndexedDB vira
+cache. Limpar dados do site apaga o handle, **não a pasta** — o professor a
+reescolhe e a base inteira é reconstruída. Se a pasta estiver no iCloud ou no
+Drive que ele já usa, a cópia fora da máquina vem de graça, sem servidor
+nenhum.
 
 Há um teste que **apaga o cache e prova a reconstrução**. É o que separa "cofre"
 de "mais um backup".
 
-**O crachá não pode virar identificador.** Só o número de série público é lido —
-nunca autenticando setores, nunca tocando em Crypto1. E ele não é guardado:
+## O crachá não pode virar identificador
+
+Só o número de série público é lido — nunca autenticando setores, nunca
+tocando em Crypto1. E ele não é guardado:
 
 <div align="center"><img src="docs/cracha-para-hash.png" alt="crachá → sal → SHA-256 → uid_hash" width="700"></div>
 
@@ -51,32 +111,20 @@ pequeno o bastante para se testar inteiro em segundos, e o resumo seria o crach�
 com outra roupa — quem obtivesse a planilha poderia **clonar crachá**. Com ele,
 não.
 
-**O registro não pode ser reescrito.** O log é somente-acréscimo, com
-`evento_id` como chave de idempotência: reimportar o mesmo arquivo não duplica
-linha. A porta `Repositorio` **não tem** `atualizarEvento` nem `removerEvento` —
-se a assinatura não existe, o bug não se escreve.
+## O registro não pode ser reescrito, mas o crachá pode errar
 
-**Mas o crachá pode errar, e isso precisa de conserto sem mentira.** Confirmar
-um crachá desconhecido para a pessoa errada, ou passar duas vezes na pressa —
-nenhum dos dois se apaga, os dois ganham um evento nascido pra desfazer o
-efeito do outro sem tocar no que já foi escrito: `'Remover crachá'` na
-chamada, `resultado: 'removido'` na planilha, e `rapido_demais` para o par que
-chega a menos de 400 ms um do outro. Só-acréscimo não significa sem correção —
-significa que a correção também vira linha.
+O log é somente-acréscimo, com `evento_id` como chave de idempotência:
+reimportar o mesmo arquivo não duplica linha. A porta `Repositorio` **não
+tem** `atualizarEvento` nem `removerEvento` — se a assinatura não existe, o
+bug não se escreve.
 
-**A tela não pode pedir decisão — nem fingir que decide sozinha.** Não há
-menu: a rota é função pura do estado ([`nucleo/rota.ts`](src/nucleo/rota.ts)),
-uma cascata de perguntas feitas na ordem em que importam. `'problema'` é
-checada **duas vezes** — navegador quebrado no topo, leitor parado só depois
-de turma e cronograma, porque digitar um horário não pede hardware nenhum. E a
-cascata se resolve **sozinha**, duas vezes: a grade confere o relógio a cada
-30 s e abre a próxima aula sem clique nem crachá, e um leitor que cai no meio
-de uma chamada devolve a tela a `'problema'` sem perder a sessão — ela espera
-no banco e reaparece assim que ele volta. `'cerimônia'`, a rota que sintetiza
-o crachá do professor pro primeiro dia, nunca chega a virar tela: ela mesma se
-resolve no instante seguinte.
-
-<div align="center"><img src="docs/mapa-estados.png" alt="A cascata de decidirRota: problema → pasta → navegador → turma → cronograma → problema outra vez → cerimônia/chamada/pronto, com a grade e o leitor fechando os dois laços sozinhos" width="880"></div>
+Isso não pode significar "sem conserto". Confirmar um crachá desconhecido
+para a pessoa errada, ou passar duas vezes na pressa — nenhum dos dois se
+apaga, os dois ganham um evento nascido pra desfazer o efeito do outro sem
+tocar no que já foi escrito: `'Remover crachá'` na chamada, `resultado:
+'removido'` na planilha, e `rapido_demais` para o par que chega a menos de
+400 ms um do outro. Só-acréscimo não significa sem correção — significa que a
+correção também vira linha.
 
 ## Arquitetura
 
