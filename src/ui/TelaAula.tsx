@@ -518,11 +518,6 @@ export function TelaAula({
             </li>
           ))}
         </ol>
-
-        {/* O símbolo fica a aula inteira, pulsando devagar: é a única instrução
-            que a tela precisa dar, e dizê-la em palavra o tempo todo seria
-            texto repetido. Movimento lento não compete com a linha que chega. */}
-        <Ondas tamanho={52} animado />
       </div>
 
       {/* Palpite, não detecção — ver `leitorSuspeito` em `nucleo/sessao.ts`. O app não sabe
@@ -629,7 +624,13 @@ export function TelaAula({
             </>
           ) : (
             <>
-              <Ondas tamanho={54} />
+              {/* Animado nos dois estados do interruptor, de propósito: o
+                  leitor está ligado o tempo todo, ligado ou desligado o
+                  "chamar nomes" — o pulsar é o único sinal de "o sistema está
+                  lendo" que a tela dá, e parar de pulsar aqui leria como o
+                  leitor tendo caído. Era o único símbolo da tela antes de
+                  "Aproxime o crachá", ali em cima, sair por redundância. */}
+              <Ondas tamanho={54} animado />
               {/* Quantos já têm crachá, não quantos faltam — o mesmo número
                   visto de progresso, não de pendência. Numa turma de 56, "56
                   sem crachá" no início da aula é só o tamanho da turma dito

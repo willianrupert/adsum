@@ -1412,15 +1412,10 @@ button:focus-visible {
 .coleta__corpo {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr;
   gap: 56px;
   align-items: center;
   padding: 44px 0;
-}
-
-.coleta__corpo > .ondas {
-  margin: 0;
-  color: var(--tinta-tenue);
 }
 
 .coleta__contador {
@@ -1580,12 +1575,6 @@ button:focus-visible {
 
 .coleta__recado {
   color: var(--tinta);
-}
-
-@media (max-width: 860px) {
-  .coleta__corpo > .ondas {
-    display: none;
-  }
 }
 
 @media (max-width: 700px) {
@@ -2266,8 +2255,12 @@ button:focus-visible {
 }
 
 /* Ondas de aproximação.
-   A pulsação só existe no repouso, onde nada está acontecendo — durante a
-   chamada ela competiria com a lista, e movimento que compete é ruído. */
+   Pulsa sempre que aparece, dentro ou fora da chamada: é o único sinal de
+   "o leitor está ligado e ouvindo" que a tela dá, e um símbolo parado ali
+   lê como leitor caído, não como calma. Existia a regra de só pulsar no
+   repouso — a chamada tinha o símbolo parado no modo comum, achado
+   redundante ao lado do de "Aproxime o crachá" que ficava mais acima: um
+   saiu, o outro ganhou o pulso que faltava. */
 
 .ondas {
   color: var(--tinta-tenue);
