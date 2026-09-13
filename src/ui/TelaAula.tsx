@@ -529,7 +529,7 @@ export function TelaAula({
           se o dongle caiu; só sabe que faz tempo que ninguém foi lido com
           gente ainda esperando, e é a melhor pista que existe para isso. */}
       {suspeito && (
-        <p className="ferramentas__nota">
+        <p className="ferramentas__nota ferramentas__nota--espacada">
           Nenhuma leitura há alguns minutos. Se alguém tentou encostar o crachá e nada
           aconteceu, confira se o leitor está conectado.
         </p>

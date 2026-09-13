@@ -67,7 +67,7 @@ import { TelaProblema } from './TelaProblema.tsx'
 import { TelaCronograma } from './TelaCronograma.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaColarTurma } from './TelaColarTurma.tsx'
-import { TelaPresencas } from './TelaPresencas.tsx'
+import { ConteudoDePresencas } from './TelaPresencas.tsx'
 
 type Folha = 'ajustes' | 'presencas' | 'diagnostico'
 
@@ -994,59 +994,70 @@ export function Fluxo() {
       </div>
       </div>
 
-      {folha === 'presencas' && <TelaPresencas aoFechar={() => setFolha(undefined)} />}
-
-      {folha === 'ajustes' && (
-        <Sheet titulo="Ajustes" aoFechar={() => setFolha(undefined)}>
-          <TelaRepositorio
-            pasta={pasta}
-            aoTrocarPasta={() => void ligarPasta(true)}
-            aoResetar={
-              podeApagar(repositorio)
-                ? async () => {
-                    await repositorio.apagarTudo()
-                    await repositorio.esquecerPasta()
-                    esquecerPreferencias()
-                    // Recarrega em vez de reconstruir o estado à mão: são doze
-                    // pedaços de estado nesta tela, e "meio zerado" é o defeito
-                    // que este botão existe para não produzir.
-                    location.reload()
-                  }
-                : undefined
-            }
-            aoDesconectarPasta={async () => {
-              await repositorio.esquecerPasta()
-              setPasta(undefined)
-              setEstadoDaPasta(pastaDisponivel() ? 'sem_pasta' : 'indisponivel')
-              setFalhaNaPasta(undefined)
-              // Sem dispensar, a rota mandaria escolher pasta na hora — e
-              // desconectar viraria um laço com a tela que pede uma.
-              dispensarPasta()
-              setSemPasta(true)
-            }}
-            aoRelerPasta={async () => {
-              const resumo = await restaurar(repositorio, pasta!)
-              await recontar()
-              return resumo
-            }}
-            aoVerPresencas={() => setFolha('presencas')}
-          />
-          {/* Diagnóstico virou folha própria — ver o comentário no topo do
-              arquivo. Cinco painéis de coisa que "não é uso do dia a dia"
-              (ambiente, leitor, últimas leituras, estado do app, modo de
-              ensaio) empilhados aqui era metade dos Ajustes sendo ferramenta
-              de quem conserta, não do professor que só quer trocar a pasta
-              ou corrigir a grade. Um link quieto continua alcançável para
-              quem precisa. */}
-          <button className="botao--quieto ajustes__diagnostico" onClick={() => setFolha('diagnostico')}>
-            Diagnóstico
-          </button>
-        </Sheet>
-      )}
-
-      {folha === 'diagnostico' && (
-        <Sheet titulo="Diagnóstico" aoFechar={() => setFolha(undefined)}>
-          <TelaDiagnostico />
+      {/* Uma folha só, não três — ver o comentário em `folha`, no topo do
+          arquivo. Ajustes → Presenças (o card "Ver presenças") e Ajustes →
+          Diagnóstico trocavam de `<Sheet>` inteiro: a folha antiga desmontava
+          e a nova montava do zero, e a animação de fundo (`.folha__fundo`,
+          que escurece e borra) recomeçava do transparente — por um instante
+          a tela de baixo reaparecia, sem escurecimento nenhum, antes do novo
+          fundo terminar de entrar. Uma única `<Sheet>` persistente, com só o
+          conteúdo trocando por dentro, tira esse instante: o fundo nunca
+          desmonta entre as três, só a primeira abertura (vindo de nenhuma
+          folha) toca a entrada. */}
+      {folha && (
+        <Sheet
+          titulo={folha === 'ajustes' ? 'Ajustes' : folha === 'presencas' ? 'Presenças' : 'Diagnóstico'}
+          aoFechar={() => setFolha(undefined)}
+        >
+          {folha === 'ajustes' && (
+            <>
+              <TelaRepositorio
+                pasta={pasta}
+                aoTrocarPasta={() => void ligarPasta(true)}
+                aoResetar={
+                  podeApagar(repositorio)
+                    ? async () => {
+                        await repositorio.apagarTudo()
+                        await repositorio.esquecerPasta()
+                        esquecerPreferencias()
+                        // Recarrega em vez de reconstruir o estado à mão: são doze
+                        // pedaços de estado nesta tela, e "meio zerado" é o defeito
+                        // que este botão existe para não produzir.
+                        location.reload()
+                      }
+                    : undefined
+                }
+                aoDesconectarPasta={async () => {
+                  await repositorio.esquecerPasta()
+                  setPasta(undefined)
+                  setEstadoDaPasta(pastaDisponivel() ? 'sem_pasta' : 'indisponivel')
+                  setFalhaNaPasta(undefined)
+                  // Sem dispensar, a rota mandaria escolher pasta na hora — e
+                  // desconectar viraria um laço com a tela que pede uma.
+                  dispensarPasta()
+                  setSemPasta(true)
+                }}
+                aoRelerPasta={async () => {
+                  const resumo = await restaurar(repositorio, pasta!)
+                  await recontar()
+                  return resumo
+                }}
+                aoVerPresencas={() => setFolha('presencas')}
+              />
+              {/* Diagnóstico virou folha própria — ver o comentário no topo do
+                  arquivo. Cinco painéis de coisa que "não é uso do dia a dia"
+                  (ambiente, leitor, últimas leituras, estado do app, modo de
+                  ensaio) empilhados aqui era metade dos Ajustes sendo ferramenta
+                  de quem conserta, não do professor que só quer trocar a pasta
+                  ou corrigir a grade. Um link quieto continua alcançável para
+                  quem precisa. */}
+              <button className="botao--quieto ajustes__diagnostico" onClick={() => setFolha('diagnostico')}>
+                Diagnóstico
+              </button>
+            </>
+          )}
+          {folha === 'presencas' && <ConteudoDePresencas />}
+          {folha === 'diagnostico' && <TelaDiagnostico />}
         </Sheet>
       )}
     </>

@@ -13,7 +13,13 @@ import { useAdsum } from './adsum.ts'
 import { Sheet } from './componentes/Sheet.tsx'
 import { GradeDePresencas } from './componentes/GradeDePresencas.tsx'
 
-export function TelaPresencas({ aoFechar }: { aoFechar: () => void }) {
+/**
+ * O corpo da tela, sem a folha em volta — para quando ela já existe e só o
+ * conteúdo troca (ver `Fluxo.tsx`: Ajustes → Presenças reaproveita a mesma
+ * folha aberta, em vez de fechar uma e abrir outra). `TelaPresencas`, abaixo,
+ * é a versão que se basta sozinha — usada direto do repouso e na vitrine.
+ */
+export function ConteudoDePresencas() {
   const { repositorio, config } = useAdsum()
   const [turmas, setTurmas] = useState<string[]>([])
   const [eventos, setEventos] = useState<Evento[]>([])
@@ -74,15 +80,21 @@ export function TelaPresencas({ aoFechar }: { aoFechar: () => void }) {
   )
 
   return (
+    <GradeDePresencas
+      turmas={turmas}
+      eventos={eventos}
+      matriculados={matriculados}
+      aulas={aulas}
+      aoCorrigir={(aluno, dia) => gravar(aluno, dia, 'ok')}
+      aoRemover={(aluno, dia) => gravar(aluno, dia, 'removido')}
+    />
+  )
+}
+
+export function TelaPresencas({ aoFechar }: { aoFechar: () => void }) {
+  return (
     <Sheet titulo="Presenças" aoFechar={aoFechar}>
-      <GradeDePresencas
-        turmas={turmas}
-        eventos={eventos}
-        matriculados={matriculados}
-        aulas={aulas}
-        aoCorrigir={(aluno, dia) => gravar(aluno, dia, 'ok')}
-        aoRemover={(aluno, dia) => gravar(aluno, dia, 'removido')}
-      />
+      <ConteudoDePresencas />
     </Sheet>
   )
 }

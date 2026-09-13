@@ -482,6 +482,13 @@ button:focus-visible {
   color: var(--tinta);
 }
 
+/* Só onde a nota vem colada num cartão logo abaixo (o aviso de leitor
+   suspeito, sobre o interruptor de "Chamar nomes") — sem isto os dois liam
+   como um bloco só. */
+.ferramentas__nota--espacada {
+  margin-bottom: 14px;
+}
+
 /* ── Selos ───────────────────────────────────────────────────────────────── */
 
 .selo {
@@ -1063,18 +1070,25 @@ button:focus-visible {
   background: var(--fundo);
   text-align: left;
   font-weight: 400;
-  white-space: nowrap;
 }
 
 .planilha__nome {
   left: 0;
-  /* Nome completo, como no SIGAA — mais largo que o nome curto de tela,
-     para truncar menos vezes num nome brasileiro comum. */
-  width: 220px;
-  min-width: 220px;
-  max-width: 220px;
+  /* Nome completo, como no SIGAA — sempre por inteiro. Truncar com "..."
+     escondia sobrenome, e é exatamente o dado que a instituição precisa
+     ver certo; quebrar em duas linhas custa altura de linha, nunca
+     informação. O limite de três linhas abaixo só entra em nome de verdade
+     extremo — o comum, mesmo composto, cabe em uma ou duas. */
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
+  white-space: normal;
+  overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.3;
   padding: 6px 14px 6px 0;
   font-size: var(--t-menor);
   letter-spacing: -0.014em;
@@ -1082,7 +1096,8 @@ button:focus-visible {
 }
 
 .planilha__contagem {
-  left: 220px;
+  left: 240px;
+  white-space: nowrap;
   padding: 6px 16px 6px 4px;
   color: var(--tinta-fraca);
   border-right: 1px solid var(--separador);

@@ -277,6 +277,32 @@ a entender que os dados estão seguros** neles.
 - **A passada visual** (tipografia, espaço, claro/escuro, Mushroom cards) e o
   corte de texto residual nas telas de chamada e base continuam por fazer.
 
+### Ideias levantadas, ainda não decididas
+
+Backlog de sugestões — nenhuma delas foi decidida pelo autor, e nenhuma entra
+sem conversa antes.
+
+- **`INTERVALO_MINIMO_MS` (400 ms, contra dois crachás na mesma mão) continua
+  chutado.** O diagnóstico já mostra o intervalo entre leituras; dava para
+  guardar esse histórico localmente e sugerir um valor medido, a partir do
+  uso real, em vez do palpite atual.
+- **Aluno sem crachá lido em várias aulas seguidas** é um padrão que a base já
+  tem dado para detectar sozinha — hoje só aparece implícito em "quem falta".
+  Um aviso do tipo "Fulano está sem crachá há N aulas" ajudaria a agir antes
+  de virar rotina, em vez de descobrir no fim do semestre.
+- **Divergência entre a grade cadastrada e o horário real do crachá.** Se por
+  algumas semanas seguidas o professor abre a chamada bem fora do horário que
+  a grade diz, é provável que a aula mudou e ninguém atualizou o cronograma —
+  dado que o app já tem, só falta juntar.
+- **Reimportar um `vinculos.json` mais velho sobrescreve sem checar qual é
+  mais recente.** `gravarVinculo` é um `put` por `uidHash` — correto para
+  mesclar vínculos novos (é exatamente o "append" que a troca entre
+  professores precisa), mas sem timestamp de comparação, reimportar um
+  arquivo antigo (um professor manda de novo o mesmo export de semanas atrás)
+  apaga uma correção de nome feita localmente depois daquele arquivo ter
+  saído. Não é duplicata — é qual versão é mais nova, e hoje ninguém pergunta
+  isso.
+
 **Vale por si, independente de hardware:** ler só o UID público (legitimidade,
 não limitação técnica), hash com sal (privacidade), registro append-only, um
 só nome chamado por vez (garantia contra trocar aluno), leitura da página do
