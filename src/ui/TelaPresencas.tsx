@@ -19,7 +19,7 @@ import { GradeDePresencas } from './componentes/GradeDePresencas.tsx'
  * folha aberta, em vez de fechar uma e abrir outra). `TelaPresencas`, abaixo,
  * é a versão que se basta sozinha — usada direto do repouso e na vitrine.
  */
-export function ConteudoDePresencas() {
+export function ConteudoDePresencas({ nomeDaPasta }: { nomeDaPasta?: string } = {}) {
   const { repositorio, config } = useAdsum()
   const [turmas, setTurmas] = useState<string[]>([])
   const [eventos, setEventos] = useState<Evento[]>([])
@@ -87,14 +87,21 @@ export function ConteudoDePresencas() {
       aulas={aulas}
       aoCorrigir={(aluno, dia) => gravar(aluno, dia, 'ok')}
       aoRemover={(aluno, dia) => gravar(aluno, dia, 'removido')}
+      nomeDaPasta={nomeDaPasta}
     />
   )
 }
 
-export function TelaPresencas({ aoFechar }: { aoFechar: () => void }) {
+export function TelaPresencas({
+  aoFechar,
+  nomeDaPasta,
+}: {
+  aoFechar: () => void
+  nomeDaPasta?: string
+}) {
   return (
     <Sheet titulo="Presenças" aoFechar={aoFechar}>
-      <ConteudoDePresencas />
+      <ConteudoDePresencas nomeDaPasta={nomeDaPasta} />
     </Sheet>
   )
 }

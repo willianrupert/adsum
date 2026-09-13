@@ -117,7 +117,7 @@ describe('exportar faltas', () => {
     const [nomeArquivo, conteudo] = salvarTexto.mock.calls[0]
     expect(nomeArquivo).toBe('faltas-IF685-T01.csv')
     const linhas = conteudo.replace(/^﻿/, '').split('\n')
-    expect(linhas[0]).toBe('nome;2026-08-17')
+    expect(linhas[0]).toBe('nome;17/08/2026')
     expect(linhas).toContain('ANA PAULA MENDES;0')
     expect(linhas).toContain('BRENO OLIVEIRA;2')
   })

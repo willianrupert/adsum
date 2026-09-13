@@ -191,7 +191,9 @@ describe('paraCsvDeFaltas', () => {
       ],
     })
     const linhas = csv.replace(/^﻿/, '').split('\n')
-    expect(linhas[0]).toBe('nome;2026-08-17;2026-08-18')
+    // Formato brasileiro na saída — a chave interna (dias, o Map) continua
+    // AAAA-MM-DD, que é o que ordena certo em texto; só a coluna muda.
+    expect(linhas[0]).toBe('nome;17/08/2026;18/08/2026')
     expect(linhas[1]).toBe('ANA PAULA MENDES;0;2')
   })
 })

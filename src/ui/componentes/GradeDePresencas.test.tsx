@@ -114,6 +114,37 @@ describe('a planilha com dois dias de aula', () => {
     expect(celula).toBeInTheDocument()
     expect(celula).toHaveTextContent('2')
   })
+
+  // Mesma ideia de "Já está gravado em", no fim da aula — só que aqui, porque
+  // quem abre "Ver presenças" pode não ter acabado de encerrar nada.
+  it('com pasta, diz onde no disco esta planilha está', () => {
+    const eventos: Evento[] = [
+      evento({ quando: '2026-03-02T13:00:00.000Z', origem: 'professor' }),
+      evento({ quando: '2026-03-02T13:05:00.000Z', origem: 'cracha', matricula: '1', nome: 'Ana Paula' }),
+    ]
+
+    render(
+      <GradeDePresencas
+        turmas={[TURMA]}
+        eventos={eventos}
+        matriculados={[ANA]}
+        nomeDaPasta="Pasta Adsum"
+      />,
+    )
+
+    expect(screen.getByText('faltas/IF685-T01.csv')).toBeInTheDocument()
+  })
+
+  it('sem pasta, não inventa um arquivo que não existe', () => {
+    const eventos: Evento[] = [
+      evento({ quando: '2026-03-02T13:00:00.000Z', origem: 'professor' }),
+      evento({ quando: '2026-03-02T13:05:00.000Z', origem: 'cracha', matricula: '1', nome: 'Ana Paula' }),
+    ]
+
+    render(<GradeDePresencas turmas={[TURMA]} eventos={eventos} matriculados={[ANA]} />)
+
+    expect(screen.queryByText(/faltas\//)).not.toBeInTheDocument()
+  })
 })
 
 describe('corrigir à mão', () => {

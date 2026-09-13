@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { planilhaDeFaltas, type CelulaDeFalta } from '../../nucleo/faltas.ts'
 import type { Aula } from '../../nucleo/grade.ts'
 import type { Evento, Matriculado } from '../../nucleo/tipos.ts'
+import { caminhoDasFaltas } from '../../ambiente/sincronia.ts'
 
 function rotuloDia(dia: string): { semana: string; numero: string } {
   const d = new Date(`${dia}T12:00:00`)
@@ -62,6 +63,7 @@ export function GradeDePresencas({
   aulas = [],
   aoCorrigir,
   aoRemover,
+  nomeDaPasta,
 }: {
   turmas: string[]
   eventos: Evento[]
@@ -71,6 +73,14 @@ export function GradeDePresencas({
   aoCorrigir?: (aluno: Matriculado, dia: string) => void | Promise<void>
   /** Tira uma presença marcada por engano, num dia que estava presente. */
   aoRemover?: (aluno: Matriculado, dia: string) => void | Promise<void>
+  /**
+   * Nome da pasta escolhida, para dizer onde no disco esta planilha mora —
+   * mesma ideia de "Já está gravado em" no fim da aula, só que aqui embaixo,
+   * porque quem abre "Ver presenças" pode não ter acabado de encerrar nada.
+   * Sem pasta (Safari, Firefox, ou ainda não escolhida), não existe arquivo
+   * nenhum no disco para apontar.
+   */
+  nomeDaPasta?: string
 }) {
   const [escolhida, setEscolhida] = useState<string>()
   const [editando, setEditando] = useState(false)
@@ -131,6 +141,11 @@ export function GradeDePresencas({
         <p className="ferramentas__nota">Nenhuma aula registrada ainda em {turma}.</p>
       ) : (
         <>
+          {nomeDaPasta && (
+            <p className="ferramentas__nota">
+              {nomeDaPasta} ▸ <code>{caminhoDasFaltas(turma)}</code>
+            </p>
+          )}
           {editando && (
             <p className="ferramentas__nota">
               Toque numa falta para marcar presença confirmada à mão, ou numa presença para tirá-la.

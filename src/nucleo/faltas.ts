@@ -144,8 +144,15 @@ export function nomeDoArquivoDeFaltas(turma: string): string {
   return `faltas-${nomeSeguroDeTurma(turma)}.csv`
 }
 
+/** `2026-08-28` → `28/08/2026`. Só na saída: a chave interna (`dias`, as
+    linhas do Map) continua AAAA-MM-DD, que é o que ordena certo em texto. */
+function comoDataBr(dia: string): string {
+  const [ano, mes, diaDoMes] = dia.split('-')
+  return `${diaDoMes}/${mes}/${ano}`
+}
+
 export function paraCsvDeFaltas(planilha: PlanilhaDeFaltas): string {
-  const cabecalho = ['nome', ...planilha.dias].join(SEP)
+  const cabecalho = ['nome', ...planilha.dias.map(comoDataBr)].join(SEP)
   const linhas = planilha.linhas.map((l) =>
     [limpar(l.matriculado.nomeCompleto), ...planilha.dias.map((d) => String(l.porDia.get(d)?.faltas ?? 0))].join(
       SEP,

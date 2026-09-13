@@ -10,10 +10,14 @@ import type { ReactNode } from 'react'
 export function Sheet({
   titulo,
   aoFechar,
+  cheia = false,
   children,
 }: {
   titulo: string
   aoFechar: () => void
+  /** Ocupa a tela inteira, sem moldura — para quem tem tabela dentro
+      (Presenças) e ganha com a coluna a mais, não com a borda arredondada. */
+  cheia?: boolean
   children: ReactNode
 }) {
   // Sem Esc: no Safari em tela cheia ele sai da tela cheia. Sair daqui é
@@ -21,7 +25,12 @@ export function Sheet({
 
   return (
     <div className="folha__fundo" onClick={aoFechar}>
-      <div className="folha" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={titulo}>
+      <div
+        className={cheia ? 'folha folha--cheia' : 'folha'}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label={titulo}
+      >
         <header className="folha__topo">
           <h2>{titulo}</h2>
           <button onClick={aoFechar}>Fechar</button>

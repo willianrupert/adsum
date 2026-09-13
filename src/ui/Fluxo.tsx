@@ -1014,6 +1014,7 @@ export function Fluxo() {
         <Sheet
           titulo={folha === 'ajustes' ? 'Ajustes' : folha === 'presencas' ? 'Presenças' : 'Diagnóstico'}
           aoFechar={() => setFolha(undefined)}
+          cheia={folha === 'presencas'}
         >
           {folha === 'ajustes' && (
             <>
@@ -1062,7 +1063,7 @@ export function Fluxo() {
               </button>
             </>
           )}
-          {folha === 'presencas' && <ConteudoDePresencas />}
+          {folha === 'presencas' && <ConteudoDePresencas nomeDaPasta={pasta?.name} />}
           {folha === 'diagnostico' && <TelaDiagnostico />}
         </Sheet>
       )}

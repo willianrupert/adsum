@@ -1810,6 +1810,18 @@ button:focus-visible {
   animation: subir 420ms var(--curva-folha);
 }
 
+/* Presenças é planilha, não formulário: mais coluna de dia cabendo de
+   relance vale mais que a moldura de folha. As outras (Ajustes,
+   Diagnóstico) continuam com a largura contida — não têm tabela nenhuma
+   que se beneficie da tela cheia, só ficariam com texto esticado. */
+.folha--cheia {
+  width: 100%;
+  max-width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+}
+
 @keyframes subir {
   from {
     transform: translateY(40px);
@@ -1849,6 +1861,14 @@ button:focus-visible {
   gap: 12px;
   overflow-y: auto;
   padding: 4px 26px 34px;
+  /* Sem efeito quando `.folha` cresce com o conteúdo (o normal, `max-height`
+     como teto) — só importa em `.folha--cheia`, que tem altura fixa: aí é
+     isto que faz o corpo preencher até embaixo em vez de flutuar do
+     tamanho do próprio conteúdo. `min-height: 0` é o que deixa o
+     `overflow-y` funcionar dentro de um flex item, que por padrão não
+     encolhe menor que o conteúdo. */
+  flex: 1;
+  min-height: 0;
 }
 
 /* ── Colar a turma ───────────────────────────────────────────────────────── */

@@ -306,7 +306,7 @@ export function Vitrine() {
       </Cena>
 
       <Cena titulo="A planilha do curso" quando="atrás de 'Ver presenças', fora do horário de aula">
-        <GradeDePresencas {...planilhaDeMentira()} />
+        <GradeDePresencas {...planilhaDeMentira()} nomeDaPasta="Pasta Adsum" />
       </Cena>
 
       <Cena titulo="Falha na pasta" quando="permissão caiu no meio da aula">
