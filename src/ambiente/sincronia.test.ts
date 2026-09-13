@@ -3,6 +3,7 @@ import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts
 import { criarPastaFalsa } from '../testes/pastaFalsa.ts'
 import {
   acrescentarNoLog,
+  gravarFaltas,
   repararLog,
   restaurar,
   restaurarDeArquivos,
@@ -97,6 +98,69 @@ describe('cofre em pasta', () => {
       'IF669-T02.csv',
       'IF685-T01.csv',
     ])
+  })
+
+  // "Se a pasta é a dona, o arquivo já está pronto no disco" — a mesma regra
+  // de `registros/`, agora para a planilha que o professor de fato entrega.
+  // Sem botão: `gravarFaltas` roda a cada mudança (ver `mudou()`, em
+  // `Fluxo.tsx`), e é recalculada do zero — nunca lida de volta na
+  // reconstrução, porque não é fonte de verdade, é relatório.
+  describe('a planilha organizada, sempre pronta na pasta', () => {
+    it('escreve faltas/<turma>.csv com nome completo, assim que há aula registrada', async () => {
+      const { handle, raiz } = criarPastaFalsa()
+      await repo.gravarVinculo(VINCULO)
+      await repo.salvarTurma('IF685 · T01', [PESSOA])
+      await repo.acrescentarEvento({
+        ...EVENTO,
+        eventoId: 'web-a1b2-20260818-0000',
+        uidHash: VINCULO.uidHash,
+        nome: '',
+        origem: 'professor',
+      })
+      await repo.acrescentarEvento(EVENTO)
+
+      const { arquivos } = await gravarFaltas(repo, handle)
+      expect(arquivos).toEqual(['faltas/IF685-T01.csv'])
+
+      const texto = raiz.pastas.get('faltas')!.arquivos.get('IF685-T01.csv')!
+      expect(texto.startsWith('﻿')).toBe(true)
+      expect(texto).toContain(PESSOA.nomeCompleto)
+    })
+
+    it('turma sem aula registrada ainda não ganha planilha vazia', async () => {
+      const { handle, raiz } = criarPastaFalsa()
+      await repo.salvarTurma('IF685 · T01', [PESSOA])
+
+      const { arquivos } = await gravarFaltas(repo, handle)
+      expect(arquivos).toEqual([])
+      expect(raiz.pastas.has('faltas')).toBe(false)
+    })
+
+    it('não é fonte de verdade — a pasta com faltas/ ainda reconstrói pelo log', async () => {
+      const { handle } = criarPastaFalsa()
+      await repo.gravarVinculo(VINCULO)
+      await repo.salvarTurma('IF685 · T01', [PESSOA])
+      const abertura = {
+        ...EVENTO,
+        eventoId: 'web-a1b2-20260818-0000',
+        uidHash: VINCULO.uidHash,
+        nome: '',
+        origem: 'professor' as const,
+      }
+      await repo.acrescentarEvento(abertura)
+      await repo.acrescentarEvento(EVENTO)
+      await acrescentarNoLog(handle, abertura)
+      await acrescentarNoLog(handle, EVENTO)
+      await sincronizar(repo, handle)
+      await gravarFaltas(repo, handle)
+
+      await repo.esvaziarCache()
+      const { problemas } = await restaurar(repo, handle)
+      expect(problemas).toEqual([])
+      // A base volta inteira sem faltas/ ter sido lida — só registros/,
+      // turmas/, vinculos.json e grade.json alimentam a reconstrução.
+      expect(await repo.contarEventos()).toBe(2)
+    })
   })
 
   // O teste de que a inversão aconteceu de fato: jogar fora o IndexedDB inteiro

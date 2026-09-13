@@ -17,7 +17,8 @@ import {
   paraJsonTurma,
   paraJsonVinculos,
 } from '../nucleo/cofre.ts'
-import { cabecalhoCsv, deCsv, linhaCsv, nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'
+import { cabecalhoCsv, deCsv, linhaCsv, nomeDoArquivo, nomeSeguroDeTurma, paraCsv, porTurma } from '../nucleo/csv.ts'
+import { planilhaDeFaltas, paraCsvDeFaltas } from '../nucleo/faltas.ts'
 import { salValido } from '../nucleo/hash.ts'
 import type { Evento } from '../nucleo/tipos.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
@@ -30,6 +31,45 @@ export interface Resumo {
 
 export function caminhoDosRegistros(turma: string): string {
   return `registros/${nomeDoArquivo(turma)}`
+}
+
+export function caminhoDasFaltas(turma: string): string {
+  return `faltas/${nomeSeguroDeTurma(turma)}.csv`
+}
+
+/**
+ * A planilha organizada — nome completo, um dia por coluna — sempre pronta na
+ * pasta, sem botão de exportar. Existia só sob pedido ("Exportar faltas", em
+ * Ajustes), e pedido é exatamente o que este projeto tenta não ter: a mesma
+ * regra que já vale para `registros/` ("se a pasta é a dona, o arquivo já
+ * está pronto no disco") ficava sem valer para esta planilha, a que o
+ * professor de fato quer entregar. `planilhaDeFaltas` é derivada — nunca é
+ * lida de volta na reconstrução, só recalculada e reescrita por inteiro a
+ * cada chamada de `gravarFaltas`, como qualquer relatório.
+ *
+ * Turma sem aula registrada ainda não ganha arquivo: uma planilha vazia não
+ * é informação, é ruído no meio das pastas de quem já tem chamada de verdade.
+ */
+export async function gravarFaltas(
+  repositorio: Repositorio,
+  pasta: FileSystemDirectoryHandle,
+): Promise<Resumo> {
+  const [eventos, matriculados, aulas, turmas] = await Promise.all([
+    repositorio.listarEventos(),
+    repositorio.listarMatriculados(),
+    repositorio.listarAulas(),
+    repositorio.listarTurmas(),
+  ])
+
+  const arquivos: string[] = []
+  for (const turma of turmas) {
+    const planilha = planilhaDeFaltas(eventos, matriculados, aulas, turma)
+    if (planilha.dias.length === 0 || planilha.linhas.length === 0) continue
+    const caminho = caminhoDasFaltas(turma)
+    await escrever(pasta, caminho, paraCsvDeFaltas(planilha))
+    arquivos.push(caminho)
+  }
+  return { arquivos, problemas: [] }
 }
 
 /**

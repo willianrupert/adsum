@@ -45,6 +45,7 @@ import {
 import {
   acrescentarNoLog,
   caminhoDosRegistros,
+  gravarFaltas,
   repararLog,
   restaurar,
   sincronizar,
@@ -310,6 +311,10 @@ export function Fluxo() {
     if (!pasta) return
     try {
       await sincronizar(repositorio, pasta)
+      // A planilha organizada (nome completo, faltas por dia) recalculada e
+      // reescrita a cada mudança — a mesma regra de "sem botão de exportar"
+      // que já vale para `registros/`. Ver o comentário em `gravarFaltas`.
+      await gravarFaltas(repositorio, pasta)
       setFalhaNaPasta(undefined)
     } catch (erro) {
       setFalhaNaPasta((erro as Error).message)
@@ -360,6 +365,7 @@ export function Fluxo() {
       }
       await sincronizar(repositorio, pasta)
       await repararLog(repositorio, pasta)
+      await gravarFaltas(repositorio, pasta)
       setFalhaNaPasta(undefined)
     } catch (erro) {
       setFalhaNaPasta((erro as Error).message)

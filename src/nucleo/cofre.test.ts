@@ -80,6 +80,7 @@ describe('o LEIA-ME da pasta', () => {
     }
     expect(texto).toContain('turmas/')
     expect(texto).toContain('registros/')
+    expect(texto).toContain('faltas/')
   })
 
   it('diz a versão do formato, que é a mesma dos arquivos ao lado', () => {
