@@ -21,7 +21,7 @@ import { useAdsum } from './adsum.ts'
 import { Linha, Painel, Secao, Selo } from './componentes/Painel.tsx'
 import { Cartao } from './componentes/Cartao.tsx'
 import { GradeDaSemana, aulasDe } from './componentes/GradeDaSemana.tsx'
-import { marcadosDe } from '../nucleo/horarios.ts'
+import { BLOCOS, marcadosDe } from '../nucleo/horarios.ts'
 import { Importacao, type Resultado } from './componentes/Importacao.tsx'
 
 /**
@@ -99,7 +99,7 @@ function GradeDeAjustes({
   const turma = escolhida && turmas.includes(escolhida) ? escolhida : turmas[0]
 
   const daTurma = useMemo(() => aulas.filter((a) => a.turma === turma), [aulas, turma])
-  const { marcados, foraDosBlocos } = useMemo(() => marcadosDe(daTurma), [daTurma])
+  const { marcados, foraDosBlocos } = useMemo(() => marcadosDe(daTurma, BLOCOS), [daTurma])
 
   if (turmas.length === 0) {
     return <p className="ferramentas__nota">Nenhuma turma cadastrada ainda.</p>
@@ -124,10 +124,14 @@ function GradeDeAjustes({
       <GradeDaSemana
         marcados={marcados}
         rotulo={`Horários de ${turma}`}
+        blocos={BLOCOS}
         aoMudar={(novos) => {
           // O professor da grade é quem já tem crachá. Sem nenhum, a grade não
           // tem por onde ser indexada — e a tela diz isso abaixo.
-          void aoMudar(turma, aulasDe(novos, turma, daTurma[0]?.uidHashProfessor ?? professorPadrao))
+          void aoMudar(
+            turma,
+            aulasDe(novos, turma, daTurma[0]?.uidHashProfessor ?? professorPadrao, BLOCOS),
+          )
         }}
       />
 

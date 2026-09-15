@@ -6,26 +6,18 @@
 // cronograma espera o "Salvar", os Ajustes gravam na hora.
 
 import { useCallback, useEffect, useRef } from 'react'
-import {
-  BLOCOS,
-  DIAS_UTEIS,
-  SIGLA_DO_DIA,
-  chaveDoBloco,
-  deChave,
-  ehCurto,
-} from '../../nucleo/horarios.ts'
+import { SIGLA_DO_DIA, chaveDoBloco, deChave, ehCurto, type Bloco } from '../../nucleo/horarios.ts'
 import type { Aula } from '../../nucleo/grade.ts'
 
 export function aulasDe(
   marcados: ReadonlySet<string>,
   turma: string,
   uidHashProfessor: string,
+  blocos: Bloco[],
 ): Aula[] {
   return [...marcados].map((chave) => {
     const { dia, inicio } = deChave(chave)
-    const bloco = BLOCOS.find(
-      (b) => b.inicio === inicio && (b.soSabado ? dia === 6 : dia !== 6),
-    )!
+    const bloco = blocos.find((b) => b.inicio === inicio && b.dias.includes(dia))!
     return { uidHashProfessor, dia, inicio, fim: bloco.fim, turma }
   })
 }
@@ -34,11 +26,19 @@ export function GradeDaSemana({
   marcados,
   aoMudar,
   rotulo,
+  blocos,
 }: {
   marcados: ReadonlySet<string>
   aoMudar: (marcados: Set<string>) => void
   rotulo: string
+  /** Simplificada ou completa (`nucleo/horarios.ts`) — a lista de dias
+      mostrada como coluna vem daqui, não de `DIAS_UTEIS`: cada catálogo já
+      sabe quais dias os próprios blocos cobrem, e derivar evita uma segunda
+      lista que pudesse divergir do catálogo (uma coluna morta, ou faltando,
+      sem ninguém avisar). */
+  blocos: Bloco[]
 }) {
+  const dias = [...new Set(blocos.flatMap((b) => b.dias))].sort((a, b) => a - b)
   /**
    * Arrastar pinta.
    *
@@ -116,16 +116,16 @@ export function GradeDaSemana({
   return (
     <div className="cronograma__grade" role="group" aria-label={rotulo} onPointerMove={arrastar}>
       <div className="cronograma__canto" />
-      {DIAS_UTEIS.map((dia) => (
+      {dias.map((dia) => (
         <div className="cronograma__dia" key={dia}>
           {SIGLA_DO_DIA[dia]}
         </div>
       ))}
 
-      {BLOCOS.map((bloco, i) => {
+      {blocos.map((bloco, i) => {
         // Filete entre turnos, como num mural: separa manhã de tarde sem
         // precisar de rótulo dizendo "tarde".
-        const trocaDeTurno = i > 0 && BLOCOS[i - 1].turno !== bloco.turno
+        const trocaDeTurno = i > 0 && blocos[i - 1].turno !== bloco.turno
         const classe = (base: string) =>
           [base, trocaDeTurno && `${base}--turno`, ehCurto(bloco) && `${base}--curto`]
             .filter(Boolean)
@@ -137,10 +137,11 @@ export function GradeDaSemana({
               <strong>{bloco.inicio}</strong>
               <small>{bloco.fim}</small>
             </div>
-            {DIAS_UTEIS.map((dia) => {
-              // Bloco de sábado não existe de segunda a sexta: a célula vazia
-              // diz isso melhor que um quadradinho que não deveria ser clicado.
-              if (bloco.soSabado && dia !== 6) return <div key={dia} aria-hidden="true" />
+            {dias.map((dia) => {
+              // Este período não existe neste dia (ex.: sábado sem meio-dia,
+              // ou 07:00 fora de sábado): a célula vazia diz isso melhor que
+              // um quadradinho que não deveria ser clicado.
+              if (!bloco.dias.includes(dia)) return <div key={dia} aria-hidden="true" />
               const chave = chaveDoBloco(dia, bloco.inicio)
               const escolhido = marcados.has(chave)
               return (

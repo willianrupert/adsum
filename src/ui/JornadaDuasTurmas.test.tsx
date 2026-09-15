@@ -79,12 +79,14 @@ function blocoDeAgora(): { aria: string } | undefined {
   const agora = new Date()
   // A grade não oferece domingo (`DIAS_UTEIS`): rodando um domingo, não há
   // bloco real para clicar, e o professor também não teria "abre sozinho".
+  // Sábado também não tem bloco na simplificada (Fase 3) — como a tela
+  // padrão usada aqui é a simplificada, `dias.includes` já resolve os dois
+  // casos sem precisar de uma checagem de sábado à parte.
   if (!DIAS_UTEIS.includes(agora.getDay())) return undefined
   const minuto = agora.getHours() * 60 + agora.getMinutes()
-  const sabado = agora.getDay() === 6
   const bloco = BLOCOS.find(
     (b) =>
-      (sabado ? !!b.soSabado : !b.soSabado) &&
+      b.dias.includes(agora.getDay()) &&
       minuto >= emMinutos(b.inicio) - FOLGA_MIN &&
       minuto <= emMinutos(b.fim) + FOLGA_MIN,
   )

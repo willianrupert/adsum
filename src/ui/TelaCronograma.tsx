@@ -13,7 +13,7 @@
 // a mesma — duas implementações divergiriam.
 
 import { useMemo, useState } from 'react'
-import { horasPorSemana, marcadosDe } from '../nucleo/horarios.ts'
+import { BLOCOS, horasPorSemana, marcadosDe } from '../nucleo/horarios.ts'
 import type { Aula } from '../nucleo/grade.ts'
 import { GradeDaSemana, aulasDe } from './componentes/GradeDaSemana.tsx'
 
@@ -31,9 +31,9 @@ export function TelaCronograma({
   aoSalvar: (aulas: Aula[]) => void
   aoPular: () => void
 }) {
-  const inicial = useMemo(() => marcadosDe(aulas), [aulas])
+  const inicial = useMemo(() => marcadosDe(aulas, BLOCOS), [aulas])
   const [marcados, setMarcados] = useState<Set<string>>(inicial.marcados)
-  const horas = horasPorSemana(marcados)
+  const horas = horasPorSemana(marcados, BLOCOS)
 
   return (
     <section className="cronograma">
@@ -50,6 +50,7 @@ export function TelaCronograma({
         marcados={marcados}
         aoMudar={setMarcados}
         rotulo={`Horários de ${turma}`}
+        blocos={BLOCOS}
       />
 
       <p className="cronograma__resumo">
@@ -73,7 +74,7 @@ export function TelaCronograma({
       <div className="cronograma__acoes">
         <button
           className="botao--acento pasta__botao"
-          onClick={() => aoSalvar(aulasDe(marcados, turma, uidHashProfessor))}
+          onClick={() => aoSalvar(aulasDe(marcados, turma, uidHashProfessor, BLOCOS))}
         >
           {marcados.size === 0 ? 'Continuar sem horário' : 'Salvar horário'}
         </button>
