@@ -91,7 +91,15 @@ export class LeitorTeclado implements LeitorDeCracha {
   #aoTeclar = (evento: KeyboardEvent) => {
     if (evento.ctrlKey || evento.metaKey || evento.altKey) return
 
-    const agora = performance.now()
+    // `evento.timeStamp`, não `performance.now()`: o navegador carimba o
+    // primeiro perto da chegada de verdade da tecla, o segundo mede quando
+    // ESTE manipulador rodou. Com a aba ocupada — turma grande, tela
+    // reatualizando — um `keydown` fica na fila e roda atrasado; medir com
+    // `performance.now()` fazia o atraso de processamento parecer atraso de
+    // digitação, e `INTERVALO_MAXIMO_MS` (60 ms) recusava a rajada inteira
+    // em silêncio. Reproduzido em aula real, 15/09/2026: "parou de associar
+    // os crachás com os alunos", sem erro nenhum na tela.
+    const agora = evento.timeStamp
     if (this.#teclas.length > 0 && agora - this.#teclas[this.#teclas.length - 1].em > ESQUECER_APOS_MS) {
       this.#teclas = []
     }

@@ -46,6 +46,27 @@ async function ler(): Promise<Leitura> {
   return new Promise((resolver) => leitor!.aoLer(resolver))
 }
 
+/**
+ * A mesma rajada do dongle, mas com a aba ocupada entre duas teclas —
+ * `atrasoDeProcessamento` simula um recarregamento de tela custando isso
+ * antes do manipulador conseguir rodar. `timeStamp` de cada tecla é
+ * carimbado ANTES do atraso, como o navegador faz de verdade: perto da
+ * chegada física, não de quando o `keydown` finalmente é processado.
+ */
+async function digitarComAbaOcupada(texto: string, gapReal: number, atrasoDeProcessamento: number) {
+  const base = performance.now()
+  for (let i = 0; i < texto.length; i++) {
+    const chegadaDeVerdade = base + i * gapReal
+    if (i > 0) await esperar(atrasoDeProcessamento)
+    const evento = new KeyboardEvent('keydown', { key: texto[i], bubbles: true, cancelable: true })
+    Object.defineProperty(evento, 'timeStamp', { value: chegadaDeVerdade, configurable: true })
+    window.dispatchEvent(evento)
+  }
+  const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+  Object.defineProperty(enter, 'timeStamp', { value: base + texto.length * gapReal, configurable: true })
+  window.dispatchEvent(enter)
+}
+
 describe('decimal de 10 dígitos — o formato que o dongle de verdade manda', () => {
   it('0930148883 vira o UID medido (3770f213)', async () => {
     const promessa = ler()
@@ -76,6 +97,28 @@ describe('o formato de fábrica também passa pelo teclado de verdade', () => {
     const leitura = await promessa
     expect(leitura.uid).toHaveLength(7)
     expect(uidParaHex(leitura.uid)).toBe('1df31fd31b1080')
+  })
+})
+
+// Aula real, 15/09/2026: o professor relatou que o app "parou de associar
+// os crachás com os alunos" no meio da chamada, sem erro nenhum na tela.
+// Causa: o ritmo era medido com `performance.now()` dentro do manipulador —
+// isso mede quando o manipulador RODOU, não quando a tecla chegou de
+// verdade. Com a aba ocupada (turma grande, tela reatualizando a cada
+// crachá), um `keydown` fica na fila do navegador e o manipulador roda
+// atrasado; o atraso de processamento parecia atraso de digitação, e
+// `INTERVALO_MAXIMO_MS` (60 ms) recusava a rajada inteira, em silêncio —
+// sem toast, sem bipe, sem "crachá desconhecido". `evento.timeStamp` resolve
+// porque é carimbado pelo navegador perto da chegada física da tecla,
+// imune a quanto tempo a aba levou para processá-la.
+describe('a aba ocupada entre duas teclas não derruba a leitura', () => {
+  it('rajada no ritmo real do dongle, com 200 ms de tela ocupada no meio, ainda vira leitura', async () => {
+    const promessa = ler()
+    // Mesmo ritmo medido do dongle (16-32 ms) — só que a terceira tecla leva
+    // 200 ms de verdade para ser processada, como um re-render custoso
+    // faria. Sem o fix, isso pareceria um gap de 200 ms na rajada.
+    await digitarComAbaOcupada('0930148883', 17, 200)
+    expect(uidParaHex((await promessa).uid)).toBe('3770f213')
   })
 })
 
