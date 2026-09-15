@@ -127,13 +127,15 @@ qualquer `Aula` que ainda aponte pro hash velho.
 
 ## Fase 2 — reorganização de UI, tudo já decidido
 
-- **Botão "Ver presenças" sumindo:** hoje só aparece em destaque na tela de
-  repouso no terceiro estado (fora de qualquer horário); nos outros dois
-  estados só existe dentro de Ajustes. Fix: link secundário sempre visível
-  na tela de repouso, independente do estado.
-- **Simplificar Ajustes:** tirar o card "Registros" (`TelaRepositorio.tsx:357`)
-  e mover Importar/Exportar/Exportar faltas para dentro de Diagnóstico.
-- **Reordenar cards de Ajustes:** Ver presenças → Grade horária → Vínculos.
+Itens 1-3 **feitos** (16/09/2026), commitados local: `3cff356`, `258f95c`.
+411 testes verdes. Itens 4-6 seguem para a próxima leva.
+
+- ~~**Botão "Ver presenças" sumindo:**~~ **feito.** Link secundário sempre
+  visível na tela de repouso, independente do estado.
+- ~~**Simplificar Ajustes:**~~ **feito.** Card "Registros" saiu de Ajustes,
+  Importar/Exportar/Exportar faltas migraram para Diagnóstico.
+- ~~**Reordenar cards de Ajustes:**~~ **feito.** Ver presenças → Grade
+  horária → Vínculos.
 - **Diagnóstico, "Últimas leituras" x "Chamadas recentes":** dados não são
   redundantes (um é log cru de leituras, inclusive recusadas; o outro é
   resumo agregado por sessão encerrada, usado para calibrar
