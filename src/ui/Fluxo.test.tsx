@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { baterCrachasEmSequencia, gerarBaralho } from '../testes/simular.ts'
-import { Fluxo } from './Fluxo.tsx'
+import { Fluxo, Repouso } from './Fluxo.tsx'
 import { adiarHorario, definirProfessorAtual, dispensarCadastro } from '../ambiente/preferencias.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import * as arquivos from '../ambiente/arquivos.ts'
@@ -102,8 +102,10 @@ describe('a rota decide a tela', () => {
   })
 
   // Com aula à vista, o gesto óbvio é abrir a chamada — "ver presença" pode
-  // esperar a aula acabar, então não compete pelo mesmo destaque.
-  it('com aula à vista, só "Começar a chamada agora" aparece — sem "Ver presenças"', async () => {
+  // esperar a aula acabar, então não compete pelo mesmo destaque. Mas deixou
+  // de ficar preso a Ajustes: item 1 da Fase 2 (docs/05_plano_execucao.md)
+  // pede o link sempre visível na tela de repouso, em qualquer estado.
+  it('com aula à vista, "Começar a chamada agora" é o acento e "Ver presenças" fica quieto ao lado', async () => {
     await turmaInteiraComCracha()
     const amanha = new Date(Date.now() + 24 * 3600_000)
     await bancada.repositorio.gravarAula({
@@ -115,8 +117,40 @@ describe('a rota decide a tela', () => {
     })
     renderizarCom(bancada, <Fluxo />)
 
-    expect(await screen.findByRole('button', { name: 'Começar a chamada agora' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Ver presenças' })).not.toBeInTheDocument()
+    const comecar = await screen.findByRole('button', { name: 'Começar a chamada agora' })
+    expect(comecar.className).toContain('botao--acento')
+
+    const verPresencas = screen.getByRole('button', { name: 'Ver presenças' })
+    expect(verPresencas.className).not.toContain('botao--acento')
+  })
+
+  // Terceiro estado da tela de repouso ("Começar chamada em X", quando o
+  // relógio identifica uma aula acontecendo agora) — testado direto no
+  // componente, sem passar pelo `Fluxo`: nesse estado, o mesmo efeito que
+  // calcula `comecarEm` também abre a chamada sozinha (ver o comentário em
+  // `Fluxo.tsx` perto de `abrirSozinhoEntreProfessores`), o que tornaria uma
+  // montagem via `Fluxo` uma corrida com o auto-abrir. `Repouso` não toca em
+  // repositório nem leitor — é só props para JSX — então isolar aqui não
+  // troca nenhum adaptador de verdade por dublê.
+  it('com "comecarEm", "Ver presenças" também aparece, quieto ao lado do acento', () => {
+    render(
+      <Repouso
+        turmas={1}
+        pendencias={[]}
+        comecarEm="IF685 · T01"
+        aoIniciar={vi.fn()}
+        aoEscolherOutra={vi.fn()}
+        aoSalvar={vi.fn()}
+        aoVerPresencas={vi.fn()}
+        aoNovaTurma={vi.fn()}
+      />,
+    )
+
+    const comecar = screen.getByRole('button', { name: 'Começar a chamada agora' })
+    expect(comecar.className).toContain('botao--acento')
+
+    const verPresencas = screen.getByRole('button', { name: 'Ver presenças' })
+    expect(verPresencas.className).not.toContain('botao--acento')
   })
 
   // Regressão: este botão existia e não fazia nada — a rota decide pelo estado,

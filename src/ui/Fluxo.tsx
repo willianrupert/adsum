@@ -1299,13 +1299,24 @@ export function Repouso({
           <button className="repouso__link botao--quieto" onClick={aoEscolherOutra}>
             Chamada em outra turma
           </button>
+          {/* "Ver presenças" deixou de morar só em Ajustes: nos outros dois
+              estados ela ainda não tinha caminho nenhum na tela de repouso. */}
+          <button className="repouso__link botao--quieto" onClick={aoVerPresencas}>
+            Ver presenças
+          </button>
         </>
       ) : proxima ? (
-        // Com grade e aula à vista, o gesto óbvio é abrir a chamada — a
-        // pergunta "quero ver presença" pode esperar a aula acabar.
-        <button className="botao--acento pasta__botao" onClick={aoIniciar}>
-          Começar a chamada agora
-        </button>
+        <>
+          {/* Com grade e aula à vista, o gesto óbvio é abrir a chamada — a
+              pergunta "quero ver presença" pode esperar a aula acabar, mas
+              o link continua ao alcance, não só dentro de Ajustes. */}
+          <button className="botao--acento pasta__botao" onClick={aoIniciar}>
+            Começar a chamada agora
+          </button>
+          <button className="repouso__link botao--quieto" onClick={aoVerPresencas}>
+            Ver presenças
+          </button>
+        </>
       ) : (
         <>
           {/* Fora do horário, "Começar a chamada" deixou de ser o convite:
