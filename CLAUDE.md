@@ -276,6 +276,13 @@ a entender que os dados estão seguros** neles.
   do próprio projeto: Adsum é o sistema, Adsum A1 é o aparelho.
 - **A passada visual** (tipografia, espaço, claro/escuro, Mushroom cards) e o
   corte de texto residual nas telas de chamada e base continuam por fazer.
+- **`MANUAL_URL` (`nucleo/cofre.ts`) aponta pra `main` no GitHub, não pra um
+  commit fixo** — de propósito, para o botão "Manual e LGPD" (em Ajustes)
+  sempre trazer a versão atual, sem precisar lembrar de atualizar um hash.
+  O preço: mover ou renomear `docs/Adsum-manual-e-LGPD.docx` sem atualizar
+  essa constante quebra o botão (com aviso, não em silêncio — a rede de
+  segurança é o link cru mostrado no erro). Mesma família de cuidado do
+  `base` do Vite, acima.
 
 ### Ideias levantadas, ainda não decididas
 

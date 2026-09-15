@@ -79,6 +79,18 @@ export const NOMES = {
 } as const
 
 /**
+ * O manual não vem embutido no app — ele vive no GitHub, versionado junto
+ * com o código, e o botão em Ajustes ("Manual e LGPD") busca uma cópia de
+ * lá na hora. Único lugar do Adsum que precisa de internet: todo o resto
+ * — chamada, planilha, cofre — continua funcionando offline. `raw.
+ * githubusercontent.com` serve o arquivo puro, sem a página do GitHub em
+ * volta, e libera o pedido de qualquer origem (CORS), como qualquer
+ * arquivo público de um repositório.
+ */
+export const MANUAL_URL =
+  'https://raw.githubusercontent.com/willianrupert/adsum/main/docs/Adsum-manual-e-LGPD.docx'
+
+/**
  * A pasta se explica sozinha.
  *
  * O cofre só é um cofre porque os arquivos são **arquivos de verdade**: o
@@ -103,6 +115,16 @@ de verdade: se o navegador for limpo, trocado ou apagado, é desta
 pasta que tudo volta.
 
 Formato versão ${VERSAO}. Gerado pelo Adsum — não precisa editar nada.
+
+
+MANUAL DE USO E LGPD
+--------------------
+
+  O manual completo — como usar, e o tratamento de dado pessoal campo
+  por campo — não fica nesta pasta. Baixe uma cópia em Ajustes →
+  "Manual e LGPD", ou direto daqui:
+
+  ${MANUAL_URL}
 
 
 O QUE TEM AQUI

@@ -20,6 +20,13 @@ const TIPO_CSV = {
   accept: { 'text/csv': ['.csv'] },
 }
 
+const TIPO_DOCX = {
+  description: 'Documento do Word',
+  accept: {
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+  },
+}
+
 function cancelou(erro: unknown): boolean {
   return erro instanceof Error && erro.name === 'AbortError'
 }
@@ -47,6 +54,36 @@ export async function salvarTexto(nomeSugerido: string, texto: string): Promise<
   link.download = nomeSugerido
   link.click()
   // Revogar cedo demais cancela o download em alguns navegadores.
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  return 'baixado'
+}
+
+/** Mesmos dois caminhos de `salvarTexto`, para dado que já chega binário —
+    o manual baixado do GitHub, por exemplo. Sem conversão pra texto no
+    meio: um `.docx` não é texto, e ida e volta por string corromperia o
+    arquivo. */
+export async function salvarBinario(nomeSugerido: string, dados: Blob): Promise<ComoSalvou> {
+  if (window.showSaveFilePicker) {
+    try {
+      const alvo = await window.showSaveFilePicker({
+        suggestedName: nomeSugerido,
+        types: [TIPO_DOCX],
+      })
+      const fluxo = await alvo.createWritable()
+      await fluxo.write(dados)
+      await fluxo.close()
+      return 'gravado'
+    } catch (erro) {
+      if (cancelou(erro)) return 'cancelado'
+      throw erro
+    }
+  }
+
+  const url = URL.createObjectURL(dados)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = nomeSugerido
+  link.click()
   setTimeout(() => URL.revokeObjectURL(url), 10_000)
   return 'baixado'
 }

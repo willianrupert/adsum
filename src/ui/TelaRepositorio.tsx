@@ -8,6 +8,7 @@ import {
   deJsonCompartilhado,
   deJsonGrade,
   deJsonVinculos,
+  MANUAL_URL,
   NOMES,
   paraJsonCompartilhado,
   paraJsonGrade,
@@ -16,7 +17,7 @@ import {
 import type { Aula, Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { quemFalta } from '../nucleo/sessao.ts'
 import { nomeDoArquivoDeFaltas, paraCsvDeFaltas, planilhaDeFaltas } from '../nucleo/faltas.ts'
-import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.ts'
+import { abrirTexto, salvarBinario, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.ts'
 import { pastaDisponivel } from '../ambiente/pasta.ts'
 import { comoInstalar, ehWebKit, instalado } from '../ambiente/instalacao.ts'
 import { useAdsum } from './adsum.ts'
@@ -729,6 +730,28 @@ export function TelaRepositorio({
           que a lista da turma.
         </p>
       </Painel>
+
+      {/* O único botão do Adsum que precisa de internet: o manual vive no
+          GitHub, não dentro do app, pra não pesar o carregamento nem
+          duplicar o que já é mantido em `docs/`. Quieto — é consulta, não
+          o dia a dia da chamada. */}
+      <button
+        className="botao--quieto"
+        onClick={tentar('Manual e LGPD', async () => {
+          const resposta = await fetch(MANUAL_URL)
+          if (!resposta.ok) {
+            throw new Error(
+              `sem internet ou o arquivo mudou de lugar (HTTP ${resposta.status}). Baixe direto em ${MANUAL_URL}`,
+            )
+          }
+          return comoFoi(
+            await salvarBinario('Adsum-manual-e-LGPD.docx', await resposta.blob()),
+            'Manual',
+          )
+        })}
+      >
+        Manual e LGPD
+      </button>
 
       {/* Recomeçar do zero.
           Existia só no modo de ensaio, e o professor real também precisa: fim

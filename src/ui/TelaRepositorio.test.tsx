@@ -4,13 +4,14 @@
 // para espiar quem falta podia custar fechar outra por engano; este painel é
 // leitura, sem abrir nada.
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import * as arquivos from '../ambiente/arquivos.ts'
+import { MANUAL_URL } from '../nucleo/cofre.ts'
 
 let bancada: Bancada
 
@@ -180,5 +181,43 @@ describe('vínculo sintético', () => {
     renderizarCom(bancada, <TelaRepositorio />)
 
     expect(await screen.findByText('1 crachá')).toBeInTheDocument()
+  })
+})
+
+// O único botão do Adsum que fala com a internet: o manual vive no GitHub,
+// não dentro do app. `fetch` é mockado aqui de propósito — não é porta do
+// Adsum, é infraestrutura de terceiro, e não tem "adaptador de verdade"
+// nenhum pra testar contra (a suíte não bate no GitHub de verdade).
+describe('manual e LGPD', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('busca do GitHub e oferece pra salvar', async () => {
+    const usuario = userEvent.setup()
+    const blobDeMentira = new Blob(['conteúdo de mentira'])
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, blob: async () => blobDeMentira }))
+    const salvarBinario = vi.spyOn(arquivos, 'salvarBinario').mockResolvedValue('gravado')
+
+    renderizarCom(bancada, <TelaRepositorio />)
+    await usuario.click(await screen.findByRole('button', { name: 'Manual e LGPD' }))
+
+    await waitFor(() => expect(salvarBinario).toHaveBeenCalled())
+    expect(fetch).toHaveBeenCalledWith(MANUAL_URL)
+    const [nomeArquivo, dados] = salvarBinario.mock.calls[0]
+    expect(nomeArquivo).toBe('Adsum-manual-e-LGPD.docx')
+    expect(dados).toBe(blobDeMentira)
+    expect(await screen.findByText(/Manual gravado/)).toBeInTheDocument()
+  })
+
+  // Arquivo movido, repositório renomeado, ou simplesmente sem internet — a
+  // tela não pode deixar o professor com um botão que "não faz nada". O
+  // link cru é a saída manual enquanto ninguém conserta a constante.
+  it('sem internet, ou arquivo mudou de lugar, mostra o link pra baixar na mão', async () => {
+    const usuario = userEvent.setup()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }))
+
+    renderizarCom(bancada, <TelaRepositorio />)
+    await usuario.click(await screen.findByRole('button', { name: 'Manual e LGPD' }))
+
+    expect(await screen.findByText((texto) => texto.includes(MANUAL_URL))).toBeInTheDocument()
   })
 })
