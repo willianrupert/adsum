@@ -4,10 +4,17 @@ import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { baterCrachasEmSequencia, gerarBaralho } from '../testes/simular.ts'
 import { Fluxo, Repouso } from './Fluxo.tsx'
-import { adiarHorario, definirProfessorAtual, dispensarCadastro } from '../ambiente/preferencias.ts'
+import {
+  adiarHorario,
+  definirProfessorAtual,
+  dispensarCadastro,
+  marcarVersaoDeNovidadeVista,
+  versaoDeNovidadeVista,
+} from '../ambiente/preferencias.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import * as arquivos from '../ambiente/arquivos.ts'
 import { MANUAL_URL } from '../nucleo/cofre.ts'
+import { NOVIDADES } from '../nucleo/novidades.ts'
 
 let bancada: Bancada
 
@@ -1149,6 +1156,28 @@ describe('rodapé de Ajustes', () => {
     expect(linkGitHub).toHaveAttribute('rel', 'noopener noreferrer')
 
     expect(screen.getByText('© 2026 Willian Rupert')).toBeInTheDocument()
+  })
+})
+
+// Fase 2, item 6 (docs/05_plano_execucao.md): popup de novidades, uma vez
+// por versão nova — ver `nucleo/novidades.ts` e `versaoDeNovidadeVista` em
+// `ambiente/preferencias.ts`.
+describe('toast de novidades', () => {
+  it('sem versão vista ainda, mostra o resumo da mais recente e marca como vista', async () => {
+    renderizarCom(bancada, <Fluxo />)
+
+    expect(await screen.findByText(NOVIDADES[0].resumo)).toBeInTheDocument()
+    expect(versaoDeNovidadeVista()).toBe(NOVIDADES[0].versao)
+  })
+
+  it('versão já vista, não aparece de novo', async () => {
+    marcarVersaoDeNovidadeVista(NOVIDADES[0].versao)
+    await turmaInteiraComCracha()
+
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
+
+    expect(screen.queryByText(NOVIDADES[0].resumo)).not.toBeInTheDocument()
   })
 })
 

@@ -824,6 +824,28 @@ button:focus-visible {
   animation: aparecer var(--rapido) var(--curva);
 }
 
+/* Mesma forma de `.dica-ensaio`/`.aviso-leitura` — aparece e some sozinho —
+   mas no rodapé da tela, não no canto: não é alerta sobre o que acabou de
+   acontecer, é aviso sobre o que mudou no app. Tom neutro (`--acao`), não
+   vermelho: ninguém perde nada por não ler. */
+.toast-novidade {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9;
+  max-width: 46ch;
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: var(--raio-pequeno);
+  background: var(--acao-fraca);
+  color: var(--acao);
+  font-size: var(--t-menor);
+  letter-spacing: -0.016em;
+  text-align: center;
+  animation: aparecer var(--rapido) var(--curva);
+}
+
 /* Convite, não aviso: fundo neutro e nenhum vermelho. Mesma forma do bloco de
    pendências para a tela ter um vocabulário só, e peso menor porque ninguém
    perde nada por ignorá-lo. */

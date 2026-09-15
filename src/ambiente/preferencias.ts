@@ -21,6 +21,7 @@ const CHAVES = {
   horarioAdiado: 'adsum.horario.adiado',
   historicoDeChamadas: 'adsum.historico.chamadas',
   professorAtual: 'adsum.professor.atual',
+  versaoDeNovidadeVista: 'adsum.novidade.versao',
 } as const
 
 function ler(chave: string): string | undefined {
@@ -244,6 +245,22 @@ export function professorAtual(): string | undefined {
 /** `undefined` desfaz — "não sou eu", de volta ao estado anônimo de sempre. */
 export function definirProfessorAtual(uidHash: string | undefined): void {
   gravar(CHAVES.professorAtual, uidHash)
+}
+
+/**
+ * Qual versão de `nucleo/novidades.ts` este navegador já viu.
+ *
+ * `undefined` é "nenhuma ainda" — `ui/Fluxo.tsx` compara com a versão do
+ * topo de `NOVIDADES` e, divergindo, mostra o toast uma vez e grava a
+ * versão atual aqui, para não mostrar de novo até a lista ganhar uma
+ * entrada nova.
+ */
+export function versaoDeNovidadeVista(): string | undefined {
+  return ler(CHAVES.versaoDeNovidadeVista)
+}
+
+export function marcarVersaoDeNovidadeVista(versao: string): void {
+  gravar(CHAVES.versaoDeNovidadeVista, versao)
 }
 
 /**

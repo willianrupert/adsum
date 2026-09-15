@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   definirProfessorAtual,
   historicoDeChamadas,
+  marcarVersaoDeNovidadeVista,
   professorAtual,
   registrarChamadaEncerrada,
+  versaoDeNovidadeVista,
   type ChamadaEncerrada,
 } from './preferencias.ts'
 
@@ -12,6 +14,7 @@ import {
 beforeEach(() => {
   window.localStorage.removeItem('adsum.historico.chamadas')
   window.localStorage.removeItem('adsum.professor.atual')
+  window.localStorage.removeItem('adsum.novidade.versao')
 })
 
 const CHAMADA: ChamadaEncerrada = {
@@ -67,5 +70,16 @@ describe('"Sou eu"', () => {
 
     definirProfessorAtual(undefined)
     expect(professorAtual()).toBeUndefined()
+  })
+})
+
+describe('versão de novidade vista', () => {
+  it('começa sem nenhuma versão vista', () => {
+    expect(versaoDeNovidadeVista()).toBeUndefined()
+  })
+
+  it('marca e lê de volta', () => {
+    marcarVersaoDeNovidadeVista('2026-09-16')
+    expect(versaoDeNovidadeVista()).toBe('2026-09-16')
   })
 })

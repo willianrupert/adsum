@@ -47,10 +47,13 @@ import {
   encerradas,
   esquecerEncerramento,
   marcarEncerrada,
+  marcarVersaoDeNovidadeVista,
   modoDev,
   professorAtual,
   registrarChamadaEncerrada,
+  versaoDeNovidadeVista,
 } from '../ambiente/preferencias.ts'
+import { NOVIDADES } from '../nucleo/novidades.ts'
 import {
   acrescentarNoLog,
   caminhoDosRegistros,
@@ -119,6 +122,9 @@ export function Fluxo() {
    * que ela mudou sem ninguém tocar em nada.
    */
   const [avisoLeitura, setAvisoLeitura] = useState<string>()
+  /** Resumo da versão mais nova de `nucleo/novidades.ts`, quando ainda não
+      vista neste navegador. Some sozinho, mesma forma de `dicaDeEnsaio`. */
+  const [novidade, setNovidade] = useState<string>()
   const [convidarApp, setConvidarApp] = useState(podeInstalarApp)
   const [falhaNaPasta, setFalhaNaPasta] = useState<string>()
   // Sem pasta, isto é a única memória de que existe trabalho fora do disco.
@@ -215,6 +221,22 @@ export function Fluxo() {
     const relogio = setTimeout(() => setAvisoLeitura(undefined), 6000)
     return () => clearTimeout(relogio)
   }, [avisoLeitura])
+
+  // Uma vez por versão nova: marca como vista já ao mostrar, não só ao
+  // sumir — senão fechar a aba no meio dos 6 segundos faria o toast voltar
+  // na próxima abertura.
+  useEffect(() => {
+    const atual = NOVIDADES[0]
+    if (!atual || atual.versao === versaoDeNovidadeVista()) return
+    setNovidade(atual.resumo)
+    marcarVersaoDeNovidadeVista(atual.versao)
+  }, [])
+
+  useEffect(() => {
+    if (!novidade) return
+    const relogio = setTimeout(() => setNovidade(undefined), 6000)
+    return () => clearTimeout(relogio)
+  }, [novidade])
 
   const recontar = useCallback(async () => {
     const [listaDeTurmas, matriculados, vinculos, aberta, eventos, atual] = await Promise.all([
@@ -994,6 +1016,7 @@ export function Fluxo() {
 
       {dicaDeEnsaio && <p className="dica-ensaio">{dicaDeEnsaio}</p>}
       {avisoLeitura && <p className="aviso-leitura">{avisoLeitura}</p>}
+      {novidade && <p className="toast-novidade">{novidade}</p>}
 
       <div className="canto">
         {(falhaNaPasta || porSalvar > 0 || !lendo || !pasta) && (
