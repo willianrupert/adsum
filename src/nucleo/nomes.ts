@@ -96,9 +96,18 @@ export function prepararLista(entrada: string | PessoaSigaa[]): NomePreparado[] 
     return partes.length > 2 ? `${nome} ${ultimo.charAt(0)}.` : nome
   })
 
-  // Sobrou empate? Não dá para resolver sozinho — a linha é marcada e a tela
-  // pede edição, em vez de deixar dois nomes iguais passarem.
+  // Sobrou empate mesmo com a inicial? Ao vivo: "Julio Ferreira C." saiu
+  // idêntico pra duas pessoas de nomes completos diferentes — o último
+  // sobrenome também começava com a mesma letra. A inicial não resolveu, e
+  // marcar `ambiguo` sem trocar o apelido deixava o aviso substituir a
+  // garantia em vez de anteceder um fallback: os dois nomes na tela
+  // continuavam iguais. Cair para o nome completo resolve por definição —
+  // nomes completos diferentes geram apelidos diferentes —, e o que sobrar
+  // disso (nomes completos de verdade idênticos) a matrícula já desempata.
   const depois = quantos(base)
+  base = base.map((nome, i) => ((depois.get(nome) ?? 0) > 1 ? completos[i] : nome))
+
+  const final = quantos(base)
 
   return base.map((nome, i) => ({
     completo: completos[i],
@@ -109,6 +118,6 @@ export function prepararLista(entrada: string | PessoaSigaa[]): NomePreparado[] 
     // algo que a página já afirmou. O toggle continua ali para corrigir.
     papel: achados[i].docenteNoSigaa ? ('professor' as const) : ('aluno' as const),
     docenteNoSigaa: achados[i].docenteNoSigaa,
-    ambiguo: (depois.get(nome) ?? 0) > 1,
+    ambiguo: (final.get(nome) ?? 0) > 1,
   }))
 }

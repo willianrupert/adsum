@@ -76,6 +76,18 @@ describe('lista pronta para a cerimônia', () => {
     expect(prepararLista('Maria Vitória\nMaria Vitória').every((n) => n.ambiguo)).toBe(true)
   })
 
+  // Ao vivo: "Julio Ferreira C." saiu idêntico pra duas pessoas de nomes
+  // completos diferentes — a inicial do último sobrenome também colidiu
+  // ("Cardoso" e "Castro" começam com a mesma letra). O aviso de nome
+  // repetido aparecia, mas os apelidos continuavam iguais. Caindo para o
+  // nome completo, os dois deixam de colidir — e o aviso deixa de ser
+  // necessário, porque não há mais colisão de fato.
+  it('cai para o nome completo quando nem a inicial resolve', () => {
+    const lista = prepararLista('Julio Ferreira Cardoso\nJulio Ferreira Castro')
+    expect(lista.map((n) => n.nome)).toEqual(['Julio Ferreira Cardoso', 'Julio Ferreira Castro'])
+    expect(lista.every((n) => !n.ambiguo)).toBe(true)
+  })
+
   it('não mexe em quem não colide', () => {
     const lista = prepararLista('Luiz Miguel da Silva\nAmanda Nascimento')
     expect(lista.map((n) => n.nome)).toEqual(['Luiz Miguel', 'Amanda Nascimento'])
