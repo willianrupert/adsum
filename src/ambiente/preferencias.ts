@@ -22,6 +22,7 @@ const CHAVES = {
   historicoDeChamadas: 'adsum.historico.chamadas',
   professorAtual: 'adsum.professor.atual',
   versaoDeNovidadeVista: 'adsum.novidade.versao',
+  modoDeGrade: 'adsum.grade.modo',
 } as const
 
 function ler(chave: string): string | undefined {
@@ -261,6 +262,26 @@ export function versaoDeNovidadeVista(): string | undefined {
 
 export function marcarVersaoDeNovidadeVista(versao: string): void {
   gravar(CHAVES.versaoDeNovidadeVista, versao)
+}
+
+export type ModoDeGrade = 'simplificada' | 'completa'
+
+/**
+ * Simplificada ou completa (`nucleo/horarios.ts`) — qual grade a tela de
+ * horário mostra: o cronograma do cadastro e o painel "Grade horária" de
+ * Ajustes leem e gravam a mesma chave, então trocar numa reflete na outra.
+ *
+ * Preferência desta máquina, não da turma: qual granularidade a pessoa
+ * prefere ver é sobre quem está sentado ali, não sobre o horário cadastrado
+ * — o mesmo raciocínio de `leitorEscolhido`. Simplificada por padrão, que é
+ * o que a tela sempre mostrou antes do toggle existir.
+ */
+export function modoDeGrade(): ModoDeGrade {
+  return ler(CHAVES.modoDeGrade) === 'completa' ? 'completa' : 'simplificada'
+}
+
+export function definirModoDeGrade(modo: ModoDeGrade): void {
+  gravar(CHAVES.modoDeGrade, modo)
 }
 
 /**

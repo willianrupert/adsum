@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+  definirModoDeGrade,
   definirProfessorAtual,
   historicoDeChamadas,
   marcarVersaoDeNovidadeVista,
+  modoDeGrade,
   professorAtual,
   registrarChamadaEncerrada,
   versaoDeNovidadeVista,
@@ -15,6 +17,20 @@ beforeEach(() => {
   window.localStorage.removeItem('adsum.historico.chamadas')
   window.localStorage.removeItem('adsum.professor.atual')
   window.localStorage.removeItem('adsum.novidade.versao')
+  window.localStorage.removeItem('adsum.grade.modo')
+})
+
+describe('modo da grade — preferência desta máquina, não da turma', () => {
+  it('começa simplificada, sem nada gravado', () => {
+    expect(modoDeGrade()).toBe('simplificada')
+  })
+
+  it('grava e lê de volta', () => {
+    definirModoDeGrade('completa')
+    expect(modoDeGrade()).toBe('completa')
+    definirModoDeGrade('simplificada')
+    expect(modoDeGrade()).toBe('simplificada')
+  })
 })
 
 const CHAMADA: ChamadaEncerrada = {
