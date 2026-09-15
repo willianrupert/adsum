@@ -31,6 +31,8 @@ const path = require('path')
 const RAIZ = path.join(__dirname, '..', 'docs')
 const DIAGRAMA = path.join(RAIZ, 'cracha-para-hash.png')
 const DESTINO = path.join(RAIZ, 'Adsum-manual-e-LGPD.docx')
+// Mesmo ícone do app (gerar_icone.py) — sem gerar captura nova para a capa.
+const ICONE = path.join(__dirname, '..', 'public', 'icone-512.png')
 const {
   Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType,
   Table, TableRow, TableCell, WidthType, ShadingType, BorderStyle, ImageRun,
@@ -130,18 +132,30 @@ const tabela = (cabecalho, linhas, larguras) => new Table({
 const mono = (texto) => new TextRun({ text: texto, font: 'Courier New', size: 20 })
 
 // ── Capa ────────────────────────────────────────────────────────────────
+// Mesma hierarquia de uma capa de manual da Apple: marca centralizada no topo,
+// nome do produto, subtítulo — e nada mais competindo por atenção ali.
 const capa = [
-  new Paragraph({ spacing: { before: 2600, after: 0 }, children: [
-    t('Adsum', { size: 72, bold: true }),
+  new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 1500, after: 320 },
+    children: [
+      new ImageRun({ type: 'png', data: fs.readFileSync(ICONE), transformation: { width: 108, height: 108 } }),
+    ],
+  }),
+  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [
+    t('Adsum', { size: 60, bold: true }),
   ]}),
-  new Paragraph({ spacing: { after: 600 }, children: [
-    t('Registro de frequência por crachá', { size: 30, color: FRACA }),
+  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 600 }, children: [
+    t('Registro de frequência por crachá', { size: 28, color: FRACA }),
   ]}),
-  new Paragraph({ spacing: { after: 120 }, children: [
+  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 }, children: [
     t('Manual de uso e descrição do tratamento de dados pessoais', { size: 24 }),
   ]}),
-  new Paragraph({ spacing: { after: 600 }, children: [
+  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 }, children: [
     t('Centro de Informática — UFPE', { size: 22, color: FRACA }),
+  ]}),
+  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 700 }, children: [
+    t('Willian Neves Rupert Jones', { size: 20, color: FRACA }),
   ]}),
   destaque([
     p([t('Este documento serve a dois leitores. ', { bold: true }),
