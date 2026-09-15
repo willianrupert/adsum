@@ -9,6 +9,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
+import { TelaCronograma } from './TelaCronograma.tsx'
 import type { Matriculado } from '../nucleo/tipos.ts'
 
 let bancada: Bancada
@@ -134,5 +135,63 @@ describe('vínculo sintético', () => {
     renderizarCom(bancada, <TelaRepositorio />)
 
     expect(await screen.findByText('1 crachá')).toBeInTheDocument()
+  })
+})
+
+// Fase 3 (docs/05_plano_execucao.md): grade simplificada e completa, toggle
+// acima da grade, mesma preferência desta máquina nas duas telas que a
+// mostram (`ambiente/preferencias.ts`, modoDeGrade).
+describe('grade horária — simplificada e completa', () => {
+  beforeEach(() => {
+    window.localStorage.removeItem('adsum.grade.modo')
+  })
+
+  it('toggle da grade é a mesma preferência das duas telas', async () => {
+    const usuario = userEvent.setup()
+    await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('IF685 · T01', '1', 'Ana')])
+
+    // Troca pra completa em Ajustes → Grade horária...
+    const primeira = renderizarCom(bancada, <TelaRepositorio />)
+    await usuario.click(await screen.findByRole('button', { name: /Grade horária/ }))
+    await usuario.click(await screen.findByRole('button', { name: 'Completa' }))
+    expect(await screen.findByLabelText('SEG, 09:00 às 09:50')).toBeInTheDocument()
+    primeira.unmount()
+
+    // ...e o cronograma de cadastro, montado depois, já nasce completo — é a
+    // mesma preferência, não um estado próprio de cada tela.
+    renderizarCom(
+      bancada,
+      <TelaCronograma turma="IF969 · T02" aulas={[]} uidHashProfessor="" aoSalvar={vi.fn()} aoPular={vi.fn()} />,
+    )
+    expect(screen.getByRole('button', { name: 'Completa' })).toBeInTheDocument()
+    expect(screen.getByLabelText('SEG, 09:00 às 09:50')).toBeInTheDocument()
+    expect(screen.getByText('SÁB')).toBeInTheDocument()
+  })
+
+  it('aula só válida na completa aparece como fora dos blocos na simplificada, e some do aviso ao trocar', async () => {
+    const usuario = userEvent.setup()
+    await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('IF685 · T01', '1', 'Ana')])
+    // 09:00-09:50 só existe na grade completa — metade do bloco simplificado
+    // 08:00-09:50.
+    await bancada.repositorio.definirHorarioDaTurma('IF685 · T01', [
+      { uidHashProfessor: 'prof', dia: 2, inicio: '09:00', fim: '09:50', turma: 'IF685 · T01' },
+    ])
+
+    renderizarCom(bancada, <TelaRepositorio />)
+    await usuario.click(await screen.findByRole('button', { name: /Grade horária/ }))
+
+    // O parágrafo do aviso concatena duas frases (a contagem e o "tocar aqui
+    // substitui"), por isso o texto exato buscado é só um trecho — daí a
+    // regex, que `findByText` casa por substring.
+    expect(
+      await screen.findByText(/Uma aula desta turma está em horário fora destes blocos/),
+    ).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Completa' }))
+
+    expect(
+      screen.queryByText(/Uma aula desta turma está em horário fora destes blocos/),
+    ).not.toBeInTheDocument()
+    expect(screen.getByLabelText('TER, 09:00 às 09:50')).toHaveAttribute('aria-pressed', 'true')
   })
 })
