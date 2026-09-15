@@ -411,9 +411,12 @@ export function Fluxo() {
 
   const abrirChamada = useCallback(
     async (turma: string, uidHash: string, em: Date, automatico = false) => {
-      const total = await repositorio.contarEventos()
+      const [total, vinculo] = await Promise.all([
+        repositorio.contarEventos(),
+        repositorio.vinculoPorHash(uidHash),
+      ])
       const evento = eventoDe(
-        { tipo: 'abrir', turma },
+        { tipo: 'abrir', turma, vinculo },
         {
           eventoId: proximoEventoId(config.instalacaoId, em, total + 1),
           quando: em,

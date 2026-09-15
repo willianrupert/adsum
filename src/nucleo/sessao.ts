@@ -110,10 +110,12 @@ export interface Sessao {
 }
 
 export type Decisao =
-  | { tipo: 'abrir'; turma: string }
+  /** `vinculo` é de quem abriu — sem ele, o evento de abertura no log fica
+      sem nome, mesmo tendo o `uid_hash` de sobra pra achar de quem era. */
+  | { tipo: 'abrir'; turma: string; vinculo?: Vinculo }
   /** Crachá novo com um nome chamado: cadastra **e** conta presença. */
   | { tipo: 'cadastro'; pessoa: Matriculado }
-  | { tipo: 'encerrar' }
+  | { tipo: 'encerrar'; vinculo?: Vinculo }
   | { tipo: 'cedo_demais'; faltamMs: number }
   | { tipo: 'presenca'; vinculo: Vinculo }
   | { tipo: 'repetido'; vinculo: Vinculo }
@@ -155,13 +157,13 @@ export function decidir(uidHash: string, ctx: Contexto): Decisao {
   if (vinculo?.papel === ('professor' satisfies Papel)) {
     if (!sessao) {
       if (!ctx.turmaSugerida) return { tipo: 'sem_turma' }
-      return { tipo: 'abrir', turma: ctx.turmaSugerida }
+      return { tipo: 'abrir', turma: ctx.turmaSugerida, vinculo }
     }
     const decorrido = agora.getTime() - Date.parse(sessao.abertaEm)
     if (decorrido < JANELA_MINIMA_MS) {
       return { tipo: 'cedo_demais', faltamMs: JANELA_MINIMA_MS - decorrido }
     }
-    return { tipo: 'encerrar' }
+    return { tipo: 'encerrar', vinculo }
   }
 
   // Dois crachás diferentes quase juntos não são duas pessoas — é uma mão com
@@ -241,9 +243,19 @@ export function eventoDe(
   }
 
   switch (decisao.tipo) {
+    // Nome do professor, quando se sabe quem é — o mesmo dado que a linha
+    // de presença de um aluno já carrega, aqui para quem abriu e fechou.
+    // Sem vínculo achado (não devia acontecer, mas `eventoDe` não assume),
+    // cai no vazio de sempre, nunca quebra o evento.
     case 'abrir':
     case 'encerrar':
-      return { ...base, nome: '', origem: 'professor', resultado: 'ok' }
+      return {
+        ...base,
+        nome: decisao.vinculo?.nome ?? '',
+        matricula: decisao.vinculo?.matricula,
+        origem: 'professor',
+        resultado: 'ok',
+      }
     // Fica no log: o professor pode ter olhado para a turma na hora em que a
     // tela avisou, e no fim da aula ele merece poder conferir que houve
     // tentativa — com o hash do crachá recusado, que é o que permite descobrir

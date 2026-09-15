@@ -36,10 +36,11 @@ const ctx = (extra: Partial<Contexto> = {}): Contexto => ({
 })
 
 describe('crachá do professor', () => {
-  it('abre a aula quando não há sessão', () => {
+  it('abre a aula quando não há sessão, com o vínculo de quem abriu', () => {
     expect(decidir(PROFESSOR.uidHash, ctx({ vinculo: PROFESSOR }))).toEqual({
       tipo: 'abrir',
       turma: 'IF685 · T01',
+      vinculo: PROFESSOR,
     })
   })
 
@@ -131,6 +132,24 @@ describe('linhas do log', () => {
   it('abrir e encerrar entram como professor, e não como presença', () => {
     expect(eventoDe({ tipo: 'abrir', turma: 'x' }, dados)?.origem).toBe('professor')
     expect(eventoDe({ tipo: 'encerrar' }, dados)?.origem).toBe('professor')
+  })
+
+  // O `uid_hash` já dizia quem abriu; só o nome ficava de fora, e quem lia o
+  // CSV bruto tinha que cruzar com vinculos.json na mão pra descobrir.
+  it('abrir e encerrar levam o nome de quem abriu, quando se sabe', () => {
+    expect(eventoDe({ tipo: 'abrir', turma: 'x', vinculo: PROFESSOR }, dados)).toMatchObject({
+      nome: PROFESSOR.nome,
+    })
+    expect(eventoDe({ tipo: 'encerrar', vinculo: PROFESSOR }, dados)).toMatchObject({
+      nome: PROFESSOR.nome,
+    })
+  })
+
+  // Sem vínculo achado — não devia acontecer, mas `eventoDe` não assume —,
+  // cai no vazio de sempre. Nunca quebra o evento por falta de nome.
+  it('sem vínculo, o nome fica vazio como sempre foi', () => {
+    expect(eventoDe({ tipo: 'abrir', turma: 'x' }, dados)?.nome).toBe('')
+    expect(eventoDe({ tipo: 'encerrar' }, dados)?.nome).toBe('')
   })
 
   // Recusa não é acontecimento: o log registra o que houve, não o que se quis.

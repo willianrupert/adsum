@@ -365,6 +365,9 @@ describe('abrir e encerrar sem crachá', () => {
     const doProfessor = eventos.filter((e) => e.origem === 'professor')
     expect(doProfessor).toHaveLength(2)
     expect(doProfessor.every((e) => e.uidHash === 'aaaa000000000000')).toBe(true)
+    // O uid_hash já dizia quem era; agora o nome também vai na linha, sem
+    // precisar cruzar com vinculos.json pra ler o CSV bruto.
+    expect(doProfessor.every((e) => e.nome === 'Ana Paula')).toBe(true)
   })
 })
 

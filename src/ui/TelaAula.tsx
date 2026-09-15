@@ -434,8 +434,9 @@ export function TelaAula({
   const aoEncerrarAgora = useCallback(() => {
     void (async () => {
       const agora = new Date()
+      const vinculo = vinculos.find((v) => v.uidHash === sessao.uidHashProfessor)
       const evento = eventoDe(
-        { tipo: 'encerrar' },
+        { tipo: 'encerrar', vinculo },
         {
           eventoId: proximoEventoId(config.instalacaoId, agora, ++sequencia.current),
           quando: agora,
@@ -456,7 +457,7 @@ export function TelaAula({
       )
       aoMudarBase()
     })()
-  }, [config.instalacaoId, sessao, repositorio, aoRegistrar, aoEncerrar, aoMudarBase])
+  }, [config.instalacaoId, sessao, repositorio, aoRegistrar, aoEncerrar, aoMudarBase, vinculos])
 
   /**
    * Antes de gravar: só pixels, para a fila nunca esperar o disco.
