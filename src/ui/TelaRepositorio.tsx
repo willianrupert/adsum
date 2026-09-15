@@ -21,8 +21,9 @@ import { useAdsum } from './adsum.ts'
 import { Linha, Painel, Secao, Selo } from './componentes/Painel.tsx'
 import { Cartao } from './componentes/Cartao.tsx'
 import { GradeDaSemana, aulasDe } from './componentes/GradeDaSemana.tsx'
-import { BLOCOS, marcadosDe } from '../nucleo/horarios.ts'
+import { BLOCOS, BLOCOS_COMPLETOS, marcadosDe } from '../nucleo/horarios.ts'
 import { Importacao, type Resultado } from './componentes/Importacao.tsx'
+import { definirModoDeGrade, modoDeGrade, type ModoDeGrade } from '../ambiente/preferencias.ts'
 
 /**
  * O que dizer onde não há seletor de pasta — e são dois casos diferentes.
@@ -98,8 +99,19 @@ function GradeDeAjustes({
   const [escolhida, setEscolhida] = useState<string>()
   const turma = escolhida && turmas.includes(escolhida) ? escolhida : turmas[0]
 
+  // Mesma preferência do cronograma de cadastro (`ambiente/preferencias.ts`):
+  // as duas telas leem e gravam a mesma chave, então trocar aqui reflete lá
+  // na próxima vez que aquela tela montar, e vice-versa.
+  const [modo, setModo] = useState<ModoDeGrade>(modoDeGrade)
+  const blocos = modo === 'completa' ? BLOCOS_COMPLETOS : BLOCOS
+
+  function trocarModo(novo: ModoDeGrade) {
+    definirModoDeGrade(novo)
+    setModo(novo)
+  }
+
   const daTurma = useMemo(() => aulas.filter((a) => a.turma === turma), [aulas, turma])
-  const { marcados, foraDosBlocos } = useMemo(() => marcadosDe(daTurma, BLOCOS), [daTurma])
+  const { marcados, foraDosBlocos } = useMemo(() => marcadosDe(daTurma, blocos), [daTurma, blocos])
 
   if (turmas.length === 0) {
     return <p className="ferramentas__nota">Nenhuma turma cadastrada ainda.</p>
@@ -121,16 +133,35 @@ function GradeDeAjustes({
         </div>
       )}
 
+      <div className="cronograma__modo">
+        <div className="segmentado" role="group" aria-label="Granularidade da grade">
+          <button
+            type="button"
+            className={modo === 'simplificada' ? 'segmento segmento--ativo' : 'segmento'}
+            onClick={() => trocarModo('simplificada')}
+          >
+            Simplificada
+          </button>
+          <button
+            type="button"
+            className={modo === 'completa' ? 'segmento segmento--ativo' : 'segmento'}
+            onClick={() => trocarModo('completa')}
+          >
+            Completa
+          </button>
+        </div>
+      </div>
+
       <GradeDaSemana
         marcados={marcados}
         rotulo={`Horários de ${turma}`}
-        blocos={BLOCOS}
+        blocos={blocos}
         aoMudar={(novos) => {
           // O professor da grade é quem já tem crachá. Sem nenhum, a grade não
           // tem por onde ser indexada — e a tela diz isso abaixo.
           void aoMudar(
             turma,
-            aulasDe(novos, turma, daTurma[0]?.uidHashProfessor ?? professorPadrao, BLOCOS),
+            aulasDe(novos, turma, daTurma[0]?.uidHashProfessor ?? professorPadrao, blocos),
           )
         }}
       />

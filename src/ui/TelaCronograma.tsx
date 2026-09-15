@@ -13,9 +13,10 @@
 // a mesma — duas implementações divergiriam.
 
 import { useMemo, useState } from 'react'
-import { BLOCOS, horasPorSemana, marcadosDe } from '../nucleo/horarios.ts'
+import { BLOCOS, BLOCOS_COMPLETOS, horasPorSemana, marcadosDe } from '../nucleo/horarios.ts'
 import type { Aula } from '../nucleo/grade.ts'
 import { GradeDaSemana, aulasDe } from './componentes/GradeDaSemana.tsx'
+import { definirModoDeGrade, modoDeGrade, type ModoDeGrade } from '../ambiente/preferencias.ts'
 
 export function TelaCronograma({
   turma,
@@ -31,9 +32,24 @@ export function TelaCronograma({
   aoSalvar: (aulas: Aula[]) => void
   aoPular: () => void
 }) {
-  const inicial = useMemo(() => marcadosDe(aulas, BLOCOS), [aulas])
+  // Preferência desta máquina (`ambiente/preferencias.ts`), não desta turma:
+  // o mesmo toggle existe em Ajustes → Grade horária, e as duas leem e
+  // gravam a mesma chave — trocar aqui reflete lá na próxima vez que aquela
+  // tela montar.
+  const [modo, setModo] = useState<ModoDeGrade>(modoDeGrade)
+  const blocos = modo === 'completa' ? BLOCOS_COMPLETOS : BLOCOS
+
+  function trocarModo(novo: ModoDeGrade) {
+    definirModoDeGrade(novo)
+    setModo(novo)
+  }
+
+  // Só recalcula a partir do que já estava salvo quando `aulas` ou o
+  // catálogo mudam — trocar de modo não reseta o que o professor já marcou
+  // nesta sessão, porque o estado de `marcados` (abaixo) não depende disto.
+  const inicial = useMemo(() => marcadosDe(aulas, blocos), [aulas, blocos])
   const [marcados, setMarcados] = useState<Set<string>>(inicial.marcados)
-  const horas = horasPorSemana(marcados, BLOCOS)
+  const horas = horasPorSemana(marcados, blocos)
 
   return (
     <section className="cronograma">
@@ -46,11 +62,30 @@ export function TelaCronograma({
         </p>
       </header>
 
+      <div className="cronograma__modo">
+        <div className="segmentado" role="group" aria-label="Granularidade da grade">
+          <button
+            type="button"
+            className={modo === 'simplificada' ? 'segmento segmento--ativo' : 'segmento'}
+            onClick={() => trocarModo('simplificada')}
+          >
+            Simplificada
+          </button>
+          <button
+            type="button"
+            className={modo === 'completa' ? 'segmento segmento--ativo' : 'segmento'}
+            onClick={() => trocarModo('completa')}
+          >
+            Completa
+          </button>
+        </div>
+      </div>
+
       <GradeDaSemana
         marcados={marcados}
         aoMudar={setMarcados}
         rotulo={`Horários de ${turma}`}
-        blocos={BLOCOS}
+        blocos={blocos}
       />
 
       <p className="cronograma__resumo">
@@ -74,7 +109,7 @@ export function TelaCronograma({
       <div className="cronograma__acoes">
         <button
           className="botao--acento pasta__botao"
-          onClick={() => aoSalvar(aulasDe(marcados, turma, uidHashProfessor, BLOCOS))}
+          onClick={() => aoSalvar(aulasDe(marcados, turma, uidHashProfessor, blocos))}
         >
           {marcados.size === 0 ? 'Continuar sem horário' : 'Salvar horário'}
         </button>

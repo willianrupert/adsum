@@ -979,6 +979,12 @@ button:focus-visible {
   text-wrap: balance;
 }
 
+/* O toggle simplificada/completa, acima da grade — mesmo espaço que separa
+   o cabeçalho da grade em si. */
+.cronograma__modo {
+  margin-bottom: 20px;
+}
+
 /* Uma coluna estreita para a hora e uma igual por dia mostrado. A hora à
    esquerda é o eixo de leitura de qualquer mural de horário. O número de
    colunas de dia varia com a grade (5 na simplificada, sem sábado; 6 na
