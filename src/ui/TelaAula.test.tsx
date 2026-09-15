@@ -731,6 +731,61 @@ describe('professores têm seção própria', () => {
   })
 })
 
+// Professor que perdeu o crachá e trouxe outro já tem vínculo — a mesma
+// regra de "crachá desconhecido sempre abre a busca, sobre a turma inteira"
+// que já valia pra aluno (`ordemDaBusca` não filtrava só pendente) só que,
+// até aqui, o filtro `papel === 'aluno'` deixava o professor de fora dessa
+// busca. Sem isto, o professor já vinculado ficava invisível assim que o
+// crachá dele mudava, e "Cadastrar" de novo criaria um segundo vínculo real
+// — o mesmo bug de grade dividida entre dois professores (`nucleo/grade.ts`),
+// só que reaberto pela troca em vez de nascer sozinho.
+describe('professor que troca de crachá', () => {
+  const PROFESSOR_JA_VINCULADO: Matriculado = {
+    turma: TURMA,
+    chave: 'prof-antigo',
+    matricula: '',
+    nome: 'Paulo Freitas',
+    nomeCompleto: 'PAULO FREITAS DE ARAUJO FILHO',
+    papel: 'professor',
+  }
+
+  it('a busca encontra o professor já vinculado, e o crachá novo substitui o antigo', async () => {
+    const usuario = userEvent.setup()
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'professor-cracha-antigo',
+      papel: 'professor',
+      nome: PROFESSOR_JA_VINCULADO.nome,
+      criadoEm: new Date().toISOString(),
+    })
+    await bancada.repositorio.gravarAula({
+      uidHashProfessor: 'professor-cracha-antigo',
+      dia: 3,
+      inicio: '08:00',
+      fim: '09:50',
+      turma: TURMA,
+    })
+
+    // Sem pendente nenhum: o professor já tem vínculo, não está na fila —
+    // e é exatamente por isso que, sem o fix, a busca não o encontrava.
+    montar([], [PROFESSOR_JA_VINCULADO])
+
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+    const dialogo = await screen.findByRole('dialog')
+    await usuario.click(within(dialogo).getByText(PROFESSOR_JA_VINCULADO.nomeCompleto))
+
+    await waitFor(async () => {
+      const vinculos = await bancada.repositorio.listarVinculos()
+      expect(vinculos).toHaveLength(1)
+      expect(vinculos[0].uidHash).not.toBe('professor-cracha-antigo')
+      expect(vinculos[0]).toMatchObject({ papel: 'professor', nome: 'Paulo Freitas' })
+    })
+
+    const [vinculoNovo] = await bancada.repositorio.listarVinculos()
+    const aulas = await bancada.repositorio.listarAulas()
+    expect(aulas[0].uidHashProfessor).toBe(vinculoNovo.uidHash)
+  })
+})
+
 // Contador de presença subia com crachá de professor: `TelaAula` somava ao
 // mesmo conjunto de presentes qualquer `cadastro`, sem olhar `papel`. O
 // professor cadastrando o próprio crachá pela seção de professores não é

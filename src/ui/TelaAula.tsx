@@ -240,10 +240,10 @@ export function TelaAula({
    */
   const ordemDaBusca = useMemo(() => {
     const naFila = new Set(pendentes.map((p) => p.chave))
-    return [
-      ...pendentes.map(efetivo),
-      ...daTurma.filter((p) => p.papel === 'aluno' && !naFila.has(p.chave)),
-    ]
+    // Turma inteira, não só quem falta — inclusive quem já tem crachá,
+    // professor ou aluno. Sem isto, quem perdeu o crachá e trouxe outro não
+    // tinha como ser encontrado: já tem vínculo, logo não está na fila.
+    return [...pendentes.map(efetivo), ...daTurma.filter((p) => !naFila.has(p.chave))]
   }, [pendentes, daTurma, efetivo])
 
   // Reabrir o app no meio da aula tem que reencontrar quem já passou. A fonte
@@ -302,22 +302,30 @@ export function TelaAula({
    * Grava o vínculo de um crachá recém-identificado — cadastro do modo de
    * chamar nomes, ou confirmação pela busca de "de quem é esse crachá".
    *
-   * Quando é a identificação **real** do professor, substitui um sintético
-   * que já existisse: sem isto os dois conviveriam — o sintético continua
-   * "vinculado" (`garantirProfessor`, em `Fluxo.tsx`, nasce genérico, mas não
-   * desaparece sozinho), e qualquer `Aula.uidHashProfessor` que ainda aponte
-   * pro hash velho nunca mais bateria com hash nenhum depois da troca.
+   * Quando é a identificação **real** do professor, substitui um vínculo
+   * antigo que já existisse pra ele — sintético (`garantirProfessor`, em
+   * `Fluxo.tsx`, nasce genérico, mas não desaparece sozinho) ou real (o
+   * professor perdeu o crachá e a busca achou o vínculo antigo, agora
+   * encontrável graças a `ordemDaBusca` não excluir mais quem já tem
+   * crachá). Sem isto os dois conviveriam, e qualquer `Aula.uidHashProfessor`
+   * que ainda apontasse pro hash velho nunca mais bateria com hash nenhum
+   * depois da troca — o mesmo bug do vínculo duplicado que quebrava a grade
+   * (`nucleo/grade.ts`), só que reaberto pela troca de crachá em vez de
+   * nascer sozinho.
    */
   const vincularCracha = useCallback(
     async (pessoa: Matriculado, uidHash: string, quando: Date) => {
       if (pessoa.papel === 'professor') {
-        const sintetico = vinculos.find(
-          (v) => v.papel === 'professor' && v.sintetico && v.uidHash !== uidHash,
+        const antigo = vinculos.find(
+          (v) =>
+            v.papel === 'professor' &&
+            v.uidHash !== uidHash &&
+            (v.sintetico || (pessoa.matricula ? v.matricula === pessoa.matricula : v.nome === pessoa.nome)),
         )
-        if (sintetico) {
-          await repositorio.removerVinculo(sintetico.uidHash)
+        if (antigo) {
+          await repositorio.removerVinculo(antigo.uidHash)
           const aulas = await repositorio.listarAulas()
-          for (const aula of aulas.filter((a) => a.uidHashProfessor === sintetico.uidHash)) {
+          for (const aula of aulas.filter((a) => a.uidHashProfessor === antigo.uidHash)) {
             await repositorio.gravarAula({ ...aula, uidHashProfessor: uidHash })
           }
         }
