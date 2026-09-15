@@ -186,11 +186,18 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
       await usuario.click(await screen.findByRole('button', { name: 'Depois' }))
     }
 
+    // "Qual turma?" não é "talvez" — é garantida nos dois ramos acima, pela
+    // mesma regra de `escolherTurma` (`nucleo/grade.ts`): com `agoraA`, as
+    // duas turmas batem com agora ("varias"); sem ele, nenhuma bate e há
+    // mais de uma turma cadastrada ("nenhuma"). Os dois caminhos caem em
+    // `perguntar`. Um `screen.queryByText` síncrono logo após o clique
+    // corria contra o próprio `iniciarChamada` (duas idas ao repositório
+    // antes de `setEscolhendo`) e, sob CPU disputada no CI, às vezes lia o
+    // popup como ausente — não porque não fosse aparecer, mas porque ainda
+    // não tinha aparecido. `findByRole` espera de verdade, em vez de
+    // apostar num instante só.
     await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
-    const talvezPergunta = screen.queryByText('Qual turma?')
-    if (talvezPergunta) {
-      await usuario.click(screen.getByRole('button', { name: TURMA_B }))
-    }
+    await usuario.click(await screen.findByRole('button', { name: TURMA_B }))
     await waitFor(async () =>
       expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: TURMA_B }),
     )
@@ -235,7 +242,12 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
 
     // A tela mostra o nome completo já em Título — "titulo()", a mesma
     // conversão que a colagem real do SIGAA sempre passa (a página entrega
-    // tudo em caixa alta).
+    // tudo em caixa alta). O diálogo monta na hora, mas o conteúdo chega
+    // depois — `carregar()`, em `useEffect` dentro de `ConteudoDePresencas`
+    // (`TelaPresencas.tsx`), lê o repositório e aplica via `startTransition`.
+    // O primeiro nome espera essa carga; o resto do quadro já veio junto na
+    // mesma transição, então ler em seguida sem esperar de novo é seguro.
+    expect(await within(popup).findByText(titulo(ALUNOS_A[0][0]))).toBeInTheDocument()
     for (const [nome] of ALUNOS_A) expect(within(popup).getByText(titulo(nome))).toBeInTheDocument()
     for (const [nome] of ALUNOS_B) expect(within(popup).queryByText(titulo(nome))).not.toBeInTheDocument()
 

@@ -107,6 +107,13 @@ describe('jornada completa: turma nova, uma aula inteira, tudo simulado', () => 
     await usuario.click(await screen.findByRole('button', { name: 'Ver presenças' }))
     const popup = await screen.findByRole('dialog', { name: 'Presenças' })
 
+    // O diálogo monta na hora; o conteúdo vem de `carregar()` em `useEffect`
+    // (quatro leituras do repositório) e chega via `startTransition` —
+    // `findByRole` acima só prova que a folha existe, não que os dados já
+    // vieram. Esperar pelo primeiro nome dá tempo a essa carga; depois dele,
+    // o resto do quadro já commitou junto (mesma transição), e ler em
+    // seguida sem esperar de novo é seguro.
+    expect(await within(popup).findByText(turma[0].nomeCompleto)).toBeInTheDocument()
     for (const pessoa of turma) {
       expect(within(popup).getByText(pessoa.nomeCompleto)).toBeInTheDocument()
     }
