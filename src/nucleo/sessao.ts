@@ -76,6 +76,32 @@ export const JANELA_MINIMA_MS = 10_000
  */
 export const INTERVALO_MINIMO_MS = 400
 
+export interface EstatisticaDeIntervalos {
+  minimoMs: number
+  maximoMs: number
+  medioMs: number
+  amostras: number
+}
+
+/**
+ * Mínimo, máximo e média dos intervalos entre crachás diferentes numa
+ * chamada — o dado que troca `INTERVALO_MINIMO_MS` de palpite por medição,
+ * de uma aula de verdade, sem precisar da tela de diagnóstico aberta ao
+ * mesmo tempo que a fila anda. Cada item de `intervalos` já é a diferença em
+ * ms entre um crachá aceito e o anterior (`TelaAula` só empilha aqui a mesma
+ * régua que `decidir` usa para `rapido_demais` — leituras aceitas, de gente
+ * diferente, nunca o mesmo crachá relido nem o crachá do professor).
+ */
+export function estatisticaDeIntervalos(intervalos: number[]): EstatisticaDeIntervalos | undefined {
+  if (intervalos.length === 0) return undefined
+  return {
+    minimoMs: Math.min(...intervalos),
+    maximoMs: Math.max(...intervalos),
+    medioMs: Math.round(intervalos.reduce((soma, ms) => soma + ms, 0) / intervalos.length),
+    amostras: intervalos.length,
+  }
+}
+
 export interface Sessao {
   turma: string
   abertaEm: string

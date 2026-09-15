@@ -15,7 +15,7 @@ import {
 import { podeApagar, type DiagnosticoRepositorio } from '../portas/Repositorio.ts'
 import { descreverAmbiente, levantarCapacidades } from '../ambiente/capacidades.ts'
 import { leitoresVisiveis, useAdsum } from './adsum.ts'
-import { definirModoDev, modoDev } from '../ambiente/preferencias.ts'
+import { definirModoDev, historicoDeChamadas, modoDev } from '../ambiente/preferencias.ts'
 import { estadoDoConvite } from '../ambiente/instalacao.ts'
 import { Linha, Painel, Selo } from './componentes/Painel.tsx'
 
@@ -53,6 +53,13 @@ function hora(d: Date): string {
   return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
+function duracao(ms: number): string {
+  const totalSeg = Math.round(ms / 1000)
+  const min = Math.floor(totalSeg / 60)
+  const seg = totalSeg % 60
+  return `${min}min ${String(seg).padStart(2, '0')}s`
+}
+
 function hhmm(d: Date): string {
   return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
@@ -63,6 +70,7 @@ export function TelaDiagnostico() {
   const ensaio = useMemo(modoDev, [])
   const capacidades = useMemo(levantarCapacidades, [])
   const ambiente = useMemo(descreverAmbiente, [])
+  const historico = useMemo(historicoDeChamadas, [])
 
   const [estadoLeitor, setEstadoLeitor] = useState<EstadoLeitor>(leitor.estado())
   const [diagLeitor, setDiagLeitor] = useState<DiagnosticoLeitor>()
@@ -404,6 +412,49 @@ export function TelaDiagnostico() {
                       </>
                     ) : (
                       <Selo tom="grave">Crachá não cadastrado</Selo>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Painel>
+
+      <Painel
+        titulo="Chamadas recentes"
+        recolhivel
+        legenda="Duração e intervalo entre crachás — o dado para calibrar o limite contra dois crachás na mesma mão."
+      >
+        {historico.length === 0 ? (
+          <p className="vazio">Nenhuma chamada encerrada ainda neste computador.</p>
+        ) : (
+          <table className="tabela">
+            <thead>
+              <tr>
+                <th>Turma</th>
+                <th>Encerrada</th>
+                <th>Duração</th>
+                <th>Intervalo entre crachás</th>
+              </tr>
+            </thead>
+            <tbody>
+              {historico.map((c, i) => (
+                <tr key={`${c.encerradaEm}-${i}`}>
+                  <td>{c.turma}</td>
+                  <td>{hora(new Date(c.encerradaEm))}</td>
+                  <td>
+                    <code>{duracao(c.duracaoMs)}</code>
+                  </td>
+                  <td>
+                    {c.intervalos ? (
+                      <code>
+                        {c.intervalos.minimoMs}–{c.intervalos.maximoMs} ms, média{' '}
+                        {c.intervalos.medioMs} ms ({c.intervalos.amostras}{' '}
+                        {c.intervalos.amostras === 1 ? 'crachá' : 'crachás'})
+                      </code>
+                    ) : (
+                      <code>—</code>
                     )}
                   </td>
                 </tr>

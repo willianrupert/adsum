@@ -38,11 +38,6 @@ export function TelaResumo({
 }) {
   const [salvo, setSalvo] = useState<ComoSalvou>()
 
-  const minutos = Math.max(
-    1,
-    Math.round((Date.now() - Date.parse(sessao.abertaEm)) / 60_000),
-  )
-
   const guardar = () => void aoSalvarCopia().then(setSalvo)
 
   return (
@@ -52,9 +47,13 @@ export function TelaResumo({
       <p className="resumo__numero">
         <Contador valor={presentes} />
       </p>
+      {/* Sem duração aqui: `abertaEm` é de quando a sessão abriu — às vezes
+          a grade, sozinha, horas antes de alguém olhar a tela —, não de
+          quando a fila de verdade começou a andar. "744 minutos" lido nesta
+          tela parece erro; o mesmo número faz sentido em Diagnóstico, ao
+          lado de outras chamadas, onde dá para comparar. */}
       <p className="resumo__unidade">
-        {presentes === 1 ? 'presença registrada' : 'presenças registradas'} em {minutos}{' '}
-        {minutos === 1 ? 'minuto' : 'minutos'}
+        {presentes === 1 ? 'presença registrada' : 'presenças registradas'}
       </p>
 
       {arquivo ? (

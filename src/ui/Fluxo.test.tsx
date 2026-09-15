@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { baterCrachasEmSequencia, gerarBaralho } from '../testes/simular.ts'
 import { Fluxo } from './Fluxo.tsx'
-import { adiarHorario, dispensarCadastro } from '../ambiente/preferencias.ts'
+import { adiarHorario, definirProfessorAtual, dispensarCadastro } from '../ambiente/preferencias.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 
 let bancada: Bancada
@@ -53,6 +53,24 @@ describe('a rota decide a tela', () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
     expect(await screen.findByText(/Começar a chamada/)).toBeInTheDocument()
+  })
+
+  // "Sou eu" (ver TelaAula.test.tsx) personaliza a saudação do repouso — o
+  // dado já existe no vínculo, só falta o app saber que é este que opera a
+  // máquina. Fora do horário de aula: com aula à vista, o repouso mostra
+  // "Sua próxima aula", não a saudação.
+  it('"Sou eu" marcado personaliza a saudação do repouso', async () => {
+    await turmaInteiraComCracha()
+    definirProfessorAtual('aaaa000000000000')
+    renderizarCom(bancada, <Fluxo />)
+    expect(await screen.findByText(/Bom dia, Ana|Boa tarde, Ana|Boa noite, Ana/)).toBeInTheDocument()
+  })
+
+  it('sem "Sou eu" marcado, a saudação continua anônima', async () => {
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    expect(await screen.findByText(/Começar a chamada/)).toBeInTheDocument()
+    expect(screen.queryByText(/, Ana/)).not.toBeInTheDocument()
   })
 
   // "Por que sugerir chamada, se o software sabe que estamos fora do

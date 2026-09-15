@@ -6,9 +6,11 @@ import { TelaAula } from './TelaAula.tsx'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import { hexParaUid } from '../nucleo/uid.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
+import { professorAtual } from '../ambiente/preferencias.ts'
 
 const TURMA = 'IF685 · T01'
 const CRACHA_DA_ANA = '04a23b91'
+const CRACHA_DO_BRENO = '0499aa77'
 const CRACHA_NOVO = '0471c2d8'
 
 const pessoa = (matricula: string, nome: string): Matriculado => ({
@@ -34,6 +36,8 @@ const SESSAO = {
 beforeEach(async () => {
   bancada = await montarBancada()
   await bancada.repositorio.abrirSessao(SESSAO)
+  // `localStorage` é compartilhado pela suíte inteira — ver `preferencias.test.ts`.
+  window.localStorage.removeItem('adsum.professor.atual')
 })
 
 async function comCrachaDaAna() {
@@ -391,9 +395,67 @@ describe('o fim da aula', () => {
     })
     await act(async () => bancada.leitor.simular(CRACHA_NOVO))
 
-    await waitFor(() => expect(aoEncerrar).toHaveBeenCalledWith(1))
+    await waitFor(() => expect(aoEncerrar).toHaveBeenCalled())
+    const [presentes, duracaoMs, intervalos] = aoEncerrar.mock.calls[0]
+    expect(presentes).toBe(1)
+    expect(duracaoMs).toBeGreaterThanOrEqual(0)
+    // Só uma pessoa registrada: não há par para medir intervalo nenhum.
+    expect(intervalos).toBeUndefined()
     expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
   })
+
+  // O dado que troca `INTERVALO_MINIMO_MS` de palpite por medição — ver
+  // `estatisticaDeIntervalos`. Atraso real de propósito: sem pelo menos
+  // 400 ms entre os dois crachás, o segundo seria recusado como "rápido
+  // demais" e não haveria par nenhum pra medir.
+  it('mede o intervalo entre crachás e a duração da aula, ao encerrar', async () => {
+    await comCrachaDaAna()
+    const uidBreno = await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_DO_BRENO))
+    await bancada.repositorio.gravarVinculo({
+      uidHash: uidBreno,
+      papel: 'aluno',
+      nome: BRENO.nome,
+      matricula: BRENO.matricula,
+      criadoEm: new Date().toISOString(),
+    })
+    const aoEncerrar = vi.fn()
+    renderizarCom(
+      bancada,
+      <TelaAula
+        sessao={SESSAO}
+        pendentes={[]}
+        daTurma={[ANA, BRENO]}
+        aoMudarBase={() => {}}
+        aoEncerrar={aoEncerrar}
+      />,
+    )
+
+    await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await waitFor(() => expect(screen.getByText('1')).toBeInTheDocument())
+
+    await new Promise((resolve) => setTimeout(resolve, 450))
+    await act(async () => bancada.leitor.simular(CRACHA_DO_BRENO))
+    await waitFor(() => expect(screen.getByText('2')).toBeInTheDocument())
+
+    const uidProfessor = await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_NOVO))
+    await bancada.repositorio.gravarVinculo({
+      uidHash: uidProfessor,
+      papel: 'professor',
+      nome: 'Paulo Freitas',
+      criadoEm: new Date().toISOString(),
+    })
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+
+    await waitFor(() => expect(aoEncerrar).toHaveBeenCalled())
+    const [presentes, duracaoMs, intervalos] = aoEncerrar.mock.calls[0]
+    expect(presentes).toBe(2)
+    expect(duracaoMs).toBeGreaterThan(0)
+    // Ana → Breno é o único par: uma amostra só, os três valores coincidem.
+    expect(intervalos).toMatchObject({ amostras: 1 })
+    expect(intervalos.minimoMs).toBeGreaterThanOrEqual(400)
+    expect(intervalos.minimoMs).toBe(intervalos.maximoMs)
+    expect(intervalos.minimoMs).toBe(intervalos.medioMs)
+  }, 10_000)
 
   // "Concluir" morava no rodapé de uma tabela que podia ter 49 linhas, e
   // virou o cabeçalho por causa disso — mesma regressão aqui: "Quem falta"
@@ -542,5 +604,53 @@ describe('crachá desconhecido sem ninguém pendente', () => {
 
     await waitFor(async () => expect(await bancada.repositorio.contarEventos()).toBe(1))
     expect((await bancada.repositorio.listarEventos())[0].resultado).toBe('desconhecido')
+  })
+})
+
+describe('"Sou eu"', () => {
+  const PROFESSOR: Matriculado = {
+    turma: TURMA,
+    chave: 'prof',
+    matricula: '',
+    nome: 'Paulo Freitas',
+    nomeCompleto: 'PAULO FREITAS DE ARAUJO FILHO',
+    papel: 'professor',
+  }
+
+  it('marca e desfaz a personalização, sem mexer no vínculo', async () => {
+    const uidHash = await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_NOVO))
+    await bancada.repositorio.gravarVinculo({
+      uidHash,
+      papel: 'professor',
+      nome: PROFESSOR.nome,
+      criadoEm: new Date().toISOString(),
+    })
+    const usuario = userEvent.setup()
+    montar([ANA], [PROFESSOR, ANA])
+
+    await usuario.click(await screen.findByRole('button', { name: 'Sou eu' }))
+    expect(professorAtual()).toBe(uidHash)
+    expect(await screen.findByRole('button', { name: 'Não sou eu' })).toBeInTheDocument()
+    expect(screen.getByText('Você')).toBeInTheDocument()
+    // O vínculo em si não muda — "sou eu" é fato desta máquina, não da turma.
+    expect(await bancada.repositorio.vinculoPorHash(uidHash)).toMatchObject({ nome: PROFESSOR.nome })
+
+    await usuario.click(screen.getByRole('button', { name: 'Não sou eu' }))
+    expect(professorAtual()).toBeUndefined()
+    expect(await screen.findByRole('button', { name: 'Sou eu' })).toBeInTheDocument()
+  })
+
+  it('sem "Sou eu" clicado, o professor não ganha o selo "Você"', async () => {
+    const uidHash = await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_NOVO))
+    await bancada.repositorio.gravarVinculo({
+      uidHash,
+      papel: 'professor',
+      nome: PROFESSOR.nome,
+      criadoEm: new Date().toISOString(),
+    })
+    montar([ANA], [PROFESSOR, ANA])
+
+    expect(await screen.findByRole('button', { name: 'Sou eu' })).toBeInTheDocument()
+    expect(screen.queryByText('Você')).not.toBeInTheDocument()
   })
 })

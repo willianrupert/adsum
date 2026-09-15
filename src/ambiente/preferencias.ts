@@ -8,6 +8,8 @@
 // `window.localStorage` e não o global solto: o Node tem um `localStorage`
 // próprio, incompleto, que ganha do jsdom sob o vitest.
 
+import type { EstatisticaDeIntervalos } from '../nucleo/sessao.ts'
+
 const CHAVES = {
   modoDev: 'adsum.modoDev',
   leitor: 'adsum.leitor',
@@ -17,6 +19,8 @@ const CHAVES = {
   cadastroDispensado: 'adsum.cadastro.dispensado',
   conviteDeApp: 'adsum.app.dispensado',
   horarioAdiado: 'adsum.horario.adiado',
+  historicoDeChamadas: 'adsum.historico.chamadas',
+  professorAtual: 'adsum.professor.atual',
 } as const
 
 function ler(chave: string): string | undefined {
@@ -179,6 +183,67 @@ export function esquecerEncerramento(turma: string): void {
   const resto = { ...encerradas() }
   delete resto[turma]
   gravar(CHAVES.encerradas, JSON.stringify(resto))
+}
+
+export interface ChamadaEncerrada {
+  turma: string
+  encerradaEm: string
+  duracaoMs: number
+  /** Ver `estatisticaDeIntervalos`. Ausente quando menos de duas pessoas
+      foram registradas em sequência — não há par para medir. */
+  intervalos?: EstatisticaDeIntervalos
+}
+
+const HISTORICO_MAXIMO = 20
+
+/**
+ * As últimas chamadas encerradas neste computador — duração e o intervalo
+ * entre crachás de cada uma. É o dado que troca `INTERVALO_MINIMO_MS` de
+ * palpite por medição, sem depender de deixar a tela de Diagnóstico aberta
+ * enquanto a fila anda: `TelaAula` mede sozinha, em segundo plano, e só o
+ * Diagnóstico mostra o resultado depois — quem está dando aula não devia
+ * precisar olhar um número em milissegundos no meio da chamada.
+ *
+ * Local, como `encerradas`: é sobre o que aconteceu neste navegador, não
+ * sobre a turma — não faz sentido um professor que recebe a pasta de um
+ * colega herdar o histórico de chamadas dele.
+ */
+export function historicoDeChamadas(): ChamadaEncerrada[] {
+  try {
+    return JSON.parse(ler(CHAVES.historicoDeChamadas) ?? '[]') as ChamadaEncerrada[]
+  } catch {
+    return []
+  }
+}
+
+/** Mais recente primeiro, capado em `HISTORICO_MAXIMO` — o suficiente para
+    uma semana de aulas, pouco para o `localStorage` sentir o peso. */
+export function registrarChamadaEncerrada(chamada: ChamadaEncerrada): void {
+  const lista = [chamada, ...historicoDeChamadas()].slice(0, HISTORICO_MAXIMO)
+  gravar(CHAVES.historicoDeChamadas, JSON.stringify(lista))
+}
+
+/**
+ * "Sou eu" — qual vínculo de professor, entre os da turma, é quem está
+ * operando este computador. `uid_hash`, não nome: o nome pode mudar (edição
+ * de cadastro), e é o crachá que a pessoa continua sendo dona.
+ *
+ * Existe porque `quemFalta` já prevê mais de um docente numa turma — e sem
+ * isto o app não tinha como saber qual dos vínculos de professor personalizar
+ * na saudação. Sem "sou eu" marcado, a saudação continua anônima, como
+ * sempre foi.
+ *
+ * Local, como `leitorEscolhido`: é sobre quem está sentado nesta máquina
+ * agora, não sobre a turma — não faz sentido herdar isso ao receber a pasta
+ * de um colega.
+ */
+export function professorAtual(): string | undefined {
+  return ler(CHAVES.professorAtual)
+}
+
+/** `undefined` desfaz — "não sou eu", de volta ao estado anônimo de sempre. */
+export function definirProfessorAtual(uidHash: string | undefined): void {
+  gravar(CHAVES.professorAtual, uidHash)
 }
 
 /**

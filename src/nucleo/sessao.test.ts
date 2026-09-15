@@ -3,6 +3,7 @@ import {
   JANELA_MINIMA_MS,
   SILENCIO_SUSPEITO_MS,
   decidir,
+  estatisticaDeIntervalos,
   eventoDe,
   leitorSuspeito,
   proximoEventoId,
@@ -264,6 +265,37 @@ describe('dois crachás quase juntos', () => {
       { eventoId: 'web-aaaa-20260820-0009', quando: em(0), turma: SESSAO.turma, uidHash: BRENO.uidHash },
     )
     expect(evento).toMatchObject({ resultado: 'rapido_demais', uidHash: BRENO.uidHash })
+  })
+})
+
+describe('estatisticaDeIntervalos', () => {
+  it('mínimo, máximo e média dos intervalos', () => {
+    expect(estatisticaDeIntervalos([500, 700, 1200])).toEqual({
+      minimoMs: 500,
+      maximoMs: 1200,
+      medioMs: 800,
+      amostras: 3,
+    })
+  })
+
+  it('sem amostra nenhuma, não inventa número', () => {
+    expect(estatisticaDeIntervalos([])).toBeUndefined()
+  })
+
+  // Uma só pessoa registrada não tem par pra medir — mas se a lista chegar
+  // com um item, o resultado é honesto: os três valores iguais, uma amostra.
+  it('uma amostra só, os três valores coincidem', () => {
+    expect(estatisticaDeIntervalos([650])).toEqual({
+      minimoMs: 650,
+      maximoMs: 650,
+      medioMs: 650,
+      amostras: 1,
+    })
+  })
+
+  it('média arredonda, não trunca', () => {
+    // (500 + 500 + 501) / 3 = 500,33... → 500, não 501 nem truncado.
+    expect(estatisticaDeIntervalos([500, 500, 501])?.medioMs).toBe(500)
   })
 })
 

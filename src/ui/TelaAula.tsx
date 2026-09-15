@@ -30,17 +30,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import {
   decidir,
+  estatisticaDeIntervalos,
   eventoDe,
   leitorSuspeito,
   proximoEventoId,
   type Decisao,
+  type EstatisticaDeIntervalos,
   type Sessao,
 } from '../nucleo/sessao.ts'
 import type { Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { useAdsum } from './adsum.ts'
-import { modoDev } from '../ambiente/preferencias.ts'
+import { definirProfessorAtual, modoDev, professorAtual } from '../ambiente/preferencias.ts'
 import { Busca } from './componentes/Busca.tsx'
 import { Ondas } from './componentes/Simbolos.tsx'
 import { Contador } from './componentes/Contador.tsx'
@@ -81,7 +83,7 @@ export function TelaAula({
   /** Grava a linha na pasta. Acontece antes do bipe: som é "está salvo". */
   aoRegistrar?: (evento: Evento) => Promise<void>
   /** Chamado quando o crachá do professor encerra, com o que houve na aula. */
-  aoEncerrar?: (presentes: number) => void
+  aoEncerrar?: (presentes: number, duracaoMs: number, intervalos?: EstatisticaDeIntervalos) => void
 }) {
   const { leitor, repositorio, config } = useAdsum()
 
@@ -99,6 +101,10 @@ export function TelaAula({
    */
   /** A última leitura aceita de crachá de aluno. Ver `INTERVALO_MINIMO_MS`. */
   const ultima = useRef<{ uidHash: string; em: Date }>(undefined)
+
+  /** Intervalo, em ms, de cada crachá aceito até o anterior — matéria-prima
+      de `estatisticaDeIntervalos`, ao encerrar. Ver o comentário lá. */
+  const intervalos = useRef<number[]>([])
 
   /**
    * Conta as leituras para o recado de uma não apagar o de outra.
@@ -133,6 +139,8 @@ export function TelaAula({
   const [edicoes, setEdicoes] = useState<Map<string, { nome: string; papel: Papel }>>(new Map())
   /** Pulado é "não agora", não "nunca" — por isso é local e não persiste. */
   const [pulados, setPulados] = useState<Set<string>>(new Set())
+  /** "Sou eu" — ver o comentário em `professorAtual`, em `preferencias.ts`. */
+  const [professorAtualHash, setProfessorAtualHash] = useState(professorAtual)
   /** Última vez que o leitor entregou alguma coisa — leitura aceita, recusa,
       qualquer uma. Ver `leitorSuspeito` em `nucleo/sessao.ts`. */
   const [ultimaAtividadeEm, setUltimaAtividadeEm] = useState(() => new Date())
@@ -314,6 +322,13 @@ export function TelaAula({
         //
         // A recusa **não** conta como leitura: assim a janela segue medida a
         // partir do último crachá aceito, e insistir depressa não a reinicia.
+        //
+        // Só `presenca`/`cadastro` vira amostra: `repetido` é o mesmo crachá
+        // relido (outro ritmo, não interessa aqui), e sem `ultima.current`
+        // ainda não há par para medir — é o primeiro crachá da fila.
+        if (ultima.current && (decisao.tipo === 'presenca' || decisao.tipo === 'cadastro')) {
+          intervalos.current.push(leitura.em.getTime() - ultima.current.em.getTime())
+        }
         if (decisao.tipo !== 'rapido_demais' && vinculo?.papel !== 'professor') {
           ultima.current = { uidHash, em: leitura.em }
         }
@@ -380,7 +395,11 @@ export function TelaAula({
         }
         if (decisao.tipo === 'encerrar') {
           await repositorio.encerrarSessao()
-          aoEncerrar?.(jaPresentes.current.size)
+          aoEncerrar?.(
+            jaPresentes.current.size,
+            leitura.em.getTime() - Date.parse(sessao.abertaEm),
+            estatisticaDeIntervalos(intervalos.current),
+          )
         }
 
         confirmar(decisao, evento, minha)
@@ -430,7 +449,11 @@ export function TelaAula({
       }
       await repositorio.encerrarSessao()
       tocar('encerramento')
-      aoEncerrar?.(jaPresentes.current.size)
+      aoEncerrar?.(
+        jaPresentes.current.size,
+        agora.getTime() - Date.parse(sessao.abertaEm),
+        estatisticaDeIntervalos(intervalos.current),
+      )
       aoMudarBase()
     })()
   }, [config.instalacaoId, sessao, repositorio, aoRegistrar, aoEncerrar, aoMudarBase])
@@ -666,6 +689,7 @@ export function TelaAula({
                 const vinculado = !pendentes.some((x) => x.chave === p.chave)
                 const e = efetivo(p)
                 const repetido = daTurma.filter((x) => efetivo(x).nome === e.nome).length > 1
+                const vinculo = vinculado ? vinculoDe(p) : undefined
                 return (
                   <tr key={p.chave} className={p.chave === chamadoChave ? 'linha--chamada' : ''}>
                     <td>
@@ -738,6 +762,37 @@ export function TelaAula({
                             <button className="botao--grave" onClick={() => removerCracha(p)}>
                               Remover crachá
                             </button>
+                          )}
+                          {/* "Sou eu": só na linha de um professor de
+                              verdade vinculado — personaliza a saudação do
+                              repouso ("Bom dia, Paulo") sem mexer no vínculo
+                              em si. Local nesta máquina, e reversível — ver
+                              `professorAtual`, em `preferencias.ts`. */}
+                          {vinculo?.papel === 'professor' && (
+                            professorAtualHash === vinculo.uidHash ? (
+                              <>
+                                <Selo tom="ok">Você</Selo>
+                                <button
+                                  className="botao--quieto"
+                                  onClick={() => {
+                                    definirProfessorAtual(undefined)
+                                    setProfessorAtualHash(undefined)
+                                  }}
+                                >
+                                  Não sou eu
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                className="botao--quieto"
+                                onClick={() => {
+                                  definirProfessorAtual(vinculo.uidHash)
+                                  setProfessorAtualHash(vinculo.uidHash)
+                                }}
+                              >
+                                Sou eu
+                              </button>
+                            )
                           )}
                         </>
                       )}

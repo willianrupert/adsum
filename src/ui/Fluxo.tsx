@@ -41,6 +41,8 @@ import {
   esquecerEncerramento,
   marcarEncerrada,
   modoDev,
+  professorAtual,
+  registrarChamadaEncerrada,
 } from '../ambiente/preferencias.ts'
 import {
   acrescentarNoLog,
@@ -131,6 +133,10 @@ export function Fluxo() {
   const [comecarEm, setComecarEm] = useState<string>()
   const [semHorario, setSemHorario] = useState<{ turma: string; aulas: Aula[] }>()
   const [uidDoProfessor, setUidDoProfessor] = useState('')
+  /** Nome de quem marcou "Sou eu" — personaliza a saudação do repouso. Ver
+      `professorAtual`, em `preferencias.ts`. Sem marcação, continua vazio, e
+      a saudação segue anônima como sempre foi. */
+  const [nomeDoProfessorAtual, setNomeDoProfessorAtual] = useState('')
   const [folha, setFolha] = useState<Folha>()
   /**
    * "Estou colando uma turma nova" — a única intenção que ainda precisa de
@@ -216,6 +222,10 @@ export function Fluxo() {
     // para dar, e é a que responde "estou no lugar certo?" sem ninguém pedir.
     const professor = vinculos.find((v) => v.papel === 'professor')
     setUidDoProfessor(professor?.uidHash ?? '')
+    const hashAtual = professorAtual()
+    setNomeDoProfessorAtual(
+      hashAtual ? (vinculos.find((v) => v.uidHash === hashAtual)?.nome ?? '') : '',
+    )
 
     // A primeira turma sem horário que ele ainda não adiou. Uma por vez: a tela
     // pergunta de uma turma, e enfileirar cinco de uma vez seria formulário.
@@ -800,10 +810,18 @@ export function Fluxo() {
           daTurma={matriculadosTodos.filter((p) => p.turma === sessao.turma)}
           aoMudarBase={mudou}
           aoRegistrar={gravarLinha}
-          aoEncerrar={(presentes) => {
+          aoEncerrar={(presentes, duracaoMs, intervalos) => {
             // Sem esta marca o relógio reabriria a aula que acabou de fechar.
             marcarEncerrada(sessao.turma, new Date().toISOString())
             setResumo({ sessao, presentes })
+            // Diagnóstico, não a tela de fim de aula: é dado para calibrar
+            // `INTERVALO_MINIMO_MS`, não algo que toda aula precisa mostrar.
+            registrarChamadaEncerrada({
+              turma: sessao.turma,
+              encerradaEm: new Date().toISOString(),
+              duracaoMs,
+              intervalos,
+            })
             void avisarSeOutraTurmaEsperava(sessao)
           }}
         />
@@ -853,6 +871,7 @@ export function Fluxo() {
         <Repouso
           turmas={turmas}
           pendencias={pasta ? [] : pendencias}
+          nomeDoProfessor={nomeDoProfessorAtual}
           comecarEm={comecarEm}
           proxima={proxima}
           aoIniciar={() => void iniciarChamada()}
@@ -1082,6 +1101,7 @@ export function Fluxo() {
 export function Repouso({
   turmas,
   pendencias,
+  nomeDoProfessor,
   comecarEm,
   proxima,
   aoIniciar,
@@ -1092,6 +1112,9 @@ export function Repouso({
 }: {
   turmas: number
   pendencias: Pendencia[]
+  /** De "Sou eu", na chamada — ver `professorAtual`, em `preferencias.ts`.
+      Vazio sem marcação: a saudação continua anônima, como sempre foi. */
+  nomeDoProfessor?: string
   /** A turma que "Começar a chamada" abriria agora — ver o comentário em
       `Fluxo`, onde é calculada. Quando existe, a tela nunca mais anuncia uma
       turma diferente da que o clique vai abrir. */
@@ -1170,7 +1193,12 @@ export function Repouso({
               há aula nenhuma por perto. Um cumprimento é o que cabe fora do
               horário, e continua sendo hora do dia mesmo sem grade nenhuma
               cadastrada. */}
-          <p className="repouso__turma">{saudacao(new Date())}</p>
+          <p className="repouso__turma">
+            {/* Só o primeiro nome — "Bom dia, Paulo", não o nome de tela
+                inteiro. Sem "Sou eu" marcado, continua anônima: ninguém
+                pediu, ninguém decide por ele. */}
+            {nomeDoProfessor ? `${saudacao(new Date())}, ${nomeDoProfessor.split(' ')[0]}` : saudacao(new Date())}
+          </p>
           <p className="repouso__acao">
             {turmas === 1 ? 'Sua turma está cadastrada' : `${turmas} turmas cadastradas`}
           </p>
