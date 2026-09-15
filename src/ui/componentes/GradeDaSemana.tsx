@@ -114,7 +114,15 @@ export function GradeDaSemana({
   }
 
   return (
-    <div className="cronograma__grade" role="group" aria-label={rotulo} onPointerMove={arrastar}>
+    <div
+      className="cronograma__grade"
+      role="group"
+      aria-label={rotulo}
+      onPointerMove={arrastar}
+      // O CSS não sabe quantos dias este catálogo cobre — a simplificada não
+      // tem sábado, a completa tem. Ver o comentário em `.cronograma__grade`.
+      style={{ '--dias-da-grade': dias.length } as React.CSSProperties}
+    >
       <div className="cronograma__canto" />
       {dias.map((dia) => (
         <div className="cronograma__dia" key={dia}>
