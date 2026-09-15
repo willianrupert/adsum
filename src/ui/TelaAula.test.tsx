@@ -287,21 +287,16 @@ describe('quem falta', () => {
     expect(screen.getAllByText('Nome repetido')).toHaveLength(2)
   })
 
-  it('"Mais um crachá" chama de novo quem já tem vínculo — segunda via', async () => {
-    const usuario = userEvent.setup()
+  // Até 11/09/2026, "Mais um crachá" permitia chamar de novo quem já tinha
+  // vínculo — segunda via sem sair da tabela. Tirado: nem aluno nem
+  // professor deveria acumular mais de um crachá ao mesmo tempo. O caminho
+  // agora é "Remover crachá" e deixar a pessoa voltar a "quem falta".
+  it('quem já tem crachá não ganha botão de chamar de novo', async () => {
     await comCrachaDaAna()
     montar([BRENO])
 
-    await usuario.click(screen.getByRole('button', { name: 'Mais um crachá' }))
-    expect(await screen.findByText('Ana Paula', { selector: '.chamado__nome' })).toBeInTheDocument()
-
-    // Ana está explicitamente chamada — cadastra direto, sem perguntar.
-    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
-
-    await waitFor(async () => {
-      const vinculos = await bancada.repositorio.listarVinculos()
-      expect(vinculos.filter((v) => v.matricula === ANA.matricula)).toHaveLength(2)
-    })
+    expect(await screen.findByText('Ana Paula')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Mais um crachá' })).not.toBeInTheDocument()
   })
 
   // A cerimônia recusava um crachá já vinculado a outra pessoa, dizendo de

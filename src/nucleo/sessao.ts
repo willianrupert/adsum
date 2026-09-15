@@ -131,9 +131,9 @@ export interface Contexto {
    * Quem está chamado, se houver — ver o comentário em `decidir()`, abaixo.
    *
    * Só existe quando o professor **escolheu explicitamente** chamar essa
-   * pessoa (botão "Chamar", "Mais um crachá", ou as setas): nunca é
-   * preenchido sozinho pela tela ao abrir a chamada. É essa explicitude que
-   * torna seguro confiar nele aqui — ver `TelaAula`.
+   * pessoa (botão "Chamar", ou as setas): nunca é preenchido sozinho pela
+   * tela ao abrir a chamada. É essa explicitude que torna seguro confiar
+   * nele aqui — ver `TelaAula`.
    */
   chamado?: Matriculado
   /** `uid_hash` de quem já foi registrado nesta sessão. */
@@ -191,7 +191,7 @@ export function decidir(uidHash: string, ctx: Contexto): Decisao {
   //
   // A correção não foi tirar a confiança do chamado — foi parar de setá-lo
   // sozinho. `TelaAula` só chama alguém por ação explícita do professor
-  // (botão "Chamar", "Mais um crachá", as setas): o modo comum, padrão, não
+  // (botão "Chamar", as setas): o modo comum, padrão, não
   // chama ninguém, e crachá desconhecido nesse modo cai em `desconhecido`
   // de qualquer jeito — a busca ainda existe, só que para o caso real que
   // ela resolve (quem chegou sem aviso), não como substituto de uma garantia

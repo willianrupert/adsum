@@ -176,7 +176,7 @@ describe('cadastro e chamada são a mesma coisa', () => {
   // Quem encosta o crachá para se cadastrar já está presente naquela aula.
   // Separar as duas obrigaria a turma a passar duas vezes. `ctx.chamado` só
   // existe quando `TelaAula` o preenche por ação explícita do professor
-  // (botão "Chamar", "Mais um crachá", as setas) — nunca sozinho. É essa
+  // (botão "Chamar", as setas) — nunca sozinho. É essa
   // explicitude, não `decidir()`, que torna seguro confiar nele aqui: ver o
   // comentário acima de `decidir()`.
   it('crachá novo com nome chamado cadastra e conta presença', () => {

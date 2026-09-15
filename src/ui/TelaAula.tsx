@@ -10,7 +10,7 @@
 // **Dois modos, a mesma tela.** O padrão é o modo comum: ninguém está
 // chamado, o leitor aceita o que vier, e crachá desconhecido pergunta de quem
 // é (a busca). O professor entra no modo de chamar nomes de propósito — botão
-// "Chamar", "Mais um crachá", as setas — e só aí a tela mostra um nome grande
+// "Chamar", as setas — e só aí a tela mostra um nome grande
 // e confia nele: crachá desconhecido com alguém chamado cadastra **e** conta
 // presença no mesmo gesto, sem perguntar de novo, porque quem está com o
 // crachá na mão está sendo observado, não só uma sugestão adivinhada. Existia
@@ -160,14 +160,13 @@ export function TelaAula({
   )
 
   /** A pessoa chamada, com a edição local aplicada — é isto que `decidir()`
-      recebe como `ctx.chamado`, e é isto que vira o vínculo gravado. */
-  // `daTurma`, não `pendentes`: "Mais um crachá" chama alguém que já tem
-  // vínculo, e essa pessoa não está na lista de pendentes — só na turma
-  // inteira. Segunda via depende de achá-la aqui.
+      recebe como `ctx.chamado`, e é isto que vira o vínculo gravado.
+      `pendentes`, não `daTurma`: quem já tem crachá não entra mais em modo
+      de chamar — ver o comentário em "Chamar", na tabela abaixo. */
   const aCadastrar = useMemo(() => {
-    const p = daTurma.find((x) => x.chave === chamadoChave)
+    const p = pendentes.find((x) => x.chave === chamadoChave)
     return p ? efetivo(p) : undefined
-  }, [daTurma, chamadoChave, efetivo])
+  }, [pendentes, chamadoChave, efetivo])
 
   const proximoPendente = useCallback(
     (apartirDe: number) => {
@@ -742,9 +741,15 @@ export function TelaAula({
                       )}
                       {repetido && <Selo tom="grave">Nome repetido</Selo>}
                     </td>
-                    {/* Chamar continua disponível depois de vinculado: um aluno
-                        com dois crachás é permitido de propósito, porque segunda
-                        via existe. A relação é muitos-para-um. */}
+                    {/* "Chamar" some depois de vinculado, de propósito — até
+                        11/09/2026 continuava disponível como "Mais um
+                        crachá", pra permitir segunda via sem sair da tabela.
+                        Tirado: nem aluno nem professor deveria acumular mais
+                        de um crachá vinculado ao mesmo tempo. Perdeu o
+                        cartão? "Remover crachá" desfaz o vínculo — sem
+                        apagar presença já gravada, eventos não se apagam —,
+                        e a pessoa volta a "quem falta", pronta pro crachá
+                        novo entrar pelo caminho comum. */}
                     <td className="celula--estado">
                       {p.chave === chamadoChave ? (
                         <Selo tom="ok">Chamando</Selo>
@@ -752,9 +757,9 @@ export function TelaAula({
                         <>
                           {vinculado && <Selo tom="ok">Vinculado</Selo>}
                           {!vinculado && pulados.has(p.chave) && <Selo tom="neutro">Pulado</Selo>}
-                          <button onClick={() => setChamadoChave(p.chave)}>
-                            {vinculado ? 'Mais um crachá' : 'Chamar'}
-                          </button>
+                          {!vinculado && (
+                            <button onClick={() => setChamadoChave(p.chave)}>Chamar</button>
+                          )}
                           {/* Corrige um crachá vinculado à pessoa errada sem
                               sair da chamada — ver o comentário de
                               `removerCracha`, acima. Não apaga presença já
