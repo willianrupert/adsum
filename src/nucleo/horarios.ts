@@ -25,30 +25,82 @@ export interface Bloco {
   inicio: string
   fim: string
   /** Só para separar visualmente, como num mural. */
-  turno: 'manha' | 'tarde' | 'noite' | 'sabado'
-  /** Bloco que só existe no sábado. Ver `BLOCOS`. */
-  soSabado?: boolean
+  turno: 'manha' | 'tarde' | 'noite'
+  /**
+   * Dias da semana em que este período existe — 1 (segunda) a 6 (sábado);
+   * domingo nunca aparece. Substitui o antigo `soSabado?: boolean`: aquele
+   * campo só sabia dizer "só sábado" ou "nunca sábado", e a grade completa
+   * tem períodos que valem em alguns dias e não em outros por motivos que não
+   * são "é ou não é sábado" (12:00 e a noite depois das 18:00 não existem aos
+   * sábados; 07:00 só existe aos sábados). `dias` cobre os dois casos com a
+   * mesma forma.
+   */
+  dias: number[]
 }
 
+/** Segunda a sexta — todos os períodos da grade simplificada, e a maioria da
+    completa. */
+const SEG_A_SEX = [1, 2, 3, 4, 5]
+
+/** Segunda a sábado — os períodos do meio do dia, que a universidade também
+    usa aos sábados. */
+const SEG_A_SAB = [1, 2, 3, 4, 5, 6]
+
 export const BLOCOS: Bloco[] = [
-  { inicio: '08:00', fim: '09:50', turno: 'manha' },
-  { inicio: '10:00', fim: '11:50', turno: 'manha' },
+  { inicio: '08:00', fim: '09:50', turno: 'manha', dias: SEG_A_SEX },
+  { inicio: '10:00', fim: '11:50', turno: 'manha', dias: SEG_A_SEX },
   // Meio-dia existe, e é o único bloco de 50 minutos — um crédito só. Eu o li
   // nas capturas, o autor achou que era almoço, conferiu e confirmou que
   // algumas turmas têm aula aí. Fica, e desenhado mais baixo que os outros.
-  { inicio: '12:00', fim: '12:50', turno: 'manha' },
-  { inicio: '13:00', fim: '14:50', turno: 'tarde' },
-  { inicio: '15:00', fim: '16:50', turno: 'tarde' },
-  { inicio: '17:00', fim: '18:50', turno: 'noite' },
+  { inicio: '12:00', fim: '12:50', turno: 'manha', dias: SEG_A_SEX },
+  { inicio: '13:00', fim: '14:50', turno: 'tarde', dias: SEG_A_SEX },
+  { inicio: '15:00', fim: '16:50', turno: 'tarde', dias: SEG_A_SEX },
+  { inicio: '17:00', fim: '18:50', turno: 'noite', dias: SEG_A_SEX },
   // Encosta no anterior: um termina 18:50 e o outro começa 18:50, sem intervalo.
   // Não é engano de digitação, é como a grade do CIn é — e tem consequência,
   // documentada em `grade.ts`.
-  { inicio: '18:50', fim: '20:30', turno: 'noite' },
-  // Sábado tem blocos próprios e longos, e só existem lá. Aparecem como linha
-  // com uma célula só, na coluna do sábado — desenhar cinco quadradinhos mortos
-  // de segunda a sexta seria oferecer o que não existe.
-  { inicio: '07:00', fim: '11:50', turno: 'sabado', soSabado: true },
-  { inicio: '13:00', fim: '17:50', turno: 'sabado', soSabado: true },
+  { inicio: '18:50', fim: '20:30', turno: 'noite', dias: SEG_A_SEX },
+  // Sábado não aparece mais aqui (Fase 3, docs/05_plano_execucao.md): os dois
+  // blocos longos de sábado (07:00–11:50 e 13:00–17:50) foram fatiados em
+  // períodos de 50 min que batem com os mesmos horários de segunda a sexta —
+  // ver `BLOCOS_COMPLETOS`. Sem período de sábado nenhum aqui, a coluna de
+  // sábado não tem o que mostrar e some da grade simplificada inteira.
+]
+
+/**
+ * A grade completa — granularidade de 50 min, 10 min de intervalo até o
+ * próximo período. Onde a simplificada oferece um bloco de 100/110 min para
+ * marcar de uma vez, esta oferece os períodos de verdade que o compõem, e é
+ * a única forma de marcar meia hora dentro dele (ex.: só a primeira metade
+ * de uma aula dupla).
+ *
+ * Tabela conferida contra a grade oficial do CIn (docs/05_plano_execucao.md,
+ * Fase 3) — **exceto o par da noite, 18:50–19:40 / 19:40–20:30**: esses dois
+ * são inferidos. A grade antiga já documentava 18:50–20:30 como um intervalo
+ * único "encostado" (sem os 10 min de folga que todo outro par tem), e essa
+ * divisão no meio, sem intervalo, é a mais consistente com o resto do
+ * padrão — mas o corte exato não foi confirmado pelo autor. Conferir contra
+ * a grade oficial antes de publicar.
+ */
+export const BLOCOS_COMPLETOS: Bloco[] = [
+  // Só sábado: dia de semana nenhum começa às 07:00.
+  { inicio: '07:00', fim: '07:50', turno: 'manha', dias: [6] },
+  { inicio: '08:00', fim: '08:50', turno: 'manha', dias: SEG_A_SAB },
+  { inicio: '09:00', fim: '09:50', turno: 'manha', dias: SEG_A_SAB },
+  { inicio: '10:00', fim: '10:50', turno: 'manha', dias: SEG_A_SAB },
+  { inicio: '11:00', fim: '11:50', turno: 'manha', dias: SEG_A_SAB },
+  // O bloco de 50 min do meio-dia não existe aos sábados.
+  { inicio: '12:00', fim: '12:50', turno: 'manha', dias: SEG_A_SEX },
+  { inicio: '13:00', fim: '13:50', turno: 'tarde', dias: SEG_A_SAB },
+  { inicio: '14:00', fim: '14:50', turno: 'tarde', dias: SEG_A_SAB },
+  { inicio: '15:00', fim: '15:50', turno: 'tarde', dias: SEG_A_SAB },
+  { inicio: '16:00', fim: '16:50', turno: 'tarde', dias: SEG_A_SAB },
+  { inicio: '17:00', fim: '17:50', turno: 'noite', dias: SEG_A_SAB },
+  // A partir daqui, sábado não tem mais período.
+  { inicio: '18:00', fim: '18:50', turno: 'noite', dias: SEG_A_SEX },
+  // Inferido, não confirmado — ver o comentário acima do catálogo.
+  { inicio: '18:50', fim: '19:40', turno: 'noite', dias: SEG_A_SEX },
+  { inicio: '19:40', fim: '20:30', turno: 'noite', dias: SEG_A_SEX },
 ]
 
 /**
@@ -87,15 +139,16 @@ export function deChave(chave: string): Escolha {
  */
 export function marcadosDe(
   aulas: { dia: number; inicio: string }[],
+  blocos: Bloco[],
 ): { marcados: Set<string>; foraDosBlocos: number } {
   const marcados = new Set<string>()
   let foraDosBlocos = 0
 
-  // O par **dia e hora** precisa existir, não só a hora: sábado tem blocos que
+  // O par **dia e hora** precisa existir, não só a hora: sábado tem períodos que
   // dia útil não tem, e vice-versa. Checar só o horário marcaria uma aula de
   // sábado às 08:00 numa célula que a tela não desenha, e ela sumiria calada.
   const existe = (dia: number, inicio: string) =>
-    BLOCOS.some((b) => b.inicio === inicio && (b.soSabado ? dia === 6 : dia !== 6))
+    blocos.some((b) => b.inicio === inicio && b.dias.includes(dia))
 
   for (const aula of aulas) {
     if (DIAS_UTEIS.includes(aula.dia) && existe(aula.dia, aula.inicio)) {
@@ -108,10 +161,10 @@ export function marcadosDe(
 }
 
 /** Quantas horas por semana os blocos escolhidos somam. */
-export function horasPorSemana(marcados: ReadonlySet<string>): number {
+export function horasPorSemana(marcados: ReadonlySet<string>, blocos: Bloco[]): number {
   return [...marcados].reduce((total, chave) => {
     const { inicio } = deChave(chave)
-    const bloco = BLOCOS.find((b) => b.inicio === inicio)
+    const bloco = blocos.find((b) => b.inicio === inicio)
     if (!bloco) return total
     const [hi, mi] = bloco.inicio.split(':').map(Number)
     const [hf, mf] = bloco.fim.split(':').map(Number)
