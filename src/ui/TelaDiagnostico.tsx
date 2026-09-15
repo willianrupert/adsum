@@ -395,6 +395,52 @@ export function TelaDiagnostico() {
         )}
       </Painel>
 
+      {/* Sem `recolhivel`: fica sempre aberto, à frente de "Últimas leituras"
+          — é o resumo por sessão que calibra `INTERVALO_MINIMO_MS`, uso do
+          dia a dia do Diagnóstico. "Últimas leituras" é log cru, ferramenta
+          de depuração, e por isso continua atrás de um clique. */}
+      <Painel
+        titulo="Chamadas recentes"
+        legenda="Duração e intervalo entre crachás — o dado para calibrar o limite contra dois crachás na mesma mão."
+      >
+        {historico.length === 0 ? (
+          <p className="vazio">Nenhuma chamada encerrada ainda neste computador.</p>
+        ) : (
+          <table className="tabela">
+            <thead>
+              <tr>
+                <th>Turma</th>
+                <th>Encerrada</th>
+                <th>Duração</th>
+                <th>Intervalo entre crachás</th>
+              </tr>
+            </thead>
+            <tbody>
+              {historico.map((c, i) => (
+                <tr key={`${c.encerradaEm}-${i}`}>
+                  <td>{c.turma}</td>
+                  <td>{hora(new Date(c.encerradaEm))}</td>
+                  <td>
+                    <code>{duracao(c.duracaoMs)}</code>
+                  </td>
+                  <td>
+                    {c.intervalos ? (
+                      <code>
+                        {c.intervalos.minimoMs}–{c.intervalos.maximoMs} ms, média{' '}
+                        {c.intervalos.medioMs} ms ({c.intervalos.amostras}{' '}
+                        {c.intervalos.amostras === 1 ? 'crachá' : 'crachás'})
+                      </code>
+                    ) : (
+                      <code>—</code>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Painel>
+
       <Painel
         titulo="Últimas leituras"
         recolhivel
@@ -447,49 +493,6 @@ export function TelaDiagnostico() {
                       </>
                     ) : (
                       <Selo tom="grave">Crachá não cadastrado</Selo>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Painel>
-
-      <Painel
-        titulo="Chamadas recentes"
-        recolhivel
-        legenda="Duração e intervalo entre crachás — o dado para calibrar o limite contra dois crachás na mesma mão."
-      >
-        {historico.length === 0 ? (
-          <p className="vazio">Nenhuma chamada encerrada ainda neste computador.</p>
-        ) : (
-          <table className="tabela">
-            <thead>
-              <tr>
-                <th>Turma</th>
-                <th>Encerrada</th>
-                <th>Duração</th>
-                <th>Intervalo entre crachás</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historico.map((c, i) => (
-                <tr key={`${c.encerradaEm}-${i}`}>
-                  <td>{c.turma}</td>
-                  <td>{hora(new Date(c.encerradaEm))}</td>
-                  <td>
-                    <code>{duracao(c.duracaoMs)}</code>
-                  </td>
-                  <td>
-                    {c.intervalos ? (
-                      <code>
-                        {c.intervalos.minimoMs}–{c.intervalos.maximoMs} ms, média{' '}
-                        {c.intervalos.medioMs} ms ({c.intervalos.amostras}{' '}
-                        {c.intervalos.amostras === 1 ? 'crachá' : 'crachás'})
-                      </code>
-                    ) : (
-                      <code>—</code>
                     )}
                   </td>
                 </tr>

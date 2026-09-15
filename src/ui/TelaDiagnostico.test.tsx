@@ -17,14 +17,32 @@ beforeEach(async () => {
   window.localStorage.removeItem('adsum.historico.chamadas')
 })
 
+// "Chamadas recentes" não recolhe (Fase 2, item 4 — docs/05_plano_execucao.md):
+// fica sempre visível, à frente de "Últimas leituras", que é a ferramenta de
+// depuração e por isso continua atrás de um clique.
 async function abrir() {
   const usuario = userEvent.setup()
   renderizarCom(bancada, <TelaDiagnostico />)
-  await usuario.click(await screen.findByRole('button', { name: /Chamadas recentes/ }))
+  await screen.findByText('Chamadas recentes')
   return usuario
 }
 
 describe('chamadas recentes', () => {
+  it('fica sempre visível, sem gatilho de recolher — "Últimas leituras" continua recolhida por padrão', async () => {
+    renderizarCom(bancada, <TelaDiagnostico />)
+
+    // Sem botão: não há o que expandir, o painel já está aberto.
+    expect(screen.queryByRole('button', { name: /Chamadas recentes/ })).not.toBeInTheDocument()
+    expect(screen.getByText('Nenhuma chamada encerrada ainda neste computador.')).toBeInTheDocument()
+
+    // "Últimas leituras" continua atrás de um clique — ferramenta de
+    // depuração, não uso do dia a dia. (O conteúdo fica montado mesmo
+    // fechado — `Painel` anima o recolher — então quem decide é o
+    // `aria-expanded`, não a presença do texto no DOM.)
+    const gatilho = await screen.findByRole('button', { name: /Últimas leituras/ })
+    expect(gatilho).toHaveAttribute('aria-expanded', 'false')
+  })
+
   it('sem chamada nenhuma ainda, diz isso em vez de tabela vazia', async () => {
     await abrir()
     expect(screen.getByText('Nenhuma chamada encerrada ainda neste computador.')).toBeInTheDocument()
