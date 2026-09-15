@@ -2,7 +2,8 @@
 
 Leia antes de qualquer tarefa. Histórico de decisões datado, achados de
 validação e o raciocínio por trás de cada mudança: `docs/04_historico.md`.
-Este arquivo guarda só o que vale agora.
+Plano de execução em aberto, com causa raiz já investigada por item:
+`docs/05_plano_execucao.md`. Este arquivo guarda só o que vale agora.
 
 > ## O Adsum A1 não existe mais
 >
