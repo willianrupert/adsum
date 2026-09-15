@@ -200,9 +200,7 @@ custou. Boa parte do raciocínio mora no código, não em documento à parte.
 Funciona de ponta a ponta e está publicado. O dongle já foi conferido com
 hardware de verdade — decimal de 10 dígitos, big-endian, com o ritmo real
 medido entre caracteres — e há teste automatizado provando isso do teclado até
-o UID. Falta comparar o UID que o celular entrega, pelo Web NFC, com o que o
-dongle lê no mesmo crachá: pilhas NFC divergem nisso, e o problema apareceria
-na frente da turma.
+o UID.
 
 <div align="center">
 
