@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import { uidLegivel, uidParaHex } from '../nucleo/uid.ts'
-import type { Evento, Vinculo } from '../nucleo/tipos.ts'
+import type { Aula, Evento, Matriculado, Vinculo } from '../nucleo/tipos.ts'
 import {
   ehSimulavel,
   type DiagnosticoLeitor,
@@ -18,6 +18,10 @@ import { leitoresVisiveis, useAdsum } from './adsum.ts'
 import { definirModoDev, historicoDeChamadas, modoDev } from '../ambiente/preferencias.ts'
 import { estadoDoConvite } from '../ambiente/instalacao.ts'
 import { Linha, Painel, Selo } from './componentes/Painel.tsx'
+import { deCsv, nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'
+import { nomeDoArquivoDeFaltas, paraCsvDeFaltas, planilhaDeFaltas } from '../nucleo/faltas.ts'
+import { abrirTexto, salvarTexto } from '../ambiente/arquivos.ts'
+import { Importacao, type Resultado } from './componentes/Importacao.tsx'
 
 interface LeituraNaTela {
   chave: string
@@ -81,6 +85,14 @@ export function TelaDiagnostico() {
   const [uidManual, setUidManual] = useState('04a23b91')
   const [recado, setRecado] = useState<{ tom: 'ok' | 'grave'; texto: string }>()
   const [agora, setAgora] = useState(() => new Date())
+  // Vieram do card "Registros" que Ajustes perdeu (Fase 2, item 2 —
+  // docs/05_plano_execucao.md): a exportação de faltas precisa da turma, da
+  // grade e de quem está matriculado, não só dos eventos.
+  const [turmas, setTurmas] = useState<string[]>([])
+  const [aulas, setAulas] = useState<Aula[]>([])
+  const [matriculados, setMatriculados] = useState<Matriculado[]>([])
+  const [totalEventos, setTotalEventos] = useState(0)
+  const [importacao, setImportacao] = useState<Resultado>()
 
   useEffect(() => {
     setEstadoLeitor(leitor.estado())
@@ -88,14 +100,22 @@ export function TelaDiagnostico() {
   }, [leitor])
 
   const atualizar = useCallback(async () => {
-    const [dl, dr, ev] = await Promise.all([
+    const [dl, dr, ev, t, a, m, te] = await Promise.all([
       leitor.diagnostico(),
       repositorio.diagnostico(),
       repositorio.listarEventos(6),
+      repositorio.listarTurmas(),
+      repositorio.listarAulas(),
+      repositorio.listarMatriculados(),
+      repositorio.contarEventos(),
     ])
     setDiagLeitor(dl)
     setDiagRepo(dr)
     setEventos(ev)
+    setTurmas(t)
+    setAulas(a)
+    setMatriculados(m)
+    setTotalEventos(te)
   }, [leitor, repositorio])
 
   useEffect(() => {
@@ -168,17 +188,31 @@ export function TelaDiagnostico() {
     }
   }, [])
 
-  function tentar(rotulo: string, acao: () => void | Promise<void>) {
+  // `string | void`, não só `void`: os botões vindos do card "Registros"
+  // (Importar/Exportar/Exportar faltas) querem dizer qual arquivo saiu, não
+  // só "feito" — mesma função de `tentar` em `TelaRepositorio.tsx`.
+  function tentar(rotulo: string, acao: () => string | void | Promise<string | void>) {
     return async () => {
       try {
-        await acao()
-        setRecado({ tom: 'ok', texto: `${rotulo}: feito.` })
+        const detalhe = await acao()
+        setRecado({ tom: 'ok', texto: detalhe ? `${rotulo}: ${detalhe}` : `${rotulo}: feito.` })
         await atualizar()
       } catch (erro) {
         setRecado({ tom: 'grave', texto: `${rotulo}: ${(erro as Error).message}` })
       }
     }
   }
+
+  const importarRegistros = tentar('Importar registros', async () => {
+    const arquivo = await abrirTexto()
+    if (!arquivo) return 'cancelado.'
+    const { itens, problemas } = deCsv(arquivo.texto)
+    // `evento_id` é a chave: reimportar o mesmo arquivo não duplica linha, e é
+    // ela que permite juntar dois arquivos que a sincronização duplicou.
+    for (const evento of itens) await repositorio.acrescentarEvento(evento)
+    setImportacao({ arquivo: arquivo.nome, aceitos: itens.length, problemas })
+    return `${itens.length} linhas lidas.`
+  })
 
   const semear = tentar('Semear', async () => {
     if (!ehSimulavel(leitor)) throw new Error('o leitor em uso não tem baralho virtual')
@@ -254,6 +288,7 @@ export function TelaDiagnostico() {
           {recado.texto}
         </div>
       )}
+      {importacao && <Importacao resultado={importacao} />}
 
       <Painel
         titulo="Ambiente"
@@ -462,6 +497,84 @@ export function TelaDiagnostico() {
             </tbody>
           </table>
         )}
+      </Painel>
+
+      {/* Migrou de Ajustes (Fase 2, item 2 — docs/05_plano_execucao.md):
+          "Registros" era um card a mais numa tela que devia ter uma ação
+          óbvia por vez. Importar/exportar é ferramenta, não uso do dia a
+          dia — o mesmo motivo que já mantém Diagnóstico como a casa de
+          "Últimas leituras" e "Chamadas recentes". */}
+      <Painel
+        titulo="Registros"
+        recolhivel
+        legenda="Quem esteve presente, e o que a planilha consome."
+        acoes={
+          <>
+            <button onClick={importarRegistros}>Importar</button>
+            <button
+              onClick={tentar('Exportar registros', async () => {
+                const eventos = await repositorio.listarEventos()
+                // O login não fica no evento: fica no vínculo, que é onde ele
+                // pertence. A coluna é preenchida na saída, com o vínculo de
+                // hoje — assim corrigir um login corrige as exportações futuras
+                // sem reescrever uma linha sequer do log.
+                const vinculos = await repositorio.listarVinculos()
+                const matriculaPorHash = new Map(vinculos.map((v) => [v.uidHash, v.matricula]))
+                const ordenados = [...eventos]
+                  .reverse()
+                  .map((e) => ({ ...e, matricula: e.matricula ?? matriculaPorHash.get(e.uidHash) }))
+
+                // Um arquivo por turma: cada turma vira uma planilha, e turma
+                // nova não mexe em arquivo de turma antiga.
+                const turmasComEventos = porTurma(ordenados)
+                if (turmasComEventos.size === 0) throw new Error('nenhum registro para exportar')
+                const nomes: string[] = []
+                for (const [turma, linhas] of turmasComEventos) {
+                  const alvo = nomeDoArquivo(turma)
+                  const salvou = await salvarTexto(alvo, paraCsv(linhas))
+                  if (salvou === 'cancelado') break
+                  nomes.push(alvo)
+                }
+                return nomes.length > 0 ? `${nomes.join(', ')}.` : 'cancelado.'
+              })}
+            >
+              Exportar
+            </button>
+            {/* Pedido do Prof. Paulo, para a v1: nome completo por linha, um
+                dia por coluna, e na célula quantas faltas aquele dia vale —
+                0 presente, senão os períodos do bloco na grade. Arquivo
+                separado do registro de verdade: este nasce recalculado a
+                cada exportação, o registro nunca perde uma linha. */}
+            <button
+              onClick={tentar('Exportar faltas', async () => {
+                // `eventos` do estado local é só a amostra de 6 das "Últimas
+                // leituras" acima — a planilha de faltas precisa do log
+                // inteiro do semestre, não de uma prévia.
+                const todosOsEventos = await repositorio.listarEventos()
+                const planilhas = turmas
+                  .map((turma) => ({
+                    turma,
+                    planilha: planilhaDeFaltas(todosOsEventos, matriculados, aulas, turma),
+                  }))
+                  .filter(({ planilha }) => planilha.dias.length > 0 && planilha.linhas.length > 0)
+                if (planilhas.length === 0) throw new Error('nenhuma turma com aula registrada ainda')
+
+                const nomes: string[] = []
+                for (const { turma, planilha } of planilhas) {
+                  const alvo = nomeDoArquivoDeFaltas(turma)
+                  const salvou = await salvarTexto(alvo, paraCsvDeFaltas(planilha))
+                  if (salvou === 'cancelado') break
+                  nomes.push(alvo)
+                }
+                return nomes.length > 0 ? `${nomes.join(', ')}.` : 'cancelado.'
+              })}
+            >
+              Exportar faltas
+            </button>
+          </>
+        }
+      >
+        <Linha rotulo="linhas gravadas">{totalEventos}</Linha>
       </Painel>
 
       <Painel

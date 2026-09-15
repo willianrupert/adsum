@@ -2,12 +2,13 @@
 // crachás, para calibrar `INTERVALO_MINIMO_MS` com dado de aula real, em
 // vez de palpite. Ver `ambiente/preferencias.ts`.
 
-import { beforeEach, describe, expect, it } from 'vitest'
-import { screen, within } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
 import { registrarChamadaEncerrada } from '../ambiente/preferencias.ts'
+import * as arquivos from '../ambiente/arquivos.ts'
 
 let bancada: Bancada
 
@@ -57,5 +58,55 @@ describe('chamadas recentes', () => {
 
     const linha = screen.getByText('IF685 · T01').closest('tr')!
     expect(within(linha).getByText('—')).toBeInTheDocument()
+  })
+})
+
+// "Registros" migrou de Ajustes pra cá (Fase 2, item 2 —
+// docs/05_plano_execucao.md). Pedido do Prof. Paulo, para a v1: nome
+// completo por linha, um dia por coluna, e na célula quantas faltas aquele
+// dia vale.
+describe('exportar faltas', () => {
+  it('zero pra quem encostou, os períodos do bloco pra quem faltou', async () => {
+    const usuario = userEvent.setup()
+    const salvarTexto = vi.spyOn(arquivos, 'salvarTexto').mockResolvedValue('baixado')
+
+    const ana = { turma: 'IF685 · T01', chave: '1', matricula: '1', nome: 'Ana', nomeCompleto: 'ANA PAULA MENDES', papel: 'aluno' as const }
+    const breno = { turma: 'IF685 · T01', chave: '2', matricula: '2', nome: 'Breno', nomeCompleto: 'BRENO OLIVEIRA', papel: 'aluno' as const }
+    await bancada.repositorio.salvarTurma('IF685 · T01', [ana, breno])
+    // Segunda-feira, bloco de duas aulas: 08:00 às 09:50.
+    await bancada.repositorio.definirHorarioDaTurma('IF685 · T01', [
+      { uidHashProfessor: 'prof', dia: 1, inicio: '08:00', fim: '09:50', turma: 'IF685 · T01' },
+    ])
+    await bancada.repositorio.acrescentarEvento({
+      eventoId: 'web-a1-20260817-0001',
+      quando: '2026-08-17T08:00:00.000Z',
+      turma: 'IF685 · T01',
+      nome: '',
+      origem: 'professor',
+      resultado: 'ok',
+      uidHash: 'prof',
+    })
+    await bancada.repositorio.acrescentarEvento({
+      eventoId: 'web-a1-20260817-0002',
+      quando: '2026-08-17T08:05:00.000Z',
+      turma: 'IF685 · T01',
+      matricula: '1',
+      nome: 'Ana',
+      origem: 'cracha',
+      resultado: 'ok',
+      uidHash: '1',
+    })
+
+    renderizarCom(bancada, <TelaDiagnostico />)
+    await usuario.click(await screen.findByRole('button', { name: /Registros/ }))
+    await usuario.click(await screen.findByRole('button', { name: 'Exportar faltas' }))
+
+    await waitFor(() => expect(salvarTexto).toHaveBeenCalled())
+    const [nomeArquivo, conteudo] = salvarTexto.mock.calls[0]
+    expect(nomeArquivo).toBe('faltas-IF685-T01.csv')
+    const linhas = conteudo.replace(/^﻿/, '').split('\n')
+    expect(linhas[0]).toBe('nome;17/08/2026')
+    expect(linhas).toContain('ANA PAULA MENDES;0')
+    expect(linhas).toContain('BRENO OLIVEIRA;2')
   })
 })

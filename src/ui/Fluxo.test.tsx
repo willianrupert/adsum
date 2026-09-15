@@ -1052,8 +1052,11 @@ describe('os Ajustes se recolhem', () => {
     await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
 
-    await screen.findByRole('button', { name: /Registros/ })
-    expect(screen.queryByRole('button', { name: 'Zerar registros' })).not.toBeInTheDocument()
+    // "Registros" migrou pra Diagnóstico (Fase 2, item 2 —
+    // docs/05_plano_execucao.md); "Vínculos" continua em Ajustes e também
+    // tem uma ação grave (`Zerar`) no cabeçalho — mesma garantia.
+    await screen.findByRole('button', { name: /Vínculos/ })
+    expect(screen.queryByRole('button', { name: 'Zerar' })).not.toBeInTheDocument()
   })
 
   // A mesma grade do cronograma, e não a lista de campos que existia aqui.

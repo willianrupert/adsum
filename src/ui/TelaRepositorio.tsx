@@ -3,7 +3,6 @@
 // Os arquivos daqui são os mesmos do cofre em pasta — ver `docs/01_cofre.md`.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { deCsv, nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'
 import {
   deJsonCompartilhado,
   deJsonGrade,
@@ -13,9 +12,8 @@ import {
   paraJsonGrade,
   paraJsonVinculos,
 } from '../nucleo/cofre.ts'
-import type { Aula, Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
+import type { Aula, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { quemFalta } from '../nucleo/sessao.ts'
-import { nomeDoArquivoDeFaltas, paraCsvDeFaltas, planilhaDeFaltas } from '../nucleo/faltas.ts'
 import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.ts'
 import { pastaDisponivel } from '../ambiente/pasta.ts'
 import { comoInstalar, ehWebKit, instalado } from '../ambiente/instalacao.ts'
@@ -188,26 +186,23 @@ export function TelaRepositorio({
   const [aulas, setAulas] = useState<Aula[]>([])
   const [turmas, setTurmas] = useState<string[]>([])
   const [totalEventos, setTotalEventos] = useState(0)
-  const [eventos, setEventos] = useState<Evento[]>([])
   const [matriculados, setMatriculados] = useState<Matriculado[]>([])
   const [busca, setBusca] = useState('')
   const [importacao, setImportacao] = useState<Resultado>()
   const [recado, setRecado] = useState<{ tom: 'ok' | 'grave'; texto: string }>()
 
   const carregar = useCallback(async () => {
-    const [v, a, e, t, ev, m] = await Promise.all([
+    const [v, a, e, t, m] = await Promise.all([
       repositorio.listarVinculos(),
       repositorio.listarAulas(),
       repositorio.contarEventos(),
       repositorio.listarTurmas(),
-      repositorio.listarEventos(),
       repositorio.listarMatriculados(),
     ])
     setVinculos(v)
     setAulas(a)
     setTotalEventos(e)
     setTurmas(t)
-    setEventos(ev)
     setMatriculados(m)
   }, [repositorio])
 
@@ -281,17 +276,6 @@ export function TelaRepositorio({
     return `${conteudo?.length ?? 0} aulas.`
   })
 
-  const importarRegistros = tentar('Importar registros', async () => {
-    const arquivo = await abrirTexto()
-    if (!arquivo) return 'cancelado.'
-    const { itens, problemas } = deCsv(arquivo.texto)
-    // `evento_id` é a chave: reimportar o mesmo arquivo não duplica linha, e é
-    // ela que permite juntar dois arquivos que a sincronização duplicou.
-    for (const evento of itens) await repositorio.acrescentarEvento(evento)
-    setImportacao({ arquivo: arquivo.nome, aceitos: itens.length, problemas })
-    return `${itens.length} linhas lidas.`
-  })
-
   return (
     <div className="diagnostico">
       <Secao titulo="Sua turma" legenda="O que se mexe durante o semestre." />
@@ -354,70 +338,38 @@ export function TelaRepositorio({
         <Painel titulo="Ver presenças" legenda="A planilha do curso, por turma." aoAbrir={aoVerPresencas} />
       )}
 
+      {/* A mesma grade do cronograma, e não uma lista de campos. O professor
+          que quer mudar a quarta de lugar olha a semana e aponta — foi assim
+          que ele cadastrou, e é assim que ele corrige. Um seletor de turma em
+          cima porque aqui há mais de uma; no cadastro, só havia aquela.
+
+          Grava a cada toque: em ajustes não existe "salvar", existe mudar. */}
       <Painel
-        titulo="Registros"
+        titulo="Grade horária"
         recolhivel
-        legenda="Quem esteve presente, e o que a planilha consome."
+        legenda="Quando cada turma tem aula."
         acoes={
           <>
-            <button onClick={importarRegistros}>Importar</button>
+            <button onClick={importarGrade}>Importar</button>
             <button
-              onClick={tentar('Exportar registros', async () => {
-                const eventos = await repositorio.listarEventos()
-                // O login não fica no evento: fica no vínculo, que é onde ele
-                // pertence. A coluna é preenchida na saída, com o vínculo de
-                // hoje — assim corrigir um login corrige as exportações futuras
-                // sem reescrever uma linha sequer do log.
-                const vinculos = await repositorio.listarVinculos()
-                const matriculaPorHash = new Map(vinculos.map((v) => [v.uidHash, v.matricula]))
-                const ordenados = [...eventos]
-                  .reverse()
-                  .map((e) => ({ ...e, matricula: e.matricula ?? matriculaPorHash.get(e.uidHash) }))
-
-                // Um arquivo por turma: cada turma vira uma planilha, e turma
-                // nova não mexe em arquivo de turma antiga.
-                const turmas = porTurma(ordenados)
-                if (turmas.size === 0) throw new Error('nenhum registro para exportar')
-                const nomes: string[] = []
-                for (const [turma, linhas] of turmas) {
-                  const alvo = nomeDoArquivo(turma)
-                  const salvou = await salvarTexto(alvo, paraCsv(linhas))
-                  if (salvou === 'cancelado') break
-                  nomes.push(alvo)
-                }
-                return nomes.length > 0 ? `${nomes.join(', ')}.` : 'cancelado.'
-              })}
+              onClick={tentar(`Exportar ${NOMES.grade}`, async () =>
+                comoFoi(await salvarTexto(NOMES.grade, paraJsonGrade(aulas)), NOMES.grade),
+              )}
             >
               Exportar
-            </button>
-            {/* Pedido do Prof. Paulo, para a v1: nome completo por linha, um
-                dia por coluna, e na célula quantas faltas aquele dia vale —
-                0 presente, senão os períodos do bloco na grade. Arquivo
-                separado do registro de verdade: este nasce recalculado a
-                cada exportação, o registro nunca perde uma linha. */}
-            <button
-              onClick={tentar('Exportar faltas', async () => {
-                const planilhas = turmas
-                  .map((turma) => ({ turma, planilha: planilhaDeFaltas(eventos, matriculados, aulas, turma) }))
-                  .filter(({ planilha }) => planilha.dias.length > 0 && planilha.linhas.length > 0)
-                if (planilhas.length === 0) throw new Error('nenhuma turma com aula registrada ainda')
-
-                const nomes: string[] = []
-                for (const { turma, planilha } of planilhas) {
-                  const alvo = nomeDoArquivoDeFaltas(turma)
-                  const salvou = await salvarTexto(alvo, paraCsvDeFaltas(planilha))
-                  if (salvou === 'cancelado') break
-                  nomes.push(alvo)
-                }
-                return nomes.length > 0 ? `${nomes.join(', ')}.` : 'cancelado.'
-              })}
-            >
-              Exportar faltas
             </button>
           </>
         }
       >
-        <Linha rotulo="linhas gravadas">{totalEventos}</Linha>
+        <GradeDeAjustes
+          turmas={turmas}
+          aulas={aulas}
+          professorPadrao={professores[0]?.uidHash ?? ''}
+          aoMudar={async (turma, novas) => {
+            await repositorio.definirHorarioDaTurma(turma, novas)
+            await carregar()
+          }}
+        />
       </Painel>
 
       <Painel
@@ -535,40 +487,6 @@ export function TelaRepositorio({
             </tbody>
           </table>
         )}
-      </Painel>
-
-      {/* A mesma grade do cronograma, e não uma lista de campos. O professor
-          que quer mudar a quarta de lugar olha a semana e aponta — foi assim
-          que ele cadastrou, e é assim que ele corrige. Um seletor de turma em
-          cima porque aqui há mais de uma; no cadastro, só havia aquela.
-
-          Grava a cada toque: em ajustes não existe "salvar", existe mudar. */}
-      <Painel
-        titulo="Grade horária"
-        recolhivel
-        legenda="Quando cada turma tem aula."
-        acoes={
-          <>
-            <button onClick={importarGrade}>Importar</button>
-            <button
-              onClick={tentar(`Exportar ${NOMES.grade}`, async () =>
-                comoFoi(await salvarTexto(NOMES.grade, paraJsonGrade(aulas)), NOMES.grade),
-              )}
-            >
-              Exportar
-            </button>
-          </>
-        }
-      >
-        <GradeDeAjustes
-          turmas={turmas}
-          aulas={aulas}
-          professorPadrao={professores[0]?.uidHash ?? ''}
-          aoMudar={async (turma, novas) => {
-            await repositorio.definirHorarioDaTurma(turma, novas)
-            await carregar()
-          }}
-        />
       </Painel>
 
       <Secao titulo="Este computador" legenda="Mexido uma vez, ou raramente." />
