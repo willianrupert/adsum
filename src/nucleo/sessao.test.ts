@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   JANELA_MINIMA_MS,
   SILENCIO_SUSPEITO_MS,
+  contaPresenca,
   decidir,
   estatisticaDeIntervalos,
   eventoDe,
@@ -334,6 +335,43 @@ describe('leitorSuspeito', () => {
   it('não desconfia se não sobra ninguém pendente — silêncio é o esperado', () => {
     const depois = new Date(base.getTime() + SILENCIO_SUSPEITO_MS + 1)
     expect(leitorSuspeito(depois, base, 0)).toBe(false)
+  })
+})
+
+// Contador de presença subia com crachá de professor: `decidir()` retorna
+// `cadastro` igual pra aluno chamado ou professor chamado (o "Cadastrar"
+// explícito de `TelaAula`), sem olhar `papel` — quem decide se conta é quem
+// consome a decisão.
+describe('contaPresenca', () => {
+  const ALUNO = {
+    turma: 'IF685 · T01',
+    chave: '20250001',
+    matricula: '20250001',
+    nomeCompleto: 'CARLA REGINA DO NASCIMENTO',
+    nome: 'Carla Regina',
+    papel: 'aluno' as const,
+  }
+  const PROFESSOR_PENDENTE = { ...ALUNO, papel: 'professor' as const }
+
+  it('presença sempre conta', () => {
+    expect(contaPresenca({ tipo: 'presenca', vinculo: ALUNA })).toBe(true)
+  })
+
+  it('cadastro de aluno conta', () => {
+    expect(contaPresenca({ tipo: 'cadastro', pessoa: ALUNO })).toBe(true)
+  })
+
+  // O caso que subia sozinho: professor se cadastrando pela primeira vez,
+  // via "Cadastrar" — não é aluno chegando, é o próprio professor gravando
+  // o crachá dele.
+  it('cadastro de professor não conta', () => {
+    expect(contaPresenca({ tipo: 'cadastro', pessoa: PROFESSOR_PENDENTE })).toBe(false)
+  })
+
+  it('o resto não conta', () => {
+    expect(contaPresenca({ tipo: 'desconhecido' })).toBe(false)
+    expect(contaPresenca({ tipo: 'repetido', vinculo: ALUNA })).toBe(false)
+    expect(contaPresenca({ tipo: 'abrir', turma: 'x' })).toBe(false)
   })
 })
 

@@ -205,6 +205,24 @@ export function decidir(uidHash: string, ctx: Contexto): Decisao {
 }
 
 /**
+ * Se a decisão soma à contagem de presença.
+ *
+ * Professor já vinculado nunca chega a `presenca`/`cadastro` — o branch do
+ * topo de `decidir()` intercepta antes. Mas o **primeiro** cadastro dele
+ * (chamado explícito, via "Cadastrar" em `TelaAula`) passa por aqui como
+ * `cadastro` igual ao de qualquer aluno, porque `decidir()` não sabe — nem
+ * devia saber — que `ctx.chamado` é professor: quem cadastra o vínculo é o
+ * mesmo caminho para os dois papéis. O que muda é só a contagem: o professor
+ * está gravando o próprio crachá, não chegando como aluno, e contar
+ * presença dele infla o número sem ninguém ter faltado a menos.
+ */
+export function contaPresenca(decisao: Decisao): boolean {
+  if (decisao.tipo === 'presenca') return true
+  if (decisao.tipo === 'cadastro') return decisao.pessoa.papel !== 'professor'
+  return false
+}
+
+/**
  * Quanto tempo de silêncio do leitor soa suspeito, em `TelaAula`.
  *
  * `LeitorTeclado` não é WebHID — é um ouvinte de teclado, e puxar o cabo do

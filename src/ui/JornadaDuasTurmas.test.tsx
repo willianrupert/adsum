@@ -131,9 +131,11 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
     }
 
     expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: TURMA_A })
-    // 5, não 4: o docente entra na conta de "quem falta", e já chega
-    // vinculado — o crachá sintético que abriu a sessão é dele.
-    await screen.findByText('4 de 5 sem crachá')
+    // 4, não 5: o docente tem seção própria, separada da lista de alunos —
+    // "Quem falta" é só dos 4 alunos. O crachá sintético que abriu a sessão
+    // não é o dele de verdade (nasce genérico, sem roubar o nome dele), e
+    // ele continua pendente na seção de professores até encostar o próprio.
+    await screen.findByText('4 de 4 sem crachá')
 
     // Registra só três dos quatro — o caso comum, gente ainda chegando, não
     // o dia perfeito. `restam`, aqui, é relativo ao tamanho da fatia do
@@ -146,13 +148,13 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
       async (indice) => {
         const faltamDeVerdade = 4 - (indice + 1)
         await waitFor(() => {
-          expect(screen.getByText(`${faltamDeVerdade} de 5 sem crachá`)).toBeInTheDocument()
+          expect(screen.getByText(`${faltamDeVerdade} de 4 sem crachá`)).toBeInTheDocument()
         })
       },
     )
     await screen.findByText('Encoste o crachá de')
     expect(screen.getByText('Elisa Martins')).toBeInTheDocument()
-    expect(screen.getByText('1 de 5 sem crachá')).toBeInTheDocument()
+    expect(screen.getByText('1 de 4 sem crachá')).toBeInTheDocument()
 
     // Encerrar sem querer acontece — e reabrir devolve a mesma aula, com a
     // mesma gente ainda faltando, não uma sessão nova.
@@ -160,7 +162,7 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
     await usuario.click(await screen.findByRole('button', { name: 'Encerrei sem querer, reabrir a chamada' }))
     await screen.findByRole('button', { name: 'Encerrar a chamada' })
     expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: TURMA_A })
-    expect(screen.getByText('1 de 5 sem crachá')).toBeInTheDocument()
+    expect(screen.getByText('1 de 4 sem crachá')).toBeInTheDocument()
 
     // Agora encerra de verdade, com Elisa ainda pendente.
     await usuario.click(screen.getByRole('button', { name: 'Encerrar a chamada' }))
@@ -202,9 +204,10 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
       expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: TURMA_B }),
     )
 
-    // 4: o mesmo professor já está vinculado (mesmo nome nas duas listas do
-    // SIGAA), então só os três alunos entram na fila.
-    await screen.findByText('3 de 4 sem crachá')
+    // 3: "Quem falta" é só dos alunos — o docente (mesmo nome nas duas
+    // listas do SIGAA, mas sem vínculo real nenhum ainda) tem a própria
+    // seção, separada, em cada turma.
+    await screen.findByText('3 de 3 sem crachá')
     // Registra só dois dos três — o caso comum, gente ainda chegando.
     await baterCrachasEmSequencia(
       bancada.leitor,
@@ -213,13 +216,13 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
       async (indice) => {
         const faltamDeVerdade = 3 - (indice + 1)
         await waitFor(() => {
-          expect(screen.getByText(`${faltamDeVerdade} de 4 sem crachá`)).toBeInTheDocument()
+          expect(screen.getByText(`${faltamDeVerdade} de 3 sem crachá`)).toBeInTheDocument()
         })
       },
     )
     await screen.findByText('Encoste o crachá de')
     expect(document.querySelector('.chamado__nome')).toHaveTextContent('Helena Costa')
-    expect(screen.getByText('1 de 4 sem crachá')).toBeInTheDocument()
+    expect(screen.getByText('1 de 3 sem crachá')).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Encerrar a chamada' }))
     await usuario.click(await screen.findByRole('button', { name: 'Concluir sem salvar' }))
@@ -228,9 +231,14 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
     // chamada de nenhuma delas pra ver isso. Não busca o nome da turma
     // sozinho: com duas turmas, o seletor da Grade horária (recolhido, mas
     // sempre montado) usa o mesmo nome como texto de botão, e isso ambiguaria
-    // a busca — a contagem já prova a associação certa. ===
+    // a busca — a contagem já prova a associação certa.
+    //
+    // 2, não 1: este card (`TelaRepositorio`) conta a turma inteira, docente
+    // incluído — diferente da "Quem falta" de `TelaAula`, que é só dos
+    // alunos. Helena ainda sem crachá, e o docente, que nunca teve o vínculo
+    // sintético roubando a identidade dele: os dois contam. ===
     await usuario.click(await screen.findByRole('button', { name: 'Ajustes' }))
-    expect(await screen.findByText('1 de 4 sem crachá')).toBeInTheDocument()
+    expect(await screen.findByText('2 de 4 sem crachá')).toBeInTheDocument()
 
     // === Ver presenças, de dentro dos Ajustes: com uma próxima aula
     // conhecida (a de A, agora que a grade reconcilia com o professor certo)

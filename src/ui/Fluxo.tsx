@@ -510,17 +510,27 @@ export function Fluxo() {
    * hash igual a um de verdade, e a leitura era "encostei um crachá e ele
    * tá aqui" quando ninguém tinha encostado nada. Ver o comentário em
    * `Vinculo`, em `nucleo/tipos.ts`.
+   *
+   * **Nasce genérico — `nome: 'Professor'`, sem matrícula — nunca com nome de
+   * gente real.** Antes ele copiava `listarMatriculados().find(papel ===
+   * 'professor')`: o primeiro docente encontrado **em toda a base, de
+   * qualquer turma**, não necessariamente desta. Ao vivo, isso vinculou o
+   * docente Mauricio Sightman sem ele nunca ter encostado crachá — `quemFalta`
+   * e `vinculoDe` casam por nome/matrícula sem filtrar turma, e o sintético
+   * "com nome de gente real" marcava ele como vinculado em qualquer lugar
+   * que aparecesse. Identidade real só entra quando o professor se cadastra
+   * de propósito — crachá de verdade, pela seção de professores em
+   * `TelaAula` — e `vincularCracha`, lá, substitui este sintético pelo
+   * vínculo real assim que isso acontece.
    */
   const garantirProfessor = useCallback(async (): Promise<Vinculo> => {
     const existente = (await repositorio.listarVinculos()).find((v) => v.papel === 'professor')
     if (existente) return existente
 
-    const docente = (await repositorio.listarMatriculados()).find((m) => m.papel === 'professor')
     const vinculo: Vinculo = {
       uidHash: uidHashSintetico(),
       papel: 'professor',
-      nome: docente?.nome ?? 'Professor',
-      matricula: docente?.matricula || undefined,
+      nome: 'Professor',
       criadoEm: new Date().toISOString(),
       sintetico: true,
     }

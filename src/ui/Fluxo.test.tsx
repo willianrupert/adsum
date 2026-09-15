@@ -150,15 +150,18 @@ describe('a rota decide a tela', () => {
     renderizarCom(bancada, <Fluxo />)
 
     // Abre sozinha, sem clique nenhum. O docente ganha vínculo sintético no
-    // mesmo gesto que abre a sessão. Ninguém fica chamado sozinho (modo
-    // comum, o padrão) — o professor entra no modo de chamar nomes de
-    // propósito, e é aí que Breno, o único genuinamente pendente, é chamado.
+    // mesmo gesto que abre a sessão — genérico, sem roubar o nome de Ana
+    // Paula: ela ainda não encostou crachá nenhum, então continua pendente,
+    // só que na seção de professores, não na fila de alunos. Ninguém fica
+    // chamado sozinho (modo comum, o padrão) — o professor entra no modo de
+    // chamar nomes de propósito, e é aí que Breno, o único aluno pendente, é
+    // chamado.
     await usuario.click(await screen.findByRole('switch', { name: 'Chamar nomes' }))
     expect(await screen.findByText('Encoste o crachá de')).toBeInTheDocument()
     expect(screen.getByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
     await waitFor(async () => {
       const vinculos = await bancada.repositorio.listarVinculos()
-      expect(vinculos).toMatchObject([{ papel: 'professor', nome: 'Ana Paula' }])
+      expect(vinculos).toMatchObject([{ papel: 'professor', nome: 'Professor', sintetico: true }])
     })
 
     // O crachá de verdade da professora, encostado no meio da fila: em
@@ -251,11 +254,14 @@ describe('a rota decide a tela', () => {
     renderizarCom(bancada, <Fluxo />)
     await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
 
-    // Abriu — e o vínculo criado usa o nome do docente que o SIGAA apontou.
+    // Abriu — e o vínculo criado é genérico, não o nome do docente que o
+    // SIGAA apontou: ninguém encostou crachá nenhum, então ninguém pode
+    // dizer quem é. Copiar o nome daria a Ana Paula um vínculo que ela nunca
+    // pediu — o bug que este teste existia para provar antes do conserto.
     await screen.findByText('IF685 · T01')
     const vinculos = await bancada.repositorio.listarVinculos()
     expect(vinculos).toHaveLength(1)
-    expect(vinculos[0]).toMatchObject({ papel: 'professor', nome: 'Ana Paula' })
+    expect(vinculos[0]).toMatchObject({ papel: 'professor', nome: 'Professor', sintetico: true })
 
     const sessao = await bancada.repositorio.sessaoAberta()
     expect(sessao?.uidHashProfessor).toBe(vinculos[0].uidHash)

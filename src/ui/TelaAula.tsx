@@ -29,6 +29,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import {
+  contaPresenca,
   decidir,
   estatisticaDeIntervalos,
   eventoDe,
@@ -151,18 +152,44 @@ export function TelaAula({
     return () => clearInterval(relogio)
   }, [])
 
+  /**
+   * O vínculo de uma linha da turma — mesmo critério de sempre: matrícula
+   * quando existe, nome de docente quando não. É por aqui que "Remover
+   * crachá" acha o `uid_hash` a apagar, e por aqui que `efetivo` acha o
+   * apelido editado em Ajustes.
+   */
+  const vinculoDe = useCallback(
+    (p: Matriculado): Vinculo | undefined =>
+      vinculos.find((v) => (p.matricula ? v.matricula === p.matricula : v.nome === p.nome)),
+    [vinculos],
+  )
+
   const efetivo = useCallback(
     (p: Matriculado): Matriculado => {
       const edicao = edicoes.get(p.chave)
-      return edicao ? { ...p, nome: edicao.nome, papel: edicao.papel } : p
+      if (edicao) return { ...p, nome: edicao.nome, papel: edicao.papel }
+      // `Vinculo.nome` (editado em Ajustes → Vínculos) e `Matriculado.nome`
+      // (vindo do SIGAA) são campos de tabelas diferentes — sem isto, um
+      // apelido trocado em Ajustes nunca aparecia na chamada, só ali.
+      const vinculo = vinculoDe(p)
+      return vinculo ? { ...p, nome: vinculo.nome } : p
     },
-    [edicoes],
+    [edicoes, vinculoDe],
   )
+
+  /**
+   * Professor não entra na fila de "Chamar nomes" dos alunos — ganhou seção
+   * própria (ver `Professores`, abaixo), e o cadastro dele é sempre um clique
+   * explícito ali, nunca um nome que a seta ou o interruptor alcança sozinho.
+   */
+  const pendentesAlunos = useMemo(() => pendentes.filter((p) => p.papel === 'aluno'), [pendentes])
+  const alunosDaTurma = useMemo(() => daTurma.filter((p) => p.papel === 'aluno'), [daTurma])
+  const professoresDaTurma = useMemo(() => daTurma.filter((p) => p.papel === 'professor'), [daTurma])
 
   /** A pessoa chamada, com a edição local aplicada — é isto que `decidir()`
       recebe como `ctx.chamado`, e é isto que vira o vínculo gravado.
-      `pendentes`, não `daTurma`: quem já tem crachá não entra mais em modo
-      de chamar — ver o comentário em "Chamar", na tabela abaixo. */
+      `pendentes` inteiro, aluno ou professor: o cadastro explícito de um
+      professor (botão "Cadastrar") também passa por `chamadoChave`. */
   const aCadastrar = useMemo(() => {
     const p = pendentes.find((x) => x.chave === chamadoChave)
     return p ? efetivo(p) : undefined
@@ -170,34 +197,34 @@ export function TelaAula({
 
   const proximoPendente = useCallback(
     (apartirDe: number) => {
-      for (let i = apartirDe; i < pendentes.length; i++) {
-        if (!pulados.has(pendentes[i].chave)) return pendentes[i].chave
+      for (let i = apartirDe; i < pendentesAlunos.length; i++) {
+        if (!pulados.has(pendentesAlunos[i].chave)) return pendentesAlunos[i].chave
       }
       return undefined
     },
-    [pendentes, pulados],
+    [pendentesAlunos, pulados],
   )
 
-  // Setas andam pela fila de pendentes. Quem opera está com a mão no teclado e
-  // um aluno na frente — e é gesto explícito o bastante para entrar no modo
-  // de chamar nomes, igual a um clique em "Chamar": sem ninguém chamado
-  // ainda, `indice` é `-1`, e a primeira seta pousa no início da fila (índice
-  // `0`), não pula ele.
+  // Setas andam pela fila de alunos pendentes. Quem opera está com a mão no
+  // teclado e um aluno na frente — e é gesto explícito o bastante para entrar
+  // no modo de chamar nomes, igual a um clique em "Chamar": sem ninguém
+  // chamado ainda, `indice` é `-1`, e a primeira seta pousa no início da fila
+  // (índice `0`), não pula ele.
   useEffect(() => {
-    if (pendentes.length === 0) return
+    if (pendentesAlunos.length === 0) return
     const andar = (evento: KeyboardEvent) => {
       if (evento.key !== 'ArrowRight' && evento.key !== 'ArrowLeft') return
-      const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
+      const indice = pendentesAlunos.findIndex((p) => p.chave === chamadoChave)
       const proximo = Math.min(
-        pendentes.length - 1,
+        pendentesAlunos.length - 1,
         Math.max(0, indice + (evento.key === 'ArrowRight' ? 1 : -1)),
       )
-      setChamadoChave(pendentes[proximo]?.chave)
+      setChamadoChave(pendentesAlunos[proximo]?.chave)
       evento.preventDefault()
     }
     window.addEventListener('keydown', andar)
     return () => window.removeEventListener('keydown', andar)
-  }, [pendentes, chamadoChave])
+  }, [pendentesAlunos, chamadoChave])
 
   /**
    * Pendentes primeiro, o resto depois — com as edições locais aplicadas.
@@ -231,8 +258,18 @@ export function TelaAula({
       (e) => e.turma === sessao.turma && e.quando >= sessao.abertaEm,
     )
     sequencia.current = eventos.length
+    // Crachá de professor nunca conta presença — nem o próprio cadastro dele
+    // (ver `contaPresenca`, em `nucleo/sessao.ts`). O evento no log não
+    // carrega `papel` — não é dado da chamada, é dado da pessoa —, então quem
+    // desempata aqui é o vínculo atual: hash de professor sai da contagem,
+    // mesmo reconstruindo do zero depois de um recarregamento.
+    const hashesDeProfessor = new Set(
+      vinculosAtuais.filter((v) => v.papel === 'professor').map((v) => v.uidHash),
+    )
     const conjunto = new Set(
-      daAula.filter((e) => e.origem === 'cracha' && e.resultado === 'ok').map((e) => e.uidHash),
+      daAula
+        .filter((e) => e.origem === 'cracha' && e.resultado === 'ok' && !hashesDeProfessor.has(e.uidHash))
+        .map((e) => e.uidHash),
     )
     jaPresentes.current = conjunto
     setPresentes(conjunto)
@@ -262,14 +299,38 @@ export function TelaAula({
   }, [recarregar])
 
   /**
-   * O vínculo de uma linha da turma — mesmo critério de sempre: matrícula
-   * quando existe, nome de docente quando não. É por aqui que "Remover
-   * crachá" acha o `uid_hash` a apagar.
+   * Grava o vínculo de um crachá recém-identificado — cadastro do modo de
+   * chamar nomes, ou confirmação pela busca de "de quem é esse crachá".
+   *
+   * Quando é a identificação **real** do professor, substitui um sintético
+   * que já existisse: sem isto os dois conviveriam — o sintético continua
+   * "vinculado" (`garantirProfessor`, em `Fluxo.tsx`, nasce genérico, mas não
+   * desaparece sozinho), e qualquer `Aula.uidHashProfessor` que ainda aponte
+   * pro hash velho nunca mais bateria com hash nenhum depois da troca.
    */
-  const vinculoDe = useCallback(
-    (p: Matriculado): Vinculo | undefined =>
-      vinculos.find((v) => (p.matricula ? v.matricula === p.matricula : v.nome === p.nome)),
-    [vinculos],
+  const vincularCracha = useCallback(
+    async (pessoa: Matriculado, uidHash: string, quando: Date) => {
+      if (pessoa.papel === 'professor') {
+        const sintetico = vinculos.find(
+          (v) => v.papel === 'professor' && v.sintetico && v.uidHash !== uidHash,
+        )
+        if (sintetico) {
+          await repositorio.removerVinculo(sintetico.uidHash)
+          const aulas = await repositorio.listarAulas()
+          for (const aula of aulas.filter((a) => a.uidHashProfessor === sintetico.uidHash)) {
+            await repositorio.gravarAula({ ...aula, uidHashProfessor: uidHash })
+          }
+        }
+      }
+      await repositorio.gravarVinculo({
+        uidHash,
+        papel: pessoa.papel,
+        nome: pessoa.nome,
+        matricula: pessoa.matricula || undefined,
+        criadoEm: quando.toISOString(),
+      })
+    },
+    [repositorio, vinculos],
   )
 
   /**
@@ -333,8 +394,11 @@ export function TelaAula({
         }
 
         // Entra no conjunto antes de qualquer `await`: é isso que faz a leitura
-        // seguinte já saber que esta pessoa passou.
-        if (decisao.tipo === 'presenca' || decisao.tipo === 'cadastro') {
+        // seguinte já saber que esta pessoa passou. Cadastro de professor
+        // (o "Cadastrar" explícito da seção de professores) não entra — ver
+        // `contaPresenca`: é o professor gravando o próprio crachá, não
+        // alguém chegando como aluno.
+        if (contaPresenca(decisao)) {
           jaPresentes.current.add(uidHash)
         }
 
@@ -355,22 +419,22 @@ export function TelaAula({
         // sobra um crachá vinculado sem presença — que se resolve encostando de
         // novo — e não uma presença de alguém que o sistema não reconhece.
         if (decisao.tipo === 'cadastro') {
-          await repositorio.gravarVinculo({
-            uidHash,
-            papel: decisao.pessoa.papel,
-            nome: decisao.pessoa.nome,
-            matricula: decisao.pessoa.matricula || undefined,
-            criadoEm: leitura.em.toISOString(),
-          })
-          // Avança sozinho para o próximo pendente, pulando quem já foi
-          // marcado como pulado — mesmo gesto de sempre: chamar um nome não
-          // deveria custar um clique a mais para "próximo". Continua no modo
-          // de chamar nomes; sai dele só quando a fila acaba ou o professor
-          // volta explicitamente.
-          setChamadoChave((atual) => {
-            const indice = pendentes.findIndex((p) => p.chave === atual)
-            return proximoPendente(indice + 1)
-          })
+          await vincularCracha(decisao.pessoa, uidHash, leitura.em)
+          if (decisao.pessoa.papel === 'aluno') {
+            // Avança sozinho para o próximo pendente, pulando quem já foi
+            // marcado como pulado — mesmo gesto de sempre: chamar um nome não
+            // deveria custar um clique a mais para "próximo". Continua no
+            // modo de chamar nomes; sai dele só quando a fila de alunos
+            // acaba ou o professor volta explicitamente.
+            setChamadoChave((atual) => {
+              const indice = pendentesAlunos.findIndex((p) => p.chave === atual)
+              return proximoPendente(indice + 1)
+            })
+          } else {
+            // Cadastro de professor não é fila — foi um clique explícito em
+            // "Cadastrar", para uma pessoa só. Feito, volta a nada chamado.
+            setChamadoChave(undefined)
+          }
         }
 
         const evento = eventoDe(decisao, {
@@ -416,8 +480,9 @@ export function TelaAula({
     aoRegistrar,
     aoEncerrar,
     aCadastrar,
-    pendentes,
+    pendentesAlunos,
     proximoPendente,
+    vincularCracha,
   ])
 
   /**
@@ -506,7 +571,11 @@ export function TelaAula({
   }
 
   const chamadoAtual = aCadastrar
-  const suspeito = leitorSuspeito(agora, ultimaAtividadeEm, pendentes.length)
+  // A fila de "Chamar nomes" (interruptor, setas, "Pular") é só dos alunos —
+  // professor tem seção própria, com "Cadastrar" em vez de fila. Ver
+  // `Professores`, abaixo.
+  const chamadoAluno = chamadoAtual?.papel === 'aluno' ? chamadoAtual : undefined
+  const suspeito = leitorSuspeito(agora, ultimaAtividadeEm, pendentesAlunos.length)
 
   return (
     <section className="coleta">
@@ -560,7 +629,7 @@ export function TelaAula({
           têm crachá. Ligado, o professor está de propósito observando o
           próximo da fila — mesmo gesto de clicar "Chamar" numa linha da
           tabela abaixo, só que pelo topo. */}
-      {pendentes.length > 0 && (
+      {pendentesAlunos.length > 0 && (
         <section className="chamado">
           <div className="chamado__interruptor">
             <span className="chamado__interruptor-textos">
@@ -570,47 +639,47 @@ export function TelaAula({
                   isto, "Chamar nomes" lido frio não diz o que o interruptor
                   faz — só que existe. */}
               <span className="chamado__interruptor-estado">
-                {chamadoAtual
+                {chamadoAluno
                   ? 'Ligado: o próximo crachá vira desta pessoa'
                   : 'Desligado: crachá desconhecido abre a busca'}
               </span>
             </span>
             <button
               role="switch"
-              aria-checked={!!chamadoAtual}
+              aria-checked={!!chamadoAluno}
               aria-label="Chamar nomes"
               className="interruptor"
               onClick={() =>
-                setChamadoChave(chamadoAtual ? undefined : proximoPendente(0))
+                setChamadoChave(chamadoAluno ? undefined : proximoPendente(0))
               }
             >
               <span className="interruptor__bolinha" aria-hidden="true" />
             </button>
           </div>
 
-          {chamadoAtual ? (
+          {chamadoAluno ? (
             <>
               <Ondas tamanho={54} animado />
               <p className="chamado__rotulo">Encoste o crachá de</p>
-              <p className="chamado__nome">{chamadoAtual.nome}</p>
+              <p className="chamado__nome">{chamadoAluno.nome}</p>
               <p className="chamado__completo">
-                {chamadoAtual.nomeCompleto} · {chamadoAtual.papel}
+                {chamadoAluno.nomeCompleto} · {chamadoAluno.papel}
               </p>
               <div className="chamado__acoes">
                 <button
                   onClick={() => {
-                    const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
-                    setChamadoChave(pendentes[Math.max(0, indice - 1)]?.chave)
+                    const indice = pendentesAlunos.findIndex((p) => p.chave === chamadoChave)
+                    setChamadoChave(pendentesAlunos[Math.max(0, indice - 1)]?.chave)
                   }}
                   aria-label="anterior"
-                  disabled={pendentes.findIndex((p) => p.chave === chamadoChave) <= 0}
+                  disabled={pendentesAlunos.findIndex((p) => p.chave === chamadoChave) <= 0}
                 >
                   ←
                 </button>
                 <button
                   onClick={() => {
-                    setPulados((antes) => new Set(antes).add(chamadoAtual.chave))
-                    const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
+                    setPulados((antes) => new Set(antes).add(chamadoAluno.chave))
+                    const indice = pendentesAlunos.findIndex((p) => p.chave === chamadoChave)
                     setChamadoChave(proximoPendente(indice + 1))
                   }}
                 >
@@ -618,11 +687,13 @@ export function TelaAula({
                 </button>
                 <button
                   onClick={() => {
-                    const indice = pendentes.findIndex((p) => p.chave === chamadoChave)
-                    setChamadoChave(pendentes[Math.min(pendentes.length - 1, indice + 1)]?.chave)
+                    const indice = pendentesAlunos.findIndex((p) => p.chave === chamadoChave)
+                    setChamadoChave(pendentesAlunos[Math.min(pendentesAlunos.length - 1, indice + 1)]?.chave)
                   }}
                   aria-label="próximo"
-                  disabled={pendentes.findIndex((p) => p.chave === chamadoChave) >= pendentes.length - 1}
+                  disabled={
+                    pendentesAlunos.findIndex((p) => p.chave === chamadoChave) >= pendentesAlunos.length - 1
+                  }
                 >
                   →
                 </button>
@@ -660,7 +731,7 @@ export function TelaAula({
                   de propósito assustador; "3 de 56 com crachá" é o mesmo
                   dado contando o que já aconteceu. */}
               <p className="chamado__rotulo">
-                {daTurma.length - pendentes.length} de {daTurma.length} com crachá
+                {alunosDaTurma.length - pendentesAlunos.length} de {alunosDaTurma.length} com crachá
               </p>
             </>
           )}
@@ -670,12 +741,18 @@ export function TelaAula({
       {/* Sem crachá pendente, o painel some — e "some" e "nunca existiu" lêem
           igual, sem essa frase. O professor precisa saber que o cadastro
           inicial acabou, não só deixar de ver um aviso. */}
-      {pendentes.length === 0 && daTurma.length > 0 && (
+      {pendentesAlunos.length === 0 && alunosDaTurma.length > 0 && (
         <p className="ferramentas__nota">Turma completa: todo mundo já tem crachá.</p>
       )}
 
-      {pendentes.length > 0 && (
-        <Painel titulo="Quem falta" legenda={`${pendentes.length} de ${daTurma.length} sem crachá`}>
+      {/* Professores ganham seção própria, acima da lista de alunos: o
+          cadastro deles é sempre um clique explícito em "Cadastrar", nunca a
+          fila automática de "Chamar nomes" — que é só dos alunos, logo
+          abaixo. Some enquanto essa fila está com alguém chamado: a atenção
+          é dela nesse momento, e um professor pendente volta a aparecer
+          assim que ela esvazia ou termina. */}
+      {professoresDaTurma.length > 0 && !chamadoAluno && (
+        <Painel titulo="Professores">
           <table className="tabela">
             <thead>
               <tr>
@@ -685,11 +762,91 @@ export function TelaAula({
               </tr>
             </thead>
             <tbody>
-              {daTurma.map((p) => {
-                const vinculado = !pendentes.some((x) => x.chave === p.chave)
+              {professoresDaTurma.map((p) => {
+                const vinculo = vinculoDe(p)
+                const vinculado = !!vinculo
                 const e = efetivo(p)
-                const repetido = daTurma.filter((x) => efetivo(x).nome === e.nome).length > 1
-                const vinculo = vinculado ? vinculoDe(p) : undefined
+                const chamando = p.chave === chamadoChave
+                return (
+                  <tr key={p.chave} className={chamando ? 'linha--chamada' : ''}>
+                    <td>
+                      {e.nome}
+                      <span className="tabela__apoio">{p.nomeCompleto}</span>
+                    </td>
+                    <td className="celula--estado">{e.papel}</td>
+                    <td className="celula--estado">
+                      {chamando ? (
+                        <Selo tom="ok">Cadastrando</Selo>
+                      ) : (
+                        <>
+                          {vinculado && <Selo tom="ok">Vinculado</Selo>}
+                          {!vinculado && (
+                            <button onClick={() => setChamadoChave(p.chave)}>Cadastrar</button>
+                          )}
+                          {/* Mesma correção de crachá trocado que "Quem
+                              falta" já tem — ver `removerCracha`, acima. */}
+                          {vinculado && (
+                            <button className="botao--grave" onClick={() => removerCracha(p)}>
+                              Remover crachá
+                            </button>
+                          )}
+                          {/* "Sou eu": personaliza a saudação do repouso sem
+                              mexer no vínculo — ver `professorAtual`, em
+                              `preferencias.ts`. */}
+                          {vinculo &&
+                            (professorAtualHash === vinculo.uidHash ? (
+                              <>
+                                <Selo tom="ok">Você</Selo>
+                                <button
+                                  className="botao--quieto"
+                                  onClick={() => {
+                                    definirProfessorAtual(undefined)
+                                    setProfessorAtualHash(undefined)
+                                  }}
+                                >
+                                  Não sou eu
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                className="botao--quieto"
+                                onClick={() => {
+                                  definirProfessorAtual(vinculo.uidHash)
+                                  setProfessorAtualHash(vinculo.uidHash)
+                                }}
+                              >
+                                Sou eu
+                              </button>
+                            ))}
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </Painel>
+      )}
+
+      {pendentesAlunos.length > 0 && (
+        <Painel
+          titulo="Quem falta"
+          legenda={`${pendentesAlunos.length} de ${alunosDaTurma.length} sem crachá`}
+        >
+          <table className="tabela">
+            <thead>
+              <tr>
+                <th>Nome exibido</th>
+                <th>Papel</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {alunosDaTurma.map((p) => {
+                const vinculado = !pendentesAlunos.some((x) => x.chave === p.chave)
+                const e = efetivo(p)
+                const repetido = alunosDaTurma.filter((x) => efetivo(x).nome === e.nome).length > 1
                 return (
                   <tr key={p.chave} className={p.chave === chamadoChave ? 'linha--chamada' : ''}>
                     <td>
@@ -769,37 +926,6 @@ export function TelaAula({
                               Remover crachá
                             </button>
                           )}
-                          {/* "Sou eu": só na linha de um professor de
-                              verdade vinculado — personaliza a saudação do
-                              repouso ("Bom dia, Paulo") sem mexer no vínculo
-                              em si. Local nesta máquina, e reversível — ver
-                              `professorAtual`, em `preferencias.ts`. */}
-                          {vinculo?.papel === 'professor' && (
-                            professorAtualHash === vinculo.uidHash ? (
-                              <>
-                                <Selo tom="ok">Você</Selo>
-                                <button
-                                  className="botao--quieto"
-                                  onClick={() => {
-                                    definirProfessorAtual(undefined)
-                                    setProfessorAtualHash(undefined)
-                                  }}
-                                >
-                                  Não sou eu
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                className="botao--quieto"
-                                onClick={() => {
-                                  definirProfessorAtual(vinculo.uidHash)
-                                  setProfessorAtualHash(vinculo.uidHash)
-                                }}
-                              >
-                                Sou eu
-                              </button>
-                            )
-                          )}
                         </>
                       )}
                     </td>
@@ -840,13 +966,11 @@ export function TelaAula({
               const uidHash = procurando
               const quando = new Date()
               setProcurando(undefined)
-              await repositorio.gravarVinculo({
-                uidHash,
-                papel: pessoa.papel,
-                nome: pessoa.nome,
-                matricula: pessoa.matricula || undefined,
-                criadoEm: quando.toISOString(),
-              })
+              // É por aqui que o crachá real do professor costuma ser
+              // identificado: crachá desconhecido, busca, "é ele" — e
+              // `vincularCracha` substitui o sintético que `garantirProfessor`
+              // já tenha criado, migrando a grade que apontava pro hash velho.
+              await vincularCracha(pessoa, uidHash, quando)
               // A busca só abre no modo comum, com ninguém chamado (ver
               // `decidir()`) — então confirmar aqui nunca entra no modo de
               // chamar nomes sozinho. É a diferença de propósito entre os

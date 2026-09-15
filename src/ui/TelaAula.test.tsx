@@ -649,3 +649,139 @@ describe('"Sou eu"', () => {
     expect(screen.queryByText('Você')).not.toBeInTheDocument()
   })
 })
+
+// Professor ganhou seção própria, acima da lista de alunos: cadastro dele é
+// sempre um clique explícito em "Cadastrar", nunca a fila automática de
+// "Chamar nomes" — que é só dos alunos. Sem isto, um professor pendente
+// entrava na mesma fila que os alunos e podia ser chamado sozinho pelas
+// setas, sem ninguém ter clicado nada.
+describe('professores têm seção própria', () => {
+  const PROFESSOR_PENDENTE: Matriculado = {
+    turma: TURMA,
+    chave: 'prof-pendente',
+    matricula: '',
+    nome: 'Paulo Freitas',
+    nomeCompleto: 'PAULO FREITAS DE ARAUJO FILHO',
+    papel: 'professor',
+  }
+
+  it('professor pendente não entra na fila de "Chamar nomes" dos alunos', async () => {
+    const usuario = userEvent.setup()
+    montar([PROFESSOR_PENDENTE, BRENO], [PROFESSOR_PENDENTE, BRENO])
+
+    // O professor aparece na própria seção, com "Cadastrar" — não é
+    // alcançado pelo interruptor nem pelas setas, que são só dos alunos.
+    expect(screen.getByRole('button', { name: 'Cadastrar' })).toBeInTheDocument()
+
+    // A fila de "Chamar nomes" continua tendo só um pendente de verdade:
+    // Breno.
+    await usuario.click(screen.getByRole('switch', { name: 'Chamar nomes' }))
+    expect(await screen.findByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
+    expect(screen.queryByText('Paulo Freitas', { selector: '.chamado__nome' })).not.toBeInTheDocument()
+  })
+
+  it('a seção de professores some enquanto um aluno está chamado, e volta quando a fila termina', async () => {
+    const usuario = userEvent.setup()
+    montar([PROFESSOR_PENDENTE, BRENO], [PROFESSOR_PENDENTE, BRENO])
+    expect(screen.getByRole('button', { name: 'Cadastrar' })).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('switch', { name: 'Chamar nomes' }))
+    expect(screen.queryByRole('button', { name: 'Cadastrar' })).not.toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('switch', { name: 'Chamar nomes' }))
+    expect(await screen.findByRole('button', { name: 'Cadastrar' })).toBeInTheDocument()
+  })
+
+  // O crachá real do professor, identificado pelo "Cadastrar" explícito,
+  // substitui um vínculo sintético que já existisse — sem isto os dois
+  // conviveriam, e qualquer `Aula.uidHashProfessor` que ainda apontasse pro
+  // hash velho nunca mais bateria com hash nenhum.
+  it('cadastro explícito substitui um vínculo sintético e migra a grade', async () => {
+    const usuario = userEvent.setup()
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'sintetico00000000',
+      papel: 'professor',
+      nome: 'Professor',
+      criadoEm: new Date().toISOString(),
+      sintetico: true,
+    })
+    await bancada.repositorio.gravarAula({
+      uidHashProfessor: 'sintetico00000000',
+      dia: 3,
+      inicio: '08:00',
+      fim: '09:50',
+      turma: TURMA,
+    })
+
+    montar([PROFESSOR_PENDENTE], [PROFESSOR_PENDENTE])
+    await usuario.click(screen.getByRole('button', { name: 'Cadastrar' }))
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+
+    await waitFor(async () => {
+      const vinculos = await bancada.repositorio.listarVinculos()
+      expect(vinculos).toHaveLength(1)
+      expect(vinculos[0]).toMatchObject({ papel: 'professor', nome: 'Paulo Freitas' })
+      expect(vinculos[0].sintetico).toBeFalsy()
+    })
+
+    const [vinculoReal] = await bancada.repositorio.listarVinculos()
+    const aulas = await bancada.repositorio.listarAulas()
+    expect(aulas[0].uidHashProfessor).toBe(vinculoReal.uidHash)
+    expect(aulas[0].uidHashProfessor).not.toBe('sintetico00000000')
+  })
+})
+
+// Contador de presença subia com crachá de professor: `TelaAula` somava ao
+// mesmo conjunto de presentes qualquer `cadastro`, sem olhar `papel`. O
+// professor cadastrando o próprio crachá pela seção de professores não é
+// aluno chegando — não deveria inflar o número.
+describe('cadastro de professor não soma presença', () => {
+  const PROFESSOR_PENDENTE: Matriculado = {
+    turma: TURMA,
+    chave: 'prof-pendente',
+    matricula: '',
+    nome: 'Paulo Freitas',
+    nomeCompleto: 'PAULO FREITAS DE ARAUJO FILHO',
+    papel: 'professor',
+  }
+
+  // O atraso real entre as duas leituras é de propósito: sem pelo menos
+  // 400 ms entre crachás diferentes, a segunda seria recusada como "rápido
+  // demais" (`INTERVALO_MINIMO_MS`) e não haveria cadastro nenhum pra medir.
+  it('cadastro explícito do professor mantém o contador como estava', async () => {
+    const usuario = userEvent.setup()
+    await comCrachaDaAna()
+    montar([PROFESSOR_PENDENTE], [ANA, PROFESSOR_PENDENTE])
+
+    await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await waitFor(() => expect(screen.getByText('1')).toBeInTheDocument())
+
+    await usuario.click(screen.getByRole('button', { name: 'Cadastrar' }))
+    await new Promise((resolve) => setTimeout(resolve, 450))
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+
+    await waitFor(async () => expect(await bancada.repositorio.listarVinculos()).toHaveLength(2))
+    // Continua 1 — o cadastro do professor não somou.
+    expect(screen.getByText('1')).toBeInTheDocument()
+  }, 10_000)
+})
+
+// `Vinculo.nome` (editado em Ajustes → Vínculos) e `Matriculado.nome` (do
+// SIGAA) são campos de tabelas diferentes. `efetivo()` sempre lia só o
+// segundo — um apelido trocado em Ajustes nunca aparecia na chamada.
+describe('apelido editado em Ajustes aparece na chamada', () => {
+  it('mostra o nome do vínculo, não o nome original do SIGAA', async () => {
+    const uidHash = await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_DA_ANA))
+    await bancada.repositorio.gravarVinculo({
+      uidHash,
+      papel: 'aluno',
+      nome: 'Aninha', // editado em Ajustes — diferente de ANA.nome
+      matricula: ANA.matricula,
+      criadoEm: new Date().toISOString(),
+    })
+    montar([BRENO], [ANA, BRENO])
+
+    expect(await screen.findByText('Aninha')).toBeInTheDocument()
+    expect(screen.queryByText(ANA.nome)).not.toBeInTheDocument()
+  })
+})
