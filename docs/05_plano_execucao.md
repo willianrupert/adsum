@@ -164,10 +164,61 @@ existe hoje forma de marcar meia hora dentro de um bloco de 100 minutos.
 Decidido com o autor: duas grades, com um toggle estilo Apple acima —
 **simplificada** (blocos atuais, sem os horários de sábado 07:00–11:50 /
 13:00–17:50 aparecendo à parte) e **completa**, com granularidade de 50 min,
-pra onde o bloco de meio-dia (hoje o único "curto") migra. Maior escopo que o
-resto do plano: exige separar unidade de marcação de unidade de exibição no
-modelo de dados antes de mexer em UI — fica para desenho dedicado, não para
-implementação direta.
+pra onde o bloco de meio-dia (hoje o único "curto") migra.
+
+**Desenho fechado (16/09/2026):**
+
+Achado ao investigar: **não precisa mudar nada no Dexie.** `Aula.inicio`/`fim`
+já são strings livres, e `marcadosDe()` (`nucleo/horarios.ts`) já tolera uma
+`Aula` que não bate com bloco nenhum (conta como `foraDosBlocos`, avisa, mas a
+aula continua abrindo chamada normal). O problema é só de UI: hoje existe um
+catálogo só (`BLOCOS`), que vira ao mesmo tempo as linhas da grade e a unidade
+de marcação. A saída: dois catálogos independentes, ambos só produzem
+`Aula{inicio, fim}` — sem conflito de dado, só de qual conjunto de horários a
+tela oferece pra clicar.
+
+Cada período de verdade tem 50 min, com 10 min de intervalo até o próximo —
+confirmado pelo autor (`8:00–8:50`, `9:00–9:50`...) — **exceto** o par da
+noite (18:50–20:30), que já era documentado como "encostado" (sem intervalo):
+inferido como `18:50–19:40` / `19:40–20:30`, sem confirmação explícita —
+conferir contra a grade oficial antes de publicar.
+
+Fatiando os blocos atuais nesse ritmo, os horários de sábado (07:00–11:50 e
+13:00–17:50) batem exatamente com os mesmos períodos de segunda a sexta —
+sábado só ganha um período a mais, às 07:00, que dia de semana não tem.
+Catálogo completo:
+
+| Período | Seg-Sex | Sáb |
+|---|---|---|
+| 07:00–07:50 | não | sim |
+| 08:00–08:50 | sim | sim |
+| 09:00–09:50 | sim | sim |
+| 10:00–10:50 | sim | sim |
+| 11:00–11:50 | sim | sim |
+| 12:00–12:50 | sim | não |
+| 13:00–13:50 | sim | sim |
+| 14:00–14:50 | sim | sim |
+| 15:00–15:50 | sim | sim |
+| 16:00–16:50 | sim | sim |
+| 17:00–17:50 | sim | sim |
+| 18:00–18:50 | sim | não |
+| 18:50–19:40 | sim (inferido) | não |
+| 19:40–20:30 | sim (inferido) | não |
+
+Implementação: `Bloco` ganha `dias: number[]` no lugar de `soSabado?: boolean`
+— mais geral, cobre "a maioria dos períodos vale seg-sex e sábado, menos
+alguns" sem caso especial. `BLOCOS` (simplificada) perde os dois blocos de
+sábado — a coluna de sábado some da grade simplificada inteira, porque não
+sobra nada pra marcar nela; sábado vira só alcançável pela completa.
+`GradeDaSemana.tsx`, `marcadosDe`, `aulasDe`, `horasPorSemana`, `ehCurto`
+passam a receber a lista de blocos como parâmetro em vez de importar `BLOCOS`
+fixo — mesma lógica, dois catálogos. Toggle (visual de segmentado, reaproveita
+`.segmentado`/`.segmento` já usado na escolha de leitor) guardado em
+`ambiente/preferencias.ts` — é escolha desta máquina, não da turma.
+
+Trocar de modo não perde dado: uma `Aula` de 09:00-09:50 (só metade de um
+bloco da simplificada) aparece como `foraDosBlocos` ao voltar pra
+simplificada — mecanismo que já existe, sem trabalho extra.
 
 ---
 
