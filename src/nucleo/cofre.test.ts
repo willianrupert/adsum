@@ -107,7 +107,7 @@ describe('o LEIA-ME da pasta', () => {
   it('diz onde achar o manual, mesmo sem o app por perto', () => {
     const texto = paraLeiaMe()
     expect(texto).toMatch(/MANUAL/)
-    expect(texto).toContain('Manual e LGPD')
+    expect(texto).toContain('Manual')
     expect(texto).toContain(MANUAL_URL)
   })
 })

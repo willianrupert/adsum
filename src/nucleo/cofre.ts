@@ -90,6 +90,10 @@ export const NOMES = {
 export const MANUAL_URL =
   'https://raw.githubusercontent.com/willianrupert/adsum/main/docs/Adsum-manual-e-LGPD.docx'
 
+/** O botão "GitHub" do rodapé de Ajustes — a página do repositório, não o
+    arquivo cru como `MANUAL_URL`: aqui quem abre é gente, não `fetch`. */
+export const REPOSITORIO_URL = 'https://github.com/willianrupert/adsum'
+
 /**
  * A pasta se explica sozinha.
  *
@@ -122,7 +126,7 @@ MANUAL DE USO E LGPD
 
   O manual completo — como usar, e o tratamento de dado pessoal campo
   por campo — não fica nesta pasta. Baixe uma cópia em Ajustes →
-  "Manual e LGPD", ou direto daqui:
+  "Manual", ou direto daqui:
 
   ${MANUAL_URL}
 

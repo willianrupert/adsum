@@ -61,7 +61,7 @@ import {
 } from '../ambiente/sincronia.ts'
 import { nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'
 import { salvarBinario, salvarTexto } from '../ambiente/arquivos.ts'
-import { MANUAL_URL } from '../nucleo/cofre.ts'
+import { MANUAL_URL, REPOSITORIO_URL } from '../nucleo/cofre.ts'
 import type { EstadoDaPasta } from '../nucleo/rota.ts'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
@@ -1121,12 +1121,16 @@ export function Fluxo() {
                 }}
                 aoVerPresencas={() => setFolha('presencas')}
               />
-              {/* Rodapé dos Ajustes: dois links quietos, separados do resto
-                  por não serem uso do dia a dia. Diagnóstico virou folha
-                  própria — ver o comentário no topo do arquivo — e o manual
-                  mora aqui pelo mesmo motivo: nenhum dos dois compete por
-                  atenção com trocar a pasta ou corrigir a grade. */}
+              {/* Rodapé dos Ajustes: links quietos, separados do resto por
+                  não serem uso do dia a dia. Diagnóstico virou folha própria
+                  — ver o comentário no topo do arquivo —, o manual mora
+                  aqui pelo mesmo motivo, e o GitHub é o repositório do
+                  projeto: nenhum dos três compete por atenção com trocar a
+                  pasta ou corrigir a grade. */}
               <div className="ajustes__rodape">
+                <button className="botao--quieto" onClick={() => setFolha('diagnostico')}>
+                  Diagnóstico
+                </button>
                 <button
                   className="botao--quieto"
                   onClick={() => {
@@ -1156,13 +1160,19 @@ export function Fluxo() {
                     })()
                   }}
                 >
-                  Manual e LGPD
+                  Manual
                 </button>
-                <button className="botao--quieto" onClick={() => setFolha('diagnostico')}>
-                  Diagnóstico
-                </button>
+                <a
+                  className="botao--quieto"
+                  href={REPOSITORIO_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  GitHub
+                </a>
               </div>
               {recadoManual && <p className="ferramentas__nota">{recadoManual}</p>}
+              <p className="ajustes__creditos">© 2026 Willian Rupert</p>
             </>
           )}
           {folha === 'presencas' && <ConteudoDePresencas nomeDaPasta={pasta?.name} />}

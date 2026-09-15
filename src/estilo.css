@@ -201,8 +201,9 @@ code {
   color: var(--tinta-fraca);
 }
 
-/* O rodapé dos Ajustes: Manual e Diagnóstico lado a lado, mesmo espírito da
-   divisória acima — separados do resto, sem competir por atenção entre si. */
+/* O rodapé dos Ajustes: Diagnóstico, Manual e GitHub lado a lado, mesmo
+   espírito da divisória acima — separados do resto, sem competir por
+   atenção entre si. */
 .ajustes__rodape {
   display: flex;
   gap: 20px;
@@ -210,6 +211,34 @@ code {
   padding-top: 20px;
   border-top: 1px solid var(--separador);
   font-size: var(--t-menor);
+}
+
+/* "GitHub" é link, não botão — mas ocupa o mesmo lugar na fileira, então
+   ganha o padding e a pílula que `button` já tem de propósito global (ver
+   a regra `button` mais abaixo), sem herdá-los de graça como elemento
+   `<a>`. */
+.ajustes__rodape a.botao--quieto {
+  display: inline-block;
+  text-decoration: none;
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: -0.016em;
+  line-height: 1;
+  padding: 8px 16px;
+  border-radius: var(--pilula);
+  transition: opacity var(--rapido) var(--curva);
+}
+
+.ajustes__rodape a.botao--quieto:hover {
+  opacity: 0.72;
+}
+
+/* Crédito de autoria: contraste baixo de propósito — é rodapé, não
+   conteúdo que alguém precisa ler. */
+.ajustes__creditos {
+  margin: 4px 0 0;
+  font-size: var(--t-menor);
+  color: var(--tinta-tenue);
 }
 
 /* Fechado encolhe: sem isto o painel guardaria a altura do conteúdo escondido,

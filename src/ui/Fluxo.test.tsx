@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { baterCrachasEmSequencia, gerarBaralho } from '../testes/simular.ts'
@@ -1095,7 +1095,7 @@ describe('manual e LGPD', () => {
     renderizarCom(bancada, <Fluxo />)
     await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
-    await usuario.click(await screen.findByRole('button', { name: 'Manual e LGPD' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Manual' }))
 
     await waitFor(() => expect(salvarBinario).toHaveBeenCalled())
     expect(fetch).toHaveBeenCalledWith(MANUAL_URL)
@@ -1116,9 +1116,39 @@ describe('manual e LGPD', () => {
     renderizarCom(bancada, <Fluxo />)
     await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
     await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
-    await usuario.click(await screen.findByRole('button', { name: 'Manual e LGPD' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Manual' }))
 
     expect(await screen.findByText((texto) => texto.includes(MANUAL_URL))).toBeInTheDocument()
+  })
+})
+
+// Fase 2, item 5 (docs/05_plano_execucao.md): rodapé ganha um terceiro
+// botão, e o "Manual e LGPD" encurta pra "Manual" — o rodapé já deixa o
+// contexto claro.
+describe('rodapé de Ajustes', () => {
+  it('tem Diagnóstico, Manual e GitHub, nessa ordem, e o crédito de autoria embaixo', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
+    await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
+
+    const rodape = (await screen.findByRole('button', { name: 'Diagnóstico' })).closest(
+      '.ajustes__rodape',
+    ) as HTMLElement
+    const rotulos = within(rodape)
+      .getAllByRole('button')
+      .concat(within(rodape).getAllByRole('link'))
+      .map((el) => el.textContent)
+    expect(rotulos).toEqual(['Diagnóstico', 'Manual', 'GitHub'])
+
+    const linkGitHub = within(rodape).getByRole('link', { name: 'GitHub' })
+    expect(linkGitHub).toHaveAttribute('href', 'https://github.com/willianrupert/adsum')
+    expect(linkGitHub).toHaveAttribute('target', '_blank')
+    expect(linkGitHub).toHaveAttribute('rel', 'noopener noreferrer')
+
+    expect(screen.getByText('© 2026 Willian Rupert')).toBeInTheDocument()
   })
 })
 
