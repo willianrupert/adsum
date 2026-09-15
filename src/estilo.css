@@ -201,14 +201,15 @@ code {
   color: var(--tinta-fraca);
 }
 
-/* O link para a folha de Diagnóstico — mesmo espírito da divisória acima:
-   separado do resto, sem competir por atenção. */
-.ajustes__diagnostico {
+/* O rodapé dos Ajustes: Manual e Diagnóstico lado a lado, mesmo espírito da
+   divisória acima — separados do resto, sem competir por atenção entre si. */
+.ajustes__rodape {
+  display: flex;
+  gap: 20px;
   margin-top: 16px;
   padding-top: 20px;
   border-top: 1px solid var(--separador);
   font-size: var(--t-menor);
-  align-self: flex-start;
 }
 
 /* Fechado encolhe: sem isto o painel guardaria a altura do conteúdo escondido,

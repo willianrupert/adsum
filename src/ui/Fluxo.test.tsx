@@ -6,6 +6,8 @@ import { baterCrachasEmSequencia, gerarBaralho } from '../testes/simular.ts'
 import { Fluxo } from './Fluxo.tsx'
 import { adiarHorario, definirProfessorAtual, dispensarCadastro } from '../ambiente/preferencias.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
+import * as arquivos from '../ambiente/arquivos.ts'
+import { MANUAL_URL } from '../nucleo/cofre.ts'
 
 let bancada: Bancada
 
@@ -946,6 +948,51 @@ describe('os Ajustes se recolhem', () => {
       await screen.findByRole('group', { name: 'Horários de IF685 · T01' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'QUA, 13:00 às 14:50' })).toBeInTheDocument()
+  })
+})
+
+// O único botão do Adsum que fala com a internet: o manual vive no GitHub,
+// não dentro do app. `fetch` é mockado aqui de propósito — não é porta do
+// Adsum, é infraestrutura de terceiro, sem "adaptador de verdade" pra testar
+// contra (a suíte não bate no GitHub de verdade). Fica no rodapé dos Ajustes,
+// ao lado de Diagnóstico — não é mais um botão solto entre painéis.
+describe('manual e LGPD', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('busca do GitHub e oferece pra salvar', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    const blobDeMentira = new Blob(['conteúdo de mentira'])
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, blob: async () => blobDeMentira }))
+    const salvarBinario = vi.spyOn(arquivos, 'salvarBinario').mockResolvedValue('gravado')
+
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
+    await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Manual e LGPD' }))
+
+    await waitFor(() => expect(salvarBinario).toHaveBeenCalled())
+    expect(fetch).toHaveBeenCalledWith(MANUAL_URL)
+    const [nomeArquivo, dados] = salvarBinario.mock.calls[0]
+    expect(nomeArquivo).toBe('Adsum-manual-e-LGPD.docx')
+    expect(dados).toBe(blobDeMentira)
+    expect(await screen.findByText(/Manual gravado/)).toBeInTheDocument()
+  })
+
+  // Arquivo movido, repositório renomeado, ou simplesmente sem internet — a
+  // tela não pode deixar o professor com um botão que "não faz nada". O
+  // link cru é a saída manual enquanto ninguém conserta a constante.
+  it('sem internet, ou arquivo mudou de lugar, mostra o link pra baixar na mão', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }))
+
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText(/Bom dia|Boa tarde|Boa noite/)
+    await usuario.click(screen.getByRole('button', { name: 'Ajustes' }))
+    await usuario.click(await screen.findByRole('button', { name: 'Manual e LGPD' }))
+
+    expect(await screen.findByText((texto) => texto.includes(MANUAL_URL))).toBeInTheDocument()
   })
 })
 

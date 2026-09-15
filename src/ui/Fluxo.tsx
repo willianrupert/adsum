@@ -53,7 +53,8 @@ import {
   sincronizar,
 } from '../ambiente/sincronia.ts'
 import { nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'
-import { salvarTexto } from '../ambiente/arquivos.ts'
+import { salvarBinario, salvarTexto } from '../ambiente/arquivos.ts'
+import { MANUAL_URL } from '../nucleo/cofre.ts'
 import type { EstadoDaPasta } from '../nucleo/rota.ts'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
@@ -138,6 +139,9 @@ export function Fluxo() {
       a saudação segue anônima como sempre foi. */
   const [nomeDoProfessorAtual, setNomeDoProfessorAtual] = useState('')
   const [folha, setFolha] = useState<Folha>()
+  /** Resultado de baixar o manual, pelo botão ao lado de "Diagnóstico" —
+      ver o comentário perto de onde ele é renderizado. */
+  const [recadoManual, setRecadoManual] = useState<string>()
   /**
    * "Estou colando uma turma nova" — a única intenção que ainda precisa de
    * estado próprio. Chamar nomes deixou de ser um modo à parte: com gente
@@ -1073,16 +1077,48 @@ export function Fluxo() {
                 }}
                 aoVerPresencas={() => setFolha('presencas')}
               />
-              {/* Diagnóstico virou folha própria — ver o comentário no topo do
-                  arquivo. Cinco painéis de coisa que "não é uso do dia a dia"
-                  (ambiente, leitor, últimas leituras, estado do app, modo de
-                  ensaio) empilhados aqui era metade dos Ajustes sendo ferramenta
-                  de quem conserta, não do professor que só quer trocar a pasta
-                  ou corrigir a grade. Um link quieto continua alcançável para
-                  quem precisa. */}
-              <button className="botao--quieto ajustes__diagnostico" onClick={() => setFolha('diagnostico')}>
-                Diagnóstico
-              </button>
+              {/* Rodapé dos Ajustes: dois links quietos, separados do resto
+                  por não serem uso do dia a dia. Diagnóstico virou folha
+                  própria — ver o comentário no topo do arquivo — e o manual
+                  mora aqui pelo mesmo motivo: nenhum dos dois compete por
+                  atenção com trocar a pasta ou corrigir a grade. */}
+              <div className="ajustes__rodape">
+                <button
+                  className="botao--quieto"
+                  onClick={() => {
+                    setRecadoManual(undefined)
+                    void (async () => {
+                      try {
+                        const resposta = await fetch(MANUAL_URL)
+                        if (!resposta.ok) {
+                          throw new Error(
+                            `sem internet ou o arquivo mudou de lugar (HTTP ${resposta.status}). Baixe direto em ${MANUAL_URL}`,
+                          )
+                        }
+                        const salvou = await salvarBinario(
+                          'Adsum-manual-e-LGPD.docx',
+                          await resposta.blob(),
+                        )
+                        setRecadoManual(
+                          salvou === 'cancelado'
+                            ? undefined
+                            : salvou === 'gravado'
+                              ? 'Manual gravado.'
+                              : 'Manual foi para a pasta de downloads. Este navegador não tem File System Access.',
+                        )
+                      } catch (erro) {
+                        setRecadoManual((erro as Error).message)
+                      }
+                    })()
+                  }}
+                >
+                  Manual e LGPD
+                </button>
+                <button className="botao--quieto" onClick={() => setFolha('diagnostico')}>
+                  Diagnóstico
+                </button>
+              </div>
+              {recadoManual && <p className="ferramentas__nota">{recadoManual}</p>}
             </>
           )}
           {folha === 'presencas' && <ConteudoDePresencas nomeDaPasta={pasta?.name} />}
