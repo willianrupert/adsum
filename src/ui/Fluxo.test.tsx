@@ -459,6 +459,89 @@ describe('a grade abre a chamada sozinha', () => {
   })
 })
 
+// Reproduzido de verdade pelo autor: 15/09/2026, 9:40, mais de uma turma
+// cadastrada, só uma com aula naquele horário — e a tela não caiu no estado
+// "Começar chamada". `recontar()` escolhia só o vínculo de professor que
+// vencia a ordem alfabética de `listarVinculos()` para checar a grade; se a
+// aula que bate "agora" é de outro professor, ela nunca era encontrada — nem
+// pelo indicador do repouso, nem pelo relógio que abre a aula sozinha.
+describe('a grade de mais de um professor', () => {
+  it('acha e abre a aula de um professor mesmo quando outro, sem aula agora, vence a ordem alfabética', async () => {
+    await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('1', 'Aluno Um')])
+    await bancada.repositorio.salvarTurma('IF969 · T02', [pessoa('2', 'Aluno Dois')])
+    adiarHorario('IF685 · T01')
+
+    // "Ana Beatriz" vence a ordem alfabética de `listarVinculos()` — e não
+    // tem aula nenhuma agora. Um `.find()` que parasse nela nunca chegaria
+    // à aula de Zeca, que é quem de fato está no horário.
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'aaaa000000000000',
+      papel: 'professor',
+      nome: 'Ana Beatriz',
+      criadoEm: new Date().toISOString(),
+    })
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'zzzz000000000000',
+      papel: 'professor',
+      nome: 'Zeca Ferreira',
+      criadoEm: new Date().toISOString(),
+    })
+
+    const agora = new Date()
+    const hhmm = (delta: number) => {
+      const d = new Date(agora.getTime() + delta * 60_000)
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    }
+    await bancada.repositorio.gravarAula({
+      uidHashProfessor: 'zzzz000000000000',
+      dia: agora.getDay(),
+      inicio: hhmm(-30),
+      fim: hhmm(30),
+      turma: 'IF969 · T02',
+    })
+
+    renderizarCom(bancada, <Fluxo />)
+
+    // Abre sozinha — o relógio, tanto quanto o indicador do repouso, olhou a
+    // grade dos dois professores, não só da que vence a ordem alfabética.
+    expect(await screen.findByRole('button', { name: 'Encerrar a chamada' })).toBeInTheDocument()
+    expect(await bancada.repositorio.sessaoAberta()).toMatchObject({
+      turma: 'IF969 · T02',
+      uidHashProfessor: 'zzzz000000000000',
+    })
+  })
+
+  // A mesma aula quebrada — hash vazio ou órfão — se autocorrige assim que
+  // existe **qualquer** vínculo de professor, não só quando ele bate com o
+  // primeiro encontrado. Órfão: aponta pra um vínculo que já foi apagado
+  // (um sintético substituído, por exemplo) — mesmo tratamento que hash vazio.
+  it('uma aula com hash de professor órfão se autocorrige, não só a de hash vazio', async () => {
+    await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('1', 'Aluno Um')])
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'aaaa000000000000',
+      papel: 'professor',
+      nome: 'Ana Paula',
+      criadoEm: new Date().toISOString(),
+    })
+    await bancada.repositorio.gravarAula({
+      uidHashProfessor: 'hash-de-vinculo-que-nao-existe-mais',
+      dia: 3,
+      inicio: '13:00',
+      fim: '14:50',
+      turma: 'IF685 · T01',
+    })
+    renderizarCom(bancada, <Fluxo />)
+
+    // O cronograma nem aparece — a turma já tem horário (quebrado).
+    expect(screen.queryByText('Quando esta turma tem aula')).not.toBeInTheDocument()
+
+    await waitFor(async () => {
+      const aulas = await bancada.repositorio.listarAulas()
+      expect(aulas[0]?.uidHashProfessor).toBe('aaaa000000000000')
+    })
+  })
+})
+
 // A sessão é única no app inteiro, não por turma: o crachá do professor
 // sempre encerra a que já está aberta, nunca abre outra por cima. Sem aviso,
 // quem esquece de encerrar a aula das 8h só descobre o motivo do "nada

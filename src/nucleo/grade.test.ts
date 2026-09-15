@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { abrirSozinho, proximaAula, FOLGA_MIN, aulasAgora, emMinutos, escolherTurma, horaValida } from './grade.ts'
+import {
+  abrirSozinho,
+  abrirSozinhoEntreProfessores,
+  proximaAula,
+  proximaAulaDeQualquer,
+  FOLGA_MIN,
+  aulasAgora,
+  emMinutos,
+  escolherTurma,
+  horaValida,
+} from './grade.ts'
 
 const PROF = 'aaaa000000000000'
 const OUTRO = 'bbbb000000000000'
@@ -201,5 +211,60 @@ describe('as duas aulas coladas da noite', () => {
   it('fora da faixa de sobreposição, abre normalmente', () => {
     expect(abrirSozinho([CEDO, TARDE], 'prof', em('17:30'))).toBe('A')
     expect(abrirSozinho([CEDO, TARDE], 'prof', em('19:40'))).toBe('B')
+  })
+})
+
+// Reproduzido de verdade pelo autor: 15/09/2026, 9:40, mais de uma turma
+// cadastrada, só uma com aula naquele horário — e a tela de repouso não
+// anunciou "Começar chamada". `Fluxo.recontar()` escolhia só o vínculo de
+// professor que vencia a ordem alfabética de `listarVinculos()`; se a aula
+// que bate "agora" é de **outro** professor, ela nunca era encontrada.
+describe('a grade de vários professores', () => {
+  const em = (hhmm: string) => new Date(`2026-08-19T${hhmm}:00`) // quarta
+  const BEA = 'bea'
+  const ZECA = 'zeca'
+  const AULA_DA_ZECA = { uidHashProfessor: ZECA, dia: 3, inicio: '08:00', fim: '10:00', turma: 'IF685 · T01' }
+
+  it('acha a aula de um professor mesmo quando outro (sem aula agora) é olhado primeiro', () => {
+    // Bea não tem aula nenhuma agora; Zeca tem. Um `.find` que parasse em
+    // Bea nunca chegaria à aula de Zeca.
+    expect(abrirSozinhoEntreProfessores([AULA_DA_ZECA], [BEA, ZECA], em('08:05'))).toBe('IF685 · T01')
+    expect(abrirSozinhoEntreProfessores([AULA_DA_ZECA], [ZECA, BEA], em('08:05'))).toBe('IF685 · T01')
+  })
+
+  // Duas turmas de professores diferentes batendo "agora" é a mesma
+  // ambiguidade que `escolherTurma` resolve perguntando — sozinho, o
+  // relógio não escolhe uma das duas.
+  it('duas turmas de professores diferentes ao mesmo tempo não são adivinhadas', () => {
+    const aulaDaBea = { uidHashProfessor: BEA, dia: 3, inicio: '08:00', fim: '10:00', turma: 'IF969 · T02' }
+    expect(
+      abrirSozinhoEntreProfessores([AULA_DA_ZECA, aulaDaBea], [BEA, ZECA], em('08:05')),
+    ).toBeUndefined()
+  })
+
+  it('sem nenhum professor com aula agora, não abre nada', () => {
+    expect(abrirSozinhoEntreProfessores([AULA_DA_ZECA], [BEA], em('08:05'))).toBeUndefined()
+  })
+
+  it('continua respeitando o que já foi encerrado', () => {
+    const encerradas = { 'IF685 · T01': '2026-08-19T09:30:00' }
+    expect(
+      abrirSozinhoEntreProfessores([AULA_DA_ZECA], [BEA, ZECA], em('09:31'), encerradas),
+    ).toBeUndefined()
+  })
+
+  it('a próxima aula de qualquer um dos professores, a mais cedo entre todos', () => {
+    const daBea = { uidHashProfessor: BEA, dia: 1, inicio: '10:00', fim: '12:00', turma: 'A' } // segunda
+    const doZeca = { uidHashProfessor: ZECA, dia: 3, inicio: '08:00', fim: '10:00', turma: 'B' } // quarta, hoje
+    // Às 06:00 de quarta, a de hoje (Zeca) ainda não começou e vence.
+    expect(proximaAulaDeQualquer([daBea, doZeca], [BEA, ZECA], em('06:00'))?.aula.turma).toBe('B')
+    // Passada a aula de hoje, sobra a de segunda, de Bea — mesmo que a
+    // ordem dos hashes coloque Zeca primeiro.
+    const proxima = proximaAulaDeQualquer([daBea, doZeca], [ZECA, BEA], em('11:00'))
+    expect(proxima?.aula.turma).toBe('A')
+  })
+
+  it('sem nenhum professor com grade, não promete nada', () => {
+    expect(proximaAulaDeQualquer([], [BEA, ZECA], em('09:00'))).toBeUndefined()
   })
 })

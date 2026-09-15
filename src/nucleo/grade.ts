@@ -56,10 +56,28 @@ export interface Aula {
 
 /** As aulas daquele professor acontecendo agora, com a folga. */
 export function aulasAgora(aulas: Aula[], uidHashProfessor: string, agora: Date): Aula[] {
+  return aulasAgoraDeQualquer(aulas, [uidHashProfessor], agora)
+}
+
+/**
+ * A mesma conta de `aulasAgora`, olhando a grade de vários professores ao
+ * mesmo tempo.
+ *
+ * Existe porque mais de um vínculo `papel: 'professor'` pode legitimamente
+ * estar na base — mais de um docente cadastrado, ou um sintético convivendo
+ * com o real por um instante — e a checagem de horário não pode enxergar só
+ * o primeiro que um `.find` alcança. Ver `recontar()`, em `Fluxo.tsx`.
+ */
+export function aulasAgoraDeQualquer(
+  aulas: Aula[],
+  uidHashesProfessores: string[],
+  agora: Date,
+): Aula[] {
+  const hashes = new Set(uidHashesProfessores)
   const minuto = agora.getHours() * 60 + agora.getMinutes()
   return aulas.filter(
     (a) =>
-      a.uidHashProfessor === uidHashProfessor &&
+      hashes.has(a.uidHashProfessor) &&
       a.dia === agora.getDay() &&
       minuto >= emMinutos(a.inicio) - FOLGA_MIN &&
       minuto <= emMinutos(a.fim) + FOLGA_MIN,
@@ -144,6 +162,36 @@ export function abrirSozinho(
 }
 
 /**
+ * A mesma decisão de `abrirSozinho`, olhando a grade de todos os vínculos de
+ * professor da base — não só de um.
+ *
+ * Mais de uma turma "agora" entre professores diferentes é a mesma
+ * ambiguidade que `escolherTurma` resolve perguntando — só que aqui, sozinho,
+ * o relógio não tem a quem perguntar: a resposta certa é não adivinhar, a
+ * mesma resposta que já valia para duas aulas coladas de **um** professor só.
+ * Dedup por turma, não por linha de `Aula`: duas linhas da mesma turma
+ * acontecendo agora (um bloco duplo, por exemplo) não são ambiguidade
+ * nenhuma.
+ */
+export function abrirSozinhoEntreProfessores(
+  aulas: Aula[],
+  uidHashesProfessores: string[],
+  agora: Date,
+  encerradas: Record<string, string> = {},
+): string | undefined {
+  const agora_ = aulasAgoraDeQualquer(aulas, uidHashesProfessores, agora)
+  const turmas = [...new Set(agora_.map((a) => a.turma))]
+  if (turmas.length !== 1) return undefined
+
+  const aula = agora_.find((a) => a.turma === turmas[0])!
+  const encerrada = encerradas[aula.turma]
+  if (encerrada && Date.parse(encerrada) >= inicioDaJanela(aula, agora).getTime()) {
+    return undefined
+  }
+  return aula.turma
+}
+
+/**
  * A próxima aula daquele professor, a partir de agora.
  *
  * Com a grade abrindo sozinha, o repouso deixou de ser "clique aqui" e virou
@@ -186,5 +234,27 @@ export function proximaAula(
     }
   }
 
+  return melhor
+}
+
+/**
+ * A próxima aula de qualquer um dos vínculos de professor — mesma ideia de
+ * `proximaAula`, sem escolher um só antes de olhar a grade. A mais cedo entre
+ * todos vence, sem se importar de quem é: é a mesma pergunta que o repouso
+ * faz ("estou no lugar certo?"), e a resposta não muda por causa de qual
+ * vínculo venceu o `.find` alfabético.
+ */
+export function proximaAulaDeQualquer(
+  aulas: Aula[],
+  uidHashesProfessores: string[],
+  agora: Date,
+): { aula: Aula; quando: Date } | undefined {
+  let melhor: { aula: Aula; quando: Date } | undefined
+  for (const hash of uidHashesProfessores) {
+    const candidata = proximaAula(aulas, hash, agora)
+    if (candidata && (!melhor || candidata.quando.getTime() < melhor.quando.getTime())) {
+      melhor = candidata
+    }
+  }
   return melhor
 }

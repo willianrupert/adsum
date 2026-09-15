@@ -14,7 +14,14 @@ import { uidInedito, hexParaUid } from '../nucleo/uid.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { podeApagar } from '../portas/Repositorio.ts'
 import { eventoDe, proximoEventoId, quemFalta, type Sessao } from '../nucleo/sessao.ts'
-import { abrirSozinho, aulasAgora, escolherTurma, proximaAula, DIAS, type Aula } from '../nucleo/grade.ts'
+import {
+  abrirSozinhoEntreProfessores,
+  aulasAgora,
+  escolherTurma,
+  proximaAulaDeQualquer,
+  DIAS,
+  type Aula,
+} from '../nucleo/grade.ts'
 import { saudacao } from '../nucleo/horarios.ts'
 import type { Matriculado, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
@@ -224,7 +231,16 @@ export function Fluxo() {
     // Com a grade abrindo sozinha, o repouso virou espera — e espera sem prazo
     // é ansiedade. Qual turma vem e quando é a única informação que a tela tem
     // para dar, e é a que responde "estou no lugar certo?" sem ninguém pedir.
-    const professor = vinculos.find((v) => v.papel === 'professor')
+    //
+    // Pode haver mais de um vínculo `papel: 'professor'` na base — mais de um
+    // docente cadastrado, ou um sintético convivendo com o real por um
+    // instante — e a checagem de horário abaixo olha a grade de **todos**,
+    // não só do primeiro que vence a ordem alfabética de `listarVinculos()`.
+    // Um `.find` aqui já causou o bug ao vivo: professor cuja turma batia
+    // "agora" não aparecia porque o vínculo checado era o de outro docente,
+    // sem aula nenhuma naquele horário.
+    const vinculosDeProfessor = vinculos.filter((v) => v.papel === 'professor')
+    const professor = vinculosDeProfessor[0]
     setUidDoProfessor(professor?.uidHash ?? '')
     const hashAtual = professorAtual()
     setNomeDoProfessorAtual(
@@ -235,16 +251,18 @@ export function Fluxo() {
     // pergunta de uma turma, e enfileirar cinco de uma vez seria formulário.
     let todasAsAulas = await repositorio.listarAulas()
 
-    // Autocorreção de uma grade salva antes de existir crachá de professor —
-    // ver o comentário em `aoSalvar` do cronograma, abaixo. `uidHashProfessor`
-    // vazio nunca se reconciliava sozinho com o vínculo criado depois, e
-    // `aulasAgora`/`proximaAula` comparam hash por igualdade: a aula existia,
-    // no dia e hora certos, e nada a achava. Assim que existe um professor de
-    // verdade, escrever o hash certo por cima é a mesma correção que o
-    // cronograma passou a fazer na origem — só que para quem já tinha
-    // salvado antes disso existir.
+    // Autocorreção de uma grade cujo `uidHashProfessor` não bate com **nenhum**
+    // vínculo de professor vivo — vazio (grade salva antes de existir crachá
+    // de professor, ver o comentário em `aoSalvar` do cronograma, abaixo) ou
+    // órfão (apontava pra um vínculo sintético que já foi substituído pelo
+    // real, ou apagado em Ajustes). Os dois casos são o mesmo problema: a aula
+    // existe, no dia e hora certos, e `aulasAgora`/`proximaAula` comparam hash
+    // por igualdade — nada a acha. Assim que existe um professor de verdade,
+    // escrever o hash certo por cima é a mesma correção que o cronograma já
+    // faz na origem, só que para quem já tinha salvado antes disso existir.
     if (professor) {
-      const quebradas = todasAsAulas.filter((a) => !a.uidHashProfessor)
+      const hashesValidos = new Set(vinculosDeProfessor.map((v) => v.uidHash))
+      const quebradas = todasAsAulas.filter((a) => !hashesValidos.has(a.uidHashProfessor))
       if (quebradas.length > 0) {
         for (const aula of quebradas) {
           await repositorio.gravarAula({ ...aula, uidHashProfessor: professor.uidHash })
@@ -259,18 +277,26 @@ export function Fluxo() {
     )
     setSemHorario(semGrade ? { turma: semGrade, aulas: [] } : undefined)
 
-    const aulas = professor ? todasAsAulas : []
-    const vem = professor ? proximaAula(aulas, professor.uidHash, new Date()) : undefined
+    const hashesDeProfessor = vinculosDeProfessor.map((v) => v.uidHash)
+    const aulas = hashesDeProfessor.length > 0 ? todasAsAulas : []
+    const vem =
+      hashesDeProfessor.length > 0 ? proximaAulaDeQualquer(aulas, hashesDeProfessor, new Date()) : undefined
     setProxima(vem && { turma: vem.aula.turma, quando: vem.quando })
-    // A mesma conta de `abrirSozinho` — a mesma que decide o auto-abrir do
-    // relógio, acima. Nada de fallback de "só existe uma turma" (isso é só
-    // para o clique deliberado, em `abrirComProfessor`): aqui a tela só pode
-    // anunciar uma turma se o relógio de fato a identificou. `encerradas()`
+    // A mesma conta de `abrirSozinhoEntreProfessores` — a mesma que decide o
+    // auto-abrir do relógio, acima. Nada de fallback de "só existe uma turma"
+    // (isso é só para o clique deliberado, em `abrirComProfessor`): aqui a
+    // tela só pode anunciar uma turma se o relógio de fato a identificou, e
+    // duas turmas batendo "agora" entre professores diferentes é ambiguidade,
+    // não escolha — a função já recusa decidir sozinha. `encerradas()`
     // importa tanto quanto o horário — sem checá-la, encerrar uma aula e
     // voltar ao repouso mostrava "Começar chamada em X" de novo, a mesma
     // turma que acabou de ser fechada, porque o horário dela ainda "bate
     // agora"; a tela prometia reabrir o que o professor acabou de encerrar.
-    setComecarEm(professor ? abrirSozinho(aulas, professor.uidHash, new Date(), encerradas()) : undefined)
+    setComecarEm(
+      hashesDeProfessor.length > 0
+        ? abrirSozinhoEntreProfessores(aulas, hashesDeProfessor, new Date(), encerradas())
+        : undefined,
+    )
     const faltando = quemFalta(matriculados, vinculos)
     setTurmas(listaDeTurmas.length)
     setPendentes(faltando.length)
@@ -700,12 +726,20 @@ export function Fluxo() {
         repositorio.listarAulas(),
         repositorio.listarVinculos(),
       ])
-      const professor = vinculos.find((v) => v.papel === 'professor')
-      if (!professor) return
+      // Mesma correção de `recontar()`: olha a grade de todos os vínculos de
+      // professor, não só do primeiro — senão a aula de um docente que perde
+      // o `.find` nunca abre sozinha.
+      const hashesDeProfessor = vinculos.filter((v) => v.papel === 'professor').map((v) => v.uidHash)
+      if (hashesDeProfessor.length === 0) return
 
       const agora = new Date()
-      const turma = abrirSozinho(aulas, professor.uidHash, agora, encerradas())
-      if (turma) await abrirChamada(turma, professor.uidHash, agora, true)
+      const turma = abrirSozinhoEntreProfessores(aulas, hashesDeProfessor, agora, encerradas())
+      if (!turma) return
+      // O hash de quem abre precisa ser o do professor **dono** desta turma,
+      // não um qualquer entre os vários — é ele quem a sessão registra como
+      // podendo encerrar.
+      const aula = aulas.find((a) => a.turma === turma && hashesDeProfessor.includes(a.uidHashProfessor))
+      if (aula) await abrirChamada(turma, aula.uidHashProfessor, agora, true)
     }
 
     void olhar()
