@@ -1,0 +1,4 @@
+# Saída de disparos e turmas fictícias geradas sob demanda — não é código,
+# é resultado de rodar rig.py. gerar-turma e disparar recriam isso na hora.
+*.log
+turma*.txt
