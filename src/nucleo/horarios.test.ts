@@ -4,7 +4,6 @@ import {
   BLOCOS_COMPLETOS,
   DIAS_UTEIS,
   chaveDoBloco,
-  ehCurto,
   horasPorSemana,
   marcadosDe,
   saudacao,
@@ -73,10 +72,11 @@ describe('a grade como o professor a enxerga', () => {
 // Lidos das grades de horário reais do CIn que o autor mandou, e é por isso que
 // estão aqui: dois dos meus palpites estavam errados.
 describe('os blocos da simplificada são os do CIn, não os que eu supus', () => {
-  it('tem o bloco de meio-dia, de 50 minutos', () => {
-    const meioDia = BLOCOS.find((b) => b.inicio === '12:00')
-    expect(meioDia).toMatchObject({ fim: '12:50' })
-    expect(ehCurto(meioDia!)).toBe(true)
+  // Pedido do autor: o meio-dia existe na grade real, mas não como atalho
+  // aqui — continua em BLOCOS_COMPLETOS.
+  it('não tem o bloco de meio-dia', () => {
+    expect(BLOCOS.find((b) => b.inicio === '12:00')).toBeUndefined()
+    expect(BLOCOS_COMPLETOS.find((b) => b.inicio === '12:00')).toMatchObject({ fim: '12:50' })
   })
 
   // Eu tinha escrito 19:00–20:50 por estimativa. A grade real diz outra coisa.
@@ -88,9 +88,16 @@ describe('os blocos da simplificada são os do CIn, não os que eu supus', () =>
 
   it('os blocos, na ordem, todos de segunda a sexta', () => {
     expect(BLOCOS.map((b) => b.inicio)).toEqual([
-      '08:00', '10:00', '12:00', '13:00', '15:00', '17:00', '18:50',
+      '08:00', '10:00', '13:00', '15:00', '17:00', '18:50',
     ])
     expect(BLOCOS.every((b) => b.dias.length === 5)).toBe(true)
+  })
+
+  // 12:00-12:50 existe só na completa (pedido do autor) — na simplificada
+  // uma aula ali cai como "fora dos blocos", igual qualquer horário incomum.
+  it('meio-dia cai fora dos blocos na simplificada', () => {
+    expect(marcadosDe([{ dia: 2, inicio: '12:00' }], BLOCOS).foraDosBlocos).toBe(1)
+    expect(marcadosDe([{ dia: 2, inicio: '12:00' }], BLOCOS_COMPLETOS).marcados.size).toBe(1)
   })
 
   it('cumprimenta pela hora', () => {

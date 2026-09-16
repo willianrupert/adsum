@@ -11,9 +11,11 @@
 // O que mudou, e por quê:
 //
 //   - a noite não é 19:00–20:50: são 17:00–18:50 e 18:50–20:30, encostados;
-//   - **12:00–12:50 existe**, e é o único bloco de 50 minutos. Passou por uma
-//     ida e volta: eu o li nas capturas, o autor achou que era almoço, foi
-//     conferir e confirmou que algumas turmas têm aula aí;
+//   - **12:00–12:50 existiu na simplificada e foi removido** (pedido do
+//     autor): apesar de a grade real do CIn ter algumas turmas nesse
+//     horário, ele não quis o bloco de meio-dia como opção rápida ali. O
+//     período continua na grade completa — quem tiver aula nesse horário
+//     ainda marca por lá, só não aparece mais como atalho de um clique;
 //   - **sábado existe**, com dois blocos longos que não aparecem em dia útil
 //     nenhum: 07:00–11:50 e 13:00–17:50.
 //
@@ -49,10 +51,9 @@ const SEG_A_SAB = [1, 2, 3, 4, 5, 6]
 export const BLOCOS: Bloco[] = [
   { inicio: '08:00', fim: '09:50', turno: 'manha', dias: SEG_A_SEX },
   { inicio: '10:00', fim: '11:50', turno: 'manha', dias: SEG_A_SEX },
-  // Meio-dia existe, e é o único bloco de 50 minutos — um crédito só. Eu o li
-  // nas capturas, o autor achou que era almoço, conferiu e confirmou que
-  // algumas turmas têm aula aí. Fica, e desenhado mais baixo que os outros.
-  { inicio: '12:00', fim: '12:50', turno: 'manha', dias: SEG_A_SEX },
+  // Meio-dia existe na grade real do CIn, mas o autor pediu pra tirar daqui
+  // (não quis o bloco de 50 min de meio-dia como atalho na simplificada) —
+  // continua em `BLOCOS_COMPLETOS`, pra quem tiver aula nesse horário.
   { inicio: '13:00', fim: '14:50', turno: 'tarde', dias: SEG_A_SEX },
   { inicio: '15:00', fim: '16:50', turno: 'tarde', dias: SEG_A_SEX },
   { inicio: '17:00', fim: '18:50', turno: 'noite', dias: SEG_A_SEX },
