@@ -1143,6 +1143,15 @@ export function Fluxo() {
                   return resumo
                 }}
                 aoVerPresencas={() => setFolha('presencas')}
+                aoNovaTurma={
+                  rota === 'pronto'
+                    ? () => {
+                        setFolha(undefined)
+                        setTurmasAntesDaNova(turmas)
+                        setColandoNova(true)
+                      }
+                    : undefined
+                }
               />
               {/* Rodapé dos Ajustes: links quietos, separados do resto por
                   não serem uso do dia a dia. Diagnóstico virou folha própria

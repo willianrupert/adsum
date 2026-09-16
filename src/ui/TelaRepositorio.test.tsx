@@ -78,6 +78,74 @@ describe('quem falta cadastrar, por turma', () => {
   })
 })
 
+// `zerarTurma` sozinho só limpava `participantes` — a grade (`Aula`) ficava
+// órfã no banco, pronta para reaparecer se o nome de turma fosse reciclado
+// num semestre seguinte. "Excluir" precisa limpar as duas.
+describe('excluir turma', () => {
+  it('confirmando, some da lista e leva a grade junto — sem apagar vínculo nem evento', async () => {
+    const usuario = userEvent.setup()
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('IF685 · T01', '1', 'Ana')])
+    await bancada.repositorio.gravarAula({
+      uidHashProfessor: 'prof',
+      dia: 1,
+      inicio: '08:00',
+      fim: '09:50',
+      turma: 'IF685 · T01',
+    })
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'aaaa',
+      papel: 'aluno',
+      nome: 'Ana',
+      matricula: '1',
+      criadoEm: new Date().toISOString(),
+    })
+
+    renderizarCom(bancada, <TelaRepositorio />)
+    await usuario.click(await screen.findByRole('button', { name: 'IF685 · T01' }))
+
+    expect(await screen.findByText('Excluir IF685 · T01: feito.')).toBeInTheDocument()
+    expect(screen.queryByText('Quem falta cadastrar, por turma')).not.toBeInTheDocument()
+    expect(await bancada.repositorio.listarAulas()).toHaveLength(0)
+    // Vínculo e evento são de outra natureza — crachá continua sendo de quem
+    // é, e presença já gravada não se apaga (regra de `CLAUDE.md`).
+    expect(await bancada.repositorio.listarVinculos()).toHaveLength(1)
+  })
+
+  it('cancelando, não muda nada', async () => {
+    const usuario = userEvent.setup()
+    // jsdom não implementa confirm() de verdade — sem mock, ele já volta
+    // falso, que é o mesmo caminho de alguém clicar "Cancelar" de propósito.
+    await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('IF685 · T01', '1', 'Ana')])
+
+    renderizarCom(bancada, <TelaRepositorio />)
+    await usuario.click(await screen.findByRole('button', { name: 'IF685 · T01' }))
+
+    expect(await screen.findByText('Excluir IF685 · T01: cancelado')).toBeInTheDocument()
+    expect(await screen.findByText('IF685 · T01')).toBeInTheDocument()
+  })
+})
+
+describe('nova turma, a partir de Ajustes', () => {
+  it('sem aoNovaTurma, o cartão não aparece', async () => {
+    await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('IF685 · T01', '1', 'Ana')])
+    renderizarCom(bancada, <TelaRepositorio />)
+
+    await screen.findByText('Quem falta cadastrar, por turma')
+    expect(screen.queryByRole('button', { name: 'Nova turma' })).not.toBeInTheDocument()
+  })
+
+  it('com aoNovaTurma, o cartão chama de volta', async () => {
+    const usuario = userEvent.setup()
+    const aoNovaTurma = vi.fn()
+    await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('IF685 · T01', '1', 'Ana')])
+    renderizarCom(bancada, <TelaRepositorio aoNovaTurma={aoNovaTurma} />)
+
+    await usuario.click(await screen.findByRole('button', { name: 'Nova turma' }))
+    expect(aoNovaTurma).toHaveBeenCalledOnce()
+  })
+})
+
 describe('ver presenças', () => {
   it('sem aoVerPresencas, não existe o link', async () => {
     renderizarCom(bancada, <TelaRepositorio />)

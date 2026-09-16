@@ -326,9 +326,10 @@ export function Vitrine() {
           armadilha, então elas ficam só em desenvolvimento. */}
       {ehDesenvolvimento && (
         <Cena titulo="Base" quando="folha, atrás da engrenagem">
-          {/* Sem `aoVerPresencas`, o card "Ver presenças" nem aparecia aqui —
-              a vitrine mostraria Ajustes sem a primeira linha da fileira. */}
-          <TelaRepositorio aoVerPresencas={() => {}} />
+          {/* Sem `aoVerPresencas`/`aoNovaTurma`, os cards "Ver presenças" e
+              "Nova turma" nem apareceriam aqui — a vitrine mostraria Ajustes
+              faltando peça. */}
+          <TelaRepositorio aoVerPresencas={() => {}} aoNovaTurma={() => {}} />
         </Cena>
       )}
 

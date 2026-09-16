@@ -202,6 +202,7 @@ export function TelaRepositorio({
   aoDesconectarPasta,
   aoResetar,
   aoVerPresencas,
+  aoNovaTurma,
 }: {
   pasta?: FileSystemDirectoryHandle
   aoTrocarPasta?: () => void
@@ -214,6 +215,10 @@ export function TelaRepositorio({
   /** Abre a planilha de presenças — a mesma folha do repouso, alcançável
       também daqui, que é onde o professor já está olhando turma por turma. */
   aoVerPresencas?: () => void
+  /** Some quando não há repouso pra onde ir montar a colagem — mesmo motivo
+      do `aoSair` de `TelaColarTurma`: com uma chamada em andamento, abrir
+      "colar turma" por cima não tem uma rota que a mostre. */
+  aoNovaTurma?: () => void
 } = {}) {
   const { repositorio, config, recarregarConfig } = useAdsum()
 
@@ -273,10 +278,40 @@ export function TelaRepositorio({
     () =>
       turmas.map((turma) => {
         const daTurma = matriculados.filter((m) => m.turma === turma)
-        return { turma, total: daTurma.length, faltam: quemFalta(daTurma, vinculos).length }
+        return {
+          turma,
+          total: daTurma.length,
+          faltam: quemFalta(daTurma, vinculos).length,
+          naGrade: aulas.filter((a) => a.turma === turma).length,
+        }
       }),
-    [turmas, matriculados, vinculos],
+    [turmas, matriculados, vinculos, aulas],
   )
+  /**
+   * `zerarTurma` só limpa `participantes` — sem isto, o horário (`Aula`)
+   * ficava órfão no banco, pronto para reaparecer sozinho se o professor
+   * reciclasse o mesmo nome de turma num semestre seguinte. As duas juntas,
+   * numa ação só, é o que "excluir" precisa significar.
+   *
+   * Não apaga vínculo nem evento: o crachá continua sendo de quem é (podia
+   * voltar a servir numa turma futura do mesmo aluno), e o registro de
+   * presença é append-only — ver a regra em `CLAUDE.md`.
+   */
+  const excluirTurma = (turma: string, total: number, naGrade: number) =>
+    tentar(`Excluir ${turma}`, async () => {
+      const partes = [`os ${total} ${total === 1 ? 'nome' : 'nomes'} cadastrados`]
+      if (naGrade > 0) partes.push(`${naGrade} ${naGrade === 1 ? 'horário' : 'horários'} na grade`)
+      if (
+        !confirm(
+          `Excluir a turma ${turma}? Saem ${partes.join(' e ')}. O histórico de presença já gravado continua intacto — não se apaga.`,
+        )
+      ) {
+        throw new Error('cancelado')
+      }
+      await repositorio.zerarTurma(turma)
+      await repositorio.definirHorarioDaTurma(turma, [])
+    })
+
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase()
     if (!termo) return vinculos
@@ -362,15 +397,22 @@ export function TelaRepositorio({
         <>
           <p className="ferramentas__nota">Quem falta cadastrar, por turma</p>
           <div className="cartoes">
-            {faltamPorTurma.map(({ turma, total, faltam }) => (
+            {faltamPorTurma.map(({ turma, total, faltam, naGrade }) => (
               <Cartao
                 key={turma}
                 icone="◉"
                 tom={faltam > 0 ? 'alerta' : 'ok'}
                 titulo={turma}
                 apoio={faltam > 0 ? `${faltam} de ${total} sem crachá` : `${total} de ${total} com crachá`}
+                aoClicar={excluirTurma(turma, total, naGrade)}
               />
             ))}
+            {/* Mesmo gesto de "Cadastrar nova turma" no repouso, só que sem
+                sair de Ajustes pra achá-lo — só aparece quando há repouso
+                pra onde a colagem possa montar (ver o comentário do prop). */}
+            {aoNovaTurma && (
+              <Cartao icone="+" tom="neutro" titulo="Nova turma" apoio="Colar outra lista" aoClicar={aoNovaTurma} />
+            )}
           </div>
         </>
       )}
