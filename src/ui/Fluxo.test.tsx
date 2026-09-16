@@ -1179,6 +1179,19 @@ describe('toast de novidades', () => {
 
     expect(screen.queryByText(NOVIDADES[0].resumo)).not.toBeInTheDocument()
   })
+
+  // Sem isto, a única saída era esperar os 12s sozinho — pouco tempo pra
+  // ler um resumo de vários tópicos, e nenhum tempo pra quem já leu e quer
+  // fechar antes.
+  it('"Fechar aviso" some com o toast antes do tempo', async () => {
+    const usuario = userEvent.setup()
+    renderizarCom(bancada, <Fluxo />)
+
+    await screen.findByText(NOVIDADES[0].resumo)
+    await usuario.click(screen.getByRole('button', { name: 'Fechar aviso' }))
+
+    expect(screen.queryByText(NOVIDADES[0].resumo)).not.toBeInTheDocument()
+  })
 })
 
 // Nota: desconectar a pasta não tem teste de tela. O handle de mentira não

@@ -861,7 +861,9 @@ button:focus-visible {
   z-index: 9;
   max-width: 46ch;
   margin: 0;
-  padding: 10px 16px;
+  /* Direita com espaço a mais: é onde o "×" mora, sem encostar no texto
+     quando o resumo cresce e quebra linha. */
+  padding: 10px 34px 10px 16px;
   border-radius: var(--raio-pequeno);
   background: var(--acao-fraca);
   color: var(--acao);
@@ -869,6 +871,24 @@ button:focus-visible {
   letter-spacing: -0.016em;
   text-align: center;
   animation: aparecer var(--rapido) var(--curva);
+}
+
+/* `.toast-novidade` é `position: fixed`, e isso já basta pra ser o
+   contêiner de referência de um filho `absolute` — não precisa de
+   `position: relative` extra só para isto. */
+.toast-novidade__fechar {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 4px 8px;
+  color: inherit;
+  opacity: 0.6;
+  font-size: 1.15em;
+  line-height: 1;
+}
+
+.toast-novidade__fechar:hover {
+  opacity: 1;
 }
 
 /* Convite, não aviso: fundo neutro e nenhum vermelho. Mesma forma do bloco de

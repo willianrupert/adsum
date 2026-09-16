@@ -223,7 +223,7 @@ export function Fluxo() {
   }, [avisoLeitura])
 
   // Uma vez por versão nova: marca como vista já ao mostrar, não só ao
-  // sumir — senão fechar a aba no meio dos 6 segundos faria o toast voltar
+  // sumir — senão fechar a aba no meio dos 12 segundos faria o toast voltar
   // na próxima abertura.
   useEffect(() => {
     const atual = NOVIDADES[0]
@@ -232,9 +232,12 @@ export function Fluxo() {
     marcarVersaoDeNovidadeVista(atual.versao)
   }, [])
 
+  // 12s, não 6: o resumo cresceu de uma frase para vários tópicos, e sumir
+  // sozinho no meio da leitura era pior do que o "Fechar" existir — ver
+  // esse botão logo abaixo, no JSX do toast.
   useEffect(() => {
     if (!novidade) return
-    const relogio = setTimeout(() => setNovidade(undefined), 6000)
+    const relogio = setTimeout(() => setNovidade(undefined), 12000)
     return () => clearTimeout(relogio)
   }, [novidade])
 
@@ -1016,7 +1019,19 @@ export function Fluxo() {
 
       {dicaDeEnsaio && <p className="dica-ensaio">{dicaDeEnsaio}</p>}
       {avisoLeitura && <p className="aviso-leitura">{avisoLeitura}</p>}
-      {novidade && <p className="toast-novidade">{novidade}</p>}
+      {novidade && (
+        <p className="toast-novidade">
+          {novidade}
+          <button
+            className="toast-novidade__fechar"
+            onClick={() => setNovidade(undefined)}
+            aria-label="Fechar aviso"
+            title="Fechar"
+          >
+            ×
+          </button>
+        </p>
+      )}
 
       <div className="canto">
         {(falhaNaPasta || porSalvar > 0 || !lendo || !pasta) && (
