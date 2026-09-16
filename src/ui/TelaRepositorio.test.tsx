@@ -138,6 +138,73 @@ describe('vínculo sintético', () => {
   })
 })
 
+// `Vinculo.nome` é só o nome curto, editável — não carrega nome completo (ver
+// `tipos.ts`). Duas pessoas com o mesmo nome curto ficavam indistinguíveis
+// nesta tabela sem essa segunda linha, que é justamente pra saber quem é quem.
+describe('nome completo na tabela de vínculos', () => {
+  it('mostra o nome completo de quem está matriculado, como linha de apoio', async () => {
+    const usuario = userEvent.setup()
+    await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('IF685 · T01', '1', 'Ana')])
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'aaaa',
+      papel: 'aluno',
+      nome: 'Ana',
+      matricula: '1',
+      criadoEm: new Date().toISOString(),
+    })
+
+    renderizarCom(bancada, <TelaRepositorio />)
+    await usuario.click(await screen.findByRole('button', { name: /Vínculos/ }))
+
+    expect(await screen.findByText('ANA DA SILVA')).toBeInTheDocument()
+  })
+
+  it('sem matrícula correspondente, não inventa nome completo', async () => {
+    const usuario = userEvent.setup()
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'aaaa1111bbbb2222',
+      papel: 'professor',
+      nome: 'Paulo Araújo',
+      criadoEm: new Date().toISOString(),
+      sintetico: true,
+    })
+
+    renderizarCom(bancada, <TelaRepositorio />)
+    await usuario.click(await screen.findByRole('button', { name: /Vínculos/ }))
+
+    expect(await screen.findByDisplayValue('Paulo Araújo')).toBeInTheDocument()
+    expect(screen.queryByText(/DA SILVA/)).not.toBeInTheDocument()
+  })
+
+  it('nome curto igual ao completo não repete a mesma linha duas vezes', async () => {
+    const usuario = userEvent.setup()
+    const semSobrenome: Matriculado = {
+      turma: 'IF685 · T01',
+      chave: '9',
+      matricula: '9',
+      nome: 'Zeca',
+      nomeCompleto: 'Zeca',
+      papel: 'aluno',
+    }
+    await bancada.repositorio.salvarTurma('IF685 · T01', [semSobrenome])
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'aaaa',
+      papel: 'aluno',
+      nome: 'Zeca',
+      matricula: '9',
+      criadoEm: new Date().toISOString(),
+    })
+
+    renderizarCom(bancada, <TelaRepositorio />)
+    await usuario.click(await screen.findByRole('button', { name: /Vínculos/ }))
+
+    // "Zeca" só existe como valor do campo editável — se a linha de apoio
+    // não fosse suprimida, apareceria de novo como texto solto.
+    expect(await screen.findByDisplayValue('Zeca')).toBeInTheDocument()
+    expect(screen.queryByText('Zeca')).not.toBeInTheDocument()
+  })
+})
+
 // Fase 3 (docs/05_plano_execucao.md): grade simplificada e completa, toggle
 // acima da grade, mesma preferência desta máquina nas duas telas que a
 // mostram (`ambiente/preferencias.ts`, modoDeGrade).

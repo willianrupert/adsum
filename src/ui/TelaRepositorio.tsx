@@ -285,6 +285,20 @@ export function TelaRepositorio({
     )
   }, [vinculos, busca])
 
+  /**
+   * `Vinculo.nome` é só o nome curto, editável — não tem nome completo nele
+   * (ver `tipos.ts`). O nome de registro mora no `Matriculado`, que é da
+   * turma, não do vínculo, e o único jeito de ligar os dois é pela matrícula.
+   * Sem essa segunda linha, duas pessoas com o mesmo nome curto ficam
+   * indistinguíveis nesta tabela — que existe justamente pra saber quem é
+   * quem.
+   */
+  const nomeCompletoPorMatricula = useMemo(() => {
+    const mapa = new Map<string, string>()
+    for (const m of matriculados) if (!mapa.has(m.matricula)) mapa.set(m.matricula, m.nomeCompleto)
+    return mapa
+  }, [matriculados])
+
   const importarVinculos = tentar(`Importar ${NOMES.vinculos}`, async () => {
     const arquivo = await abrirTexto()
     if (!arquivo) return 'cancelado.'
@@ -481,6 +495,21 @@ export function TelaRepositorio({
                       onBlur={tentar('Renomear', () => repositorio.gravarVinculo(v))}
                       aria-label={`nome de ${v.uidHash}`}
                     />
+                    {/* Segunda linha só quando existe e diz algo a mais — sem
+                        isto, gente cujo nome completo já é só duas palavras
+                        (igual ao curto) ganhava uma linha repetindo o que a
+                        de cima já disse. */}
+                    {(() => {
+                      const completo = v.matricula
+                        ? nomeCompletoPorMatricula.get(v.matricula)
+                        : undefined
+                      return (
+                        completo &&
+                        completo !== v.nome && (
+                          <span className="tabela__apoio">{completo}</span>
+                        )
+                      )
+                    })()}
                   </td>
                   <td>
                     <select
