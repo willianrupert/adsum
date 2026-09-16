@@ -58,6 +58,13 @@ function montar(pendentes: Matriculado[], daTurma = [ANA, BRENO]) {
   )
 }
 
+/** O painel "Professores" nasce fechado (foco em aluno é o padrão — ver o
+    comentário na Painel dele, em `TelaAula.tsx`), e fechado ele é `inert`:
+    nada dentro dele é alcançável por `getByRole` até abrir. */
+async function abrirProfessores(usuario: ReturnType<typeof userEvent.setup>) {
+  await usuario.click(await screen.findByRole('button', { name: /^Professores/ }))
+}
+
 describe('a chamada', () => {
   it('conta presença de quem já tem crachá', async () => {
     await comCrachaDaAna()
@@ -622,6 +629,7 @@ describe('"Sou eu"', () => {
     })
     const usuario = userEvent.setup()
     montar([ANA], [PROFESSOR, ANA])
+    await abrirProfessores(usuario)
 
     await usuario.click(await screen.findByRole('button', { name: 'Sou eu' }))
     expect(professorAtual()).toBe(uidHash)
@@ -643,7 +651,9 @@ describe('"Sou eu"', () => {
       nome: PROFESSOR.nome,
       criadoEm: new Date().toISOString(),
     })
+    const usuario = userEvent.setup()
     montar([ANA], [PROFESSOR, ANA])
+    await abrirProfessores(usuario)
 
     expect(await screen.findByRole('button', { name: 'Sou eu' })).toBeInTheDocument()
     expect(screen.queryByText('Você')).not.toBeInTheDocument()
@@ -668,6 +678,7 @@ describe('professores têm seção própria', () => {
   it('professor pendente não entra na fila de "Chamar nomes" dos alunos', async () => {
     const usuario = userEvent.setup()
     montar([PROFESSOR_PENDENTE, BRENO], [PROFESSOR_PENDENTE, BRENO])
+    await abrirProfessores(usuario)
 
     // O professor aparece na própria seção, com "Cadastrar" — não é
     // alcançado pelo interruptor nem pelas setas, que são só dos alunos.
@@ -680,15 +691,57 @@ describe('professores têm seção própria', () => {
     expect(screen.queryByText('Paulo Freitas', { selector: '.chamado__nome' })).not.toBeInTheDocument()
   })
 
+  // Sem isto, clicar "Cadastrar" não tinha volta — a única saída era
+  // encostar um crachá de verdade ou recarregar a página.
+  it('"Cadastrar" de professor pode ser cancelado', async () => {
+    const usuario = userEvent.setup()
+    montar([PROFESSOR_PENDENTE, BRENO], [PROFESSOR_PENDENTE, BRENO])
+    await abrirProfessores(usuario)
+
+    await usuario.click(screen.getByRole('button', { name: 'Cadastrar' }))
+    expect(screen.getByText('Cadastrando')).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByText('Cadastrando')).not.toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Cadastrar' })).toBeInTheDocument()
+  })
+
+  // A mesma correção que o aluno pendente já tinha ("Quem falta") — o
+  // apelido vem do SIGAA e pode estar errado, e sem isto só dava pra
+  // corrigir depois, em Ajustes → Vínculos, com o crachá já vinculado ao
+  // nome errado.
+  it('apelido do professor pendente é editável, e o vínculo nasce com o nome corrigido', async () => {
+    const usuario = userEvent.setup()
+    montar([PROFESSOR_PENDENTE, BRENO], [PROFESSOR_PENDENTE, BRENO])
+    await abrirProfessores(usuario)
+
+    const campo = screen.getByRole('textbox', { name: `nome de ${PROFESSOR_PENDENTE.nomeCompleto}` })
+    await usuario.clear(campo)
+    await usuario.type(campo, 'Professor Paulo')
+
+    await usuario.click(screen.getByRole('button', { name: 'Cadastrar' }))
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+
+    await waitFor(async () => {
+      const vinculos = await bancada.repositorio.listarVinculos()
+      expect(vinculos).toHaveLength(1)
+      expect(vinculos[0]).toMatchObject({ papel: 'professor', nome: 'Professor Paulo' })
+    })
+  })
+
   it('a seção de professores some enquanto um aluno está chamado, e volta quando a fila termina', async () => {
     const usuario = userEvent.setup()
     montar([PROFESSOR_PENDENTE, BRENO], [PROFESSOR_PENDENTE, BRENO])
-    expect(screen.getByRole('button', { name: 'Cadastrar' })).toBeInTheDocument()
+    // A seção inteira (não só o corpo) some e reaparece com o interruptor —
+    // ver a checagem de existência dela primeiro, antes de tentar abri-la.
+    expect(await screen.findByRole('button', { name: /^Professores/ })).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('switch', { name: 'Chamar nomes' }))
-    expect(screen.queryByRole('button', { name: 'Cadastrar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Professores/ })).not.toBeInTheDocument()
 
     await usuario.click(screen.getByRole('switch', { name: 'Chamar nomes' }))
+    // Painel volta a montar do zero — fechado de novo, como na primeira vez.
+    await abrirProfessores(usuario)
     expect(await screen.findByRole('button', { name: 'Cadastrar' })).toBeInTheDocument()
   })
 
@@ -714,6 +767,7 @@ describe('professores têm seção própria', () => {
     })
 
     montar([PROFESSOR_PENDENTE], [PROFESSOR_PENDENTE])
+    await abrirProfessores(usuario)
     await usuario.click(screen.getByRole('button', { name: 'Cadastrar' }))
     await act(async () => bancada.leitor.simular(CRACHA_NOVO))
 
@@ -811,6 +865,7 @@ describe('cadastro de professor não soma presença', () => {
     await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
     await waitFor(() => expect(screen.getByText('1')).toBeInTheDocument())
 
+    await abrirProfessores(usuario)
     await usuario.click(screen.getByRole('button', { name: 'Cadastrar' }))
     await new Promise((resolve) => setTimeout(resolve, 450))
     await act(async () => bancada.leitor.simular(CRACHA_NOVO))

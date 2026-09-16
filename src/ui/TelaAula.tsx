@@ -185,6 +185,12 @@ export function TelaAula({
   const pendentesAlunos = useMemo(() => pendentes.filter((p) => p.papel === 'aluno'), [pendentes])
   const alunosDaTurma = useMemo(() => daTurma.filter((p) => p.papel === 'aluno'), [daTurma])
   const professoresDaTurma = useMemo(() => daTurma.filter((p) => p.papel === 'professor'), [daTurma])
+  /** Só para a legenda do painel fechado — sem isto, "Professores" sozinho
+      não diz se falta alguém, e o professor teria que abrir pra saber. */
+  const professoresVinculados = useMemo(
+    () => professoresDaTurma.filter((p) => vinculoDe(p)).length,
+    [professoresDaTurma, vinculoDe],
+  )
 
   /** A pessoa chamada, com a edição local aplicada — é isto que `decidir()`
       recebe como `ctx.chamado`, e é isto que vira o vínculo gravado.
@@ -760,7 +766,11 @@ export function TelaAula({
           é dela nesse momento, e um professor pendente volta a aparecer
           assim que ela esvazia ou termina. */}
       {professoresDaTurma.length > 0 && !chamadoAluno && (
-        <Painel titulo="Professores">
+        <Painel
+          titulo="Professores"
+          recolhivel
+          legenda={`${professoresVinculados} de ${professoresDaTurma.length} com crachá`}
+        >
           <table className="tabela">
             <thead>
               <tr>
@@ -778,13 +788,50 @@ export function TelaAula({
                 return (
                   <tr key={p.chave} className={chamando ? 'linha--chamada' : ''}>
                     <td>
-                      {e.nome}
-                      <span className="tabela__apoio">{p.nomeCompleto}</span>
+                      {/* Mesma assimetria que a tabela de alunos já resolvia:
+                          antes do crachá, o apelido nasceu do SIGAA e pode
+                          estar errado — depois, corrigir é em Ajustes →
+                          Vínculos, não aqui. Só faltava replicar pro
+                          professor quando a seção dele ganhou tabela própria
+                          (Fase 1). */}
+                      {vinculado ? (
+                        <>
+                          {e.nome}
+                          <span className="tabela__apoio">{p.nomeCompleto}</span>
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            className="entrada--celula"
+                            value={e.nome}
+                            onChange={(evento) =>
+                              setEdicoes((antes) => {
+                                const novo = new Map(antes)
+                                novo.set(p.chave, { nome: evento.target.value, papel: e.papel })
+                                return novo
+                              })
+                            }
+                            aria-label={`nome de ${p.nomeCompleto}`}
+                          />
+                          <span className="tabela__apoio">{p.nomeCompleto}</span>
+                        </>
+                      )}
                     </td>
                     <td className="celula--estado">{e.papel}</td>
                     <td className="celula--estado">
                       {chamando ? (
-                        <Selo tom="ok">Cadastrando</Selo>
+                        <>
+                          <Selo tom="ok">Cadastrando</Selo>
+                          {/* Sem isto, clicar "Cadastrar" de novo em alguém
+                              não tinha volta — a única saída era encostar um
+                              crachá de verdade ou recarregar a página. */}
+                          <button
+                            className="botao--quieto"
+                            onClick={() => setChamadoChave(undefined)}
+                          >
+                            Cancelar
+                          </button>
+                        </>
                       ) : (
                         <>
                           {vinculado && <Selo tom="ok">Vinculado</Selo>}
