@@ -176,6 +176,17 @@ code {
   transition: padding-bottom var(--medio) var(--curva);
 }
 
+/* `.coleta` empilha sem `gap` (ver a regra, mais abaixo) — cada vizinho que
+   precisa de respiro pede o seu, como `.chamado` já fazia. "Professores" e
+   "Quem falta" são dois painéis do mesmo cinza de fundo, um embaixo do
+   outro: sem isto, o corte entre eles só aparecia pelo canto arredondado,
+   quase invisível — o mesmo defeito que `.chamado` já resolvia com quem vem
+   depois dele. Escopado a `.coleta` para não somar com o `gap` que
+   `.diagnostico` já dá aos painéis de Ajustes. */
+.coleta > .painel + .painel {
+  margin-top: 16px;
+}
+
 /* Divisória simples entre grupos de Ajustes — "Sua turma", "Este
    computador". Não é painel, não colapsa: os painéis empilhados sem
    agrupamento nenhum é a parede que fazia "eu me perco lá". Diagnóstico
@@ -469,7 +480,10 @@ button:focus-visible {
   width: 100%;
   border-color: transparent;
   background: transparent;
-  padding: 6px 10px;
+  /* Sem padding à esquerda: quem dá o recuo agora é `.tabela td:first-child`,
+     o mesmo pai que alinha o texto puro das linhas já vinculadas — as duas
+     formas de mostrar um nome nascem no mesmo x. */
+  padding: 6px 10px 6px 0;
   font-size: var(--t-menor);
 }
 
@@ -617,6 +631,16 @@ button:focus-visible {
 .tabela td {
   padding: 8px 18px 8px 0;
   vertical-align: middle;
+}
+
+/* Sem isto, a primeira coluna tinha dois recuos diferentes: nome de quem já
+   tem crachá começava na borda da célula, nome de quem ainda não tem
+   começava 10px mais à direita (o padding interno de `.entrada--celula`) —
+   zigue-zague entre linhas vizinhas. O respiro também dá ao anel de foco do
+   campo onde render sem ser cortado pelo `overflow-x: auto` da tabela. */
+.tabela th:first-child,
+.tabela td:first-child {
+  padding-left: 10px;
 }
 
 /* Nome completo, como apoio abaixo do nome curto — não troca um pelo outro.
