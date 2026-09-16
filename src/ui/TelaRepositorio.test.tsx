@@ -112,7 +112,7 @@ describe('excluir turma', () => {
     expect(await bancada.repositorio.listarVinculos()).toHaveLength(1)
   })
 
-  it('cancelando, não muda nada', async () => {
+  it('cancelando, não muda nada e não mostra aviso nenhum', async () => {
     const usuario = userEvent.setup()
     // jsdom não implementa confirm() de verdade — sem mock, ele já volta
     // falso, que é o mesmo caminho de alguém clicar "Cancelar" de propósito.
@@ -121,8 +121,11 @@ describe('excluir turma', () => {
     renderizarCom(bancada, <TelaRepositorio />)
     await usuario.click(await screen.findByRole('button', { name: 'IF685 · T01' }))
 
-    expect(await screen.findByText('Excluir IF685 · T01: cancelado')).toBeInTheDocument()
+    // Cancelar um confirm() já é a resposta — não precisa de um cartão a
+    // mais repetindo "cancelado" por cima de uma decisão que a pessoa acabou
+    // de tomar.
     expect(await screen.findByText('IF685 · T01')).toBeInTheDocument()
+    expect(screen.queryByText(/cancelado/)).not.toBeInTheDocument()
   })
 })
 

@@ -257,6 +257,11 @@ export function TelaRepositorio({
         setRecado({ tom: 'ok', texto: detalhe ? `${rotulo}: ${detalhe}` : `${rotulo}: feito.` })
         await carregar()
       } catch (erro) {
+        // Cancelar num confirm() já é a resposta — a pessoa acabou de dizer
+        // "não" pra essa mesma pergunta. Um cartão avisando "cancelado" por
+        // cima disso é confirmar uma decisão que ninguém pediu pra ver de
+        // novo, não informar nada novo.
+        if ((erro as Error).message === 'cancelado') return
         setRecado({ tom: 'grave', texto: `${rotulo}: ${(erro as Error).message}` })
       }
     }

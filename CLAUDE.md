@@ -320,6 +320,23 @@ sem conversa antes.
   sem sair da aula em andamento. O gasto real é abrir uma folha à parte, não
   a impossibilidade que este arquivo registrou antes. Não tem decisão tomada
   sobre se vale a pena trazer isso pra dentro da própria lista.
+- **Renomear uma turma não existe, e não é um campo de texto simples de
+  adicionar.** O nome da turma é chave literal em `Matriculado.turma`,
+  `Aula.turma` e `evento.turma` — os dois primeiros dá pra atualizar em
+  massa, mas `evento` é onde trava: **é o registro append-only, e a regra
+  deste arquivo proíbe `Repositorio` ganhar `atualizarEvento`**. Só trocar o
+  nome pra frente não é renomear — é abandonar a turma antiga e começar
+  outra, com a chamada já registrada órfã do nome novo (os crachás
+  sobrevivem, porque vínculo não é por turma; a grade e o histórico de
+  presença, não). A saída sem quebrar a regra seria um **apelido de
+  turma** — guardar "IF685 · T01 virou T02" e fazer os lugares que leem
+  presença por turma (Ver presenças, sobretudo) mesclar as duas na leitura,
+  sem tocar no que já foi gravado. Avaliado e **decidido por ora não
+  construir**: é peça nova, mexe em todo read-path de presença, para um
+  caso que deve ser raro — typo ocasional não paga esse custo. O caminho de
+  hoje é excluir a turma e colar a lista de novo em "Nova turma": os
+  crachás voltam sozinhos, só a grade horária precisa ser remarcada.
+  Revisitar se isso virar dor de verdade, não antes.
 
 **Vale por si, independente de hardware:** ler só o UID público (legitimidade,
 não limitação técnica), hash com sal (privacidade), registro append-only, um
