@@ -239,6 +239,7 @@ code {
   margin: 4px 0 0;
   font-size: var(--t-menor);
   color: var(--tinta-tenue);
+  text-align: center;
 }
 
 /* Fechado encolhe: sem isto o painel guardaria a altura do conteúdo escondido,
