@@ -310,6 +310,15 @@ sem conversa antes.
   apaga uma correção de nome feita localmente depois daquele arquivo ter
   saído. Não é duplicata — é qual versão é mais nova, e hoje ninguém pergunta
   isso.
+- **Nome completo de quem já tem crachá some durante a chamada.** A lista de
+  leituras recentes (`TelaAula.tsx`) mostra só o nome curto — certo pela regra
+  de exibição, mas hoje não existe nenhum jeito de ver o `nomeCompleto` de
+  alguém já vinculado sem sair da aula em andamento: o painel "Chamar nomes"/
+  "Quem falta" só existe enquanto sobra gente pendente, a busca por crachá
+  desconhecido só acha quem ainda não foi identificado, e "Ver presenças" só
+  é alcançável pelo Repouso (`rota === 'pronto'`), ou seja, com a chamada já
+  encerrada. Não tem decisão nenhuma tomada sobre como resolver — só o
+  registro de que a lacuna existe.
 
 **Vale por si, independente de hardware:** ler só o UID público (legitimidade,
 não limitação técnica), hash com sal (privacidade), registro append-only, um
