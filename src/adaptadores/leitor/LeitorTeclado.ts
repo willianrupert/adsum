@@ -10,7 +10,7 @@
 // onde o foco estiver, e por isso a rajada é interrompida assim que se reconhece
 // como crachá.
 
-import { interpretarDigitacao, type Digitacao, type Tecla } from '../../nucleo/digitacao.ts'
+import { foiDigitadoPorMaquina, interpretarDigitacao, type Digitacao, type Tecla } from '../../nucleo/digitacao.ts'
 import type {
   Cancelar,
   DiagnosticoLeitor,
@@ -22,6 +22,10 @@ import { criarEmissor } from './emissor.ts'
 
 /** Depois disto, o que estava no buffer era outra coisa. */
 const ESQUECER_APOS_MS = 400
+
+/** Quantas recusas recentes o diagnóstico guarda — o bastante pra reconstruir
+    o fim de uma aula sem virar um log sem limite. */
+const RECUSAS_GUARDADAS = 5
 
 export class LeitorTeclado implements LeitorDeCracha {
   readonly nome = 'Dongle USB'
@@ -38,6 +42,38 @@ export class LeitorTeclado implements LeitorDeCracha {
   #leituras = criarEmissor<Leitura>()
   #estados = criarEmissor<EstadoLeitor>()
 
+  // Instrumentação de diagnóstico, sem efeito nenhum na decisão de aceitar ou
+  // recusar — só existe para reconstruir, depois do fato, o que aconteceu
+  // numa aula em que a leitura falhou sem erro na tela. Ver o relato do Prof.
+  // Paulo em 17/09/2026 (mesmo sintoma de 15/09 — "apitou e não fez nada" —
+  // agora recorrente numa turma diferente da que já tinha sido validada):
+  // sem isto, "recusada" e "nunca chegou" eram indistinguíveis, e as duas
+  // apontam para consertos diferentes.
+  /** Rajada rápida o bastante pra ser máquina, mas em formato não reconhecido
+      (comprimento errado, caractere fora do esperado) — causa diferente de
+      "parecia digitação humana". */
+  #recusasPorFormato = 0
+  /** Rajada recusada por `foiDigitadoPorMaquina` — o sintoma original de
+      15/09/2026 (`INTERVALO_MAXIMO_MS` julgando digitação atrasada como
+      humana). */
+  #recusasPorRitmo = 0
+  /** Últimas recusas, mais recente primeiro — o "última rajada" sozinho não
+      bastava: uma recusa nova apaga a anterior antes de alguém abrir o
+      Diagnóstico pra ver. */
+  #recusas: { quando: Date; motivo: 'ritmo' | 'formato'; cru: string }[] = []
+  /** Toda tecla não-modificadora que chega ao manipulador, aceita ou não —
+      inclusive Enter e teclas de navegação. Se isto parar de andar durante
+      uma aula com gente pendente, nada está chegando à janela: não é recusa,
+      é ausência — sintoma físico (foco, cabo, dongle), não de software. */
+  #ultimaTeclaEm?: Date
+  /** Quantas vezes a janela perdeu o foco desde que `iniciar()` rodou — o
+      dongle é HID de teclado, então as teclas vão para onde o SO mandar; sem
+      foco na aba do Adsum, o app não recebe nada, e o buzzer do dongle (que é
+      hardware, soa de qualquer jeito) engana quem está na sala. */
+  #perdasDeFoco = 0
+  #ultimaPerdaDeFocoEm?: Date
+  #ultimoFocoRecuperadoEm?: Date
+
   async estaDisponivel(): Promise<boolean> {
     return typeof window !== 'undefined'
   }
@@ -49,11 +85,15 @@ export class LeitorTeclado implements LeitorDeCracha {
   async iniciar(): Promise<void> {
     if (this.#estado === 'lendo') return
     window.addEventListener('keydown', this.#aoTeclar, true)
+    window.addEventListener('blur', this.#aoPerderFoco)
+    window.addEventListener('focus', this.#aoGanharFoco)
     this.#mudarPara('lendo')
   }
 
   async parar(): Promise<void> {
     window.removeEventListener('keydown', this.#aoTeclar, true)
+    window.removeEventListener('blur', this.#aoPerderFoco)
+    window.removeEventListener('focus', this.#aoGanharFoco)
     clearTimeout(this.#relogio)
     this.#teclas = []
     this.#mudarPara('parado')
@@ -84,12 +124,40 @@ export class LeitorTeclado implements LeitorDeCracha {
         // para saber qual é o certo, então aparecem os dois: comparar com o
         // celular resolve a olho.
         'se estiver invertido': this.#ultimoInvertido ?? '—',
+        // Daqui pra baixo: só diagnóstico do sintoma "apitou, nada na tela"
+        // (17/09/2026) — ver o comentário nos campos privados, acima.
+        'recusadas por parecer digitação': String(this.#recusasPorRitmo),
+        'recusadas por formato desconhecido': String(this.#recusasPorFormato),
+        'última tecla recebida': this.#ultimaTeclaEm?.toISOString() ?? '—',
+        // Junta com " — " (não quebra de linha): `<code>` não preserva `\n`,
+        // e isto precisa continuar legível também numa tela estreita.
+        'últimas recusas (hora · motivo · cru)':
+          this.#recusas.length === 0
+            ? '—'
+            : this.#recusas.map((r) => `${r.quando.toISOString()} · ${r.motivo} · "${r.cru}"`).join(' — '),
+        'janela perdeu o foco': `${this.#perdasDeFoco}×`,
+        'última perda de foco': this.#ultimaPerdaDeFocoEm?.toISOString() ?? '—',
+        'foco recuperado em': this.#ultimoFocoRecuperadoEm?.toISOString() ?? '—',
       },
     }
   }
 
+  #aoPerderFoco = () => {
+    this.#perdasDeFoco++
+    this.#ultimaPerdaDeFocoEm = new Date()
+  }
+
+  #aoGanharFoco = () => {
+    this.#ultimoFocoRecuperadoEm = new Date()
+  }
+
   #aoTeclar = (evento: KeyboardEvent) => {
     if (evento.ctrlKey || evento.metaKey || evento.altKey) return
+
+    // Qualquer tecla não-modificadora conta como "chegou algo" — mesmo as que
+    // o resto da função ignora (Escape, setas). É o oposto de `#recusados`:
+    // aqui não importa se virou rajada, só que a janela recebeu alguma coisa.
+    this.#ultimaTeclaEm = new Date()
 
     // `evento.timeStamp`, não `performance.now()`: o navegador carimba o
     // primeiro perto da chegada de verdade da tecla, o segundo mede quando
@@ -133,6 +201,18 @@ export class LeitorTeclado implements LeitorDeCracha {
 
     if (!lido) {
       this.#recusados++
+      // Duas causas bem diferentes viram a mesma coisa (`undefined`) em
+      // `interpretarDigitacao`: o ritmo pareceu humano (nem chegou a tentar
+      // decodificar), ou o ritmo era de máquina mas o formato não bateu com
+      // nenhum dos reconhecidos. Reclassificar aqui, com a mesma função pura
+      // que `interpretarDigitacao` já chamava por baixo.
+      const motivo: 'formato' | 'ritmo' = foiDigitadoPorMaquina(teclas) ? 'formato' : 'ritmo'
+      if (motivo === 'formato') this.#recusasPorFormato++
+      else this.#recusasPorRitmo++
+      this.#recusas = [{ quando: new Date(), motivo, cru: this.#ultimaCrua }, ...this.#recusas].slice(
+        0,
+        RECUSAS_GUARDADAS,
+      )
       this.#ultimoFormato = undefined
       this.#ultimoInvertido = undefined
       this.#ultimoUid = undefined

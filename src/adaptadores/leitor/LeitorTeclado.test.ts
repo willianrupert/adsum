@@ -135,3 +135,84 @@ describe('o que não é dongle', () => {
     expect(leituras).toHaveLength(0)
   })
 })
+
+// 17/09/2026: o Prof. Paulo relatou o mesmo sintoma de 15/09 de novo — dongle
+// apitou, nada mudou na tela —, agora numa turma diferente. "Recusada" e
+// "nunca chegou" eram indistinguíveis no diagnóstico; estes testes provam os
+// campos que passaram a diferenciar as duas, antes de decidir qualquer
+// conserto de comportamento.
+describe('diagnóstico do sintoma "apitou, nada na tela"', () => {
+  it('recusa por ritmo humano soma em "recusadas por parecer digitação", não em formato', async () => {
+    leitor = new LeitorTeclado()
+    await leitor.iniciar()
+
+    await digitarComRitmo('04a23b91', [120])
+
+    const { detalhes } = await leitor.diagnostico()
+    expect(detalhes['recusadas por parecer digitação']).toBe('1')
+    expect(detalhes['recusadas por formato desconhecido']).toBe('0')
+    expect(detalhes['últimas recusas (hora · motivo · cru)']).toContain('ritmo')
+    expect(detalhes['últimas recusas (hora · motivo · cru)']).toContain('"04a23b91"')
+  })
+
+  it('rajada rápida mas em formato desconhecido soma em "formato desconhecido", não em ritmo', async () => {
+    leitor = new LeitorTeclado()
+    await leitor.iniciar()
+
+    // Mesmo comprimento de `digitacao.test.ts` ("recusa comprimento que não
+    // existe no padrão"): 10 caracteres hex válidos, mas 10 não é 8/14/20.
+    await digitarComRitmo('04a23b9112', [12])
+
+    const { detalhes } = await leitor.diagnostico()
+    expect(detalhes['recusadas por parecer digitação']).toBe('0')
+    expect(detalhes['recusadas por formato desconhecido']).toBe('1')
+    expect(detalhes['últimas recusas (hora · motivo · cru)']).toContain('formato')
+  })
+
+  it('uma leitura aceita não apaga o histórico de recusas anteriores', async () => {
+    const promessa = ler()
+    await digitarComRitmo('04a23b91', [120]) // recusada, ritmo humano
+    await digitarComRitmo('0930148883', [17]) // aceita
+    await promessa
+
+    const { detalhes } = await leitor!.diagnostico()
+    expect(detalhes['recusadas por parecer digitação']).toBe('1')
+    expect(detalhes['leituras aceitas']).toBe('1')
+  })
+
+  it('"última tecla recebida" anda mesmo quando a tecla não forma rajada nenhuma', async () => {
+    leitor = new LeitorTeclado()
+    await leitor.iniciar()
+
+    expect((await leitor.diagnostico()).detalhes['última tecla recebida']).toBe('—')
+    tecla('a')
+    expect((await leitor.diagnostico()).detalhes['última tecla recebida']).not.toBe('—')
+  })
+
+  it('perder e recuperar o foco da janela fica registrado', async () => {
+    leitor = new LeitorTeclado()
+    await leitor.iniciar()
+
+    expect((await leitor.diagnostico()).detalhes['janela perdeu o foco']).toBe('0×')
+
+    window.dispatchEvent(new Event('blur'))
+    let detalhes = (await leitor.diagnostico()).detalhes
+    expect(detalhes['janela perdeu o foco']).toBe('1×')
+    expect(detalhes['última perda de foco']).not.toBe('—')
+    expect(detalhes['foco recuperado em']).toBe('—')
+
+    window.dispatchEvent(new Event('focus'))
+    detalhes = (await leitor.diagnostico()).detalhes
+    expect(detalhes['foco recuperado em']).not.toBe('—')
+  })
+
+  it('parar() de ouvir o leitor também para de contar perda de foco', async () => {
+    leitor = new LeitorTeclado()
+    await leitor.iniciar()
+    await leitor.parar()
+
+    window.dispatchEvent(new Event('blur'))
+
+    expect((await leitor.diagnostico()).detalhes['janela perdeu o foco']).toBe('0×')
+  })
+})
