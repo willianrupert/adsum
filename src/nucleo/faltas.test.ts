@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { nomeDoArquivoDeFaltas, paraCsvDeFaltas, periodosDoBloco, planilhaDeFaltas } from './faltas.ts'
+import {
+  chaveDeIdentidade,
+  nomeDoArquivoDeFaltas,
+  paraCsvDeFaltas,
+  periodosDoBloco,
+  planilhaDeFaltas,
+  presencasDoDia,
+} from './faltas.ts'
 import type { Aula } from './grade.ts'
 import type { Evento, Matriculado } from './tipos.ts'
 
@@ -165,6 +172,67 @@ describe('planilhaDeFaltas', () => {
     const { linhas } = planilhaDeFaltas(eventos, [ana], [AULA_DUPLA], TURMA)
     const celula = linhas.find((l) => l.matriculado === ana)?.porDia.get('2026-08-17')
     expect(celula?.faltas).toBe(0)
+  })
+
+  // `presencasDoDia` é a mesma regra de `planilhaDeFaltas`, extraída pra
+  // consulta pontual — usada por `TelaAula` pra decidir Presente/Não
+  // presente sem montar a planilha do semestre inteiro.
+  describe('presencasDoDia', () => {
+    it('crachá lido conta como presente', () => {
+      const eventos = [abrir('2026-08-17', '08:00'), presenca('2026-08-17', '08:05', ana)]
+      const mapa = presencasDoDia(eventos, TURMA, '2026-08-17')
+      expect(mapa.get(chaveDeIdentidade(ana))?.presente).toBe(true)
+    })
+
+    it('quem não tem evento nenhum não aparece no mapa — não é "presente: false", é ausência de dado', () => {
+      const eventos = [abrir('2026-08-17', '08:00')]
+      const mapa = presencasDoDia(eventos, TURMA, '2026-08-17')
+      expect(mapa.has(chaveDeIdentidade(breno))).toBe(false)
+    })
+
+    it('marcação manual funciona mesmo sem crachá nenhum — por matrícula, sem uidHash de verdade', () => {
+      const manual: Evento = {
+        eventoId: 'web-a1-20260817-0009',
+        quando: '2026-08-17T12:00:00.000Z',
+        turma: TURMA,
+        matricula: breno.matricula,
+        nome: breno.nome,
+        origem: 'manual',
+        resultado: 'ok',
+        uidHash: 'manual-x',
+      }
+      const mapa = presencasDoDia([abrir('2026-08-17', '08:00'), manual], TURMA, '2026-08-17')
+      const entrada = mapa.get(chaveDeIdentidade(breno))
+      expect(entrada?.presente).toBe(true)
+      expect(entrada?.manual).toBe(true)
+    })
+
+    it('remoção manual derruba um crachá lido — mesma regra de "quem manda é o professor"', () => {
+      const remocao: Evento = {
+        eventoId: 'web-a1-20260817-0009',
+        quando: '2026-08-17T12:00:00.000Z',
+        turma: TURMA,
+        matricula: ana.matricula,
+        nome: ana.nome,
+        origem: 'manual',
+        resultado: 'removido',
+        uidHash: 'manual-x',
+      }
+      const eventos = [abrir('2026-08-17', '08:00'), remocao, presenca('2026-08-17', '08:05', ana)]
+      const mapa = presencasDoDia(eventos, TURMA, '2026-08-17')
+      expect(mapa.get(chaveDeIdentidade(ana))?.presente).toBe(false)
+    })
+
+    it('só olha o dia e a turma pedidos — outro dia ou outra turma não contam', () => {
+      const eventos = [
+        abrir('2026-08-17', '08:00'),
+        presenca('2026-08-17', '08:05', ana),
+        abrir('2026-08-18', '08:00'),
+        { ...presenca('2026-08-19', '08:05', breno), turma: 'Outra turma' },
+      ]
+      const mapa = presencasDoDia(eventos, TURMA, '2026-08-18')
+      expect(mapa.size).toBe(0)
+    })
   })
 })
 

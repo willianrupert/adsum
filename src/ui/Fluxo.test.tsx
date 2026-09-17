@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx'
 import { baterCrachasEmSequencia, gerarBaralho } from '../testes/simular.ts'
-import { Fluxo, Repouso } from './Fluxo.tsx'
+import { Fluxo } from './Fluxo.tsx'
 import {
   adiarHorario,
   definirProfessorAtual,
@@ -11,6 +11,8 @@ import {
   marcarVersaoDeNovidadeVista,
   versaoDeNovidadeVista,
 } from '../ambiente/preferencias.ts'
+import { calcularUidHash } from '../nucleo/hash.ts'
+import { hexParaUid } from '../nucleo/uid.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import * as arquivos from '../ambiente/arquivos.ts'
 import { MANUAL_URL } from '../nucleo/cofre.ts'
@@ -82,21 +84,18 @@ describe('a rota decide a tela', () => {
     expect(screen.queryByText(/, Ana/)).not.toBeInTheDocument()
   })
 
-  // "Por que sugerir chamada, se o software sabe que estamos fora do
-  // horário?" Sem grade cadastrada — ou grade que já acabou por hoje —,
-  // sugerir "Começar a chamada" como ação principal é empurrar pro crachá
-  // numa hora em que não há aula nenhuma. "Ver presenças" — a pergunta mais
-  // comum fora de aula — vira o acento; começar continua ali, só que quieto,
-  // para reposição.
-  it('fora do horário, "Ver presenças" é a ação principal, e "Começar a chamada" fica quieto', async () => {
+  // A grade deixou de decidir se "Começar a chamada" é o acento ou não — ela
+  // é sempre o acento agora, esteja ou não uma aula à vista. "Ver
+  // presenças" é sempre o link quieto ao lado, em qualquer estado.
+  it('"Começar a chamada" é sempre o acento, e "Ver presenças" o link quieto', async () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
 
-    const verPresencas = await screen.findByRole('button', { name: 'Ver presenças' })
-    expect(verPresencas.className).toContain('botao--acento')
+    const comecar = await screen.findByRole('button', { name: /Começar a chamada/ })
+    expect(comecar.className).toContain('botao--acento')
 
-    const comecar = screen.getByRole('button', { name: /Começar a chamada/ })
-    expect(comecar.className).not.toContain('botao--acento')
+    const verPresencas = screen.getByRole('button', { name: 'Ver presenças' })
+    expect(verPresencas.className).not.toContain('botao--acento')
   })
 
   it('"Ver presenças" abre o popup com a tabela de registros', async () => {
@@ -106,58 +105,6 @@ describe('a rota decide a tela', () => {
 
     await usuario.click(await screen.findByRole('button', { name: 'Ver presenças' }))
     expect(await screen.findByRole('dialog', { name: 'Presenças' })).toBeInTheDocument()
-  })
-
-  // Com aula à vista, o gesto óbvio é abrir a chamada — "ver presença" pode
-  // esperar a aula acabar, então não compete pelo mesmo destaque. Mas deixou
-  // de ficar preso a Ajustes: item 1 da Fase 2 (docs/05_plano_execucao.md)
-  // pede o link sempre visível na tela de repouso, em qualquer estado.
-  it('com aula à vista, "Começar a chamada agora" é o acento e "Ver presenças" fica quieto ao lado', async () => {
-    await turmaInteiraComCracha()
-    const amanha = new Date(Date.now() + 24 * 3600_000)
-    await bancada.repositorio.gravarAula({
-      uidHashProfessor: 'aaaa000000000000',
-      dia: amanha.getDay(),
-      inicio: '13:00',
-      fim: '14:50',
-      turma: 'IF685 · T01',
-    })
-    renderizarCom(bancada, <Fluxo />)
-
-    const comecar = await screen.findByRole('button', { name: 'Começar a chamada agora' })
-    expect(comecar.className).toContain('botao--acento')
-
-    const verPresencas = screen.getByRole('button', { name: 'Ver presenças' })
-    expect(verPresencas.className).not.toContain('botao--acento')
-  })
-
-  // Terceiro estado da tela de repouso ("Começar chamada em X", quando o
-  // relógio identifica uma aula acontecendo agora) — testado direto no
-  // componente, sem passar pelo `Fluxo`: nesse estado, o mesmo efeito que
-  // calcula `comecarEm` também abre a chamada sozinha (ver o comentário em
-  // `Fluxo.tsx` perto de `abrirSozinhoEntreProfessores`), o que tornaria uma
-  // montagem via `Fluxo` uma corrida com o auto-abrir. `Repouso` não toca em
-  // repositório nem leitor — é só props para JSX — então isolar aqui não
-  // troca nenhum adaptador de verdade por dublê.
-  it('com "comecarEm", "Ver presenças" também aparece, quieto ao lado do acento', () => {
-    render(
-      <Repouso
-        turmas={1}
-        pendencias={[]}
-        comecarEm="IF685 · T01"
-        aoIniciar={vi.fn()}
-        aoEscolherOutra={vi.fn()}
-        aoSalvar={vi.fn()}
-        aoVerPresencas={vi.fn()}
-        aoNovaTurma={vi.fn()}
-      />,
-    )
-
-    const comecar = screen.getByRole('button', { name: 'Começar a chamada agora' })
-    expect(comecar.className).toContain('botao--acento')
-
-    const verPresencas = screen.getByRole('button', { name: 'Ver presenças' })
-    expect(verPresencas.className).not.toContain('botao--acento')
   })
 
   // Regressão: este botão existia e não fazia nada — a rota decide pelo estado,
@@ -214,7 +161,6 @@ describe('a rota decide a tela', () => {
     // A tela continua na chamada — não pulou para o repouso por baixo de
     // ninguém, nem por causa do crachá do professor tocado no meio da fila.
     expect(screen.getByRole('button', { name: 'Encerrar a chamada' })).toBeInTheDocument()
-    await waitFor(() => expect(screen.queryByText('Quem falta')).not.toBeInTheDocument())
   })
 
   // Regressão irmã da anterior: o docente não tem matrícula na página do
@@ -338,14 +284,15 @@ describe('a rota decide a tela', () => {
     // Turma nova, sem horário: o cronograma entra no meio.
     await usuario.click(await screen.findByRole('button', { name: 'Depois' }))
 
-    // Volta ao repouso — não à colagem em branco de novo. IF685 · T01 já tem
-    // professor, então não há sessão para abrir sozinha; com duas turmas
-    // sem horário, "Começar a chamada" pergunta qual.
+    // Volta ao repouso — não à colagem em branco de novo. Sem grade
+    // nenhuma das duas turmas, a sugestão inicial é a primeira em ordem
+    // alfabética (IF685 · T01) — a seta troca pra IF999 · T02, sem popup.
     expect(await screen.findByText(/Bom dia|Boa tarde|Boa noite/)).toBeInTheDocument()
     expect(screen.queryByText('Cole sua primeira turma')).not.toBeInTheDocument()
 
+    await usuario.click(await screen.findByRole('button', { name: 'próxima turma' }))
+    expect(screen.getByText('IF999 · T02')).toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: /Começar a chamada/ }))
-    await usuario.click(await screen.findByRole('button', { name: 'IF999 · T02' }))
     await usuario.click(await screen.findByRole('switch', { name: 'Chamar nomes' }))
 
     // Chama Carla, na turma nova — o professor já reconhecido, sem crachá
@@ -422,7 +369,12 @@ describe('abrir e encerrar sem crachá', () => {
 
 // O fim da linha do "menos decisões": com o horário cadastrado, o professor
 // entra na sala e a chamada já está aberta. Nem clique, nem crachá.
-describe('a grade abre a chamada sozinha', () => {
+// Até 17/09/2026 a grade abria a chamada sozinha, sem gesto nenhum — pedido
+// do professor foi o oposto: liberdade máxima, a grade vira recomendação,
+// nunca porta de entrada. O relógio de 30s e o auto-abrir saíram
+// (`docs/05_plano_execucao.md`); o que resta é a grade continuar sugerindo
+// a turma certa como ponto de partida — nunca abrindo nada sozinha.
+describe('a grade recomenda, mas nunca abre sozinha', () => {
   const aulaAgora = async () => {
     const agora = new Date()
     const hhmm = (delta: number) => {
@@ -438,62 +390,25 @@ describe('a grade abre a chamada sozinha', () => {
     })
   }
 
-  it('abre sem ninguém tocar em nada, e avisa que foi a grade quem abriu', async () => {
+  it('bate agora na grade: sugere a turma, mas espera o gesto do professor', async () => {
     await turmaInteiraComCracha()
     await aulaAgora()
     renderizarCom(bancada, <Fluxo />)
 
-    expect(await screen.findByRole('button', { name: 'Encerrar a chamada' })).toBeInTheDocument()
-    expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: 'IF685 · T01' })
-    expect(await screen.findByText(/grade horária abriu esta aula sozinha/)).toBeInTheDocument()
-  })
-
-  // Fechar às 9h30 uma aula que vai até as 10h não pode ser desfeito pelo
-  // relógio no segundo seguinte.
-  it('não reabre a chamada que o professor acabou de encerrar', async () => {
-    const usuario = userEvent.setup()
-    await turmaInteiraComCracha()
-    await aulaAgora()
-    renderizarCom(bancada, <Fluxo />)
-
-    await usuario.click(await screen.findByRole('button', { name: 'Encerrar a chamada' }))
-    // Sem pasta o acento é salvar, e concluir vira "concluir sem salvar".
-    await usuario.click(await screen.findByRole('button', { name: 'Concluir sem salvar' }))
-
-    // Com grade, o repouso não pede clique nenhum: diz qual aula vem.
-    expect(await screen.findByText('Sua próxima aula')).toBeInTheDocument()
+    // Sugerida na tela — não aberta sozinha.
+    expect(await screen.findByText('IF685 · T01')).toBeInTheDocument()
     expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
   })
 
-  // O caso que faltava provar. Abrir na montagem é o professor que chega e abre
-  // o app; este é o app **já aberto na mesa** quando a aula começa — e é o que
-  // dá sentido à frase "abre sozinha". Sem o relógio, ele esperaria para sempre.
-  it('o relógio abre a chamada quando a aula começa com o app na tela', async () => {
-    // Só o intervalo é falso. Fingir o relógio inteiro derruba o Dexie —
-    // "Transaction committed too early" —, porque o IndexedDB depende de timers
-    // de verdade para fechar transação.
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
-    try {
-      await turmaInteiraComCracha()
-      renderizarCom(bancada, <Fluxo />)
-      await screen.findByText(/Começar a chamada/)
+  // Nem o relógio de 30s existe mais: passar tempo não abre nada sozinho.
+  it('o tempo passando não abre a chamada sozinha, mesmo com a aula batendo agora', async () => {
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText(/Começar a chamada/)
+    await aulaAgora()
 
-      // A aula entra na grade **depois** de a tela já estar montada.
-      await aulaAgora()
-      expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
-
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(31_000)
-      })
-
-      await waitFor(async () =>
-        expect(await bancada.repositorio.sessaoAberta()).toMatchObject({
-          turma: 'IF685 · T01',
-        }),
-      )
-    } finally {
-      vi.useRealTimers()
-    }
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
   })
 
   // Sem grade, "só existe uma turma, abre essa" valeria no domingo à noite.
@@ -549,8 +464,14 @@ describe('a grade de mais de um professor', () => {
 
     renderizarCom(bancada, <Fluxo />)
 
-    // Abre sozinha — o relógio, tanto quanto o indicador do repouso, olhou a
-    // grade dos dois professores, não só da que vence a ordem alfabética.
+    // Sugerida na tela — o indicador do repouso olhou a grade dos dois
+    // professores, não só da que vence a ordem alfabética. Não abre
+    // sozinha: só sugere, o professor confirma.
+    expect(await screen.findByText('IF969 · T02')).toBeInTheDocument()
+    expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
+
+    const usuario = userEvent.setup()
+    await usuario.click(screen.getByRole('button', { name: /Começar a chamada/ }))
     expect(await screen.findByRole('button', { name: 'Encerrar a chamada' })).toBeInTheDocument()
     expect(await bancada.repositorio.sessaoAberta()).toMatchObject({
       turma: 'IF969 · T02',
@@ -619,8 +540,8 @@ describe('duas turmas se encavalam no horário', () => {
     await aulaEm('IF685 · T01', -30, 30)
     renderizarCom(bancada, <Fluxo />)
 
-    // Só existe uma aula "agora" no momento em que a tela monta — a mesma
-    // grade que abre sozinha (ver acima) já abre esta, sem clique nenhum.
+    // A grade sugere IF685 · T01 (é a que bate agora) — o professor confirma.
+    await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
     await screen.findByRole('button', { name: 'Encerrar a chamada' })
     expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: 'IF685 · T01' })
 
@@ -642,10 +563,99 @@ describe('duas turmas se encavalam no horário', () => {
     await aulaEm('IF685 · T01', -30, 30)
     renderizarCom(bancada, <Fluxo />)
 
+    await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
     await usuario.click(await screen.findByRole('button', { name: 'Encerrar a chamada' }))
     await screen.findByRole('button', { name: 'Concluir sem salvar' })
 
     expect(screen.queryByText(/deveria estar rodando agora/)).not.toBeInTheDocument()
+  })
+})
+
+// Substitui a tela "Qual turma?" (`EscolherTurma`, removida): a seta troca a
+// turma direto na tela de repouso, sem popup, e Enter/crachá abre a que
+// estiver ali. Ver `docs/05_plano_execucao.md` e o pedido de 17/09/2026.
+describe('turma e hora por seta, sem tela "Qual turma?"', () => {
+  it('a seta troca qual turma "Começar a chamada" abre, sem dar volta nas pontas', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    // `pessoa()` fixa `turma: 'IF685 · T01'` — sobrescrever pra criar
+    // alguém de verdade na segunda turma.
+    await bancada.repositorio.salvarTurma('IF969 · T02', [
+      { ...pessoa('9', 'Zeca'), turma: 'IF969 · T02' },
+    ])
+    adiarHorario('IF969 · T02')
+    renderizarCom(bancada, <Fluxo />)
+
+    // Sem grade nenhuma, a sugestão inicial é a primeira em ordem alfabética.
+    await screen.findByText('IF685 · T01')
+    expect(screen.getByRole('button', { name: 'turma anterior' })).toBeDisabled()
+    // As duas turmas levam um instante pra chegar do IndexedDB — só então
+    // a seta "próxima" destrava.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'próxima turma' })).toBeEnabled())
+
+    await usuario.click(screen.getByRole('button', { name: 'próxima turma' }))
+    expect(screen.getByText('IF969 · T02')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'próxima turma' })).toBeDisabled()
+
+    await usuario.click(screen.getByRole('button', { name: /Começar a chamada/ }))
+    await waitFor(async () =>
+      expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: 'IF969 · T02' }),
+    )
+  })
+
+  it('editar a data/hora muda o registro de verdade — não é só mostrador', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+
+    // `datetime-local` é um campo segmentado (dia/mês/ano/hora/minuto) —
+    // `userEvent.type` não navega os segmentos como um input de texto
+    // comum. `fireEvent.change` grava o valor direto, do jeito que o
+    // próprio navegador entrega o `onChange` de um `datetime-local`.
+    const campo = await screen.findByLabelText('quando a chamada abre')
+    fireEvent.change(campo, { target: { value: '2026-03-02T08:15' } })
+    await usuario.click(screen.getByRole('button', { name: /Começar a chamada/ }))
+
+    await waitFor(async () => {
+      const sessao = await bancada.repositorio.sessaoAberta()
+      expect(sessao?.abertaEm).toBe(new Date('2026-03-02T08:15').toISOString())
+    })
+  })
+
+  // O crachá do professor faz o mesmo que o botão: abre a turma e a hora
+  // que a tela está mostrando, não a hora real do toque.
+  it('o crachá do professor também abre na hora editada, não na hora real do toque', async () => {
+    // `turmaInteiraComCracha()` grava um `uidHash` fixo, sem relação com
+    // nenhum crachá simulável — serve pra clique de botão, não pra
+    // `leitor.simular()`, que calcula o hash de verdade a partir do sal
+    // desta bancada. Aqui precisa do par certo: o hash que '04a23b91'
+    // realmente produz.
+    adiarHorario('IF685 · T01')
+    await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('1', 'Ana Paula')])
+    const uidHash = await calcularUidHash(bancada.config.salHex, hexParaUid('04a23b91'))
+    await bancada.repositorio.gravarVinculo({
+      uidHash,
+      papel: 'professor',
+      nome: 'Ana Paula',
+      matricula: '1',
+      criadoEm: new Date().toISOString(),
+    })
+    renderizarCom(bancada, <Fluxo />)
+
+    // Espera a turma sugerida aparecer — o campo de hora já existe antes
+    // disso (é incondicional), mas `turmaSelecionada` só se firma depois
+    // que `recontar()` (assíncrono) resolve. Encostar o crachá antes disso
+    // seria testar contra `turmaSelecionada` ainda vazio.
+    await screen.findByText('IF685 · T01')
+    const campo = screen.getByLabelText('quando a chamada abre')
+    fireEvent.change(campo, { target: { value: '2026-03-02T08:15' } })
+
+    await act(async () => bancada.leitor.simular('04a23b91'))
+
+    await waitFor(async () => {
+      const sessao = await bancada.repositorio.sessaoAberta()
+      expect(sessao?.abertaEm).toBe(new Date('2026-03-02T08:15').toISOString())
+    })
   })
 })
 
@@ -694,7 +704,7 @@ describe('uma turma grande, crachá por crachá', () => {
     // professor nenhum'. É o caminho que qualquer teste de ponta a ponta vai
     // usar de verdade.
     await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
-    await screen.findByText('Quem falta')
+    await screen.findByText('Lista de alunos')
 
     await baterCrachasEmSequencia(
       bancada.leitor,
@@ -719,11 +729,7 @@ describe('uma turma grande, crachá por crachá', () => {
         // porque só a metade certa da corrida tinha sido esperada.
         await waitFor(() => {
           expect(screen.getByLabelText(String(indice + 1))).toBeInTheDocument()
-          if (restam > 0) {
-            expect(screen.getByText(`${restam} de ${TAMANHO} sem crachá`)).toBeInTheDocument()
-          } else {
-            expect(screen.queryByText('Quem falta')).not.toBeInTheDocument()
-          }
+          expect(screen.getByText(`${restam} de ${TAMANHO} sem crachá`)).toBeInTheDocument()
         })
       },
     )
@@ -732,8 +738,10 @@ describe('uma turma grande, crachá por crachá', () => {
     // por `transform`, então não existe um nó de texto "50" — o valor certo
     // mora no `aria-label`, que é a própria razão de ele existir ali.
     await waitFor(() => expect(screen.getByLabelText(String(TAMANHO))).toBeInTheDocument())
-    expect(screen.queryByText('Quem falta')).not.toBeInTheDocument()
-    expect(screen.getByText(/Turma completa/)).toBeInTheDocument()
+    // A lista continua na tela — não some mais quando todo mundo já tem
+    // crachá (é justamente o que o pedido de 17/09/2026 corrigiu).
+    expect(screen.getByText('Lista de alunos')).toBeInTheDocument()
+    expect(screen.getByText(`0 de ${TAMANHO} sem crachá`)).toBeInTheDocument()
 
     const vinculos = await bancada.repositorio.listarVinculos()
     expect(vinculos.filter((v) => v.papel === 'aluno')).toHaveLength(TAMANHO)
@@ -1155,7 +1163,7 @@ describe('rodapé de Ajustes', () => {
     expect(linkGitHub).toHaveAttribute('target', '_blank')
     expect(linkGitHub).toHaveAttribute('rel', 'noopener noreferrer')
 
-    expect(screen.getByText('© 2026 Willian Rupert')).toBeInTheDocument()
+    expect(screen.getByText('© 2026 Adsum')).toBeInTheDocument()
   })
 })
 

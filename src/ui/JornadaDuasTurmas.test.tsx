@@ -106,6 +106,20 @@ async function colarTurma(usuario: ReturnType<typeof userEvent.setup>, turma: st
   await usuario.click(screen.getByRole('button', { name: 'Continuar' }))
 }
 
+/** A seta troca a turma sugerida do repouso pela pedida — substitui a tela
+    "Qual turma?" (removida): não há mais pergunta separada, só navegar até
+    a turma certa aparecer. Limitada a 5 cliques pra nunca girar pra sempre
+    se a turma pedida não existir. */
+async function selecionarTurma(usuario: ReturnType<typeof userEvent.setup>, turma: string) {
+  for (let tentativas = 0; tentativas < 5; tentativas++) {
+    if (screen.queryByText(turma)) return
+    const proxima = screen.getByRole('button', { name: 'próxima turma' })
+    if ((proxima as HTMLButtonElement).disabled) break
+    await usuario.click(proxima)
+  }
+  await screen.findByText(turma)
+}
+
 describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
   it('registra parte de cada turma, sobrevive a encerrar sem querer, e nada vaza entre as turmas', async () => {
     const usuario = userEvent.setup()
@@ -119,18 +133,18 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
 
     const agoraA = blocoDeAgora()
     if (agoraA) {
-      // O horário bate com agora de verdade: a grade abre a aula sozinha,
-      // sem clique nem crachá — o mesmo "abre sozinho" que o professor vê.
+      // O horário bate com agora de verdade — só decide a sugestão inicial
+      // do repouso agora (a grade parou de abrir sozinha, ver
+      // `docs/05_plano_execucao.md`). O professor sempre confirma.
       await usuario.click(await screen.findByRole('button', { name: agoraA.aria }))
       await usuario.click(await screen.findByRole('button', { name: 'Salvar horário' }))
-      await screen.findByRole('button', { name: 'Encerrar a chamada' })
     } else {
       // Nenhum bloco real bate com o horário em que a suíte está rodando —
-      // o professor também não teria "abre sozinho" agora. O caminho real
-      // dele aqui é começar com o próprio dedo.
+      // fica pra depois, e o professor aponta a turma com o dedo mesmo.
       await usuario.click(await screen.findByRole('button', { name: 'Depois' }))
-      await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
     }
+    await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
+    await screen.findByRole('button', { name: 'Encerrar a chamada' })
 
     expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: TURMA_A })
     // 4, não 5: o docente tem seção própria, separada da lista de alunos —
@@ -177,12 +191,6 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
     await screen.findByText('Cole mais uma turma')
     await colarTurma(usuario, TURMA_B, paginaDoSigaa(ALUNOS_B))
 
-    // Se A ainda bate com agora (mesmo bloco de antes — a grade dela agora
-    // reconcilia com o professor certo, ver Fluxo.test.tsx "cronograma"),
-    // clicar "Começar a chamada" sem mais nada abriria A de novo, sozinha e
-    // sem perguntar — um só nome bate, e "nunca perguntar o que dá pra
-    // saber" vale pra ela também. Dar o mesmo bloco pra B é o que garante a
-    // pergunta que este teste quer exercitar, em vez de torcer pro relógio.
     if (agoraA) {
       await usuario.click(await screen.findByRole('button', { name: agoraA.aria }))
       await usuario.click(await screen.findByRole('button', { name: 'Salvar horário' }))
@@ -190,18 +198,12 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
       await usuario.click(await screen.findByRole('button', { name: 'Depois' }))
     }
 
-    // "Qual turma?" não é "talvez" — é garantida nos dois ramos acima, pela
-    // mesma regra de `escolherTurma` (`nucleo/grade.ts`): com `agoraA`, as
-    // duas turmas batem com agora ("varias"); sem ele, nenhuma bate e há
-    // mais de uma turma cadastrada ("nenhuma"). Os dois caminhos caem em
-    // `perguntar`. Um `screen.queryByText` síncrono logo após o clique
-    // corria contra o próprio `iniciarChamada` (duas idas ao repositório
-    // antes de `setEscolhendo`) e, sob CPU disputada no CI, às vezes lia o
-    // popup como ausente — não porque não fosse aparecer, mas porque ainda
-    // não tinha aparecido. `findByRole` espera de verdade, em vez de
-    // apostar num instante só.
+    // Sem tela "Qual turma?" (removida — a seta é a resposta): a sugestão
+    // inicial do repouso pode cair em A (é a recém-fechada, `encerradas()`
+    // desempata pra ela quando a grade não sabe decidir sozinha) ou já em
+    // B — a seta resolve os dois casos, sem popup.
+    await selecionarTurma(usuario, TURMA_B)
     await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
-    await usuario.click(await screen.findByRole('button', { name: TURMA_B }))
     await waitFor(async () =>
       expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: TURMA_B }),
     )
@@ -242,11 +244,9 @@ describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
     await usuario.click(await screen.findByRole('button', { name: 'Ajustes' }))
     expect(await screen.findByText('2 de 4 sem crachá')).toBeInTheDocument()
 
-    // === Ver presenças, de dentro dos Ajustes: com uma próxima aula
-    // conhecida (a de A, agora que a grade reconcilia com o professor certo)
-    // o repouso mostra só "Começar a chamada agora" — o link daqui é o
-    // caminho que continua sempre alcançável. Cada turma mostra só a sua
-    // gente. ===
+    // === Ver presenças, de dentro dos Ajustes: o link continua sempre
+    // alcançável no repouso, em qualquer estado. Cada turma mostra só a
+    // sua gente. ===
     await usuario.click(await screen.findByRole('button', { name: /Ver presenças/ }))
     const popup = await screen.findByRole('dialog', { name: 'Presenças' })
 

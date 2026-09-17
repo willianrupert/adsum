@@ -487,6 +487,15 @@ button:focus-visible {
   font-size: var(--t-menor);
 }
 
+/* Onde toda linha da tabela virou input — sem texto puro pra alinhar com —
+   o motivo do padding-esquerdo zero acima deixa de existir. Sem isto, o
+   texto nascia colado na borda arredondada do campo. Só a lista de alunos
+   de `TelaAula` usa esta classe hoje: o painel de Professores ainda mistura
+   texto puro (vinculado) com input (pendente), e ali o zero continua certo. */
+.entrada--recuada {
+  padding-left: 10px;
+}
+
 .entrada--celula:hover,
 .entrada--celula:focus {
   background: var(--fundo);
@@ -741,11 +750,25 @@ button:focus-visible {
   text-wrap: balance;
 }
 
-.repouso__quando {
-  margin: 10px 0 0;
+/* A turma por seta — mesma ideia de `.chamado__acoes` (os botões de
+   "Chamar nomes"), centralizada em volta do nome da turma em vez de ficar
+   embaixo dele. Os botões em si já herdam o `button` base do app. */
+.repouso__turma-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 0;
+}
+
+.repouso__hora {
+  margin-top: 18px;
   font-size: var(--t-titulo);
   color: var(--tinta-fraca);
-  letter-spacing: -0.012em;
+  text-align: center;
+  /* `datetime-local` tem opinião própria de largura por navegador — sem
+     isto, o campo nasce estreito demais pra mostrar a data inteira. */
+  min-width: 15em;
 }
 
 .repouso__link {
@@ -1653,6 +1676,12 @@ button:focus-visible {
 }
 
 .coleta__linha--desconhecido span {
+  color: var(--grave);
+}
+
+/* Mesma cor de recusa — uma remoção manual é a mesma categoria de "isto não
+   conta mais", só que decidida pelo professor, não pelo leitor. */
+.coleta__linha--removido span {
   color: var(--grave);
 }
 

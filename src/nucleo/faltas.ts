@@ -22,8 +22,10 @@ export function periodosDoBloco(inicio: string, fim: string): number {
   return Math.max(1, Math.round((emMinutos(fim) - emMinutos(inicio)) / 50))
 }
 
-/** Chave local (`AAAA-MM-DD`) do dia da aula, no fuso de quem gerou o log. */
-function diaLocal(iso: string): string {
+/** Chave local (`AAAA-MM-DD`) do dia da aula, no fuso de quem gerou o log.
+    Exportada porque `TelaAula` precisa da mesma chave pra saber qual "dia"
+    a sessão aberta representa, ao consultar `presencasDoDia`. */
+export function diaLocal(iso: string): string {
   const d = new Date(iso)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
@@ -35,10 +37,66 @@ function diaLocal(iso: string): string {
  *
  * Existe como chave (não como predicado `ehDoAluno(evento, aluno)`) porque
  * `planilhaDeFaltas` monta um índice por identidade antes de percorrer os
- * alunos — ver o comentário lá.
+ * alunos — ver o comentário lá. Exportada porque `TelaAula` precisa da mesma
+ * chave pra consultar `presencasDoDia` por matriculado.
  */
-function chaveDeIdentidade(dono: { matricula?: string; nome: string }): string {
+export function chaveDeIdentidade(dono: { matricula?: string; nome: string }): string {
   return dono.matricula ? `m:${dono.matricula}` : `n:${dono.nome}`
+}
+
+/** Se um evento (crachá ou manual) conta como presença — ver o comentário
+    de `planilhaDeFaltas` pra regra completa de quem manda na célula. */
+function contaComoPresenca(e: Evento): boolean {
+  return (
+    (e.origem === 'cracha' || e.origem === 'manual') &&
+    (e.resultado === 'ok' || e.resultado === 'duplicado' || e.resultado === 'removido')
+  )
+}
+
+/**
+ * Presente ou não, pra um dia já isolado de eventos de uma única pessoa —
+ * mesma regra de `planilhaDeFaltas`: manual mais recente decide
+ * (`'removido'` é falta, qualquer outro resultado é presença); sem manual
+ * nenhum, o crachá decide. `doDia` precisa vir mais recente primeiro (a
+ * ordem que `Repositorio.listarEventos` já entrega).
+ */
+function resolverPresencaDoDia(doDia: Evento[]): { presente: boolean; repetido: boolean; manual: boolean } {
+  const doCracha = doDia.filter((e) => e.origem === 'cracha')
+  const ultimoManual = doDia.find((e) => e.origem === 'manual')
+  return {
+    presente: ultimoManual ? ultimoManual.resultado !== 'removido' : doCracha.length > 0,
+    repetido: doCracha.length > 1,
+    manual: !!ultimoManual,
+  }
+}
+
+/**
+ * Quem está presente **num dia específico** da turma, pronto pra consulta —
+ * a mesma regra de `planilhaDeFaltas`, mas sem montar a planilha inteira
+ * (todos os dias, faltas contadas). Usada onde só interessa "esta pessoa já
+ * foi marcada presente hoje?", não o semestre inteiro — a lista de alunos em
+ * `TelaAula`, por exemplo, pra decidir se mostra "Presente" ou "Não
+ * presente".
+ *
+ * Consulta por `chaveDeIdentidade` — a mesma chave que identifica quem é
+ * dono de um evento manual (matrícula, ou nome pra quem não tem).
+ */
+export function presencasDoDia(
+  eventos: Evento[],
+  turma: string,
+  dia: string,
+): Map<string, { presente: boolean; repetido: boolean; manual: boolean }> {
+  const porChave = new Map<string, Evento[]>()
+  for (const e of eventos) {
+    if (e.turma !== turma || !contaComoPresenca(e) || diaLocal(e.quando) !== dia) continue
+    const chave = chaveDeIdentidade(e)
+    const lista = porChave.get(chave)
+    if (lista) lista.push(e)
+    else porChave.set(chave, [e])
+  }
+  const resultado = new Map<string, { presente: boolean; repetido: boolean; manual: boolean }>()
+  for (const [chave, doDia] of porChave) resultado.set(chave, resolverPresencaDoDia(doDia))
+  return resultado
 }
 
 function limpar(campo: string): string {
@@ -133,14 +191,7 @@ export function planilhaDeFaltas(
   // a mesma garantia que o `.filter()` original preservava.
   const indice = new Map<string, Map<string, Evento[]>>()
   for (const e of daTurma) {
-    if (
-      !(
-        (e.origem === 'cracha' || e.origem === 'manual') &&
-        (e.resultado === 'ok' || e.resultado === 'duplicado' || e.resultado === 'removido')
-      )
-    ) {
-      continue
-    }
+    if (!contaComoPresenca(e)) continue
     const chave = chaveDeIdentidade(e)
     const dia = diaPorEvento.get(e)!
     let porDia = indice.get(chave)
@@ -157,14 +208,11 @@ export function planilhaDeFaltas(
       // Mais recente primeiro (herdado de `eventos`), então o primeiro manual
       // encontrado é o último que o professor tocou nesta célula.
       const doDia = doAluno?.get(dia) ?? []
-      const doCracha = doDia.filter((e) => e.origem === 'cracha')
-      const ultimoManual = doDia.find((e) => e.origem === 'manual')
-      const repetido = doCracha.length > 1
-      const presente = ultimoManual ? ultimoManual.resultado !== 'removido' : doCracha.length > 0
+      const { presente, repetido, manual } = resolverPresencaDoDia(doDia)
       porDia.set(dia, {
         faltas: presente ? 0 : (periodosPorDia.get(dia) ?? 1),
         repetido,
-        manual: !!ultimoManual,
+        manual,
         quando: doDia[0]?.quando,
       })
     }

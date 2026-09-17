@@ -11,7 +11,6 @@ import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
 import { TelaNavegador } from './TelaNavegador.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
-import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { TelaColarTurma } from './TelaColarTurma.tsx'
 import { TelaRepositorio } from './TelaRepositorio.tsx'
 import { TelaPresencas } from './TelaPresencas.tsx'
@@ -194,7 +193,7 @@ export function Vitrine() {
         <TelaColarTurma />
       </Cena>
 
-      <Cena titulo="A aula, sem ninguém pendente" quando="dia comum: sem fila de crachá">
+      <Cena titulo="A aula, turma completa" quando="a lista continua — Presente/Não presente e apelido, sempre">
         <TelaAula
           sessao={{ turma: TURMA, abertaEm: new Date(Date.now() - 22 * 60000).toISOString(), uidHashProfessor: 'x' }}
           pendentes={[]}
@@ -236,25 +235,30 @@ export function Vitrine() {
         />
       </Cena>
 
-      <Cena titulo="Repouso" quando="sem grade: iniciar é a ação">
+      <Cena titulo="Repouso" quando="uma turma: nada para escolher, só confirmar">
         <Repouso
-          turmas={1}
           pendencias={[]}
+          listaDeTurmas={[TURMA]}
+          turmaSelecionada={TURMA}
+          horaSelecionada={new Date()}
+          aoMudarTurma={() => {}}
+          aoEditarHora={() => {}}
           aoIniciar={() => {}}
-          aoEscolherOutra={() => {}}
           aoSalvar={() => {}}
           aoVerPresencas={() => {}}
           aoNovaTurma={() => {}}
         />
       </Cena>
 
-      <Cena titulo="Repouso com chamada identificada" quando="o relógio achou a aula: um clique abre">
+      <Cena titulo="Repouso com várias turmas" quando="a seta troca — sem tela de pergunta à parte">
         <Repouso
-          turmas={2}
           pendencias={[]}
-          comecarEm={TURMA}
+          listaDeTurmas={[TURMA, 'IF669 · T02']}
+          turmaSelecionada={TURMA}
+          horaSelecionada={new Date()}
+          aoMudarTurma={() => {}}
+          aoEditarHora={() => {}}
           aoIniciar={() => {}}
-          aoEscolherOutra={() => {}}
           aoSalvar={() => {}}
           aoVerPresencas={() => {}}
           aoNovaTurma={() => {}}
@@ -277,28 +281,18 @@ export function Vitrine() {
         </div>
       </Cena>
 
-      <Cena titulo="Repouso com grade" quando="a aula abre sozinha; a tela só espera">
-        <Repouso
-          turmas={2}
-          pendencias={[]}
-          proxima={{ turma: TURMA, quando: new Date(Date.now() + 3 * 3600_000) }}
-          aoIniciar={() => {}}
-          aoEscolherOutra={() => {}}
-          aoSalvar={() => {}}
-          aoVerPresencas={() => {}}
-          aoNovaTurma={() => {}}
-        />
-      </Cena>
-
       <Cena titulo="Repouso com aula por salvar" quando="sem pasta: a chamada só existe aqui">
         <Repouso
-          turmas={2}
           pendencias={[
             { turma: TURMA, quantos: 41, desde: '2026-08-19T10:04:00.000Z' },
-            { turma: 'IF969 · T02', quantos: 28, desde: '2026-08-18T14:02:00.000Z' },
+            { turma: 'IF669 · T02', quantos: 28, desde: '2026-08-18T14:02:00.000Z' },
           ]}
+          listaDeTurmas={[TURMA, 'IF669 · T02']}
+          turmaSelecionada={TURMA}
+          horaSelecionada={new Date()}
+          aoMudarTurma={() => {}}
+          aoEditarHora={() => {}}
           aoIniciar={() => {}}
-          aoEscolherOutra={() => {}}
           aoSalvar={() => {}}
           aoVerPresencas={() => {}}
           aoNovaTurma={() => {}}
@@ -340,16 +334,6 @@ export function Vitrine() {
           <TelaPresencas aoFechar={() => {}} />
         </Cena>
       )}
-
-      <Cena titulo="Qual turma" quando="duas aulas no mesmo horário">
-        <EscolherTurma
-          opcoes={['IF685 · T01', 'IF669 · T02']}
-          motivo="varias"
-          aoEscolher={() => {}}
-          aoDesistir={() => {}}
-          aoNovaTurma={() => {}}
-        />
-      </Cena>
 
       {ehDesenvolvimento ? (
         <Cena titulo="Diagnóstico" quando="folha, quando algo falha">

@@ -99,14 +99,20 @@ describe('a chamada', () => {
 describe('quem falta', () => {
   it('aparece com qualquer gente pendente, mesmo que o resto já tenha crachá', () => {
     montar([BRENO])
-    expect(screen.getByText('Quem falta')).toBeInTheDocument()
+    expect(screen.getByText('Lista de alunos')).toBeInTheDocument()
     expect(screen.getByText(/1 de 2 sem crachá/)).toBeInTheDocument()
   })
 
-  it('some quando ninguém está pendente, e diz que o cadastro terminou', () => {
+  // Até 17/09/2026, a tabela sumia inteira quando ninguém estava pendente —
+  // exatamente o motivo da reclamação em uso real: turma 100% vinculada
+  // ficava sem nenhuma lista na tela, sem jeito de corrigir presença de
+  // quem já tinha crachá. Agora ela continua, sempre que há gente na turma.
+  it('continua mostrando a lista mesmo quando ninguém está pendente', () => {
     montar([])
-    expect(screen.queryByText('Quem falta')).not.toBeInTheDocument()
-    expect(screen.getByText(/Turma completa/)).toBeInTheDocument()
+    expect(screen.getByText('Lista de alunos')).toBeInTheDocument()
+    expect(screen.getByDisplayValue(ANA.nome)).toBeInTheDocument()
+    expect(screen.getByDisplayValue(BRENO.nome)).toBeInTheDocument()
+    expect(screen.queryByText(/Turma completa/)).not.toBeInTheDocument()
   })
 
   // Modo comum é o padrão: ninguém chamado sozinho. O nome grande na tela só
@@ -206,7 +212,7 @@ describe('quem falta', () => {
     await usuario.type(screen.getByLabelText('Buscar na turma'), '{Enter}')
     await waitFor(async () => expect(await bancada.repositorio.listarVinculos()).toHaveLength(1))
 
-    expect(screen.getByText('Quem falta')).toBeInTheDocument()
+    expect(screen.getByText('Lista de alunos')).toBeInTheDocument()
   })
 
   // Sem ninguém chamado, a primeira seta pousa no início da fila — não pula
@@ -302,7 +308,7 @@ describe('quem falta', () => {
     await comCrachaDaAna()
     montar([BRENO])
 
-    expect(await screen.findByText('Ana Paula')).toBeInTheDocument()
+    expect(await screen.findByDisplayValue('Ana Paula')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Mais um crachá' })).not.toBeInTheDocument()
   })
 
@@ -323,6 +329,131 @@ describe('quem falta', () => {
     await waitFor(() => expect(screen.getByText('1')).toBeInTheDocument())
     expect(screen.getByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
     expect(await bancada.repositorio.listarVinculos()).toHaveLength(1)
+  })
+})
+
+// Presente/Não presente na própria lista — pra quem tem crachá e pra quem
+// não tem. Antes só existia em "Ver presenças", longe de onde o professor
+// está olhando durante a aula. Reproduz o pedido de 17/09/2026.
+describe('presença manual na lista de alunos', () => {
+  it('marcar presente quem não tem crachá grava evento manual, sem exigir vínculo', async () => {
+    const usuario = userEvent.setup()
+    montar([ANA, BRENO])
+
+    const linha = screen.getByLabelText(`nome de ${ANA.nomeCompleto}`).closest('tr')!
+    await usuario.click(within(linha).getByRole('button', { name: 'Presente' }))
+
+    await waitFor(async () => {
+      const eventos = await bancada.repositorio.listarEventos()
+      expect(eventos).toHaveLength(1)
+    })
+    const [evento] = await bancada.repositorio.listarEventos()
+    expect(evento.origem).toBe('manual')
+    expect(evento.resultado).toBe('ok')
+    expect(evento.matricula).toBe(ANA.matricula)
+    // Some vínculo nenhum — a matrícula basta pra identificar quem foi
+    // marcado presente sem nunca ter encostado um crachá.
+    expect(await bancada.repositorio.listarVinculos()).toHaveLength(0)
+
+    // O botão vira "Não presente" — a linha reflete o estado atual.
+    expect(await within(linha).findByRole('button', { name: 'Não presente' })).toBeInTheDocument()
+  })
+
+  it('não presente derruba um crachá já lido, e aparece em vermelho na lista de leituras', async () => {
+    const usuario = userEvent.setup()
+    await comCrachaDaAna()
+    montar([BRENO])
+    await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await waitFor(() => expect(screen.getByText('1')).toBeInTheDocument())
+
+    const linha = screen.getByLabelText(`nome de ${ANA.nomeCompleto}`).closest('tr')!
+    await usuario.click(await within(linha).findByRole('button', { name: 'Não presente' }))
+
+    await waitFor(async () => {
+      const eventos = await bancada.repositorio.listarEventos()
+      expect(eventos.some((e) => e.origem === 'manual' && e.resultado === 'removido')).toBe(true)
+    })
+
+    // A remoção entra na lista de leituras recentes, com o tom vermelho —
+    // é a mesma área que mostra "o que está acontecendo agora".
+    const linhaDaLista = await screen.findByText('Ana Paula', { selector: '.coleta__linha--removido span' })
+    expect(linhaDaLista).toBeInTheDocument()
+  })
+})
+
+// Mesmo padrão de `TelaRepositorio.tsx` (Ajustes → Vínculos): editar aqui
+// grava direto no vínculo, sem esperar um novo crachá. Antes só dava pra
+// corrigir um apelido de quem já tinha crachá indo em Ajustes.
+describe('apelido editável mesmo com crachá já vinculado', () => {
+  it('edita o campo de uma pessoa já vinculada e grava no vínculo dela', async () => {
+    const usuario = userEvent.setup()
+    await comCrachaDaAna()
+    montar([BRENO])
+
+    const campo = await screen.findByDisplayValue('Ana Paula')
+    await usuario.clear(campo)
+    await usuario.type(campo, 'Aninha')
+    // Grava no `onBlur` — uma escrita por edição, não uma por tecla.
+    await usuario.tab()
+
+    await waitFor(async () => {
+      const vinculos = await bancada.repositorio.listarVinculos()
+      expect(vinculos[0]?.nome).toBe('Aninha')
+    })
+    // Sem crachá novo nenhum: continua a mesma pessoa, só o apelido mudou.
+    expect(await bancada.repositorio.listarVinculos()).toHaveLength(1)
+  })
+})
+
+// Reproduz o susto de 17/09/2026: buzzer do dongle soando, nada acontecendo
+// no Adsum — hipótese mais provável era a janela sem foco. Isto é detecção
+// real (o navegador sabe se a janela está em foco), não palpite.
+describe('aviso de janela sem foco', () => {
+  it('não avisa na troca rápida — só depois de 2,5s sem foco', async () => {
+    // Só `setTimeout`: fingir o relógio inteiro derruba o Dexie
+    // ("Transaction committed too early"), que depende de timers de
+    // verdade para fechar transação — mesmo cuidado de `Fluxo.test.tsx`.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      montar([ANA, BRENO])
+      expect(screen.queryByText(/perdeu o foco/)).not.toBeInTheDocument()
+
+      act(() => window.dispatchEvent(new Event('blur')))
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000)
+      })
+      expect(screen.queryByText(/perdeu o foco/)).not.toBeInTheDocument()
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1600)
+      })
+      expect(screen.getByText(/perdeu o foco/)).toBeInTheDocument()
+
+      act(() => window.dispatchEvent(new Event('focus')))
+      expect(screen.queryByText(/perdeu o foco/)).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('foco de volta antes dos 2,5s cancela o aviso — nunca chega a aparecer', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      montar([ANA, BRENO])
+
+      act(() => window.dispatchEvent(new Event('blur')))
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000)
+      })
+      act(() => window.dispatchEvent(new Event('focus')))
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2500)
+      })
+      expect(screen.queryByText(/perdeu o foco/)).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 
@@ -588,7 +719,11 @@ describe('crachá desconhecido sem ninguém pendente', () => {
 
     await act(async () => bancada.leitor.simular(CRACHA_NOVO))
     await screen.findByText('Crachá novo')
-    await usuario.click(await screen.findByText(ANA.nomeCompleto))
+    // Escopado ao diálogo de busca: com a lista de alunos agora sempre
+    // visível por baixo, o nome completo de Ana também aparece ali (como
+    // apoio da linha dela), então `findByText` sem escopo acharia dois.
+    const dialogo = within(screen.getByRole('dialog'))
+    await usuario.click(await dialogo.findByText(ANA.nomeCompleto))
 
     // Dois crachás para a mesma pessoa, que é o que o app sempre aceitou.
     const vinculos = await bancada.repositorio.listarVinculos()
@@ -891,7 +1026,8 @@ describe('apelido editado em Ajustes aparece na chamada', () => {
     })
     montar([BRENO], [ANA, BRENO])
 
-    expect(await screen.findByText('Aninha')).toBeInTheDocument()
+    expect(await screen.findByDisplayValue('Aninha')).toBeInTheDocument()
     expect(screen.queryByText(ANA.nome)).not.toBeInTheDocument()
+    expect(screen.queryByDisplayValue(ANA.nome)).not.toBeInTheDocument()
   })
 })

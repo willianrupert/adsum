@@ -27,7 +27,7 @@
 // declarar.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { calcularUidHash } from '../nucleo/hash.ts'
+import { calcularUidHash, uidHashSintetico } from '../nucleo/hash.ts'
 import {
   contaPresenca,
   decidir,
@@ -39,6 +39,7 @@ import {
   type EstatisticaDeIntervalos,
   type Sessao,
 } from '../nucleo/sessao.ts'
+import { chaveDeIdentidade, diaLocal, presencasDoDia } from '../nucleo/faltas.ts'
 import type { Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
@@ -53,7 +54,7 @@ interface Linha {
   chave: string
   nome: string
   hora: string
-  tom: 'ok' | 'repetido' | 'desconhecido'
+  tom: 'ok' | 'repetido' | 'desconhecido' | 'removido'
 }
 
 function hhmm(d: Date) {
@@ -126,6 +127,17 @@ export function TelaAula({
   /** Para "Remover crachá" na tabela — o vínculo de cada linha já ligada. */
   const [vinculos, setVinculos] = useState<Vinculo[]>([])
   const sequencia = useRef(0)
+  /** Quem já foi marcado presente **hoje** (crachá ou correção manual) — a
+      mesma regra de `planilhaDeFaltas`, consultada por matrícula/nome, não
+      por crachá. Alimenta o botão Presente/Não presente na lista de alunos,
+      que existe pra quem tem crachá e pra quem não tem. */
+  const [presencasHoje, setPresencasHoje] = useState<
+    Map<string, { presente: boolean; manual: boolean }>
+  >(new Map())
+  /** O dia que esta sessão representa — não necessariamente "hoje" de
+      calendário, se a abertura foi editada. Mesma chave que
+      `planilhaDeFaltas` usa pra agrupar por dia. */
+  const dia = useMemo(() => diaLocal(sessao.abertaEm), [sessao.abertaEm])
 
   /**
    * Quem está chamado agora, por `chave` — não por índice: a ordem de
@@ -150,6 +162,38 @@ export function TelaAula({
   useEffect(() => {
     const relogio = setInterval(() => setAgora(new Date()), 15_000)
     return () => clearInterval(relogio)
+  }, [])
+
+  /**
+   * A janela do sistema operacional perdeu o foco — outro app na frente,
+   * outra aba. O dongle "digita" pra onde o foco do SO estiver, não para
+   * esta aba especificamente: se outro programa estiver na frente, um
+   * crachá encostado não chega aqui, sem erro nenhum, sem toast, sem bipe
+   * — o mesmo susto de 17/09/2026 (buzzer do leitor soando, nada
+   * acontecendo no Adsum, causa provável era o foco em outra janela).
+   *
+   * Atraso de 2,5s antes de avisar: trocar de janela por um instante é
+   * gesto normal (checar outra aba, responder uma notificação) — avisar na
+   * hora piscaria à toa. Falta de foco que persiste é que é o problema.
+   */
+  const [semFoco, setSemFoco] = useState(false)
+
+  useEffect(() => {
+    let espera: ReturnType<typeof setTimeout> | undefined
+    const aoPerder = () => {
+      espera = setTimeout(() => setSemFoco(true), 2500)
+    }
+    const aoGanhar = () => {
+      clearTimeout(espera)
+      setSemFoco(false)
+    }
+    window.addEventListener('blur', aoPerder)
+    window.addEventListener('focus', aoGanhar)
+    return () => {
+      clearTimeout(espera)
+      window.removeEventListener('blur', aoPerder)
+      window.removeEventListener('focus', aoGanhar)
+    }
   }, [])
 
   /**
@@ -282,9 +326,13 @@ export function TelaAula({
     )
     jaPresentes.current = conjunto
     setPresentes(conjunto)
+    setPresencasHoje(presencasDoDia(daAula, sessao.turma, dia))
     setLinhas(
       daAula
-        .filter((e) => e.origem === 'cracha')
+        // Correção manual entra na mesma lista — é a mesma área da tela que
+        // mostra "o que está acontecendo agora", e uma remoção é parte disso
+        // tanto quanto um crachá aceito.
+        .filter((e) => e.origem === 'cracha' || e.origem === 'manual')
         .slice(0, 6)
         .map((e) => ({
           chave: e.eventoId,
@@ -298,10 +346,22 @@ export function TelaAula({
           hora: hhmm(new Date(e.quando)),
           // `rapido_demais` cai no tom de 'desconhecido' de propósito: os dois
           // são recusa, e a lista não precisa de um terceiro vermelho.
-          tom: e.resultado === 'ok' ? 'ok' : e.resultado === 'duplicado' ? 'repetido' : 'desconhecido',
+          // Remoção manual (`'removido'`) ganha o tom próprio — vermelho, como
+          // qualquer recusa — pra a lista continuar mostrando o estado atual,
+          // não só chegadas.
+          tom:
+            e.origem === 'manual'
+              ? e.resultado === 'removido'
+                ? 'removido'
+                : 'ok'
+              : e.resultado === 'ok'
+                ? 'ok'
+                : e.resultado === 'duplicado'
+                  ? 'repetido'
+                  : 'desconhecido',
         })),
     )
-  }, [repositorio, sessao])
+  }, [repositorio, sessao, dia])
 
   useEffect(() => {
     void recarregar()
@@ -374,6 +434,49 @@ export function TelaAula({
       })()
     },
     [vinculoDe, repositorio, recarregar, aoMudarBase],
+  )
+
+  /**
+   * Presente/Não presente à mão — pra quem já tem crachá **e** pra quem
+   * ainda não tem. Mesmo caminho de `TelaPresencas.tsx` (`gravar`): evento
+   * `origem: 'manual'`, identificado por matrícula/nome — não por crachá,
+   * porque quem não tem crachá não tem `uidHash` de verdade.
+   *
+   * `quando` é a hora real do clique, não o meio-dia fixo que
+   * `TelaPresencas.tsx` usa. Lá faz sentido — é correção de um dia
+   * qualquer, sem sessão aberta, sem hora real nenhuma pra registrar. Aqui
+   * a sessão está aberta de verdade: usar meio-dia UTC fixo podia cair
+   * **antes** de `sessao.abertaEm` dependendo do fuso (uma sessão aberta às
+   * 13h local, em fuso UTC-3, abre com `abertaEm` = 16h UTC — depois do
+   * meio-dia UTC) — e `recarregar()` só considera eventos com `quando >=
+   * sessao.abertaEm` como desta sessão. O evento existia no banco, mas a
+   * própria tela que acabou de gravá-lo nunca o via. Achado pelo teste, não
+   * a olho.
+   *
+   * Não mexe no contador do topo (`presentes.size`) — esse é o dedup em
+   * tempo real da fila de leitura, com garantia própria contra crachá
+   * duplo; misturar os dois aqui trocaria uma contagem defendida por
+   * comentário por uma nova, sem a mesma garantia. `presencasHoje` é a
+   * fonte certa pra "esta linha está presente agora".
+   */
+  const alterarPresenca = useCallback(
+    async (p: Matriculado, presente: boolean) => {
+      const evento: Evento = {
+        eventoId: proximoEventoId(config.instalacaoId, new Date(), ++sequencia.current),
+        quando: new Date().toISOString(),
+        turma: p.turma,
+        matricula: p.matricula || undefined,
+        nome: efetivo(p).nome,
+        origem: 'manual',
+        resultado: presente ? 'ok' : 'removido',
+        uidHash: uidHashSintetico(),
+      }
+      await repositorio.acrescentarEvento(evento)
+      await aoRegistrar?.(evento)
+      await recarregar()
+      aoMudarBase()
+    },
+    [config.instalacaoId, efetivo, repositorio, aoRegistrar, recarregar, aoMudarBase],
   )
 
   useEffect(() => {
@@ -629,6 +732,20 @@ export function TelaAula({
         </ol>
       </div>
 
+      {/* Diferente do aviso de `suspeito`, abaixo: este é detecção de
+          verdade, não palpite — o navegador sabe com certeza que a janela
+          não está em foco. Vem primeiro porque é a causa mais provável de
+          "nada acontece": sem foco, nenhum crachá chega aqui, ponto. */}
+      {semFoco && (
+        // `--forte`, não uma cor de alerta: em `--t-menor` uma cor de aviso
+        // não bate o contraste mínimo (ver o comentário na própria regra) —
+        // tinta cheia é o destaque que sobra sem esse risco.
+        <p className="ferramentas__nota ferramentas__nota--espacada ferramentas__nota--forte">
+          Esta janela perdeu o foco — o crachá não chega aqui enquanto outro
+          programa estiver na frente. Clique nesta janela para voltar a ler.
+        </p>
+      )}
+
       {/* Palpite, não detecção — ver `leitorSuspeito` em `nucleo/sessao.ts`. O app não sabe
           se o dongle caiu; só sabe que faz tempo que ninguém foi lido com
           gente ainda esperando, e é a melhor pista que existe para isso. */}
@@ -753,13 +870,6 @@ export function TelaAula({
             </>
           )}
         </section>
-      )}
-
-      {/* Sem crachá pendente, o painel some — e "some" e "nunca existiu" lêem
-          igual, sem essa frase. O professor precisa saber que o cadastro
-          inicial acabou, não só deixar de ver um aviso. */}
-      {pendentesAlunos.length === 0 && alunosDaTurma.length > 0 && (
-        <p className="ferramentas__nota">Turma completa: todo mundo já tem crachá.</p>
       )}
 
       {/* Professores ganham seção própria, acima da lista de alunos: o
@@ -887,9 +997,9 @@ export function TelaAula({
         </Painel>
       )}
 
-      {pendentesAlunos.length > 0 && (
+      {alunosDaTurma.length > 0 && (
         <Painel
-          titulo="Quem falta"
+          titulo="Lista de alunos"
           legenda={`${pendentesAlunos.length} de ${alunosDaTurma.length} sem crachá`}
         >
           <table className="tabela">
@@ -905,35 +1015,57 @@ export function TelaAula({
                 const vinculado = !pendentesAlunos.some((x) => x.chave === p.chave)
                 const e = efetivo(p)
                 const repetido = alunosDaTurma.filter((x) => efetivo(x).nome === e.nome).length > 1
+                // Presente hoje, com ou sem crachá — a mesma regra de
+                // `planilhaDeFaltas`, ver `presencasHoje` acima.
+                const presente = presencasHoje.get(chaveDeIdentidade(p))?.presente ?? false
                 return (
                   <tr key={p.chave} className={p.chave === chamadoChave ? 'linha--chamada' : ''}>
                     <td>
                       {/* O nome curto continua sendo o que se chama em voz
-                          alta — e o que se edita aqui, viraria o vínculo. O
-                          completo só entra como apoio, pra achar quem é na
+                          alta. Editável sempre — vinculado ou não —, porque um
+                          apelido puxado errado do SIGAA continuava errado pra
+                          sempre depois do crachá chegar, a não ser que o
+                          professor soubesse ir em Ajustes → Vínculos corrigir
+                          lá. O completo entra como apoio, pra achar quem é na
                           lista sem depender de decorar o apelido de tela. */}
-                      {vinculado ? (
-                        <>
-                          {e.nome}
-                          <span className="tabela__apoio">{p.nomeCompleto}</span>
-                        </>
-                      ) : (
-                        <>
-                          <input
-                            className="entrada--celula"
-                            value={e.nome}
-                            onChange={(evento) =>
-                              setEdicoes((antes) => {
-                                const novo = new Map(antes)
-                                novo.set(p.chave, { nome: evento.target.value, papel: e.papel })
-                                return novo
-                              })
-                            }
-                            aria-label={`nome de ${p.nomeCompleto}`}
-                          />
-                          <span className="tabela__apoio">{p.nomeCompleto}</span>
-                        </>
-                      )}
+                      <input
+                        className="entrada--celula entrada--recuada"
+                        value={e.nome}
+                        onChange={(evento) => {
+                          const novoNome = evento.target.value
+                          if (vinculado) {
+                            // Já tem vínculo: só o estado local muda a cada
+                            // tecla — igual a `TelaRepositorio.tsx` (Ajustes →
+                            // Vínculos). Gravar no Dexie é o `onBlur`, abaixo:
+                            // uma escrita por edição, não uma por tecla.
+                            const vinculo = vinculoDe(p)
+                            if (!vinculo) return
+                            setVinculos((antes) =>
+                              antes.map((v) =>
+                                v.uidHash === vinculo.uidHash ? { ...v, nome: novoNome } : v,
+                              ),
+                            )
+                          } else {
+                            setEdicoes((antes) => {
+                              const novo = new Map(antes)
+                              novo.set(p.chave, { nome: novoNome, papel: e.papel })
+                              return novo
+                            })
+                          }
+                        }}
+                        onBlur={() => {
+                          if (!vinculado) return
+                          const vinculo = vinculoDe(p)
+                          // `efetivo()` lê `vinculos`, então a mudança já
+                          // aparece em qualquer lugar que mostra este nome
+                          // (busca, leituras recentes, Professores) assim que
+                          // `setVinculos`, acima, roda — o `gravarVinculo`
+                          // aqui só persiste o que a tela já mostra.
+                          if (vinculo) void repositorio.gravarVinculo(vinculo)
+                        }}
+                        aria-label={`nome de ${p.nomeCompleto}`}
+                      />
+                      <span className="tabela__apoio">{p.nomeCompleto}</span>
                     </td>
                     <td className="celula--estado">
                       {vinculado ? (
@@ -974,6 +1106,20 @@ export function TelaAula({
                           {!vinculado && pulados.has(p.chave) && <Selo tom="neutro">Pulado</Selo>}
                           {!vinculado && (
                             <button onClick={() => setChamadoChave(p.chave)}>Chamar</button>
+                          )}
+                          {/* Presente/Não presente: com crachá ou sem, a
+                              mesma correção manual que "Ver presenças" já
+                              fazia — só que sem sair da chamada. Não mexe no
+                              vínculo, só no registro do dia. */}
+                          {presente ? (
+                            <button
+                              className="botao--quieto"
+                              onClick={() => void alterarPresenca(p, false)}
+                            >
+                              Não presente
+                            </button>
+                          ) : (
+                            <button onClick={() => void alterarPresenca(p, true)}>Presente</button>
                           )}
                           {/* Corrige um crachá vinculado à pessoa errada sem
                               sair da chamada — ver o comentário de

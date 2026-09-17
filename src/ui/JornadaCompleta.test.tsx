@@ -59,7 +59,7 @@ describe('jornada completa: turma nova, uma aula inteira, tudo simulado', () => 
     // Turma inteira sem crachá ainda. "Começar a chamada" sintetiza o crachá
     // do professor sozinho; nenhum vínculo existe antes disto.
     await usuario.click(await screen.findByRole('button', { name: /Começar a chamada/ }))
-    await screen.findByText('Quem falta')
+    await screen.findByText('Lista de alunos')
 
     await baterCrachasEmSequencia(
       bancada.leitor,
@@ -75,17 +75,16 @@ describe('jornada completa: turma nova, uma aula inteira, tudo simulado', () => 
         // terminar juntas (ver o mesmo achado em `Fluxo.test.tsx`).
         await waitFor(() => {
           expect(screen.getByLabelText(String(indice + 1))).toBeInTheDocument()
-          if (restam > 0) {
-            expect(screen.getByText(`${restam} de ${TAMANHO} sem crachá`)).toBeInTheDocument()
-          } else {
-            expect(screen.queryByText('Quem falta')).not.toBeInTheDocument()
-          }
+          expect(screen.getByText(`${restam} de ${TAMANHO} sem crachá`)).toBeInTheDocument()
         })
       },
     )
 
     expect(await screen.findByLabelText(String(TAMANHO))).toBeInTheDocument()
-    expect(screen.getByText(/Turma completa/)).toBeInTheDocument()
+    // A lista continua na tela — não some mais quando todo mundo já tem
+    // crachá (pedido de 17/09/2026).
+    expect(screen.getByText('Lista de alunos')).toBeInTheDocument()
+    expect(screen.getByText(`0 de ${TAMANHO} sem crachá`)).toBeInTheDocument()
 
     // Encerra e confere o CSV que de fato sai — não a tela, a fonte que o
     // professor leva pra planilha.

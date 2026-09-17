@@ -17,9 +17,7 @@ import { eventoDe, proximoEventoId, quemFalta, type Sessao } from '../nucleo/ses
 import {
   abrirSozinhoEntreProfessores,
   aulasAgora,
-  escolherTurma,
   proximaAulaDeQualquer,
-  DIAS,
   type Aula,
 } from '../nucleo/grade.ts'
 import { saudacao } from '../nucleo/horarios.ts'
@@ -70,7 +68,6 @@ import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
 import { TelaNavegador } from './TelaNavegador.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
-import { EscolherTurma } from './componentes/EscolherTurma.tsx'
 import { Baixar, Cadeado, Engrenagem, Ondas } from './componentes/Simbolos.tsx'
 import { Sheet } from './componentes/Sheet.tsx'
 import { levantarCapacidades } from '../ambiente/capacidades.ts'
@@ -90,6 +87,10 @@ export function Fluxo() {
 
   const [lendo, setLendo] = useState(leitor.estado() === 'lendo')
   const [turmas, setTurmas] = useState(0)
+  /** Nomes de verdade, não só a contagem — precisa pra andar entre elas
+      com seta na tela de repouso. Ver `turmaSugerida`/`turmaSelecionada`,
+      abaixo. */
+  const [listaDeTurmas, setListaDeTurmas] = useState<string[]>([])
   const [pendentes, setPendentes] = useState(0)
   const [pendentesDaTurma, setPendentesDaTurma] = useState<Matriculado[]>([])
   const [matriculadosTodos, setMatriculadosTodos] = useState<Matriculado[]>([])
@@ -173,13 +174,51 @@ export function Fluxo() {
    */
   const [turmasAntesDaNova, setTurmasAntesDaNova] = useState(0)
   const [resumo, setResumo] = useState<{ sessao: Sessao; presentes: number }>()
-  const [escolhendo, setEscolhendo] = useState<{
-    opcoes: string[]
-    /** 'manual': o professor pediu para trocar, não é o app perguntando. */
-    motivo: 'nenhuma' | 'varias' | 'manual'
-    uidHash: string
-    em: Date
-  }>()
+
+  /**
+   * Turma e hora que a tela de repouso mostra — a mesma lógica de seta de
+   * "Chamar nomes" (`TelaAula`), só que pra escolher a turma em vez de um
+   * aluno. Substitui a tela "Qual turma?" (`EscolherTurma`): não existe
+   * mais pergunta separada, a resposta já está na tela, navegável, e Enter
+   * (ou o crachá do professor) abre a chamada na turma e hora que estiverem
+   * ali — nunca uma coisa dita e outra aberta.
+   *
+   * A grade continua como recomendação, não porta de entrada: `comecarEm`
+   * (bate agora) e `proxima` (a próxima do dia) só decidem a **sugestão**
+   * inicial, abaixo — o professor pode trocar com a seta a qualquer momento,
+   * pra qualquer turma cadastrada, sem a grade interferir.
+   */
+  const [turmaSelecionada, setTurmaSelecionada] = useState<string>()
+  const turmaSugerida = useMemo(() => {
+    if (comecarEm) return comecarEm
+    if (proxima) return proxima.turma
+    // Sem sugestão da grade: a turma fechada mais recentemente — o
+    // professor provavelmente vai voltar a ela — e, sem nenhuma fechada
+    // ainda, a primeira em ordem alfabética.
+    const fechamentos = Object.entries(encerradas()).sort((a, b) => b[1].localeCompare(a[1]))
+    const maisRecente = fechamentos.find(([turma]) => listaDeTurmas.includes(turma))?.[0]
+    if (maisRecente) return maisRecente
+    return [...listaDeTurmas].sort((a, b) => a.localeCompare(b, 'pt-BR'))[0]
+  }, [comecarEm, proxima, listaDeTurmas])
+
+  // Sozinha na sugestão até o professor mexer na seta — e volta a seguir a
+  // sugestão se a turma escolhida deixar de existir (turma excluída).
+  useEffect(() => {
+    if (turmaSelecionada && listaDeTurmas.includes(turmaSelecionada)) return
+    setTurmaSelecionada(turmaSugerida)
+  }, [turmaSugerida, listaDeTurmas, turmaSelecionada])
+
+  /** A hora que a chamada abriria agora — editável. Sem edição, continua
+      viva (o relógio de verdade); editada uma vez, para de andar sozinha
+      até a próxima chamada aberta, quando volta a seguir o relógio. */
+  const [horaSelecionada, setHoraSelecionada] = useState(() => new Date())
+  const [horaEditada, setHoraEditada] = useState(false)
+
+  useEffect(() => {
+    if (horaEditada) return
+    const relogio = setInterval(() => setHoraSelecionada(new Date()), 1000)
+    return () => clearInterval(relogio)
+  }, [horaEditada])
 
   const ambienteQuebrado = levantarCapacidades().some((c) => c.peso === 'essencial' && !c.presente)
   // Lido uma vez: o modo de ensaio muda pelos Ajustes, e a folha recarrega a
@@ -331,6 +370,7 @@ export function Fluxo() {
     )
     const faltando = quemFalta(matriculados, vinculos)
     setTurmas(listaDeTurmas.length)
+    setListaDeTurmas(listaDeTurmas)
     setPendentes(faltando.length)
     setPendentesDaTurma(faltando)
     setMatriculadosTodos(matriculados)
@@ -483,7 +523,7 @@ export function Fluxo() {
   )
 
   const abrirChamada = useCallback(
-    async (turma: string, uidHash: string, em: Date, automatico = false) => {
+    async (turma: string, uidHash: string, em: Date) => {
       const [total, vinculo] = await Promise.all([
         repositorio.contarEventos(),
         repositorio.vinculoPorHash(uidHash),
@@ -503,37 +543,31 @@ export function Fluxo() {
       }
       await repositorio.abrirSessao({ turma, abertaEm: em.toISOString(), uidHashProfessor: uidHash })
       tocar('abertura')
-      // Sem isto, a tela trocava inteira sem ninguém ter tocado em nada — e
-      // quem não sabia que a grade abre aula sozinha lia isso como bug, não
-      // como o comportamento pretendido.
-      if (automatico) setAvisoLeitura('A grade horária abriu esta aula sozinha.')
       await mudou(turma)
     },
     [repositorio, config.instalacaoId, gravarLinha, mudou],
   )
 
   /**
-   * O relógio e a grade escolhem a turma; só o caso ambíguo vira pergunta.
+   * O crachá do professor e o botão "Começar a chamada" fazem a mesma
+   * coisa: abrem a turma e a hora que a tela de repouso está mostrando —
+   * nunca uma turma calculada por baixo dos panos, nunca uma pergunta à
+   * parte. A seta escolhe a turma, o campo de data/hora escolhe quando;
+   * este gesto só confirma o que já está na tela.
    *
-   * Compartilhado entre os dois jeitos de abrir — o botão e o crachá — porque a
-   * regra é a mesma e duplicá-la seria a forma de os dois divergirem sem
-   * ninguém notar.
+   * Compartilhado entre os dois jeitos de abrir — o botão e o crachá —
+   * porque a regra é a mesma e duplicá-la seria a forma de os dois
+   * divergirem sem ninguém notar.
    */
   const abrirComProfessor = useCallback(
-    async (uidHash: string, em: Date) => {
-      const [aulas, listaDeTurmas] = await Promise.all([
-        repositorio.listarAulas(),
-        repositorio.listarTurmas(),
-      ])
-      const escolha = escolherTurma(aulas, listaDeTurmas, uidHash, em)
-
-      if (escolha.tipo === 'sem_turma') return
-      if (escolha.tipo === 'perguntar') {
-        return setEscolhendo({ opcoes: escolha.opcoes, motivo: escolha.motivo, uidHash, em })
-      }
-      await abrirChamada(escolha.turma, uidHash, em)
+    async (uidHash: string) => {
+      if (!turmaSelecionada) return
+      await abrirChamada(turmaSelecionada, uidHash, horaSelecionada)
+      // Depois de abrir, a próxima chamada volta a sugerir a hora real —
+      // sem isto, uma edição de hoje ficaria presa, congelada, pra sempre.
+      setHoraEditada(false)
     },
-    [repositorio, abrirChamada],
+    [turmaSelecionada, horaSelecionada, abrirChamada],
   )
 
   /**
@@ -590,27 +624,45 @@ export function Fluxo() {
    * mais simples e continua sendo o professor quem clica: a máquina é dele.
    *
    * O crachá continua valendo, para quem está longe do teclado.
+   *
+   * Com mais de um professor cadastrado, `garantirProfessor()` sozinha
+   * devolveria sempre o mesmo (o primeiro por ordem alfabética de nome) —
+   * mesmo bug que já foi corrigido uma vez pro indicador do repouso
+   * (`docs/04_historico.md`, 21/08/2026): a turma sugerida pode ser de
+   * **outro** professor, cuja grade bate agora. Aqui se procura, antes, se
+   * algum vínculo de professor tem aula agora justamente na turma
+   * selecionada — se tiver, é o dele que abre; senão, cai no de sempre.
    */
   const iniciarChamada = useCallback(async () => {
-    const professor = await garantirProfessor()
-    await abrirComProfessor(professor.uidHash, new Date())
-  }, [garantirProfessor, abrirComProfessor])
+    if (!turmaSelecionada) return
+    const [professor, aulas] = await Promise.all([garantirProfessor(), repositorio.listarAulas()])
+    const aulaDaTurmaAgora = aulas.find(
+      (a) => a.turma === turmaSelecionada && aulasAgora([a], a.uidHashProfessor, horaSelecionada).length > 0,
+    )
+    await abrirComProfessor(aulaDaTurmaAgora?.uidHashProfessor ?? professor.uidHash)
+  }, [turmaSelecionada, horaSelecionada, garantirProfessor, repositorio, abrirComProfessor])
 
-  /**
-   * "Não é esta, é outra" — a saída para quando `comecarEm` acertou a turma
-   * errada (duas turmas bem coladas no horário, uma delas sem grade
-   * cadastrada ainda, e por aí vai) ou para quem só quer abrir uma turma
-   * fora do horário dela mesmo. Mesma folha de `EscolherTurma` que a
-   * ambiguidade automática já usa — motivo `'manual'` porque quem está
-   * perguntando aqui é o professor, não o app.
-   */
-  const aoEscolherOutraTurma = useCallback(async () => {
-    const [professor, listaDeTurmas] = await Promise.all([
-      garantirProfessor(),
-      repositorio.listarTurmas(),
-    ])
-    setEscolhendo({ opcoes: listaDeTurmas, motivo: 'manual', uidHash: professor.uidHash, em: new Date() })
-  }, [garantirProfessor, repositorio])
+  /** -1 volta, 1 avança — não dá volta nas pontas, mesma regra de "Chamar
+      nomes" em `TelaAula`. */
+  const mudarTurma = useCallback(
+    (direcao: -1 | 1) => {
+      setTurmaSelecionada((atual) => {
+        if (!atual) return atual
+        const indice = listaDeTurmas.indexOf(atual)
+        if (indice < 0) return atual
+        const proximo = Math.min(listaDeTurmas.length - 1, Math.max(0, indice + direcao))
+        return listaDeTurmas[proximo]
+      })
+    },
+    [listaDeTurmas],
+  )
+
+  const editarHora = useCallback((valor: string) => {
+    const data = new Date(valor)
+    if (Number.isNaN(data.getTime())) return
+    setHoraEditada(true)
+    setHoraSelecionada(data)
+  }, [])
 
   // Não se reconta ao ouvir o crachá: a gravação acontece depois, e contar
   // antes dela devolveria a pendência que acabou de deixar de existir. Quem
@@ -626,7 +678,9 @@ export function Fluxo() {
       void (async () => {
         const uidHash = await calcularUidHash(config.salHex, leitura.uid)
         const vinculo = await repositorio.vinculoPorHash(uidHash)
-        if (vinculo?.papel === 'professor') return await abrirComProfessor(uidHash, leitura.em)
+        // Abre a turma e a hora que a tela de repouso está mostrando — não
+        // a hora real deste toque. Ver o comentário em `abrirComProfessor`.
+        if (vinculo?.papel === 'professor') return await abrirComProfessor(uidHash)
         // Um crachá que não é do professor, encostado sem aula aberta, não
         // tem o que fazer — mas ficar mudo sobre isso é indistinguível de um
         // leitor quebrado. Dizer o que aconteceu é mais barato que a dúvida.
@@ -741,8 +795,8 @@ export function Fluxo() {
   /**
    * O que está na tela, para depuração — só em modo de ensaio.
    *
-   * `rota` sozinha não basta: `resumo`, `escolhendo`, `colandoNova` e `folha`
-   * são sobreposições que vivem fora de `decidirRota`, em estado local daqui.
+   * `rota` sozinha não basta: `resumo`, `colandoNova` e `folha` são
+   * sobreposições que vivem fora de `decidirRota`, em estado local daqui.
    * É possível estar em `rota === 'pronto'` com `TelaResumo` na tela, e uma
    * etiqueta que mostrasse só a rota mentiria nesse caso. A ordem aqui segue
    * a ordem em que o JSX abaixo de fato decide o que aparece.
@@ -750,55 +804,11 @@ export function Fluxo() {
   const camadas = [
     rota,
     colandoNova && 'colando turma nova',
-    escolhendo && 'escolhendo turma',
     resumo && 'resumo aberto',
     folha && `folha: ${folha}`,
   ]
     .filter(Boolean)
     .join(' · ')
-
-  /**
-   * A grade abre a aula sozinha.
-   *
-   * É o fim da linha do "menos decisões": com o horário cadastrado, o professor
-   * entra na sala e a chamada já está aberta — nem clique, nem crachá. As
-   * recusas que tornam isso seguro estão em `abrirSozinho`.
-   *
-   * Um relógio de 30 s, e não só na montagem: a aula que começa com o app
-   * aberto na mesa precisa abrir sem ninguém tocar em nada, que é o ponto.
-   *
-   * **Encerrar continua sendo do professor.** Abrir cedo demais não custa nada
-   * — ninguém está encostando crachá —, mas fechar cedo demais custa um aluno.
-   * Automatizar só o lado barato do erro.
-   */
-  useEffect(() => {
-    if (sessao || rota !== 'pronto') return
-
-    const olhar = async () => {
-      const [aulas, vinculos] = await Promise.all([
-        repositorio.listarAulas(),
-        repositorio.listarVinculos(),
-      ])
-      // Mesma correção de `recontar()`: olha a grade de todos os vínculos de
-      // professor, não só do primeiro — senão a aula de um docente que perde
-      // o `.find` nunca abre sozinha.
-      const hashesDeProfessor = vinculos.filter((v) => v.papel === 'professor').map((v) => v.uidHash)
-      if (hashesDeProfessor.length === 0) return
-
-      const agora = new Date()
-      const turma = abrirSozinhoEntreProfessores(aulas, hashesDeProfessor, agora, encerradas())
-      if (!turma) return
-      // O hash de quem abre precisa ser o do professor **dono** desta turma,
-      // não um qualquer entre os vários — é ele quem a sessão registra como
-      // podendo encerrar.
-      const aula = aulas.find((a) => a.turma === turma && hashesDeProfessor.includes(a.uidHashProfessor))
-      if (aula) await abrirChamada(turma, aula.uidHashProfessor, agora, true)
-    }
-
-    void olhar()
-    const relogio = setInterval(() => void olhar(), 30_000)
-    return () => clearInterval(relogio)
-  }, [sessao, rota, repositorio, abrirChamada])
 
   const ligarPasta = async (escolhendo: boolean) => {
     const handle = escolhendo ? await escolherPasta() : await repositorio.lerPasta()
@@ -922,24 +932,6 @@ export function Fluxo() {
           }}
         />
       )}
-      {escolhendo && (
-        <EscolherTurma
-          opcoes={escolhendo.opcoes}
-          motivo={escolhendo.motivo}
-          aoDesistir={() => setEscolhendo(undefined)}
-          aoEscolher={(turma) => {
-            const pedido = escolhendo
-            setEscolhendo(undefined)
-            void abrirChamada(turma, pedido.uidHash, pedido.em)
-          }}
-          aoNovaTurma={() => {
-            setEscolhendo(undefined)
-            setTurmasAntesDaNova(turmas)
-            setColandoNova(true)
-          }}
-        />
-      )}
-
       {resumo && (
         <TelaResumo
           sessao={resumo.sessao}
@@ -965,13 +957,14 @@ export function Fluxo() {
 
       {!resumo && rota === 'pronto' && !colandoNova && (
         <Repouso
-          turmas={turmas}
           pendencias={pasta ? [] : pendencias}
           nomeDoProfessor={nomeDoProfessorAtual}
-          comecarEm={comecarEm}
-          proxima={proxima}
+          listaDeTurmas={listaDeTurmas}
+          turmaSelecionada={turmaSelecionada}
+          horaSelecionada={horaSelecionada}
+          aoMudarTurma={mudarTurma}
+          aoEditarHora={editarHora}
           aoIniciar={() => void iniciarChamada()}
-          aoEscolherOutra={() => void aoEscolherOutraTurma()}
           aoSalvar={(turma) => void salvarCopia(turma)}
           aoVerPresencas={() => setFolha('presencas')}
           aoNovaTurma={() => {
@@ -1239,7 +1232,7 @@ export function Fluxo() {
                 </a>
               </div>
               {recadoManual && <p className="ferramentas__nota">{recadoManual}</p>}
-              <p className="ajustes__creditos">© 2026 Willian Rupert</p>
+              <p className="ajustes__creditos">© 2026 Adsum</p>
             </>
           )}
           {folha === 'presencas' && (
@@ -1264,31 +1257,44 @@ export function Fluxo() {
  * A pendência empurra o "encoste o crachá" para baixo de propósito: enquanto
  * houver aula só neste navegador, ela é a tarefa da tela, e não um rodapé.
  */
+/** `Date` local → o formato que `<input type="datetime-local">` espera
+    (`AAAA-MM-DDTHH:mm`, sem fuso — o próprio input já é "hora daqui"). */
+function paraDatetimeLocal(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
 export function Repouso({
-  turmas,
   pendencias,
   nomeDoProfessor,
-  comecarEm,
-  proxima,
+  listaDeTurmas,
+  turmaSelecionada,
+  horaSelecionada,
+  aoMudarTurma,
+  aoEditarHora,
   aoIniciar,
-  aoEscolherOutra,
   aoSalvar,
   aoVerPresencas,
   aoNovaTurma,
 }: {
-  turmas: number
   pendencias: Pendencia[]
   /** De "Sou eu", na chamada — ver `professorAtual`, em `preferencias.ts`.
       Vazio sem marcação: a saudação continua anônima, como sempre foi. */
   nomeDoProfessor?: string
-  /** A turma que "Começar a chamada" abriria agora — ver o comentário em
-      `Fluxo`, onde é calculada. Quando existe, a tela nunca mais anuncia uma
-      turma diferente da que o clique vai abrir. */
-  comecarEm?: string
-  proxima?: { turma: string; quando: Date }
+  listaDeTurmas: string[]
+  /** A turma que "Começar a chamada" abriria agora — sempre a que está na
+      tela, nunca uma calculada por baixo dos panos. Ver o comentário em
+      `Fluxo`, onde a sugestão inicial é decidida (grade, se souber; senão a
+      última usada; senão a primeira). */
+  turmaSelecionada?: string
+  /** Quando a chamada abriria — editável. Sem edição, é o relógio de
+      verdade, andando. */
+  horaSelecionada: Date
+  /** -1 volta, 1 avança — mesma lógica de seta de "Chamar nomes"
+      (`TelaAula`): não dá volta nas pontas. */
+  aoMudarTurma: (direcao: -1 | 1) => void
+  aoEditarHora: (valor: string) => void
   aoIniciar: () => void
-  /** "Não é esta, é outra" — só existe junto de `comecarEm`. */
-  aoEscolherOutra: () => void
   aoSalvar: (turma: string) => void
   aoVerPresencas: () => void
   aoNovaTurma: () => void
@@ -1296,15 +1302,7 @@ export function Repouso({
   const dia = (iso: string) =>
     new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
 
-  /** "hoje às 08:00", "amanhã às 10:00", "segunda às 10:00". */
-  function quandoPorExtenso(quando: Date): string {
-    const hora = quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    const meiaNoite = (d: Date) => new Date(d).setHours(0, 0, 0, 0)
-    const dias = Math.round((meiaNoite(quando) - meiaNoite(new Date())) / 86_400_000)
-    if (dias === 0) return `hoje às ${hora}`
-    if (dias === 1) return `amanhã às ${hora}`
-    return `${DIAS[quando.getDay()]} às ${hora}`
-  }
+  const indice = turmaSelecionada ? listaDeTurmas.indexOf(turmaSelecionada) : -1
 
   return (
     <section className="repouso">
@@ -1333,99 +1331,67 @@ export function Repouso({
 
       <Ondas tamanho={72} animado />
 
-      {comecarEm ? (
-        <>
-          {/* "Começar chamada em", não "Sua próxima aula": a turma aqui é a
-              mesma que o botão abaixo vai abrir, sempre — nunca uma dita e
-              outra aberta. */}
-          <p className="repouso__turma">Começar chamada em</p>
-          <p className="repouso__acao">{comecarEm}</p>
-        </>
-      ) : proxima ? (
-        <>
-          {/* Com grade, a turma é o assunto e a hora é o apoio: é a ordem em
-              que a pergunta se forma na cabeça de quem olha — "qual aula?" vem
-              antes de "que horas?". Só chega aqui quando nem `comecarEm` sabe
-              dizer sozinho — duas turmas bem coladas no horário, por
-              exemplo —, então a hora é a única pista extra que ajuda. */}
-          <p className="repouso__turma">Sua próxima aula</p>
-          <p className="repouso__acao">{proxima.turma}</p>
-          <p className="repouso__quando">{quandoPorExtenso(proxima.quando)}</p>
-        </>
-      ) : (
-        <>
-          {/* Sem próxima aula conhecida — sem grade, ou grade que já acabou
-              por hoje —, "Tudo pronto" soava a convite pro crachá quando não
-              há aula nenhuma por perto. Um cumprimento é o que cabe fora do
-              horário, e continua sendo hora do dia mesmo sem grade nenhuma
-              cadastrada. */}
-          <p className="repouso__turma">
-            {/* Só o primeiro nome — "Bom dia, Paulo", não o nome de tela
-                inteiro. Sem "Sou eu" marcado, continua anônima: ninguém
-                pediu, ninguém decide por ele. */}
-            {nomeDoProfessor ? `${saudacao(new Date())}, ${nomeDoProfessor.split(' ')[0]}` : saudacao(new Date())}
-          </p>
-          <p className="repouso__acao">
-            {turmas === 1 ? 'Sua turma está cadastrada' : `${turmas} turmas cadastradas`}
-          </p>
-        </>
-      )}
+      {/* Só o primeiro nome — "Bom dia, Paulo", não o nome de tela inteiro.
+          Sem "Sou eu" marcado, continua anônima: ninguém pediu, ninguém
+          decide por ele. Sempre aparece agora — a grade deixou de decidir
+          se esta linha existe, ela é só a saudação, sempre. */}
+      <p className="repouso__turma">
+        {nomeDoProfessor ? `${saudacao(new Date())}, ${nomeDoProfessor.split(' ')[0]}` : saudacao(new Date())}
+      </p>
 
-      {comecarEm ? (
-        <>
-          <button className="botao--acento pasta__botao" onClick={aoIniciar}>
-            Começar a chamada agora
-          </button>
-          {/* Terciário, e só aparece quando há uma turma nomeada acima pra
-              corrigir — sem isso não havia como dizer "não é esta" sem
-              esperar o horário dela passar sozinho. */}
-          <button className="repouso__link botao--quieto" onClick={aoEscolherOutra}>
-            Chamada em outra turma
-          </button>
-          {/* "Ver presenças" deixou de morar só em Ajustes: nos outros dois
-              estados ela ainda não tinha caminho nenhum na tela de repouso. */}
-          <button className="repouso__link botao--quieto" onClick={aoVerPresencas}>
-            Ver presenças
-          </button>
-        </>
-      ) : proxima ? (
-        <>
-          {/* Com grade e aula à vista, o gesto óbvio é abrir a chamada — a
-              pergunta "quero ver presença" pode esperar a aula acabar, mas
-              o link continua ao alcance, não só dentro de Ajustes. */}
-          <button className="botao--acento pasta__botao" onClick={aoIniciar}>
-            Começar a chamada agora
-          </button>
-          <button className="repouso__link botao--quieto" onClick={aoVerPresencas}>
-            Ver presenças
-          </button>
-        </>
-      ) : (
-        <>
-          {/* Fora do horário, "Começar a chamada" deixou de ser o convite:
-              o software sabe que não há aula agora, e sugerir mesmo assim
-              era empurrar pro crachá numa hora em que ele não faz sentido.
-              "Ver presenças" — a pergunta mais comum fora de aula — vira o
-              acento; começar continua possível, só que quieto, para
-              reposição ou aula fora do horário cadastrado. */}
-          <button className="botao--acento pasta__botao" onClick={aoVerPresencas}>
-            Ver presenças
-          </button>
-          <button className="repouso__link botao--quieto" onClick={aoIniciar}>
-            Começar a chamada
-          </button>
-        </>
-      )}
+      {/* A turma por seta — o que era a tela "Qual turma?" virou isto: a
+          resposta já está aqui, navegável, nunca uma pergunta à parte. A
+          grade só decide qual aparece primeiro (`turmaSugerida`, em
+          `Fluxo`) — a partir daí, quem escolhe é o professor. */}
+      <div className="repouso__turma-nav">
+        <button
+          aria-label="turma anterior"
+          onClick={() => aoMudarTurma(-1)}
+          disabled={indice <= 0}
+        >
+          ←
+        </button>
+        <p className="repouso__acao">{turmaSelecionada ?? 'Nenhuma turma'}</p>
+        <button
+          aria-label="próxima turma"
+          onClick={() => aoMudarTurma(1)}
+          disabled={indice < 0 || indice >= listaDeTurmas.length - 1}
+        >
+          →
+        </button>
+      </div>
+      {listaDeTurmas.length > 1 && <p className="chamado__atalho">← e → trocam de turma</p>}
+
+      {/* Editável de propósito — dá ao professor o controle de registrar a
+          abertura numa hora diferente da do clique (esqueceu de abrir a
+          chamada na hora certa, por exemplo). Isto muda o registro de
+          verdade: o valor daqui vira `Sessao.abertaEm`, não é só mostrador.
+          Nativo (`datetime-local`), não um calendário customizado — o
+          navegador já desenha um seletor decente, e um componente novo
+          seria superfície de bug num app que hoje não tem nenhum. */}
+      <input
+        type="datetime-local"
+        className="repouso__hora"
+        value={paraDatetimeLocal(horaSelecionada)}
+        onChange={(e) => aoEditarHora(e.target.value)}
+        aria-label="quando a chamada abre"
+      />
+
+      <button
+        className="botao--acento pasta__botao"
+        onClick={aoIniciar}
+        disabled={!turmaSelecionada}
+      >
+        Começar a chamada
+      </button>
       {/* O crachá continua abrindo, e a tela **não** diz isso. Anunciar dois
           caminhos para a mesma coisa é a decisão que se queria evitar: quem lê
           "ou encoste o crachá" para para escolher, e escolher é o custo. Quem
-          precisa do atalho descobre encostando.
-
-          "Cadastrar mais um crachá" saiu daqui: com a cerimônia unificada à
-          chamada, "Começar a chamada" já abre a turma certa (pelo horário, ou
-          perguntando quando ambíguo) e a fila de pendentes aparece sozinha se
-          houver alguém. Manter os dois botões seria a mesma redundância que
-          este app já cortou noutro lugar. */}
+          precisa do atalho descobre encostando. O crachá abre exatamente a
+          turma e a hora que estiverem na tela — mesma regra do clique. */}
+      <button className="repouso__link botao--quieto" onClick={aoVerPresencas}>
+        Ver presenças
+      </button>
 
       {/* Terciário, e por isso quieto. Sem isto não havia como começar uma
           turma nova depois da primeira: a tela de colar só aparecia com
