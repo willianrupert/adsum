@@ -19,7 +19,25 @@ import { GradeDePresencas } from './componentes/GradeDePresencas.tsx'
  * folha aberta, em vez de fechar uma e abrir outra). `TelaPresencas`, abaixo,
  * é a versão que se basta sozinha — usada direto do repouso e na vitrine.
  */
-export function ConteudoDePresencas({ nomeDaPasta }: { nomeDaPasta?: string } = {}) {
+export function ConteudoDePresencas({
+  nomeDaPasta,
+  aoRegistrar,
+  aoMudarBase,
+}: {
+  nomeDaPasta?: string
+  /**
+   * Grava a linha no log da pasta, o mesmo caminho de qualquer evento de
+   * crachá (`gravarLinha`, em `Fluxo.tsx`). Sem isto, corrigir presença
+   * aqui gravava certo no IndexedDB — a tela mostrava a correção — mas o
+   * CSV na pasta nunca recebia a linha. Reproduzido ao vivo, 17/09/2026:
+   * professor marcou presença manual de um aluno sem crachá, a tela
+   * confirmou, e o arquivo na pasta não mudou.
+   */
+  aoRegistrar?: (evento: Evento) => Promise<void>
+  /** Recalcula e regrava a planilha de faltas da turma corrigida — sem
+      isto, `faltas/<turma>.csv` também ficava atrás da correção. */
+  aoMudarBase?: (turma: string) => void
+} = {}) {
   const { repositorio, config } = useAdsum()
   const [turmas, setTurmas] = useState<string[]>([])
   const [eventos, setEventos] = useState<Evento[]>([])
@@ -74,9 +92,11 @@ export function ConteudoDePresencas({ nomeDaPasta }: { nomeDaPasta?: string } = 
         uidHash: uidHashSintetico(),
       }
       await repositorio.acrescentarEvento(evento)
+      await aoRegistrar?.(evento)
       await carregar()
+      aoMudarBase?.(aluno.turma)
     },
-    [config.instalacaoId, repositorio, carregar],
+    [config.instalacaoId, repositorio, carregar, aoRegistrar, aoMudarBase],
   )
 
   return (

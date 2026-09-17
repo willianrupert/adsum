@@ -49,23 +49,35 @@ export function caminhoDasFaltas(turma: string): string {
  *
  * Turma sem aula registrada ainda não ganha arquivo: uma planilha vazia não
  * é informação, é ruído no meio das pastas de quem já tem chamada de verdade.
+ *
+ * `turma`, quando informado, recalcula e regrava **só essa turma** — o caso
+ * normal, um crachá aceito numa aula. Sem `turma`, recalcula todas (o
+ * primeiro sync, a restauração, ou qualquer chamador que não sabe qual turma
+ * mudou). Ver `docs/05_plano_execucao.md`, Fase 4, item C: sem isso, um
+ * crachá na Turma A regravava a planilha da Turma B também, sem que nada
+ * nela tivesse mudado.
  */
 export async function gravarFaltas(
   repositorio: Repositorio,
   pasta: FileSystemDirectoryHandle,
+  turma?: string,
 ): Promise<Resumo> {
-  const [eventos, matriculados, aulas, turmas] = await Promise.all([
-    repositorio.listarEventos(),
-    repositorio.listarMatriculados(),
+  const turmas = turma ? [turma] : await repositorio.listarTurmas()
+  const [eventos, matriculados, aulas] = await Promise.all([
+    // Escopado quando dá — mesmo índice de turma que `TelaAula.recarregar`
+    // já usa (item B). Sem `turma`, `listarEventos()`/`listarMatriculados()`
+    // continuam lendo tudo, porque `planilhaDeFaltas` roda pra cada turma da
+    // lista de qualquer forma.
+    turma ? repositorio.listarEventos({ turma }) : repositorio.listarEventos(),
+    turma ? repositorio.listarMatriculados(turma) : repositorio.listarMatriculados(),
     repositorio.listarAulas(),
-    repositorio.listarTurmas(),
   ])
 
   const arquivos: string[] = []
-  for (const turma of turmas) {
-    const planilha = planilhaDeFaltas(eventos, matriculados, aulas, turma)
+  for (const t of turmas) {
+    const planilha = planilhaDeFaltas(eventos, matriculados, aulas, t)
     if (planilha.dias.length === 0 || planilha.linhas.length === 0) continue
-    const caminho = caminhoDasFaltas(turma)
+    const caminho = caminhoDasFaltas(t)
     await escrever(pasta, caminho, paraCsvDeFaltas(planilha))
     arquivos.push(caminho)
   }
@@ -121,16 +133,25 @@ export async function repararLog(
  *
  * Só o que é reescrito por inteiro passa por aqui. O log não — ele cresce por
  * `acrescentarNoLog`.
+ *
+ * `leiaMe`/`config`/`vinculos`/`grade` são sempre regravados, com ou sem
+ * `turma`: `vinculos.json` pode mudar em qualquer crachá aceito (um
+ * cadastro), e os outros três são baratos (não crescem com o histórico). Só
+ * o laço por turma (`turmas/<turma>.json`, o cadastro da lista) é que
+ * `turma` escopa — ele não muda dentro de uma chamada, então regravar as
+ * turmas que não são a de agora era trabalho e I/O de disco à toa. Ver
+ * `docs/05_plano_execucao.md`, Fase 4, item C.
  */
 export async function sincronizar(
   repositorio: Repositorio,
   pasta: FileSystemDirectoryHandle,
+  turma?: string,
 ): Promise<Resumo> {
   const [config, vinculos, aulas, matriculados] = await Promise.all([
     repositorio.lerConfig(),
     repositorio.listarVinculos(),
     repositorio.listarAulas(),
-    repositorio.listarMatriculados(),
+    turma ? repositorio.listarMatriculados(turma) : repositorio.listarMatriculados(),
   ])
 
   const arquivos: string[] = []
@@ -149,8 +170,8 @@ export async function sincronizar(
   for (const pessoa of matriculados) {
     turmas.set(pessoa.turma, [...(turmas.get(pessoa.turma) ?? []), pessoa])
   }
-  for (const [turma, pessoas] of turmas) {
-    await gravar(NOMES.turma(turma), paraJsonTurma(pessoas))
+  for (const [t, pessoas] of turmas) {
+    await gravar(NOMES.turma(t), paraJsonTurma(pessoas))
   }
 
   return { arquivos, problemas: [] }

@@ -28,9 +28,17 @@ function diaLocal(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-/** Mesma pessoa do vínculo, num evento: por matrícula, e por nome pra quem não tem. */
-function ehDoAluno(e: Evento, aluno: Matriculado): boolean {
-  return aluno.matricula ? e.matricula === aluno.matricula : !e.matricula && e.nome === aluno.nome
+/**
+ * Mesma pessoa do vínculo, num evento: por matrícula, e por nome pra quem não
+ * tem. `undefined` quando o evento não identifica ninguém (nem matrícula nem
+ * nome) — não deve acontecer na prática, mas não é chave de aluno nenhum.
+ *
+ * Existe como chave (não como predicado `ehDoAluno(evento, aluno)`) porque
+ * `planilhaDeFaltas` monta um índice por identidade antes de percorrer os
+ * alunos — ver o comentário lá.
+ */
+function chaveDeIdentidade(dono: { matricula?: string; nome: string }): string {
+  return dono.matricula ? `m:${dono.matricula}` : `n:${dono.nome}`
 }
 
 function limpar(campo: string): string {
@@ -97,8 +105,15 @@ export function planilhaDeFaltas(
     .filter((m) => m.turma === turma && m.papel === 'aluno')
     .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt-BR'))
 
+  // `diaLocal` custa um `new Date()` — calculado uma vez por evento aqui, não
+  // uma vez por célula (aluno × dia) mais abaixo. Com turma grande e muitas
+  // aulas já dadas, célula a célula chegava a refazer isso milhões de vezes
+  // por planilha — ver `docs/05_plano_execucao.md`, Fase 4, item D.
+  const diaPorEvento = new Map<Evento, string>()
+  for (const e of daTurma) diaPorEvento.set(e, diaLocal(e.quando))
+
   const dias = Array.from(
-    new Set(daTurma.filter((e) => e.origem === 'professor').map((e) => diaLocal(e.quando))),
+    new Set(daTurma.filter((e) => e.origem === 'professor').map((e) => diaPorEvento.get(e)!)),
   ).sort()
 
   const periodosPorDia = new Map<string, number>()
@@ -111,18 +126,37 @@ export function planilhaDeFaltas(
     )
   }
 
+  // Uma indexação só, em vez de refazer `daTurma.filter(...)` inteiro pra
+  // cada (aluno, dia) — O(eventos + alunos × dias) no lugar de O(alunos ×
+  // dias × eventos). Mesma saída: a ordem dentro de cada balde preserva a
+  // ordem de `daTurma` (mais recente primeiro, herdada de `eventos`), que é
+  // a mesma garantia que o `.filter()` original preservava.
+  const indice = new Map<string, Map<string, Evento[]>>()
+  for (const e of daTurma) {
+    if (
+      !(
+        (e.origem === 'cracha' || e.origem === 'manual') &&
+        (e.resultado === 'ok' || e.resultado === 'duplicado' || e.resultado === 'removido')
+      )
+    ) {
+      continue
+    }
+    const chave = chaveDeIdentidade(e)
+    const dia = diaPorEvento.get(e)!
+    let porDia = indice.get(chave)
+    if (!porDia) indice.set(chave, (porDia = new Map()))
+    let doDia = porDia.get(dia)
+    if (!doDia) porDia.set(dia, (doDia = []))
+    doDia.push(e)
+  }
+
   const linhas: LinhaDeFaltas[] = alunos.map((aluno) => {
+    const doAluno = indice.get(chaveDeIdentidade(aluno))
     const porDia = new Map<string, CelulaDeFalta>()
     for (const dia of dias) {
       // Mais recente primeiro (herdado de `eventos`), então o primeiro manual
       // encontrado é o último que o professor tocou nesta célula.
-      const doDia = daTurma.filter(
-        (e) =>
-          (e.origem === 'cracha' || e.origem === 'manual') &&
-          (e.resultado === 'ok' || e.resultado === 'duplicado' || e.resultado === 'removido') &&
-          diaLocal(e.quando) === dia &&
-          ehDoAluno(e, aluno),
-      )
+      const doDia = doAluno?.get(dia) ?? []
       const doCracha = doDia.filter((e) => e.origem === 'cracha')
       const ultimoManual = doDia.find((e) => e.origem === 'manual')
       const repetido = doCracha.length > 1

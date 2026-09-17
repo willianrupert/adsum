@@ -160,7 +160,20 @@ export class RepositorioDexie implements Repositorio {
     }
   }
 
-  async listarEventos(limite?: number): Promise<Evento[]> {
+  async listarEventos(opcoes?: { turma?: string; limite?: number }): Promise<Evento[]> {
+    const { turma, limite } = opcoes ?? {}
+
+    // Com turma, o índice já existe (`eventos: '..., turma, ...'`) — ler só
+    // as linhas dela em vez da tabela inteira. `where().equals()` não sai
+    // ordenado por `quando`, então o ordenamento (mais recente primeiro, a
+    // mesma garantia do caminho sem turma) é feito depois, no array já
+    // filtrado — bem menor que a tabela inteira.
+    if (turma !== undefined) {
+      const lista = await this.#banco.eventos.where('turma').equals(turma).sortBy('quando')
+      lista.reverse()
+      return limite === undefined ? lista : lista.slice(0, limite)
+    }
+
     // Sem limite significa sem `limit()`. Passar um número enorme não é o mesmo
     // que não limitar: o cursor do IndexedDB só avança até 2³²−1, e acima disso
     // a consulta rejeita — a tela fica vazia sem nenhum erro à vista.

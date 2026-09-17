@@ -280,3 +280,56 @@ a divisória — não colapsa, é só o título.
 - O popup de leitura de CSV, estilo Ajustes com bordas foscas:
   `TabelaDeRegistros` e `Sheet` viraram componentes compartilhados em
   `componentes/`; `TelaPresencas.tsx` é a folha nova, "Presenças".
+
+## 15-17/09/2026 — incidente do dongle sob carga, validação real, correção de escala
+
+**15/09/2026, aula real:** o professor relatou que a leitura do dongle
+"parou de associar os crachás com os alunos" no meio da chamada, sem erro
+na tela. Causa: `INTERVALO_MAXIMO_MS` (`nucleo/digitacao.ts`) era medido
+com `performance.now()` dentro do manipulador de `keydown` — isso mede
+quando o manipulador *rodou*, não quando a tecla chegou de verdade. Com a
+aba ocupada (turma grande, tela reatualizando a cada crachá), o atraso de
+processamento parecia atraso de digitação, e a rajada inteira era recusada
+em silêncio. Corrigido trocando para `evento.timeStamp`, carimbado pelo
+navegador perto da chegada física da tecla, imune ao atraso de
+processamento (commit `4d89ad6`).
+
+Validado de duas formas antes de confiar nisso com o professor: um teste
+automatizado (`TelaAula.escala.test.tsx`, 100 alunos, `LeitorTeclado` de
+verdade mas evento sintético em jsdom) e, mais forte, um **rig de hardware
+real** (`ferramentas/rig-de-cracha/`) — um ESP32-S3 configurado como
+teclado USB HID de verdade, digitando através do sistema operacional no
+Chrome real. Validado com turma simulada de 200 pessoas, duas vezes
+(intervalo aleatório 800-1200ms e fixo 500ms), 100% de sucesso nas duas.
+
+**Investigação de escala (16-17/09/2026):** o fix de `timeStamp` resolve
+uma medição errada de tempo, não uma conta genuinamente lenta. Auditando o
+caminho quente (o que roda a cada crachá aceito), achado com benchmark
+real: `planilhaDeFaltas` (`nucleo/faltas.ts`) crescia quadraticamente com
+o histórico acumulado — 20ms na terceira aula, 1,3 **segundo** por crachá
+na trigésima, cruzando o limiar de 60ms já por volta da sexta aula.
+Reescrita com indexação prévia (por aluno + dia, numa passada só, em vez
+de refazer o filtro completo por célula): **575,8× mais rápida**,
+equivalência provada contra a suíte de testes existente (valores exatos,
+sem alteração). Junto, escopo por turma nas leituras e escritas
+(`Repositorio.listarEventos({ turma })`, `gravarFaltas`/`sincronizar`
+aceitando `turma?`) — o índice de turma já existia no Dexie, só não era
+usado. Projeção combinada: ~1,33s → ~10-15ms por crachá no fim de um
+semestre de 60h com duas turmas (50 e 80 alunos). **Decidido não subir no
+mesmo dia da validação real** (17/09/2026) — a base do professor tinha só
+uma aula (a de 15/09, interrompida pelo incidente) — sem urgência real
+para o fix de escala ainda, e misturar duas mudanças no mesmo teste
+dificultaria diagnosticar qualquer problema.
+
+**17/09/2026, validação real: funcionou.** Um problema à parte apareceu:
+o professor marcou presença manual, pela tela "Presenças", de um aluno sem
+crachá — a tela confirmou, mas a planilha na pasta cofre não recebeu a
+mudança. Causa: `ConteudoDePresencas` (`ui/TelaPresencas.tsx`) gravava a
+correção só no IndexedDB (`repositorio.acrescentarEvento`), sem passar
+pelo caminho que qualquer evento de crachá já usa — `gravarLinha`
+(acrescenta no log) e `mudou` (recalcula a planilha de faltas). A tela
+mostrava certo porque lê do IndexedDB; o arquivo ficava para trás porque
+nada mandava ele se atualizar. Corrigido conectando a tela ao mesmo
+caminho (`aoRegistrar`/`aoMudarBase`, espelhando como `TelaAula` já fazia)
+— testado contra pasta de verdade, não só o cache, com o teste provado
+falhando sem a correção antes de confirmar que passa com ela.

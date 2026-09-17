@@ -62,6 +62,25 @@ describe('cofre em pasta', () => {
     ])
   })
 
+  // Fase 4, item C: com `turma`, só o cadastro dessa turma é regravado — os
+  // quatro arquivos globais (config/vínculos/grade/leia-me) continuam
+  // sempre, porque `vinculos.json` pode ter mudado em qualquer crachá.
+  it('com turma informada, regrava só o cadastro dessa turma', async () => {
+    const { handle } = criarPastaFalsa()
+    await repo.gravarVinculo(VINCULO)
+    await repo.salvarTurma('IF685 · T01', [PESSOA])
+    await repo.salvarTurma('IF685 · T02', [{ ...PESSOA, turma: 'IF685 · T02', chave: '2', matricula: '2' }])
+
+    const { arquivos } = await sincronizar(repo, handle, 'IF685 · T01')
+    expect(arquivos).toEqual([
+      'LEIA-ME.txt',
+      'config.json',
+      'vinculos.json',
+      'grade.json',
+      'turmas/IF685-T01.json',
+    ])
+  })
+
   // O log não entra na sincronização do cadastro: ele cresce por append, um
   // evento por vez. Regravá-lo a cada crachá seria trabalho crescente por
   // leitura — e, com a pasta sincronizada, apagaria a aula da outra máquina.
@@ -134,6 +153,43 @@ describe('cofre em pasta', () => {
       const { arquivos } = await gravarFaltas(repo, handle)
       expect(arquivos).toEqual([])
       expect(raiz.pastas.has('faltas')).toBe(false)
+    })
+
+    // Fase 4, item C (`docs/05_plano_execucao.md`): um crachá aceito numa
+    // turma não pode regravar a planilha de outra que não mudou.
+    it('com turma informada, regrava só essa turma — a outra fica intocada', async () => {
+      const { handle, raiz } = criarPastaFalsa()
+      const PESSOA_B = { ...PESSOA, turma: 'IF685 · T02', chave: '20250099099', matricula: '20250099099' }
+      await repo.gravarVinculo(VINCULO)
+      await repo.salvarTurma('IF685 · T01', [PESSOA])
+      await repo.salvarTurma('IF685 · T02', [PESSOA_B])
+      await repo.acrescentarEvento({
+        ...EVENTO,
+        eventoId: 'web-a1b2-20260818-0000',
+        uidHash: VINCULO.uidHash,
+        nome: '',
+        origem: 'professor',
+      })
+      await repo.acrescentarEvento(EVENTO)
+      await repo.acrescentarEvento({
+        ...EVENTO,
+        eventoId: 'web-a1b2-20260818-0002',
+        turma: 'IF685 · T02',
+        uidHash: VINCULO.uidHash,
+        nome: '',
+        origem: 'professor',
+      })
+      await repo.acrescentarEvento({ ...EVENTO, eventoId: 'web-a1b2-20260818-0003', turma: 'IF685 · T02' })
+
+      // As duas primeiro, pra provar que a segunda chamada (escopada) não
+      // apaga nem deixa de tocar o que já existia da outra turma.
+      await gravarFaltas(repo, handle)
+      expect(raiz.pastas.get('faltas')!.arquivos.has('IF685-T02.csv')).toBe(true)
+
+      const { arquivos } = await gravarFaltas(repo, handle, 'IF685 · T01')
+      expect(arquivos).toEqual(['faltas/IF685-T01.csv'])
+      // A de T02 continua lá — não foi apagada, e a chamada nem tentou lê-la.
+      expect(raiz.pastas.get('faltas')!.arquivos.has('IF685-T02.csv')).toBe(true)
     })
 
     it('não é fonte de verdade — a pasta com faltas/ ainda reconstrói pelo log', async () => {

@@ -256,7 +256,10 @@ export function TelaAula({
   // é o log, não a memória da tela — fechar o notebook não pode zerar a chamada.
   const recarregar = useCallback(async () => {
     const [eventos, vinculosAtuais] = await Promise.all([
-      repositorio.listarEventos(),
+      // Só a turma desta aula: o índice já existe, e ler a base inteira do
+      // professor a cada crachá não tinha por que acontecer aqui. Ver
+      // `docs/05_plano_execucao.md`, Fase 4, item B.
+      repositorio.listarEventos({ turma: sessao.turma }),
       repositorio.listarVinculos(),
     ])
     setVinculos(vinculosAtuais)

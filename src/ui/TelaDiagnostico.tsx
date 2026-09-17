@@ -103,7 +103,7 @@ export function TelaDiagnostico() {
     const [dl, dr, ev, t, a, m, te] = await Promise.all([
       leitor.diagnostico(),
       repositorio.diagnostico(),
-      repositorio.listarEventos(6),
+      repositorio.listarEventos({ limite: 6 }),
       repositorio.listarTurmas(),
       repositorio.listarAulas(),
       repositorio.listarMatriculados(),

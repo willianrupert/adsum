@@ -79,7 +79,35 @@ describe('eventos', () => {
     for (let i = 0; i < 5; i++) {
       await repo.acrescentarEvento(evento({ eventoId: `web-a1b2-20260818-000${i}` }))
     }
-    expect(await repo.listarEventos(2)).toHaveLength(2)
+    expect(await repo.listarEventos({ limite: 2 })).toHaveLength(2)
+  })
+
+  // Fase 4, item B (`docs/05_plano_execucao.md`): a consulta por turma usa o
+  // índice do esquema em vez de ler a tabela inteira — mas tem que devolver
+  // exatamente o mesmo que ler tudo e filtrar depois, ordem incluída.
+  describe('com turma', () => {
+    it('devolve só os eventos da turma pedida, mais recentes primeiro', async () => {
+      await repo.acrescentarEvento(evento({ eventoId: 'web-a1b2-20260818-0000', quando: '2026-08-18T10:00:00.000Z' }))
+      await repo.acrescentarEvento(
+        evento({ eventoId: 'web-a1b2-20260818-0001', turma: 'IF685 · T02', quando: '2026-08-18T10:01:00.000Z' }),
+      )
+      await repo.acrescentarEvento(evento({ eventoId: 'web-a1b2-20260818-0002', quando: '2026-08-18T10:02:00.000Z' }))
+
+      const daT01 = await repo.listarEventos({ turma: 'IF685 · T01' })
+      expect(daT01.map((e) => e.eventoId)).toEqual(['web-a1b2-20260818-0002', 'web-a1b2-20260818-0000'])
+      expect(daT01.every((e) => e.turma === 'IF685 · T01')).toBe(true)
+    })
+
+    it('turma e limite juntos', async () => {
+      for (let i = 0; i < 3; i++) {
+        await repo.acrescentarEvento(evento({ eventoId: `web-a1b2-20260818-000${i}` }))
+      }
+      expect(await repo.listarEventos({ turma: 'IF685 · T01', limite: 2 })).toHaveLength(2)
+    })
+
+    it('turma sem evento nenhum devolve lista vazia, não erro', async () => {
+      expect(await repo.listarEventos({ turma: 'Turma inexistente' })).toEqual([])
+    })
   })
 })
 

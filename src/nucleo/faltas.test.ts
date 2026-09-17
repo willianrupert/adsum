@@ -203,3 +203,58 @@ describe('nomeDoArquivoDeFaltas', () => {
     expect(nomeDoArquivoDeFaltas('IF685 · T01')).toBe('faltas-IF685-T01.csv')
   })
 })
+
+// Regressão de desempenho — ver `docs/05_plano_execucao.md`, Fase 4, item D.
+// A versão anterior (duplo `.filter()` refeito por célula) chegava a 1,3s
+// nesta mesma carga; a indexação prévia mede ~2ms. O limiar aqui é 200x
+// folgado de propósito: o teste existe pra pegar uma regressão que reintroduz
+// o loop O(alunos × dias × eventos), não pra travar por uma máquina lenta de
+// CI cronometrando alguns milissegundos a mais.
+describe('planilhaDeFaltas — desempenho não regride em silêncio', () => {
+  it('turma de 80 alunos, 30 aulas, sob 200ms', () => {
+    const TURMA = 'Turma de escala'
+    const alunos: Matriculado[] = Array.from({ length: 80 }, (_, i) => ({
+      turma: TURMA,
+      chave: String(i),
+      matricula: String(20260000001 + i),
+      nome: `Aluno ${i + 1}`,
+      nomeCompleto: `ALUNO ${i + 1} DA SILVA`,
+      papel: 'aluno' as const,
+    }))
+    const eventos: Evento[] = []
+    let seq = 0
+    const inicio = new Date('2026-03-02T14:00:00')
+    for (let d = 0; d < 30; d++) {
+      const abrir = new Date(inicio.getTime() + d * 3 * 24 * 3600_000)
+      eventos.push({
+        eventoId: `ev-${seq++}`,
+        quando: abrir.toISOString(),
+        turma: TURMA,
+        uidHash: 'professor',
+        origem: 'professor',
+        resultado: 'ok',
+        nome: 'Professor',
+      })
+      for (const aluno of alunos) {
+        eventos.push({
+          eventoId: `ev-${seq++}`,
+          quando: new Date(abrir.getTime() + 2 * 60_000).toISOString(),
+          turma: TURMA,
+          uidHash: `uid-${aluno.matricula}`,
+          origem: 'cracha',
+          resultado: 'ok',
+          nome: aluno.nome,
+          matricula: aluno.matricula,
+        })
+      }
+    }
+
+    const inicioMedicao = performance.now()
+    const planilha = planilhaDeFaltas(eventos, alunos, [], TURMA)
+    const duracao = performance.now() - inicioMedicao
+
+    expect(planilha.linhas).toHaveLength(80)
+    expect(planilha.dias).toHaveLength(30)
+    expect(duracao).toBeLessThan(200)
+  })
+})

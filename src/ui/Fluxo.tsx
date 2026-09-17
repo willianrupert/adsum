@@ -242,16 +242,23 @@ export function Fluxo() {
   }, [novidade])
 
   const recontar = useCallback(async () => {
-    const [listaDeTurmas, matriculados, vinculos, aberta, eventos, atual] = await Promise.all([
+    const [listaDeTurmas, matriculados, vinculos, aberta, atual] = await Promise.all([
       repositorio.listarTurmas(),
       repositorio.listarMatriculados(),
       repositorio.listarVinculos(),
       repositorio.sessaoAberta(),
-      repositorio.listarEventos(),
       repositorio.lerConfig(),
     ])
     setSessao(aberta)
-    setPendencias(naoSalvos(eventos, atual.exportado))
+    // "Só faz sentido onde não há pasta: com pasta, cada evento é gravado no
+    // ato e nada fica pendente" (comentário de `Config.exportado`, em
+    // `nucleo/tipos.ts`) — e de fato, todo consumidor de `pendencias` já
+    // reduz pra `pasta ? [] : pendencias` / `pasta ? 0 : totalNaoSalvo(...)`.
+    // Ler o log inteiro (cresce com o histórico do professor) só pra um
+    // valor que a tela descarta em seguida era achado extra da Fase 4
+    // (`docs/05_plano_execucao.md`) — sem mudança de comportamento, porque
+    // o valor final já era sempre `[]` neste caso.
+    setPendencias(pasta ? [] : naoSalvos(await repositorio.listarEventos(), atual.exportado))
 
     // Com a grade abrindo sozinha, o repouso virou espera — e espera sem prazo
     // é ansiedade. Qual turma vem e quando é a única informação que a tela tem
@@ -336,7 +343,7 @@ export function Fluxo() {
       esquecerDispensaDoCadastro()
       setSemCadastro(false)
     }
-  }, [repositorio])
+  }, [repositorio, pasta])
 
   useEffect(() => {
     void recontar()
@@ -372,19 +379,27 @@ export function Fluxo() {
   // parecendo salva e só se descobre depois. O erro vira estado visível, e o
   // dado continua no cache até o conserto — nada se perde, mas ninguém fica
   // sabendo por acaso.
-  const gravarNaPasta = useCallback(async () => {
-    if (!pasta) return
-    try {
-      await sincronizar(repositorio, pasta)
-      // A planilha organizada (nome completo, faltas por dia) recalculada e
-      // reescrita a cada mudança — a mesma regra de "sem botão de exportar"
-      // que já vale para `registros/`. Ver o comentário em `gravarFaltas`.
-      await gravarFaltas(repositorio, pasta)
-      setFalhaNaPasta(undefined)
-    } catch (erro) {
-      setFalhaNaPasta((erro as Error).message)
-    }
-  }, [pasta, repositorio])
+  // `turma`, quando o chamador sabe qual mudou (um crachá aceito numa aula
+  // aberta), escopa `sincronizar`/`gravarFaltas` pra só ela — Fase 4, item C
+  // (`docs/05_plano_execucao.md`). Sem `turma` (colar turma nova, cronograma
+  // salvo, vínculo de professor criado), continua recalculando tudo, que é
+  // o certo quando não dá pra saber só uma turma foi afetada.
+  const gravarNaPasta = useCallback(
+    async (turma?: string) => {
+      if (!pasta) return
+      try {
+        await sincronizar(repositorio, pasta, turma)
+        // A planilha organizada (nome completo, faltas por dia) recalculada e
+        // reescrita a cada mudança — a mesma regra de "sem botão de exportar"
+        // que já vale para `registros/`. Ver o comentário em `gravarFaltas`.
+        await gravarFaltas(repositorio, pasta, turma)
+        setFalhaNaPasta(undefined)
+      } catch (erro) {
+        setFalhaNaPasta((erro as Error).message)
+      }
+    },
+    [pasta, repositorio],
+  )
 
   const gravarLinha = useCallback(
     async (evento: Parameters<typeof acrescentarNoLog>[1]) => {
@@ -437,10 +452,13 @@ export function Fluxo() {
     }
   }, [pasta, repositorio])
 
-  const mudou = useCallback(async () => {
-    await recontar()
-    await gravarNaPasta()
-  }, [recontar, gravarNaPasta])
+  const mudou = useCallback(
+    async (turma?: string) => {
+      await recontar()
+      await gravarNaPasta(turma)
+    },
+    [recontar, gravarNaPasta],
+  )
 
   /**
    * A sessão é única no app inteiro — não por turma. O crachá do professor
@@ -489,7 +507,7 @@ export function Fluxo() {
       // quem não sabia que a grade abre aula sozinha lia isso como bug, não
       // como o comportamento pretendido.
       if (automatico) setAvisoLeitura('A grade horária abriu esta aula sozinha.')
-      await mudou()
+      await mudou(turma)
     },
     [repositorio, config.instalacaoId, gravarLinha, mudou],
   )
@@ -884,7 +902,9 @@ export function Fluxo() {
           sessao={sessao}
           pendentes={pendentesDaTurma.filter((p) => p.turma === sessao.turma)}
           daTurma={matriculadosTodos.filter((p) => p.turma === sessao.turma)}
-          aoMudarBase={mudou}
+          // Só a turma da aula aberta — Fase 4, item C. Um crachá aqui não
+          // tem como mudar outra turma.
+          aoMudarBase={() => mudou(sessao.turma)}
           aoRegistrar={gravarLinha}
           aoEncerrar={(presentes, duracaoMs, intervalos) => {
             // Sem esta marca o relógio reabriria a aula que acabou de fechar.
@@ -1222,7 +1242,13 @@ export function Fluxo() {
               <p className="ajustes__creditos">© 2026 Willian Rupert</p>
             </>
           )}
-          {folha === 'presencas' && <ConteudoDePresencas nomeDaPasta={pasta?.name} />}
+          {folha === 'presencas' && (
+            <ConteudoDePresencas
+              nomeDaPasta={pasta?.name}
+              aoRegistrar={gravarLinha}
+              aoMudarBase={(turma) => mudou(turma)}
+            />
+          )}
           {folha === 'diagnostico' && <TelaDiagnostico />}
         </Sheet>
       )}

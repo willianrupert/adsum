@@ -80,8 +80,18 @@ export interface Repositorio {
 
   /** Único caminho de escrita de evento. Rejeita `eventoId` repetido. */
   acrescentarEvento(evento: Evento): Promise<void>
-  /** Mais recentes primeiro. Sem limite, devolve tudo. */
-  listarEventos(limite?: number): Promise<Evento[]>
+  /**
+   * Mais recentes primeiro. Sem opções, devolve tudo, de qualquer turma.
+   *
+   * `turma` usa o índice que o esquema já tem (`banco.ts`) em vez de ler a
+   * tabela inteira pra filtrar em memória — importa a partir de algumas
+   * dezenas de aulas acumuladas. Ver `docs/05_plano_execucao.md`, Fase 4,
+   * item B: só passe `turma` quando a chamada é sobre uma turma só (a tela
+   * de uma aula, a planilha de uma turma) — telas que legitimamente olham a
+   * base inteira (Diagnóstico, pendências de exportação entre turmas)
+   * continuam sem filtro.
+   */
+  listarEventos(opcoes?: { turma?: string; limite?: number }): Promise<Evento[]>
   contarEventos(): Promise<number>
 
   /**
