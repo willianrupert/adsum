@@ -392,6 +392,12 @@ describe('apelido editável mesmo com crachá já vinculado', () => {
 
     const campo = await screen.findByDisplayValue('Ana Paula')
     await usuario.clear(campo)
+    // `clear()` dispara o onChange que zera o estado controlado, mas o React
+    // pode não ter terminado de sincronizar `value=''` de volta pro DOM antes
+    // do próximo comando — sem esperar, `type()` às vezes começa a digitar em
+    // cima do texto antigo ainda visível ("Ana Paula" + "Aninha" em vez de
+    // "Aninha"). Achado num loop local (falhava ~1 em cada 3 execuções).
+    await waitFor(() => expect(campo).toHaveValue(''))
     await usuario.type(campo, 'Aninha')
     // Grava no `onBlur` — uma escrita por edição, não uma por tecla.
     await usuario.tab()

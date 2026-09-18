@@ -1033,18 +1033,42 @@ export function TelaAula({
                         value={e.nome}
                         onChange={(evento) => {
                           const novoNome = evento.target.value
-                          if (vinculado) {
-                            // Já tem vínculo: só o estado local muda a cada
-                            // tecla — igual a `TelaRepositorio.tsx` (Ajustes →
-                            // Vínculos). Gravar no Dexie é o `onBlur`, abaixo:
-                            // uma escrita por edição, não uma por tecla.
-                            const vinculo = vinculoDe(p)
-                            if (!vinculo) return
+                          // `vinculoDe(p)` pode não achar nada mesmo com
+                          // `vinculado === true`: `vinculos` só carrega depois
+                          // de `recarregar()` (assíncrono, roda ao montar), e
+                          // `vinculado` vem de `pendentes` (prop, já pronta) —
+                          // as duas fontes não chegam juntas. Editar bem nesse
+                          // instante caía num `return` mudo, e a tecla digitada
+                          // sumia sem gravar nada. `edicoes` (o mesmo caminho
+                          // de quem ainda não tem crachá) segura o texto até o
+                          // vínculo aparecer — `efetivo()` sempre prioriza a
+                          // edição sobre o `vinculo.nome` cru.
+                          const vinculo = vinculado ? vinculoDe(p) : undefined
+                          if (vinculo) {
+                            // Só o estado local muda a cada tecla — igual a
+                            // `TelaRepositorio.tsx` (Ajustes → Vínculos).
+                            // Gravar no Dexie é o `onBlur`, abaixo: uma
+                            // escrita por edição, não uma por tecla.
                             setVinculos((antes) =>
                               antes.map((v) =>
                                 v.uidHash === vinculo.uidHash ? { ...v, nome: novoNome } : v,
                               ),
                             )
+                            // Uma tecla anterior pode ter caído no fallback
+                            // acima (vínculo ainda não carregado naquele
+                            // instante) — essa entrada precisa sumir agora,
+                            // senão `efetivo()` fica presa nela pra sempre
+                            // (prioriza `edicoes`), ignorando as teclas que
+                            // `vinculos` já está recebendo certinho a partir
+                            // daqui. Sem isto: digitar rápido o bastante para
+                            // pegar essa janela travava o campo eternamente
+                            // no que foi digitado no primeiro instante.
+                            setEdicoes((antes) => {
+                              if (!antes.has(p.chave)) return antes
+                              const novo = new Map(antes)
+                              novo.delete(p.chave)
+                              return novo
+                            })
                           } else {
                             setEdicoes((antes) => {
                               const novo = new Map(antes)
@@ -1056,12 +1080,13 @@ export function TelaAula({
                         onBlur={() => {
                           if (!vinculado) return
                           const vinculo = vinculoDe(p)
-                          // `efetivo()` lê `vinculos`, então a mudança já
-                          // aparece em qualquer lugar que mostra este nome
-                          // (busca, leituras recentes, Professores) assim que
-                          // `setVinculos`, acima, roda — o `gravarVinculo`
-                          // aqui só persiste o que a tela já mostra.
-                          if (vinculo) void repositorio.gravarVinculo(vinculo)
+                          // `efetivo(p).nome`, não `vinculo.nome`: se a
+                          // digitação caiu em `edicoes` (vínculo ainda não
+                          // carregado durante o `onChange`, acima), é lá que
+                          // o texto mais novo está — `vinculo.nome` sozinho
+                          // gravaria o nome antigo de volta. `efetivo()` já
+                          // decide qual dos dois vale.
+                          if (vinculo) void repositorio.gravarVinculo({ ...vinculo, nome: efetivo(p).nome })
                         }}
                         aria-label={`nome de ${p.nomeCompleto}`}
                       />
