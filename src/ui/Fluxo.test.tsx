@@ -245,7 +245,13 @@ describe('a rota decide a tela', () => {
     // SIGAA apontou: ninguém encostou crachá nenhum, então ninguém pode
     // dizer quem é. Copiar o nome daria a Ana Paula um vínculo que ela nunca
     // pediu — o bug que este teste existia para provar antes do conserto.
-    await screen.findByText('IF685 · T01')
+    //
+    // 'IF685 · T01' não serve de sinal aqui: a tela de repouso já mostra o
+    // nome da turma selecionada antes do clique (seta do redesenho de
+    // 17/09/2026), então esse texto pode aparecer antes de `abrirChamada`
+    // terminar de gravar a sessão — 'Encerrar a chamada' só existe depois
+    // que a chamada de fato abriu.
+    await screen.findByRole('button', { name: 'Encerrar a chamada' })
     const vinculos = await bancada.repositorio.listarVinculos()
     expect(vinculos).toHaveLength(1)
     expect(vinculos[0]).toMatchObject({ papel: 'professor', nome: 'Professor', sintetico: true })
@@ -377,9 +383,16 @@ describe('abrir e encerrar sem crachá', () => {
 describe('a grade recomenda, mas nunca abre sozinha', () => {
   const aulaAgora = async () => {
     const agora = new Date()
+    // Preso ao MESMO dia de `agora` (`dia: agora.getDay()`, abaixo) — nunca
+    // deixa o delta cruzar a meia-noite. Sem isto, rodar a suíte perto de
+    // 23:5x UTC faz `inicio`/`fim` "voltarem" pra 00:0x, um horário que já
+    // passou pro dia certo: a aula deixa de bater "agora" e o teste falha
+    // sem relação nenhuma com o código sendo testado. Achado ao vivo: o
+    // deploy de 17/09/2026 rodou às 23:33 UTC e pegou exatamente essa borda.
     const hhmm = (delta: number) => {
-      const d = new Date(agora.getTime() + delta * 60_000)
-      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+      const minutoBase = agora.getHours() * 60 + agora.getMinutes()
+      const minuto = Math.min(1439, Math.max(0, minutoBase + delta))
+      return `${String(Math.floor(minuto / 60)).padStart(2, '0')}:${String(minuto % 60).padStart(2, '0')}`
     }
     await bancada.repositorio.gravarAula({
       uidHashProfessor: 'aaaa000000000000',
@@ -450,9 +463,16 @@ describe('a grade de mais de um professor', () => {
     })
 
     const agora = new Date()
+    // Preso ao MESMO dia de `agora` (`dia: agora.getDay()`, abaixo) — nunca
+    // deixa o delta cruzar a meia-noite. Sem isto, rodar a suíte perto de
+    // 23:5x UTC faz `inicio`/`fim` "voltarem" pra 00:0x, um horário que já
+    // passou pro dia certo: a aula deixa de bater "agora" e o teste falha
+    // sem relação nenhuma com o código sendo testado. Achado ao vivo: o
+    // deploy de 17/09/2026 rodou às 23:33 UTC e pegou exatamente essa borda.
     const hhmm = (delta: number) => {
-      const d = new Date(agora.getTime() + delta * 60_000)
-      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+      const minutoBase = agora.getHours() * 60 + agora.getMinutes()
+      const minuto = Math.min(1439, Math.max(0, minutoBase + delta))
+      return `${String(Math.floor(minuto / 60)).padStart(2, '0')}:${String(minuto % 60).padStart(2, '0')}`
     }
     await bancada.repositorio.gravarAula({
       uidHashProfessor: 'zzzz000000000000',
@@ -517,9 +537,16 @@ describe('a grade de mais de um professor', () => {
 describe('duas turmas se encavalam no horário', () => {
   const aulaEm = async (turma: string, deltaInicio: number, deltaFim: number) => {
     const agora = new Date()
+    // Preso ao MESMO dia de `agora` (`dia: agora.getDay()`, abaixo) — nunca
+    // deixa o delta cruzar a meia-noite. Sem isto, rodar a suíte perto de
+    // 23:5x UTC faz `inicio`/`fim` "voltarem" pra 00:0x, um horário que já
+    // passou pro dia certo: a aula deixa de bater "agora" e o teste falha
+    // sem relação nenhuma com o código sendo testado. Achado ao vivo: o
+    // deploy de 17/09/2026 rodou às 23:33 UTC e pegou exatamente essa borda.
     const hhmm = (delta: number) => {
-      const d = new Date(agora.getTime() + delta * 60_000)
-      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+      const minutoBase = agora.getHours() * 60 + agora.getMinutes()
+      const minuto = Math.min(1439, Math.max(0, minutoBase + delta))
+      return `${String(Math.floor(minuto / 60)).padStart(2, '0')}:${String(minuto % 60).padStart(2, '0')}`
     }
     await bancada.repositorio.gravarAula({
       uidHashProfessor: 'aaaa000000000000',
