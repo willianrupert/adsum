@@ -630,6 +630,51 @@ describe('turma e hora por seta, sem tela "Qual turma?"', () => {
     )
   })
 
+  // Reportado pelo autor em 18/09/2026: as setas do redesenho eram só os
+  // botões na tela — sem o atalho de teclado que "Chamar nomes" já tinha,
+  // e que o pedido original (17/09/2026) explicitamente pedia ("mesma
+  // lógica de seta que já existe em Chamar nomes... ao pressionar enter a
+  // chamada comeca").
+  it('← → do teclado também trocam de turma, e Enter abre a que estiver na tela', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    await bancada.repositorio.salvarTurma('IF969 · T02', [
+      { ...pessoa('9', 'Zeca'), turma: 'IF969 · T02' },
+    ])
+    adiarHorario('IF969 · T02')
+    renderizarCom(bancada, <Fluxo />)
+
+    await screen.findByText('IF685 · T01')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'próxima turma' })).toBeEnabled())
+
+    await usuario.keyboard('{ArrowRight}')
+    expect(screen.getByText('IF969 · T02')).toBeInTheDocument()
+
+    await usuario.keyboard('{Enter}')
+    await waitFor(async () =>
+      expect(await bancada.repositorio.sessaoAberta()).toMatchObject({ turma: 'IF969 · T02' }),
+    )
+  })
+
+  // O campo nativo já usa ← → pra andar entre dia/mês/ano/hora/minuto —
+  // roubar essas teclas pra trocar de turma quebraria a edição da data.
+  it('← → não trocam de turma quando o foco está no campo de data/hora', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    await bancada.repositorio.salvarTurma('IF969 · T02', [
+      { ...pessoa('9', 'Zeca'), turma: 'IF969 · T02' },
+    ])
+    adiarHorario('IF969 · T02')
+    renderizarCom(bancada, <Fluxo />)
+
+    await screen.findByText('IF685 · T01')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'próxima turma' })).toBeEnabled())
+    screen.getByLabelText('quando a chamada abre').focus()
+
+    await usuario.keyboard('{ArrowRight}')
+    expect(screen.getByText('IF685 · T01')).toBeInTheDocument()
+  })
+
   it('editar a data/hora muda o registro de verdade — não é só mostrador', async () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()

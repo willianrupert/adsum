@@ -782,6 +782,36 @@ export function Fluxo() {
     if (rota === 'cerimonia') void iniciarChamada()
   }, [rota, iniciarChamada])
 
+  /**
+   * ← → trocam de turma, Enter confirma "Começar a chamada" — a mesma
+   * promessa da seta em "Chamar nomes" (`TelaAula`): a mão fica no
+   * teclado, sem precisar alcançar o mouse pra nenhum dos dois gestos.
+   * Pedido de 17/09/2026 ("ao pressionar enter a chamada comeca").
+   *
+   * Só ativo com o repouso de fato na tela — nas outras rotas o
+   * professor pode estar digitando em qualquer lugar, e nada aqui devia
+   * interferir. As setas, além disso, ficam de fora sempre que o foco
+   * estiver num controle de forma: o campo de data/hora já usa ← → para
+   * andar entre os segmentos da data, e roubar isso quebraria o campo.
+   */
+  useEffect(() => {
+    const emRepouso = !resumo && rota === 'pronto' && !colandoNova
+    if (!emRepouso) return
+    const aoTeclar = (evento: KeyboardEvent) => {
+      if (evento.key === 'Enter') {
+        if (turmaSelecionada) void iniciarChamada()
+        return
+      }
+      if (evento.key !== 'ArrowRight' && evento.key !== 'ArrowLeft') return
+      const foco = document.activeElement
+      if (foco instanceof HTMLElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(foco.tagName)) return
+      mudarTurma(evento.key === 'ArrowRight' ? 1 : -1)
+      evento.preventDefault()
+    }
+    window.addEventListener('keydown', aoTeclar)
+    return () => window.removeEventListener('keydown', aoTeclar)
+  }, [resumo, rota, colandoNova, turmaSelecionada, iniciarChamada, mudarTurma])
+
   // Sai da colagem assim que a turma colada é salva — ver o comentário de
   // `turmasAntesDaNova`. Sem isto, voltar do cronograma da turma recém
   // criada reabria a colagem em branco, como se a lista nunca tivesse sido
