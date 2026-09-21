@@ -642,16 +642,17 @@ export function Fluxo() {
     await abrirComProfessor(aulaDaTurmaAgora?.uidHashProfessor ?? professor.uidHash)
   }, [turmaSelecionada, horaSelecionada, garantirProfessor, repositorio, abrirComProfessor])
 
-  /** -1 volta, 1 avança — não dá volta nas pontas, mesma regra de "Chamar
-      nomes" em `TelaAula`. */
+  /** -1 volta, 1 avança — circular: da última turma o → cai na primeira, e
+      da primeira o ← cai na última. Com duas ou três turmas, chegar na ponta
+      e ter de voltar tudo de volta é o gesto que mais se repete. */
   const mudarTurma = useCallback(
     (direcao: -1 | 1) => {
       setTurmaSelecionada((atual) => {
         if (!atual) return atual
         const indice = listaDeTurmas.indexOf(atual)
         if (indice < 0) return atual
-        const proximo = Math.min(listaDeTurmas.length - 1, Math.max(0, indice + direcao))
-        return listaDeTurmas[proximo]
+        const total = listaDeTurmas.length
+        return listaDeTurmas[(indice + direcao + total) % total]
       })
     },
     [listaDeTurmas],
@@ -1377,7 +1378,7 @@ export function Repouso({
         <button
           aria-label="turma anterior"
           onClick={() => aoMudarTurma(-1)}
-          disabled={indice <= 0}
+          disabled={indice < 0 || listaDeTurmas.length < 2}
         >
           ←
         </button>
@@ -1385,7 +1386,7 @@ export function Repouso({
         <button
           aria-label="próxima turma"
           onClick={() => aoMudarTurma(1)}
-          disabled={indice < 0 || indice >= listaDeTurmas.length - 1}
+          disabled={indice < 0 || listaDeTurmas.length < 2}
         >
           →
         </button>

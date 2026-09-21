@@ -602,7 +602,7 @@ describe('duas turmas se encavalam no horário', () => {
 // turma direto na tela de repouso, sem popup, e Enter/crachá abre a que
 // estiver ali. Ver `docs/05_plano_execucao.md` e o pedido de 17/09/2026.
 describe('turma e hora por seta, sem tela "Qual turma?"', () => {
-  it('a seta troca qual turma "Começar a chamada" abre, sem dar volta nas pontas', async () => {
+  it('a seta troca qual turma "Começar a chamada" abre, e dá a volta nas pontas', async () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     // `pessoa()` fixa `turma: 'IF685 · T01'` — sobrescrever pra criar
@@ -615,14 +615,18 @@ describe('turma e hora por seta, sem tela "Qual turma?"', () => {
 
     // Sem grade nenhuma, a sugestão inicial é a primeira em ordem alfabética.
     await screen.findByText('IF685 · T01')
-    expect(screen.getByRole('button', { name: 'turma anterior' })).toBeDisabled()
     // As duas turmas levam um instante pra chegar do IndexedDB — só então
     // a seta "próxima" destrava.
     await waitFor(() => expect(screen.getByRole('button', { name: 'próxima turma' })).toBeEnabled())
 
     await usuario.click(screen.getByRole('button', { name: 'próxima turma' }))
     expect(screen.getByText('IF969 · T02')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'próxima turma' })).toBeDisabled()
+
+    // Da última, → volta para a primeira; da primeira, ← vai para a última.
+    await usuario.click(screen.getByRole('button', { name: 'próxima turma' }))
+    expect(screen.getByText('IF685 · T01')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'turma anterior' }))
+    expect(screen.getByText('IF969 · T02')).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: /Começar a chamada/ }))
     await waitFor(async () =>
@@ -648,6 +652,12 @@ describe('turma e hora por seta, sem tela "Qual turma?"', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'próxima turma' })).toBeEnabled())
 
     await usuario.keyboard('{ArrowRight}')
+    expect(screen.getByText('IF969 · T02')).toBeInTheDocument()
+
+    // Circular: → na última cai na primeira, ← na primeira cai na última.
+    await usuario.keyboard('{ArrowRight}')
+    expect(screen.getByText('IF685 · T01')).toBeInTheDocument()
+    await usuario.keyboard('{ArrowLeft}')
     expect(screen.getByText('IF969 · T02')).toBeInTheDocument()
 
     await usuario.keyboard('{Enter}')
