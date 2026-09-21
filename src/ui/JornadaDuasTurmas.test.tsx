@@ -108,16 +108,23 @@ async function colarTurma(usuario: ReturnType<typeof userEvent.setup>, turma: st
 
 /** A seta troca a turma sugerida do repouso pela pedida — substitui a tela
     "Qual turma?" (removida): não há mais pergunta separada, só navegar até
-    a turma certa aparecer. Limitada a 5 cliques pra nunca girar pra sempre
-    se a turma pedida não existir. */
+    a turma certa aparecer.
+
+    Só olha o seletor do repouso, nunca a tela inteira: o nome da turma
+    também aparece na tela do cronograma que está saindo, e num CI lento o
+    helper via ali a turma pedida, não clicava em nada, e a chamada abria
+    na turma que já estava selecionada (falha de 21/09/2026). Espera as
+    duas turmas chegarem do IndexedDB (a seta só destrava com 2 ou mais) e
+    depois gira; a seta é circular, então uma volta inteira sempre alcança. */
 async function selecionarTurma(usuario: ReturnType<typeof userEvent.setup>, turma: string) {
+  const proxima = await screen.findByRole('button', { name: 'próxima turma' })
+  await waitFor(() => expect(proxima).toBeEnabled())
+  const seletor = proxima.parentElement as HTMLElement
   for (let tentativas = 0; tentativas < 5; tentativas++) {
-    if (screen.queryByText(turma)) return
-    const proxima = screen.getByRole('button', { name: 'próxima turma' })
-    if ((proxima as HTMLButtonElement).disabled) break
+    if (within(seletor).queryByText(turma)) return
     await usuario.click(proxima)
   }
-  await screen.findByText(turma)
+  expect(within(seletor).getByText(turma)).toBeInTheDocument()
 }
 
 describe('duas turmas coladas do SIGAA, uma aula real em cada', () => {
