@@ -4,6 +4,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { montarBancada, type Bancada } from '../testes/montar.tsx'
 import { prepararTurmaDeTeste, situacaoDaTurmaDeTeste } from './turmaDeTeste.ts'
+import { horariosAdiados } from './preferencias.ts'
 import { TURMA_DE_TESTE } from '../nucleo/suiteDeTestes.ts'
 
 let bancada: Bancada
@@ -52,6 +53,16 @@ describe('prepararTurmaDeTeste', () => {
 
     const sessao = await bancada.repositorio.sessaoAberta()
     expect(sessao?.turma).toBe(TURMA_DE_TESTE)
+  })
+
+  // Achado ao vivo em 22/09/2026: sem isto, `decidirRota` pede o
+  // cronograma antes de mostrar a chamada — turma sem grade vem antes de
+  // sessão aberta, na ordem de perguntas de `nucleo/rota.ts`.
+  it('marca a turma como "horário adiado" — nunca pede o cronograma', async () => {
+    bancada = await montarBancada()
+    window.localStorage.clear()
+    await prepararTurmaDeTeste(bancada.repositorio, bancada.config)
+    expect(horariosAdiados()).toContain(TURMA_DE_TESTE)
   })
 
   it('recusa se há uma chamada de verdade aberta — nunca fecha aula alheia', async () => {

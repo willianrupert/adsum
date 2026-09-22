@@ -74,6 +74,45 @@ describe('RigDeCracha: conexão', () => {
   })
 })
 
+describe('RigDeCracha: falha no meio da conexão não deixa a porta presa', () => {
+  it('porta ilegível: desfaz sozinho (fecha a porta), e uma tentativa seguinte não esbarra em "já aberta"', async () => {
+    // Simula o que aconteceu na bancada real (22/09/2026): algo falha depois
+    // de `porta.open()` já ter tido sucesso — aqui, `readable`/`writable`
+    // ausentes, que falha na hora, sem esperar os 2s do PING de verdade.
+    const porta: PortaSerial = {
+      readable: null,
+      writable: null,
+      open: vi.fn(async () => {}),
+      close: vi.fn(async () => {}),
+      getInfo: () => ({}),
+    }
+    rig = new RigDeCracha({ serial: servicoCom(porta) })
+
+    await expect(rig.conectar()).rejects.toThrow('não é legível')
+    expect(rig.conectado).toBe(false)
+    // A limpeza (`desconectar()`) chama `close()` — é isso que evita o "the
+    // port is already open" na tentativa seguinte, no navegador de verdade.
+    expect(porta.close).toHaveBeenCalledOnce()
+  })
+
+  it('depois da falha, uma nova tentativa na mesma porta funciona normalmente', async () => {
+    const falsa = criarPortaFalsa()
+    // Primeira tentativa: porta sem `writable` — falha e desfaz.
+    const portaQuebrada: PortaSerial = { ...falsa.porta, writable: null }
+    rig = new RigDeCracha({ serial: servicoCom(portaQuebrada) })
+    await expect(rig.conectar()).rejects.toThrow()
+    expect(rig.conectado).toBe(false)
+
+    // Segunda tentativa, porta de verdade: sem "já aberta", sem travar.
+    rig = new RigDeCracha({ serial: servicoCom(falsa.porta) })
+    const conectar = rig.conectar()
+    await vi.waitFor(() => expect(falsa.escritas.join('')).toBe('PING\n'))
+    falsa.responder('PONG\n')
+    await conectar
+    expect(rig.conectado).toBe(true)
+  })
+})
+
 describe('RigDeCracha: iniciar() — reconexão sem diálogo', () => {
   it('com porta já autorizada, reconecta sozinho e confirma com PING', async () => {
     const falsa = criarPortaFalsa()

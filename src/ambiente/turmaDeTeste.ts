@@ -6,6 +6,7 @@
 // já substitui a turma inteira, e os UIDs de teste são determinísticos —
 // gravar o mesmo vínculo duas vezes é o mesmo vínculo.
 
+import { adiarHorario } from './preferencias.ts'
 import { calcularUidHash, uidHashSintetico } from '../nucleo/hash.ts'
 import { decimalParaBytes } from '../nucleo/digitacao.ts'
 import { matriculadosDeTeste, TURMA_DE_TESTE, uidCurtoDeTeste } from '../nucleo/suiteDeTestes.ts'
@@ -61,6 +62,13 @@ export async function prepararTurmaDeTeste(repositorio: Repositorio, config: Con
 
   const matriculados = matriculadosDeTeste(QUANTIDADE)
   await repositorio.salvarTurma(TURMA_DE_TESTE, matriculados)
+  // Sem isto, `decidirRota` (`nucleo/rota.ts`) manda pro cronograma antes de
+  // deixar ver a chamada — turma sem grade nenhuma vem antes de sessão
+  // aberta, na ordem de perguntas. Achado ao vivo em 22/09/2026: a primeira
+  // vez que este fluxo rodou de verdade, o autor teve que preencher um
+  // horário à toa só pra passar por essa tela. O mesmo "Depois" que o
+  // cronograma de verdade oferece, aplicado sozinho.
+  adiarHorario(TURMA_DE_TESTE)
 
   for (let i = 0; i < QUANTIDADE; i++) {
     const uid = decimalParaBytes(uidCurtoDeTeste(i))

@@ -62,20 +62,40 @@ export class RigDeCracha {
     await this.#abrir(portas[0])
   }
 
+  /**
+   * Se qualquer passo daqui pra frente falhar — a porta não ser legível, o
+   * PING não voltar a tempo —, a conexão inteira desfaz sozinha antes de
+   * propagar o erro. Sem isto, um `iniciar()` automático (ao montar a
+   * tela, depois do recarregamento de `turmaDeTeste.ts`) que falhasse no
+   * meio deixava a porta aberta pro navegador mas "desconectada" pro app —
+   * e o próximo clique em "Conectar" esbarrava num "the port is already
+   * open" sem conserto nenhum ao alcance do professor, a não ser recarregar
+   * a página nas mãos. Achado em 22/09/2026, na primeira bancada real.
+   */
   async #abrir(porta: PortaSerial): Promise<void> {
-    await porta.open({ baudRate: VELOCIDADE })
-    if (!porta.readable || !porta.writable) {
-      throw new Error('A porta abriu, mas não é legível.')
+    try {
+      await porta.open({ baudRate: VELOCIDADE })
+      // Guardada assim que `open()` funciona, antes de qualquer outra
+      // checagem — é o que garante que `desconectar()`, no `catch` abaixo,
+      // sempre encontra a porta pra fechar, mesmo quando a falha é a
+      // checagem seguinte (`readable`/`writable` ausentes).
+      this.#porta = porta
+      if (!porta.readable || !porta.writable) {
+        throw new Error('A porta abriu, mas não é legível.')
+      }
+      this.#leitorDeBytes = porta.readable.getReader()
+      this.#escritor = porta.writable.getWriter()
+      this.#conectado = true
+      void this.#ler(this.#leitorDeBytes)
+      // A placa manda "PRONTO adsum-rig-de-crachas" ao ligar, mas se a porta
+      // já estava aberta antes (a placa não resetou agora), a saudação pode
+      // não vir — um PING resolve os dois casos e confirma que é o rig de
+      // verdade.
+      await this.enviar('PING', 2000)
+    } catch (erro) {
+      await this.desconectar()
+      throw erro
     }
-    this.#porta = porta
-    this.#leitorDeBytes = porta.readable.getReader()
-    this.#escritor = porta.writable.getWriter()
-    this.#conectado = true
-    void this.#ler(this.#leitorDeBytes)
-    // A placa manda "PRONTO adsum-rig-de-crachas" ao ligar, mas se a porta já
-    // estava aberta antes (a placa não resetou agora), a saudação pode não
-    // vir — um PING resolve os dois casos e confirma que é o rig de verdade.
-    await this.enviar('PING', 2000)
   }
 
   async desconectar(): Promise<void> {

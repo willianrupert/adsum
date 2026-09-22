@@ -55,7 +55,14 @@ export function PainelDeTestesFisicos({
   // "Preparar" — sem isto, o professor precisaria clicar em "Conectar" de
   // novo só porque a aba reabriu.
   useEffect(() => {
-    void rig.iniciar().then(() => setConectado(rig.conectado))
+    // Falha aqui não é erro de tela — é só "não deu pra reconectar sozinho",
+    // e o botão "Conectar" continua disponível pro professor tentar na mão.
+    // `RigDeCracha` já desfaz a conexão pela metade sozinha (`#abrir`) antes
+    // de rejeitar, então não há porta presa esperando aqui.
+    void rig
+      .iniciar()
+      .then(() => setConectado(rig.conectado))
+      .catch(() => setConectado(false))
   }, [rig])
 
   useEffect(() => {
