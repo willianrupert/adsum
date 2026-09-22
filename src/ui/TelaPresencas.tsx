@@ -4,10 +4,10 @@
 // para "quero ver quem veio", a pergunta mais comum fora do horário de aula
 // — por isso mora no repouso, não atrás da engrenagem.
 
-import { startTransition, useCallback, useEffect, useRef, useState } from 'react'
+import { startTransition, useCallback, useEffect, useState } from 'react'
 import type { Aula } from '../nucleo/grade.ts'
 import { uidHashSintetico } from '../nucleo/hash.ts'
-import { proximoEventoId } from '../nucleo/sessao.ts'
+import { gravarEventoNovo } from '../portas/Repositorio.ts'
 import type { Evento, Matriculado } from '../nucleo/tipos.ts'
 import { useAdsum } from './adsum.ts'
 import { Sheet } from './componentes/Sheet.tsx'
@@ -43,7 +43,6 @@ export function ConteudoDePresencas({
   const [eventos, setEventos] = useState<Evento[]>([])
   const [matriculados, setMatriculados] = useState<Matriculado[]>([])
   const [aulas, setAulas] = useState<Aula[]>([])
-  const sequencia = useRef(0)
 
   const carregar = useCallback(async () => {
     const [t, e, m, a] = await Promise.all([
@@ -52,7 +51,6 @@ export function ConteudoDePresencas({
       repositorio.listarMatriculados(),
       repositorio.listarAulas(),
     ])
-    sequencia.current = e.length
     // `startTransition`: montar a planilha recalcula `planilhaDeFaltas` para
     // cada aluno contra todo o histórico de eventos — pesado o bastante para
     // competir, no mesmo quadro, com a folha ainda subindo (a animação de
@@ -81,8 +79,8 @@ export function ConteudoDePresencas({
    */
   const gravar = useCallback(
     async (aluno: Matriculado, dia: string, resultado: Evento['resultado']) => {
-      const evento: Evento = {
-        eventoId: proximoEventoId(config.instalacaoId, new Date(), ++sequencia.current),
+      const evento = await gravarEventoNovo(repositorio, config.instalacaoId, new Date(), (eventoId) => ({
+        eventoId,
         quando: `${dia}T12:00:00.000Z`,
         turma: aluno.turma,
         matricula: aluno.matricula || undefined,
@@ -90,8 +88,7 @@ export function ConteudoDePresencas({
         origem: 'manual',
         resultado,
         uidHash: uidHashSintetico(),
-      }
-      await repositorio.acrescentarEvento(evento)
+      }))
       await aoRegistrar?.(evento)
       await carregar()
       aoMudarBase?.(aluno.turma)

@@ -13,8 +13,8 @@ import { calcularUidHash, uidHashSintetico } from '../nucleo/hash.ts'
 import { uidInedito, hexParaUid } from '../nucleo/uid.ts'
 import { ehQueRecusa, ehSimulavel, type Recusa } from '../portas/LeitorDeCracha.ts'
 import { IndicadorDoLeitor } from './IndicadorDoLeitor.tsx'
-import { podeApagar } from '../portas/Repositorio.ts'
-import { eventoDe, proximoEventoId, quemFalta, type Sessao } from '../nucleo/sessao.ts'
+import { gravarEventoNovo, podeApagar } from '../portas/Repositorio.ts'
+import { eventoDe, quemFalta, type Sessao } from '../nucleo/sessao.ts'
 import {
   abrirSozinhoEntreProfessores,
   aulasAgora,
@@ -91,7 +91,7 @@ function mensagemDeRecusa(recusa: Recusa): string {
 }
 
 export function Fluxo() {
-  const { leitor, repositorio, config } = useAdsum()
+  const { leitor, repositorio, config, recarregarConfig } = useAdsum()
 
   const [lendo, setLendo] = useState(leitor.estado() === 'lendo')
   const [turmas, setTurmas] = useState(0)
@@ -434,15 +434,28 @@ export function Fluxo() {
 
   // A pasta é a dona: se o cache está vazio e ela tem conteúdo, quem manda é
   // ela. É este caminho que transforma "perdi tudo" em "cliquei de novo".
+  //
+  // `recarregarConfig` depois de restaurar, sempre: a restauração adota o sal
+  // do cofre **na base**, e a config que as telas usam para calcular o hash é
+  // uma cópia em memória lida quando o app abriu. Sem reler, a base guardava
+  // um sal e o crachá era calculado com outro — foi o 17/09/2026: reinstalado
+  // o app, a pasta devolveu o sal antigo, a tela seguiu com o recém-sorteado,
+  // e a turma inteira foi recadastrada num sal que sumiu ao reabrir. No dia
+  // 22 ninguém daquela manhã era reconhecido.
   useEffect(() => {
     if (!pasta) return
     void (async () => {
       if ((await repositorio.listarVinculos()).length === 0) {
+        const antes = (await repositorio.lerConfig()).salHex
         await restaurar(repositorio, pasta)
+        // Só quando o sal mudou: reler troca a identidade de
+        // `recarregarConfig`, que reroda este efeito — e com a pasta sem
+        // vínculos, reler sempre seria laço.
+        if ((await repositorio.lerConfig()).salHex !== antes) await recarregarConfig()
       }
       await recontar()
     })()
-  }, [pasta, repositorio, recontar])
+  }, [pasta, repositorio, recontar, recarregarConfig])
 
   // Gravação que falha em silêncio é o pior defeito possível aqui: a aula segue
   // parecendo salva e só se descobre depois. O erro vira estado visível, e o
@@ -553,21 +566,16 @@ export function Fluxo() {
 
   const abrirChamada = useCallback(
     async (turma: string, uidHash: string, em: Date) => {
-      const [total, vinculo] = await Promise.all([
-        repositorio.contarEventos(),
-        repositorio.vinculoPorHash(uidHash),
-      ])
-      const evento = eventoDe(
+      const vinculo = await repositorio.vinculoPorHash(uidHash)
+      const rascunho = eventoDe(
         { tipo: 'abrir', turma, vinculo },
-        {
-          eventoId: proximoEventoId(config.instalacaoId, em, total + 1),
-          quando: em,
-          turma,
-          uidHash,
-        },
+        { eventoId: '', quando: em, turma, uidHash },
       )
-      if (evento) {
-        await repositorio.acrescentarEvento(evento)
+      if (rascunho) {
+        const evento = await gravarEventoNovo(repositorio, config.instalacaoId, em, (eventoId) => ({
+          ...rascunho,
+          eventoId,
+        }))
         await gravarLinha(evento)
       }
       await repositorio.abrirSessao({ turma, abertaEm: em.toISOString(), uidHashProfessor: uidHash })
@@ -1239,6 +1247,7 @@ export function Fluxo() {
                 }}
                 aoRelerPasta={async () => {
                   const resumo = await restaurar(repositorio, pasta!)
+                  await recarregarConfig()
                   await recontar()
                   return resumo
                 }}

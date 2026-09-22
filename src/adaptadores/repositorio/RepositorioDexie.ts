@@ -147,14 +147,16 @@ export class RepositorioDexie implements Repositorio {
     await this.#banco.sessao.delete(1)
   }
 
-  async acrescentarEvento(evento: Evento): Promise<void> {
+  async acrescentarEvento(evento: Evento): Promise<boolean> {
     try {
       await this.#banco.eventos.add(evento)
+      return true
     } catch (erro) {
       if (erro instanceof Error && erro.name === 'ConstraintError') {
-        // Não é falha: é a idempotência funcionando. Reler o mesmo arquivo não
-        // pode duplicar linha, aqui nem na planilha.
-        return
+        // Não é falha ao reler um arquivo: é a idempotência funcionando. Mas
+        // quem cunhou um evento novo precisa saber que ele não entrou — ver
+        // `gravarEventoNovo`, e o 22/09/2026 que o engolir calado causou.
+        return false
       }
       throw erro
     }

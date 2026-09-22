@@ -333,3 +333,54 @@ nada mandava ele se atualizar. Corrigido conectando a tela ao mesmo
 caminho (`aoRegistrar`/`aoMudarBase`, espelhando como `TelaAula` já fazia)
 — testado contra pasta de verdade, não só o cache, com o teste provado
 falhando sem a correção antes de confirmar que passa com ela.
+
+## 22/09/2026 — a aula que não gravou: dois defeitos depois da leitura
+
+Aula real de CIN0144, com o autor presente. Sintomas: quase todo aluno
+aparecia como crachá sem dono, mesmo quem tinha cadastrado na aula anterior.
+Por volta do trigésimo, escolher o nome na busca não contava mais nada, e o
+botão "Presente" também não. Encerrar e reabrir a chamada funcionou para um
+aluno e travou de novo. **O dongle não teve culpa em nenhum dos dois.**
+Reconstruído a partir do cofre do professor (a pasta, não o navegador).
+
+**1. `evento_id` repetido, engolido como idempotência.** Cada tela tinha o
+próprio contador: `TelaAula` começava pela contagem de eventos **da turma**
+(desde a Fase 4, item B, que escopou a leitura por turma e deixou o
+contador junto), `Fluxo.abrirChamada` pela da base inteira, `TelaPresencas`
+pela da base também. Com duas turmas na base, cunhavam o mesmo id no mesmo
+dia. O `add` do Dexie recusava, `acrescentarEvento` tratava a recusa como
+"reler o mesmo arquivo" e voltava calado — enquanto a linha já tinha ido
+para o CSV da pasta. Pior: o contador era relido da base depois de cada
+evento, e o evento perdido não estava lá, então o id seguinte era o mesmo
+de novo. Travava para sempre. No log de 22/09, 0063→0097 seguidos, depois
+`…-0098` onze vezes, todas recusadas pela base. **O "apita e nada acontece"
+de 17/09 à tarde era este mesmo defeito** (`…-0035` cinco vezes), e não o
+foco da janela que se supôs na época.
+Correção: `gravarEventoNovo` (`portas/Repositorio.ts`) é o único caminho
+para evento novo. Começa da contagem da base e sobe até o `add` aceitar;
+`acrescentarEvento` passou a devolver se gravou. O formato do id não mudou.
+
+**2. O sal em dois lugares.** Em 17/09 o app foi reinstalado apagando os
+dados do site. A instalação nova sorteou um sal; ao religar a pasta,
+`restaurar` adotou na base o sal do cofre, o certo. Mas a config que as
+telas usam para o hash é uma cópia lida quando o app abriu, e ninguém a
+releu. A turma inteira foi recadastrada naquela manhã com o sal
+recém-sorteado, que existia só na memória da aba. Ao reabrir, valia o do
+cofre, e aqueles vínculos nunca mais bateram: 40 deles, incluindo o crachá
+do professor. Correção: `Fluxo` chama `recarregarConfig` quando a
+restauração troca o sal.
+
+**Por que a suíte não pegou.** Todo teste começava de uma base com uma
+turma só e um sal só, e nessa base as duas contagens coincidem. A base
+de um professor na segunda semana não é assim. `ui/Incidente2209.test.tsx`
+monta a base assim (outra turma com aula no mesmo dia; reinstalar e
+religar a pasta), e os quatro testes falham no código anterior.
+
+**O que ficou nos dados.** 16 linhas do CSV (9 presenças de pessoa-dia) têm
+`evento_id` repetido e não estão na base do navegador, então a planilha de
+faltas as mostra como falta. Uma restauração pela pasta também as descartaria
+pela mesma chave. O caminho limpo é o professor marcar essas presenças à mão
+em "Ver presenças", como evento novo, sem reescrever nada. Os 40 vínculos
+no sal perdido ficam inertes: quem só tinha esse vínculo cai na busca de
+crachá desconhecido e é recadastrado na próxima leitura, como aconteceu
+em 22/09.

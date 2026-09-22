@@ -34,7 +34,6 @@ import {
   estatisticaDeIntervalos,
   eventoDe,
   leitorSuspeito,
-  proximoEventoId,
   type Decisao,
   type EstatisticaDeIntervalos,
   type Sessao,
@@ -43,6 +42,7 @@ import { chaveDeIdentidade, diaLocal, presencasDoDia } from '../nucleo/faltas.ts
 import type { Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { ehConfirmavel, ehSimulavel } from '../portas/LeitorDeCracha.ts'
+import { gravarEventoNovo } from '../portas/Repositorio.ts'
 import { useAdsum } from './adsum.ts'
 import { definirProfessorAtual, modoDev, professorAtual } from '../ambiente/preferencias.ts'
 import { Busca } from './componentes/Busca.tsx'
@@ -137,7 +137,6 @@ export function TelaAula({
   const [procurando, setProcurando] = useState<string>()
   /** Para "Remover crachá" na tabela — o vínculo de cada linha já ligada. */
   const [vinculos, setVinculos] = useState<Vinculo[]>([])
-  const sequencia = useRef(0)
   /** Quem já foi marcado presente **hoje** (crachá ou correção manual) — a
       mesma regra de `planilhaDeFaltas`, consultada por matrícula/nome, não
       por crachá. Alimenta o botão Presente/Não presente na lista de alunos,
@@ -321,7 +320,6 @@ export function TelaAula({
     const daAula = eventos.filter(
       (e) => e.turma === sessao.turma && e.quando >= sessao.abertaEm,
     )
-    sequencia.current = eventos.length
     // Crachá de professor nunca conta presença — nem o próprio cadastro dele
     // (ver `contaPresenca`, em `nucleo/sessao.ts`). O evento no log não
     // carrega `papel` — não é dado da chamada, é dado da pessoa —, então quem
@@ -504,17 +502,17 @@ export function TelaAula({
    */
   const alterarPresenca = useCallback(
     async (p: Matriculado, presente: boolean) => {
-      const evento: Evento = {
-        eventoId: proximoEventoId(config.instalacaoId, new Date(), ++sequencia.current),
-        quando: new Date().toISOString(),
+      const agora = new Date()
+      const evento = await gravarEventoNovo(repositorio, config.instalacaoId, agora, (eventoId) => ({
+        eventoId,
+        quando: agora.toISOString(),
         turma: p.turma,
         matricula: p.matricula || undefined,
         nome: efetivo(p).nome,
         origem: 'manual',
         resultado: presente ? 'ok' : 'removido',
         uidHash: uidHashSintetico(),
-      }
-      await repositorio.acrescentarEvento(evento)
+      }))
       await aoRegistrar?.(evento)
       await recarregar()
       aoMudarBase()
@@ -600,8 +598,9 @@ export function TelaAula({
           }
         }
 
-        const evento = eventoDe(decisao, {
-          eventoId: proximoEventoId(config.instalacaoId, leitura.em, ++sequencia.current),
+        // Sem id ainda: quem cunha é `gravarEventoNovo`, na hora de gravar.
+        const rascunho = eventoDe(decisao, {
+          eventoId: '',
           quando: leitura.em,
           turma: sessao.turma,
           uidHash,
@@ -615,8 +614,13 @@ export function TelaAula({
         // latência do disco a cada crachá, e numa fila isso se sente.
         mostrar(decisao)
 
+        const evento =
+          rascunho &&
+          (await gravarEventoNovo(repositorio, config.instalacaoId, leitura.em, (eventoId) => ({
+            ...rascunho,
+            eventoId,
+          })))
         if (evento) {
-          await repositorio.acrescentarEvento(evento)
           await aoRegistrar?.(evento)
           // O LED do leitor serial significa "está salvo", como o bipe: só
           // depois da gravação. Leitor de teclado não tem como confirmar.
@@ -665,17 +669,15 @@ export function TelaAula({
     void (async () => {
       const agora = new Date()
       const vinculo = vinculos.find((v) => v.uidHash === sessao.uidHashProfessor)
-      const evento = eventoDe(
+      const rascunho = eventoDe(
         { tipo: 'encerrar', vinculo },
-        {
-          eventoId: proximoEventoId(config.instalacaoId, agora, ++sequencia.current),
-          quando: agora,
-          turma: sessao.turma,
-          uidHash: sessao.uidHashProfessor,
-        },
+        { eventoId: '', quando: agora, turma: sessao.turma, uidHash: sessao.uidHashProfessor },
       )
-      if (evento) {
-        await repositorio.acrescentarEvento(evento)
+      if (rascunho) {
+        const evento = await gravarEventoNovo(repositorio, config.instalacaoId, agora, (eventoId) => ({
+          ...rascunho,
+          eventoId,
+        }))
         await aoRegistrar?.(evento)
       }
       await repositorio.encerrarSessao()
@@ -1219,17 +1221,16 @@ export function TelaAula({
             void (async () => {
               const uidHash = procurando
               setProcurando(undefined)
-              const evento = eventoDe(
+              const agora = new Date()
+              const rascunho = eventoDe(
                 { tipo: 'desconhecido' },
-                {
-                  eventoId: proximoEventoId(config.instalacaoId, new Date(), ++sequencia.current),
-                  quando: new Date(),
-                  turma: sessao.turma,
-                  uidHash,
-                },
+                { eventoId: '', quando: agora, turma: sessao.turma, uidHash },
               )
-              if (evento) {
-                await repositorio.acrescentarEvento(evento)
+              if (rascunho) {
+                const evento = await gravarEventoNovo(repositorio, config.instalacaoId, agora, (eventoId) => ({
+                  ...rascunho,
+                  eventoId,
+                }))
                 await aoRegistrar?.(evento)
               }
               await recarregar()
@@ -1252,17 +1253,15 @@ export function TelaAula({
               // dois: aqui alguém chegou sem aviso e o app perguntou quem é;
               // chamar nomes é o professor decidindo, de propósito, ir atrás
               // de quem falta.
-              const evento = eventoDe(
+              const rascunho = eventoDe(
                 { tipo: 'cadastro', pessoa },
-                {
-                  eventoId: proximoEventoId(config.instalacaoId, quando, ++sequencia.current),
-                  quando,
-                  turma: sessao.turma,
-                  uidHash,
-                },
+                { eventoId: '', quando, turma: sessao.turma, uidHash },
               )
-              if (evento) {
-                await repositorio.acrescentarEvento(evento)
+              if (rascunho) {
+                const evento = await gravarEventoNovo(repositorio, config.instalacaoId, quando, (eventoId) => ({
+                  ...rascunho,
+                  eventoId,
+                }))
                 await aoRegistrar?.(evento)
               }
               tocar('ok')

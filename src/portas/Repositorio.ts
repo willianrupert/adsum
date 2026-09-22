@@ -8,7 +8,7 @@
 //    camada, e nunca do caminho da leitura.
 
 import type { Aula, Config, Evento, Matriculado, UidHash, Vinculo } from '../nucleo/tipos.ts'
-import type { Sessao } from '../nucleo/sessao.ts'
+import { proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
 
 export interface DiagnosticoRepositorio {
   nome: string
@@ -78,8 +78,13 @@ export interface Repositorio {
   abrirSessao(sessao: Sessao): Promise<void>
   encerrarSessao(): Promise<void>
 
-  /** Único caminho de escrita de evento. Rejeita `eventoId` repetido. */
-  acrescentarEvento(evento: Evento): Promise<void>
+  /**
+   * Único caminho de escrita de evento. `eventoId` repetido não grava e
+   * devolve `false` — é a idempotência de reler um arquivo. Evento **novo**
+   * não chama isto direto: passa por `gravarEventoNovo`, que não aceita o
+   * `false` como resposta.
+   */
+  acrescentarEvento(evento: Evento): Promise<boolean>
   /**
    * Mais recentes primeiro. Sem opções, devolve tudo, de qualquer turma.
    *
@@ -106,6 +111,42 @@ export interface Repositorio {
   esvaziarCache(): Promise<void>
 
   diagnostico(): Promise<DiagnosticoRepositorio>
+}
+
+/** Muito acima de qualquer aula: bater nisto é defeito, não fila longa. */
+const TENTATIVAS_DE_ID = 1000
+
+/**
+ * Grava um evento que acabou de acontecer, com um `evento_id` que ainda não
+ * existe na base.
+ *
+ * Existe por causa de 22/09/2026. Cada tela guardava o próprio contador, e
+ * cada uma o começava de um lugar: `TelaAula` pela contagem **da turma**
+ * (desde a Fase 4, item B), `Fluxo` pela da base inteira. Numa base com duas
+ * turmas os dois cunhavam o mesmo id no mesmo dia; o `add` recusava o
+ * repetido, a recusa passava por idempotência, e o evento sumia calado — o
+ * bipe tocava, o nome não mudava, o contador não subia. Como o contador era
+ * relido da base depois de cada evento, e o evento perdido não estava lá, o
+ * id seguinte era o mesmo de novo: travava para sempre. Foi também o "apita e
+ * nada acontece" de 17/09 à tarde, que se atribuiu ao foco da janela.
+ *
+ * A saída não é acertar o contador, é não depender dele: começa da contagem
+ * da base e sobe até o `add` aceitar. O `add` do IndexedDB é atômico, então
+ * duas leituras quase juntas nunca ficam com o mesmo id — a segunda só tenta
+ * o próximo. Não achar id livre lança: gravação que falha tem que aparecer.
+ */
+export async function gravarEventoNovo(
+  repositorio: Repositorio,
+  instalacaoId: string,
+  cunhadoEm: Date,
+  montar: (eventoId: string) => Evento,
+): Promise<Evento> {
+  const inicio = (await repositorio.contarEventos()) + 1
+  for (let n = inicio; n < inicio + TENTATIVAS_DE_ID; n++) {
+    const evento = montar(proximoEventoId(instalacaoId, cunhadoEm, n))
+    if (await repositorio.acrescentarEvento(evento)) return evento
+  }
+  throw new Error('Nenhum evento_id livre para gravar o evento. Nada foi salvo.')
 }
 
 /**
