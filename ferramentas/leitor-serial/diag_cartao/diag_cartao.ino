@@ -34,6 +34,8 @@
 #include <SPI.h>
 
 static const int PINO_SCK = 4, PINO_MISO = 5, PINO_MOSI = 6, PINO_CS = 7;
+/** LED verde no GPIO 3, com 330 Ω para o GND: acende a cada crachá lido. */
+static const int PINO_LED = 3;
 static const uint8_t ESCREVER = 0x01, LER_ESTADO = 0x02, LER_DADOS = 0x03;
 static const uint8_t VERSAO[] = {0x00, 0x00, 0xFF, 0x02, 0xFE, 0xD4, 0x02, 0x2A, 0x00};
 // SAMConfiguration: modo normal, sem timeout, sem IRQ.
@@ -152,6 +154,8 @@ void setup() {
   Serial.begin(115200);
   delay(1500);
   Serial.println("#DIAG diag_cartao — encoste um crachá no PN532");
+  pinMode(PINO_LED, OUTPUT);
+  digitalWrite(PINO_LED, LOW);
   pinMode(PINO_CS, OUTPUT);
   digitalWrite(PINO_CS, HIGH);
   SPI.begin(PINO_SCK, PINO_MISO, PINO_MOSI, PINO_CS);
@@ -181,7 +185,9 @@ void loop() {
     Serial.printf("| ATQA=%02X%02X SAK=%02X", r[9], r[10], r[11]);
     if (tamanhoUid == 4) Serial.printf(" | decimal do dongle: %010u", valor);
     Serial.println();
+    digitalWrite(PINO_LED, HIGH);
     delay(1200);
+    digitalWrite(PINO_LED, LOW);
   }
   delay(200);
 }
