@@ -447,3 +447,19 @@ gravada a cada leitura (e depois adiada leitura a leitura), fez o teste de
 100 alunos perder uma rajada. Agora fica em memória e grava num lote, com o
 navegador ocioso ou no fim da chamada. O diário mostrou que, sem isso, cada
 crachá custa ~30-50 ms no jsdom e nenhuma rajada é recusada.
+
+**Ligar uma pasta a uma base com dados apagava da pasta o que era só dela.**
+Achado ao preparar o autor para trabalhar sobre uma cópia do cofre do
+professor: com base não vazia, ligar a pasta só trazia os sais, e a primeira
+gravação reescrevia `vinculos.json` a partir da base — todo vínculo que só a
+pasta tinha sumia. `mesclarDaPasta` traz vínculos, turmas e grade que a base
+não tem, sem tocar nos que ela tem.
+
+**Restaurar descartava calado linhas de `evento_id` repetido.** Contra a
+regra de que leitura de CSV nunca descarta linha. `importarEventos` traz a
+linha repetida de outro conteúdo com id derivado (`<id>.2`), só na base; o
+arquivo fica como foi gravado. A conferência passou a valer nos dois
+sentidos. Ensaio com a cópia real do cofre: as 168 linhas dos dois arquivos
+entram na base, e as 13 presenças que a base do professor tinha perdido
+(8 em 22/09, 5 em 17/09 — ids colidindo também entre as duas turmas, que a
+primeira contagem não viu) voltam sozinhas ao ligar a pasta.

@@ -103,56 +103,200 @@ export async function acrescentarNoLog(
   )
 }
 
+/** Mesmo acontecimento, e não só o mesmo `evento_id`. */
+function mesmoEvento(a: Evento, b: Evento): boolean {
+  return (
+    a.quando === b.quando &&
+    a.uidHash === b.uidHash &&
+    a.turma === b.turma &&
+    a.origem === b.origem &&
+    a.resultado === b.resultado
+  )
+}
+
+/** `web-8c56-20260922-0098.2` → `web-8c56-20260922-0098`. Ver `importarEventos`. */
+export const idDeOrigem = (eventoId: string) => eventoId.replace(/\.\d+$/, '')
+
+/**
+ * Traz linhas de um log para a base. **Nenhuma linha fica de fora em silêncio.**
+ *
+ * `evento_id` repetido com o mesmo conteúdo é a idempotência de sempre: reler
+ * o arquivo não duplica nada. Mas repetido com **outro** conteúdo é outro
+ * acontecimento — foi o que o defeito de 22/09/2026 deixou nos arquivos: onze
+ * presenças com o mesmo id. Antes, a primeira entrava e as outras eram
+ * descartadas calado, contra a regra de que leitura de CSV nunca descarta
+ * linha. Agora entram com um id derivado (`<id>.2`, `<id>.3`…), só na base: o
+ * arquivo continua exatamente como foi gravado.
+ */
+export async function importarEventos(
+  repositorio: Repositorio,
+  itens: Evento[],
+): Promise<{ novos: number; renumerados: number }> {
+  const existentes = new Map((await repositorio.listarEventos()).map((e) => [e.eventoId, e]))
+  let novos = 0
+  let renumerados = 0
+  for (const evento of itens) {
+    const ja = existentes.get(evento.eventoId)
+    if (!ja) {
+      if (await repositorio.acrescentarEvento(evento)) {
+        existentes.set(evento.eventoId, evento)
+        novos++
+      }
+      continue
+    }
+    if (mesmoEvento(ja, evento)) continue
+
+    // Já trazido antes com id derivado? Então é releitura, não linha nova.
+    let derivado: string | undefined
+    for (let n = 2; ; n++) {
+      const candidato = `${evento.eventoId}.${n}`
+      const outro = existentes.get(candidato)
+      if (!outro) {
+        derivado = candidato
+        break
+      }
+      if (mesmoEvento(outro, evento)) break
+    }
+    if (!derivado) continue
+    const copia = { ...evento, eventoId: derivado }
+    if (await repositorio.acrescentarEvento(copia)) {
+      existentes.set(derivado, copia)
+      renumerados++
+    }
+  }
+  return { novos, renumerados }
+}
+
 export interface Conferencia {
   turma: string
   naBase: number
   noArquivo: number
-  /** Estavam na base e faltavam no arquivo; foram acrescentados agora. */
+  /** Estavam só no arquivo e entraram na base agora. */
+  trazidos: number
+  /** Dos trazidos, os que tinham `evento_id` repetido e ganharam id derivado. */
+  renumerados: number
+  /** Estavam só na base e foram acrescentados ao fim do arquivo agora. */
   acrescentados: number
-  /** Estão no arquivo e a base não tem. Não se conserta sozinho: só se denuncia. */
-  soNoArquivo: number
   /** `evento_id` que aparece mais de uma vez no arquivo. */
   repetidos: number
 }
 
 /**
- * Confere o log da pasta contra a base, turma a turma. **Só acrescenta.**
+ * Confere o log da pasta contra a base, turma a turma, **nos dois sentidos**,
+ * e deixa os dois iguais sem reescrever nada.
  *
  * Existe por causa de 22/09/2026: a planilha tinha linhas que a base não
  * tinha, e nada comparava as duas. O arquivo é a planilha que o professor
  * entrega; a base é o que a tela mostra. Divergirem calado é o pior defeito
  * possível aqui.
  *
- * - Evento na base e fora do arquivo (a gravação na pasta falhou): vai para
- *   o fim do arquivo agora. Não reescreve nada; é o mesmo append de sempre.
- * - Linha no arquivo e fora da base: não tem como entrar sem reescrever o que
- *   já foi gravado, então fica como está e é contada — quem chama registra no
- *   diário.
+ * - Linha só no arquivo: entra na base (`importarEventos`), inclusive a de
+ *   id repetido.
+ * - Evento só na base (a gravação na pasta falhou): vai para o fim do arquivo,
+ *   o mesmo append de sempre. Evento de id derivado não volta para o arquivo:
+ *   a linha dele já está lá, com o id original.
  */
 export async function conferirLog(
   repositorio: Repositorio,
   pasta: FileSystemDirectoryHandle,
   turma?: string,
 ): Promise<Conferencia[]> {
-  const eventos = turma ? await repositorio.listarEventos({ turma }) : await repositorio.listarEventos()
+  const turmas = new Set<string>()
+  if (turma) turmas.add(turma)
+  else {
+    for (const e of await repositorio.listarEventos()) turmas.add(e.turma)
+    for (const nome of await listarArquivos(pasta, ['registros'])) {
+      const cru = await ler(pasta, `registros/${nome}`)
+      const primeira = cru ? deCsv(cru).itens[0] : undefined
+      if (primeira) turmas.add(primeira.turma)
+    }
+  }
+
   const resultado: Conferencia[] = []
-  for (const [t, daBase] of porTurma([...eventos].reverse())) {
+  for (const t of turmas) {
     const texto = await ler(pasta, caminhoDosRegistros(t))
-    const doArquivo = texto ? deCsv(texto).itens : []
+    const doArquivo = texto ? deCsv(texto).itens.filter((e) => e.turma === t) : []
+    const { novos, renumerados } = await importarEventos(repositorio, doArquivo)
+
     const idsNoArquivo = new Set(doArquivo.map((e) => e.eventoId))
-    const idsNaBase = new Set(daBase.map((e) => e.eventoId))
-    const faltando = daBase.filter((e) => !idsNoArquivo.has(e.eventoId))
+    const daBase = [...(await repositorio.listarEventos({ turma: t }))].reverse()
+    const faltando = daBase.filter((e) => !idsNoArquivo.has(idDeOrigem(e.eventoId)))
     for (const evento of faltando) await acrescentarNoLog(pasta, evento)
+
     resultado.push({
       turma: t,
       naBase: daBase.length,
       noArquivo: doArquivo.length,
+      trazidos: novos + renumerados,
+      renumerados,
       acrescentados: faltando.length,
-      soNoArquivo: doArquivo.filter((e) => !idsNaBase.has(e.eventoId)).length,
       repetidos: doArquivo.length - idsNoArquivo.size,
     })
   }
   return resultado
+}
+
+/**
+ * Traz da pasta o que a base não tem, sem tocar no que ela tem. É o que ligar
+ * uma pasta faz quando a base já não está vazia.
+ *
+ * Antes, com base cheia, só os sais vinham. Na primeira gravação,
+ * `sincronizar` reescrevia `vinculos.json` e as turmas a partir da base — e
+ * todo vínculo que só existia na pasta sumia dela. Ligar a pasta de outro
+ * computador apagava os crachás cadastrados lá. Aluno cadastrado não pode
+ * ser perdido por ligar uma pasta.
+ *
+ * Mescla, nunca substitui: vínculo e turma que a base já tem ficam como estão
+ * (a base é o que o professor está vendo e corrigindo agora); grade só entra
+ * para turma que ainda não tem nenhuma, porque aulas não têm chave natural e
+ * trazer de novo duplicaria.
+ */
+export async function mesclarDaPasta(
+  repositorio: Repositorio,
+  pasta: FileSystemDirectoryHandle,
+): Promise<{ vinculos: number; turmas: number; aulas: number; problemas: string[] }> {
+  const problemas: string[] = []
+  await lembrarSaisDaPasta(repositorio, pasta)
+
+  let vinculos = 0
+  const vinculosCru = await ler(pasta, NOMES.vinculos)
+  if (vinculosCru) {
+    const { conteudo, problemas: falhas } = deJsonVinculos(vinculosCru)
+    problemas.push(...falhas.map((f) => f.motivo))
+    const locais = new Set((await repositorio.listarVinculos()).map((v) => v.uidHash))
+    for (const vinculo of conteudo ?? []) {
+      if (locais.has(vinculo.uidHash)) continue
+      await repositorio.gravarVinculo(vinculo)
+      vinculos++
+    }
+  }
+
+  let turmas = 0
+  const turmasLocais = new Set(await repositorio.listarTurmas())
+  for (const nome of await listarArquivos(pasta, ['turmas'])) {
+    const cru = await ler(pasta, `turmas/${nome}`)
+    if (!cru) continue
+    const { conteudo, problemas: falhas } = deJsonTurma(cru, nome)
+    problemas.push(...falhas.map((f) => f.motivo))
+    if (!conteudo?.length || turmasLocais.has(conteudo[0].turma)) continue
+    await repositorio.salvarTurma(conteudo[0].turma, conteudo)
+    turmas++
+  }
+
+  let aulas = 0
+  const gradeCru = await ler(pasta, NOMES.grade)
+  if (gradeCru) {
+    const { conteudo, problemas: falhas } = deJsonGrade(gradeCru)
+    problemas.push(...falhas.map((f) => f.motivo))
+    const comGrade = new Set((await repositorio.listarAulas()).map((a) => a.turma))
+    for (const aula of conteudo ?? []) {
+      if (comGrade.has(aula.turma)) continue
+      await repositorio.gravarAula({ ...aula, id: undefined })
+      aulas++
+    }
+  }
+
+  return { vinculos, turmas, aulas, problemas }
 }
 
 /**
@@ -346,7 +490,7 @@ export async function restaurarDeArquivos(
 
     if (nome.endsWith('.csv')) {
       const { itens, problemas: falhas } = deCsv(texto)
-      for (const evento of itens) await repositorio.acrescentarEvento(evento)
+      await importarEventos(repositorio, itens)
       problemas.push(...falhas.map((f) => `${nome}, linha ${f.linha}: ${f.motivo}`))
       lidos.push(nome)
     }
@@ -402,8 +546,9 @@ export async function restaurar(
     const cru = await ler(pasta, `registros/${nome}`)
     if (!cru) continue
     const { itens, problemas: falhas } = deCsv(cru)
-    // `evento_id` é a chave: reler o mesmo arquivo não duplica nada.
-    for (const evento of itens) await repositorio.acrescentarEvento(evento)
+    // `evento_id` é a chave: reler o mesmo arquivo não duplica nada. E id
+    // repetido com outro conteúdo entra com id derivado — ver `importarEventos`.
+    await importarEventos(repositorio, itens)
     problemas.push(...falhas.map((f) => `${nome}, linha ${f.linha}: ${f.motivo}`))
     arquivos.push(`registros/${nome}`)
   }

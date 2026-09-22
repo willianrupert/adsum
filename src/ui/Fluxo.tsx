@@ -63,7 +63,7 @@ import {
   conferirLog,
   gravarFaltas,
   repararLog,
-  lembrarSaisDaPasta,
+  mesclarDaPasta,
   restaurar,
   sincronizar,
 } from '../ambiente/sincronia.ts'
@@ -518,13 +518,14 @@ export function Fluxo() {
       if (!pasta) return
       try {
         for (const c of await conferirLog(repositorio, pasta, turma)) {
-          const divergiu = c.acrescentados > 0 || c.soNoArquivo > 0 || c.repetidos > 0
+          const divergiu = c.acrescentados > 0 || c.trazidos > 0 || c.repetidos > 0
           registrar(divergiu ? 'conferencia_divergiu' : 'conferencia_ok', {
             turma: c.turma,
             base: c.naBase,
             arquivo: c.noArquivo,
-            acrescentados: c.acrescentados,
-            so_no_arquivo: c.soNoArquivo,
+            trazidos_para_base: c.trazidos,
+            renumerados: c.renumerados,
+            acrescentados_ao_arquivo: c.acrescentados,
             repetidos: c.repetidos,
           })
         }
@@ -554,10 +555,16 @@ export function Fluxo() {
     void (async () => {
       const antes = saisConhecidos(await repositorio.lerConfig()).join()
       const vazia = (await repositorio.listarVinculos()).length === 0
+      // Base cheia também recebe o que só a pasta tem: sem isto, a primeira
+      // gravação reescrevia a pasta a partir da base e apagava dela os
+      // vínculos que a base não conhecia. Ver `mesclarDaPasta`.
+      const mescla = vazia ? undefined : await mesclarDaPasta(repositorio, pasta)
       if (vazia) await restaurar(repositorio, pasta)
-      else await lembrarSaisDaPasta(repositorio, pasta)
       registrar('pasta_ligada', {
         restaurou: vazia,
+        vinculos_trazidos: mescla?.vinculos,
+        turmas_trazidas: mescla?.turmas,
+        aulas_trazidas: mescla?.aulas,
         sais: saisConhecidos(await repositorio.lerConfig()).length,
       })
       await conferir()

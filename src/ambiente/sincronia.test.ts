@@ -4,6 +4,7 @@ import { criarPastaFalsa } from '../testes/pastaFalsa.ts'
 import {
   acrescentarNoLog,
   conferirLog,
+  mesclarDaPasta,
   gravarFaltas,
   repararLog,
   restaurar,
@@ -414,10 +415,11 @@ function deCsvTeste(texto: string): string[] {
     .map((l) => l.split(';')[0])
 }
 
-// 22/09/2026: a planilha e a base divergiram calado. A conferência compara as
-// duas e só acrescenta — nunca reescreve o que já foi gravado.
+// 22/09/2026: a planilha e a base divergiram calado. A conferência deixa as
+// duas iguais nos dois sentidos, e nunca reescreve o que já foi gravado.
 describe('conferência da planilha contra a base', () => {
   const SEGUNDO = { ...EVENTO, eventoId: 'web-a1b2-20260818-0002', quando: '2026-08-18T10:07:00.000Z' }
+  const OUTRA_PESSOA = { ...EVENTO, nome: 'Outra Pessoa', uidHash: 'ffff000000000000', quando: '2026-08-18T10:09:00.000Z' }
 
   it('evento que a pasta perdeu volta para o fim do arquivo', async () => {
     const { handle } = criarPastaFalsa()
@@ -427,30 +429,74 @@ describe('conferência da planilha contra a base', () => {
     await repo.acrescentarEvento(SEGUNDO)
 
     const [c] = await conferirLog(repo, handle)
-    expect(c).toMatchObject({ naBase: 2, noArquivo: 1, acrescentados: 1, soNoArquivo: 0, repetidos: 0 })
-
+    expect(c).toMatchObject({ acrescentados: 1, trazidos: 0 })
     const [depois] = await conferirLog(repo, handle)
-    expect(depois).toMatchObject({ naBase: 2, noArquivo: 2, acrescentados: 0 })
+    expect(depois).toMatchObject({ naBase: 2, noArquivo: 2, acrescentados: 0, trazidos: 0 })
   })
 
-  it('denuncia, sem apagar, a linha repetida que a base recusou', async () => {
+  it('linha que só o arquivo tem entra na base', async () => {
     const { handle } = criarPastaFalsa()
+    await acrescentarNoLog(handle, EVENTO)
+    const [c] = await conferirLog(repo, handle)
+    expect(c).toMatchObject({ trazidos: 1, renumerados: 0 })
+    expect(await repo.contarEventos()).toBe(1)
+  })
+
+  it('id repetido com outra pessoa entra com id derivado, e o arquivo fica intacto', async () => {
+    const { handle, raiz } = criarPastaFalsa()
     await repo.acrescentarEvento(EVENTO)
     await acrescentarNoLog(handle, EVENTO)
     // O defeito de 22/09: mesmo id, outra pessoa, só no arquivo.
-    await acrescentarNoLog(handle, { ...EVENTO, nome: 'Outra Pessoa', quando: '2026-08-18T10:09:00.000Z' })
+    await acrescentarNoLog(handle, OUTRA_PESSOA)
+    const antes = raiz.pastas.get('registros')!.arquivos.values().next().value
 
     const [c] = await conferirLog(repo, handle)
-    expect(c).toMatchObject({ naBase: 1, noArquivo: 2, acrescentados: 0, repetidos: 1 })
+    expect(c).toMatchObject({ trazidos: 1, renumerados: 1, repetidos: 1, acrescentados: 0 })
+    const ids = (await repo.listarEventos()).map((e) => e.eventoId).sort()
+    expect(ids).toEqual([EVENTO.eventoId, `${EVENTO.eventoId}.2`])
+    expect(raiz.pastas.get('registros')!.arquivos.values().next().value).toBe(antes)
+
+    // Conferir de novo não traz a mesma linha outra vez.
+    const [depois] = await conferirLog(repo, handle)
+    expect(depois).toMatchObject({ trazidos: 0, acrescentados: 0 })
   })
 
-  it('linha no arquivo que a base não tem é contada', async () => {
+  it('restaurar também não descarta a linha de id repetido', async () => {
     const { handle } = criarPastaFalsa()
-    await repo.acrescentarEvento(EVENTO)
     await acrescentarNoLog(handle, EVENTO)
-    await acrescentarNoLog(handle, SEGUNDO)
+    await acrescentarNoLog(handle, OUTRA_PESSOA)
+    await restaurar(repo, handle)
+    expect(await repo.contarEventos()).toBe(2)
+  })
+})
 
-    const [c] = await conferirLog(repo, handle)
-    expect(c).toMatchObject({ soNoArquivo: 1, acrescentados: 0 })
+describe('ligar uma pasta a uma base que já tem dados', () => {
+  it('traz os vínculos, turmas e grade que só a pasta tem, sem tocar nos daqui', async () => {
+    const { handle } = criarPastaFalsa()
+    await repo.gravarVinculo(VINCULO)
+    await repo.salvarTurma('IF969 · T02', [{ ...PESSOA, turma: 'IF969 · T02' }])
+    await repo.gravarAula({ uidHashProfessor: 'p', dia: 2, inicio: '08:00', fim: '09:50', turma: 'IF969 · T02' })
+    await sincronizar(repo, handle)
+
+    const outra = new RepositorioDexie(`adsum-cofre-${n++}`)
+    await outra.abrir()
+    const meu = { ...VINCULO, uidHash: 'eeee000000000000', nome: 'Daqui' }
+    await outra.gravarVinculo(meu)
+
+    const r = await mesclarDaPasta(outra, handle)
+    expect(r).toMatchObject({ vinculos: 1, turmas: 1, aulas: 1 })
+    const hashes = (await outra.listarVinculos()).map((v) => v.uidHash).sort()
+    expect(hashes).toEqual([VINCULO.uidHash, meu.uidHash].sort())
+
+    // Gravar depois disso não apaga da pasta o vínculo que era só dela.
+    await sincronizar(outra, handle)
+    const deNovo = new RepositorioDexie(`adsum-cofre-${n++}`)
+    await deNovo.abrir()
+    await restaurar(deNovo, handle)
+    expect((await deNovo.listarVinculos()).map((v) => v.uidHash)).toContain(VINCULO.uidHash)
+
+    // Mesclar de novo não duplica a grade.
+    await mesclarDaPasta(outra, handle)
+    expect(await outra.listarAulas()).toHaveLength(1)
   })
 })
