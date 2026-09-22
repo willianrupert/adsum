@@ -13,12 +13,23 @@
 //
 //   PING                       -> PONG
 //   SET <indice> <uid> <matiz> -- define um crachá virtual; uid em decimal de
-//                                 10 dígitos (como o dongle digita) ou em hex
+//                                 10 dígitos (como o dongle digita) ou em hex.
+//                                 Responde `OK <numero>`: o que o dongle vai
+//                                 digitar de verdade, já com o 0x08 imposto
+//                                 pelo firmware e a ordem invertida
 //   CARD <indice> [ms]         -- põe aquele crachá no ar por [ms] (2500 por
 //                                 padrão). O dongle varre o campo em
 //                                 intervalos: com pouco tempo no ar, ele
 //                                 simplesmente não passa por lá — medido em
 //                                 22/09/2026, 350 ms não bastava
+//   FILA <quantos> <ar> <gap>  -- uma turma inteira: `quantos` crachás
+//                                 diferentes, cada um `ar` ms no campo, com
+//                                 `gap` ms entre eles. Responde
+//                                 `OK <primeiro> <ultimo>` com os números que
+//                                 o dongle digita. Crachás **diferentes** a
+//                                 cada rodada de propósito: o dongle ignora o
+//                                 mesmo crachá parado no campo, e só lê de
+//                                 novo quando ele sai e outro entra
 //   LED                        -- pisca cinco vezes, para conferir a ligação
 //   HUMAN <texto> <ms>         -- aceito e ignorado: não há como "digitar
 //                                 devagar" por rádio, e o comando existe só
@@ -217,7 +228,14 @@ void tratar(String linha) {
       return;
     }
     crachas[indice].definido = true;
-    Serial.println("OK");
+    // Devolve o número que o dongle vai digitar, que **não** é o que se
+    // pediu: o primeiro byte do ar é sempre 0x08, e o dongle imprime os
+    // bytes ao contrário. Quem testa precisa saber o que esperar, e
+    // calcular isso do lado de fora seria repetir esta regra em dois
+    // lugares. O app aceita qualquer resposta que não comece por ERR.
+    const uint8_t* u = crachas[indice].uid;
+    const uint32_t comoSai = ((uint32_t)u[2] << 24) | ((uint32_t)u[1] << 16) | ((uint32_t)u[0] << 8) | 0x08;
+    Serial.printf("OK %010u\n", comoSai);
     return;
   }
 
@@ -262,6 +280,44 @@ void tratar(String linha) {
     return;
   }
 
+  if (comando == "FILA") {
+    const int quantos = proximaPalavra(linha).toInt();
+    const String arTexto = proximaPalavra(linha);
+    const String gapTexto = proximaPalavra(linha);
+    const int ar = arTexto.length() ? arTexto.toInt() : 1200;
+    const int gap = gapTexto.length() ? gapTexto.toInt() : 300;
+    if (quantos <= 0 || quantos > 1000) {
+      Serial.println("ERR uso: FILA <quantos> <ms no ar> <ms entre>");
+      return;
+    }
+    // Faixa própria, longe dos UIDs medidos do dongle real e dos crachás de
+    // teste do rig de HID: uma fila nunca deve colidir com crachá de gente.
+    uint32_t primeiro = 0, ultimo = 0;
+    for (int i = 0; i < quantos; i++) {
+      Cracha c;
+      c.definido = true;
+      c.uid[0] = 0xAD;
+      c.uid[1] = (uint8_t)(i >> 8);
+      c.uid[2] = (uint8_t)i;
+      const uint32_t comoSai = ((uint32_t)c.uid[2] << 24) | ((uint32_t)c.uid[1] << 16) | ((uint32_t)c.uid[0] << 8) | 0x08;
+      if (i == 0) primeiro = comoSai;
+      ultimo = comoSai;
+
+      digitalWrite(PINO_LED, HIGH);
+      porNoAr(c);
+      const uint32_t limite = millis() + (uint32_t)max(ar, 100);
+      while (millis() < limite) {
+        delay(45);
+        if (pronto()) break;
+      }
+      tirarDoAr();
+      digitalWrite(PINO_LED, LOW);
+      delay((uint32_t)max(gap, 0));
+    }
+    Serial.printf("OK %010u %010u\n", primeiro, ultimo);
+    return;
+  }
+
   if (comando == "LED") {
     for (int i = 0; i < 5; i++) {
       digitalWrite(PINO_LED, HIGH);
@@ -293,6 +349,13 @@ void setup() {
   delay(500);
   acordar();
 
+  // SAMConfiguration antes de qualquer coisa. Descoberto por eliminação em
+  // 22/09/2026: as duas únicas emulações que o dongle leu aconteceram com o
+  // PN532 ainda configurado pelo sketch anterior — regravar o ESP32 não
+  // reinicia o PN532, e o estado sobreviveu. Depois de desligar a energia de
+  // verdade, nenhuma leitura mais. O chip parece precisar do modo normal
+  // configurado antes de entrar em modo alvo.
+  const uint8_t sam[] = {0xD4, 0x14, 0x01, 0x14, 0x01};
   const uint8_t versao[] = {0xD4, 0x02};
   uint8_t r[16];
   enviarComando(versao, sizeof versao);
@@ -304,7 +367,16 @@ void setup() {
       ok = r[7] == 0x32;
     }
   }
-  Serial.printf("#ADSUM-EMULADOR 1 pn532=%s\n", ok ? "ok" : "erro");
+  enviarComando(sam, sizeof sam);
+  bool samOk = false;
+  if (esperar(40)) {
+    lerQuadro(r, 6);
+    if (esperar(40)) {
+      lerQuadro(r, 9);
+      samOk = true;
+    }
+  }
+  Serial.printf("#ADSUM-EMULADOR 1 pn532=%s sam=%s\n", ok ? "ok" : "erro", samOk ? "ok" : "erro");
 }
 
 void loop() {

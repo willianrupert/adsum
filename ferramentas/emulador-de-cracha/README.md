@@ -24,27 +24,28 @@ diferença. `PING`, `SET <indice> <uid> <matiz>`, `CARD <indice> [ms]`,
 LED verde no GPIO 3 com 330 Ω para o GND: pulsa devagar quando ocioso, fica
 aceso com crachá no ar, pisca três vezes se o alvo for selecionado.
 
-## Estado em 22/09/2026, com honestidade
+## Estado em 22/09/2026: funciona, e o que faltava era uma linha
 
-**Funcionou duas vezes e depois parou de reproduzir.** O `diag_emular`
-(`../leitor-serial/diag_emular`) pôs dois alvos no ar e o dongle leu os dois:
-`08 01 02 01` saiu como `0016908552` e `08 01 02 02` como `0033685768` —
-os mesmos bytes na ordem inversa, como acontece com crachá de verdade. Depois
-disso, nem o firmware novo nem o próprio `diag_emular` conseguiram repetir,
-com a antena na mesma posição.
+O dongle lê os crachás emulados. Provado com números: `SET` anuncia o número
+que vai sair, e foi o que o dongle digitou (`0301101064`, `0317878280`).
 
-Então o caminho **existe** (está provado que o dongle lê alvo emulado), mas
-ainda não é confiável. O que ficou por investigar, em ordem:
+**O que travou a bancada por horas foi a falta do `SAMConfiguration`.** O
+PN532 precisa do modo normal configurado antes de entrar em modo alvo. As
+duas primeiras emulações que funcionaram aconteceram por acidente: o sketch
+anterior (`diag_cartao`) tinha mandado o `SAMConfiguration`, e **regravar o
+ESP32 não reinicia o PN532** — o estado sobreviveu. Ao desligar a energia de
+verdade, o estado se perdeu e nada mais funcionou, o que parecia
+instabilidade de rádio e era configuração faltando.
 
-1. **Estado do PN532** depois de muitas rodadas de modo alvo: desligar e
-   religar tudo antes de concluir qualquer coisa.
-2. **Alimentação**: emitir resposta de rádio puxa mais corrente que responder
-   comando. Vale testar com 5 V no VCC.
-3. **Ritmo da consulta de estado**: perguntar a cada poucos ms mantém o chip
-   ocupado no SPI enquanto ele deveria cuidar do rádio. O firmware já espaça
-   em ~50 ms, mas isso não foi validado com leitura de verdade.
-4. **Descanso do dongle**: se ele tem modo de economia depois de tempo parado,
-   o teste precisa acordá-lo antes.
+Vale registrar o caminho errado que isso me fez seguir, para ninguém repetir:
+cheguei a suspeitar de alimentação e a sugerir 5 V no VCC. Era hipótese ruim,
+e o próprio dado desmentia — o módulo continuava respondendo à SPI antes e
+depois de cada tentativa, e queda de alimentação derrubaria as duas coisas.
+
+**O dongle ignora o mesmo crachá parado no campo** (observação do autor na
+bancada): ele só lê de novo quando o cartão sai e outro entra. Por isso o
+comando `FILA` troca de UID a cada aluno, e é assim que uma turma inteira
+passa com o dongle imóvel.
 
 ## Limites que não são bug
 
