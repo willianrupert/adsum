@@ -133,6 +133,16 @@ export async function importarEventos(
   itens: Evento[],
 ): Promise<{ novos: number; renumerados: number }> {
   const existentes = new Map((await repositorio.listarEventos()).map((e) => [e.eventoId, e]))
+  // O contador não pode ficar atrás de um id desta instalação que veio no
+  // arquivo: seria cunhar de novo um número já gasto.
+  const { instalacaoId } = await repositorio.lerConfig()
+  let maiorDaCasa = 0
+  for (const e of itens) {
+    if (!e.eventoId.startsWith(`${instalacaoId}-`)) continue
+    const numero = Number.parseInt(e.eventoId.split('-').pop() ?? '', 10)
+    if (Number.isFinite(numero) && numero > maiorDaCasa) maiorDaCasa = numero
+  }
+  if (maiorDaCasa > 0) await repositorio.garantirSequenciaAcimaDe(maiorDaCasa)
   let novos = 0
   let renumerados = 0
   for (const evento of itens) {

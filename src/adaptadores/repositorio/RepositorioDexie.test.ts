@@ -251,13 +251,12 @@ describe('sequência de evento_id', () => {
     expect(await repo.reservarSequencia()).toBe(primeiro + 1)
   })
 
-  // Base de antes deste campo: o contador não pode nascer na contagem de
-  // eventos, porque o log tem buracos (restauração traz o de outra instalação).
-  it('numa base antiga, começa depois do maior número já usado por esta instalação', async () => {
-    const { instalacaoId } = await repo.lerConfig()
-    await repo.acrescentarEvento(evento({ eventoId: `${instalacaoId}-20260818-0136` }))
-    await repo.acrescentarEvento(evento({ eventoId: `${instalacaoId}-20260818-0007` }))
-    await repo.acrescentarEvento(evento({ eventoId: 'web-outra-20260818-9999' }))
-    expect(await repo.reservarSequencia()).toBe(137)
+  it('log trazido de fora empurra o contador para cima do que já foi usado', async () => {
+    expect(await repo.reservarSequencia()).toBe(1)
+    await repo.garantirSequenciaAcimaDe(500)
+    expect(await repo.reservarSequencia()).toBe(501)
+    // Número menor não puxa para trás.
+    await repo.garantirSequenciaAcimaDe(10)
+    expect(await repo.reservarSequencia()).toBe(502)
   })
 })

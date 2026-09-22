@@ -90,6 +90,12 @@ export interface Repositorio {
    * devolvem o mesmo número, nem em duas abas: ver `Config.proximaSequencia`.
    */
   reservarSequencia(): Promise<number>
+  /**
+   * Garante que o contador está acima de um número já usado. Log trazido de
+   * fora pode conter ids desta instalação maiores que o contador daqui — uma
+   * restauração depois de limpar o navegador, por exemplo.
+   */
+  garantirSequenciaAcimaDe(numero: number): Promise<void>
 
   /**
    * Único caminho de escrita de evento. `eventoId` repetido não grava e

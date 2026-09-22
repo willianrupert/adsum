@@ -32,6 +32,7 @@ export class RepositorioDexie implements Repositorio {
   async abrir(): Promise<void> {
     await this.#banco.open()
     await this.#garantirConfig()
+    await this.#prepararSequencia()
     this.#persistente = await this.#pedirPersistencia()
   }
 
@@ -215,6 +216,23 @@ export class RepositorioDexie implements Repositorio {
   }
 
   /**
+   * Deixa o contador pronto antes da primeira leitura.
+   *
+   * Numa base que vem de antes do campo, descobrir o número inicial custa uma
+   * varredura do log inteiro — medido em 3 s com 150 mil eventos. Na abertura
+   * do app isso não atrapalha ninguém; no primeiro crachá da fila, atrapalha.
+   */
+  async #prepararSequencia(): Promise<void> {
+    const config = await this.lerConfig()
+    if (config.proximaSequencia !== undefined) return
+    // Base sem evento nenhum não precisa de varredura nem de escrita: o
+    // primeiro pedido acerta sozinho, e abrir o app não custa uma gravação.
+    if ((await this.#banco.eventos.count()) === 0) return
+    const maior = await this.#maiorSequenciaUsada(config.instalacaoId)
+    await this.#mudarConfig({ proximaSequencia: maior + 1 })
+  }
+
+  /**
    * O número seguinte, reservado numa transação: duas abas na mesma base
    * nunca recebem o mesmo. A primeira chamada numa base anterior a este
    * campo olha o maior número já usado por esta instalação — contar eventos
@@ -231,6 +249,15 @@ export class RepositorioDexie implements Repositorio {
     })
     this.#config = undefined
     return reservado
+  }
+
+  async garantirSequenciaAcimaDe(numero: number): Promise<void> {
+    await this.#banco.transaction('rw', this.#banco.config, async () => {
+      const config = (await this.#banco.config.get(ID_DA_CONFIG))!
+      if ((config.proximaSequencia ?? 0) > numero) return
+      await this.#banco.config.update(ID_DA_CONFIG, { proximaSequencia: numero + 1 })
+    })
+    this.#config = undefined
   }
 
   async #maiorSequenciaUsada(instalacaoId: string): Promise<number> {

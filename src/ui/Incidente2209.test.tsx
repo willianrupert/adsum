@@ -130,6 +130,36 @@ describe('base com duas turmas: cada evento novo ganha um id que ainda não exis
     expect(await within(linha).findByRole('button', { name: 'Não presente' })).toBeInTheDocument()
   })
 
+  // A rede de segurança: mesmo que o número reservado já esteja ocupado — um
+  // log trazido de fora com ids desta instalação —, a gravação acontece.
+  it('id reservado já ocupado não perde o evento', async () => {
+    const { repositorio, config } = bancada
+    // O próximo a ser reservado é o seguinte ao que acabou de sair.
+    const ocupado = proximoEventoId(config.instalacaoId, new Date(), (await repositorio.reservarSequencia()) + 1)
+    await repositorio.acrescentarEvento({
+      eventoId: ocupado,
+      quando: new Date().toISOString(),
+      turma: TURMA,
+      nome: 'De outro lugar',
+      origem: 'manual',
+      resultado: 'ok',
+      uidHash: 'aaaa111122223333',
+    })
+
+    const evento = await gravarEventoNovo(repositorio, config.instalacaoId, new Date(), (eventoId) => ({
+      eventoId,
+      quando: new Date().toISOString(),
+      turma: TURMA,
+      nome: 'Aluno 1',
+      origem: 'manual' as const,
+      resultado: 'ok' as const,
+      uidHash: 'bbbb111122223333',
+    }))
+    expect(evento.eventoId).not.toBe(ocupado)
+    expect(await repositorio.vinculoPorHash('bbbb111122223333')).toBeUndefined() // nada além do evento
+    expect((await repositorio.listarEventos({ turma: TURMA })).map((e) => e.eventoId)).toContain(evento.eventoId)
+  })
+
   it('trinta eventos gravados ao mesmo tempo ganham trinta ids diferentes', async () => {
     const { repositorio, config } = bancada
     const gravados = await Promise.all(
