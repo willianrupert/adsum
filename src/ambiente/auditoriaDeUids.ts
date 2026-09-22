@@ -12,13 +12,15 @@
 // - arquivo **separado** (`auditoria/uids.csv`), nunca misturado ao log de
 //   presença nem ao `vinculos.json` — apagar a auditoria não toca na chamada;
 // - **sem nome**: o arquivo liga UID a `uid_hash`, e o nome só aparece
-//   cruzando com `vinculos.json`;
+//   cruzando com `vinculos.json`. Por isso o `uid_hash` gravado é **o do
+//   vínculo que a leitura achou**, no sal em que ele foi cadastrado, e não o
+//   do sal atual: é essa igualdade de texto que permite refazer a base a
+//   partir deste arquivo mesmo que o sal daquele vínculo se perca;
 // - **ligado por padrão durante os testes**, desligável no Diagnóstico, que
 //   avisa enquanto estiver ligado;
 // - **uma linha por crachá**, na primeira leitura: nenhum custo nas leituras
 //   seguintes, que são quase todas.
 
-import { calcularUidHash } from '../nucleo/hash.ts'
 import type { Uid } from '../nucleo/tipos.ts'
 import { acrescentar, ler } from './pasta.ts'
 
@@ -57,7 +59,8 @@ function jaVistos(pasta: FileSystemDirectoryHandle): Promise<Set<string>> {
  */
 export function anotarUid(
   pasta: FileSystemDirectoryHandle,
-  salHex: string,
+  /** Só é chamado quando o crachá é novo no arquivo: nenhum custo nos outros. */
+  hashDoCracha: () => Promise<string>,
   uid: Uid,
   em: Date,
   leitor: string,
@@ -67,7 +70,7 @@ export function anotarUid(
     try {
       const conjunto = await jaVistos(pasta)
       if (conjunto.has(hex)) return false
-      const uidHash = await calcularUidHash(salHex, uid)
+      const uidHash = await hashDoCracha()
       await acrescentar(pasta, CAMINHO_DA_AUDITORIA, `${hex};${uidHash};${em.toISOString()};${leitor}\n`, CABECALHO)
       conjunto.add(hex)
       return true

@@ -35,6 +35,8 @@ import { adiarHorario } from '../ambiente/preferencias.ts'
 import { restaurar, sincronizar } from '../ambiente/sincronia.ts'
 import { LeitorTeclado } from '../adaptadores/leitor/LeitorTeclado.ts'
 import { esquecerDiario, linhasDoDiario } from '../ambiente/diario.ts'
+import { anotarUid, CAMINHO_DA_AUDITORIA, esquecerAuditoria } from '../ambiente/auditoriaDeUids.ts'
+import { ler } from '../ambiente/pasta.ts'
 import { gravarMarcasPendentes, identificarCracha, vinculosSemSal } from '../portas/Repositorio.ts'
 
 const TURMA = 'IF685 · T01'
@@ -373,6 +375,23 @@ describe('aluno cadastrado nunca se perde por troca de sal', () => {
     expect((await repositorio.vinculoPorHash(uidHash))?.salId).toBeUndefined()
     await gravarMarcasPendentes()
     expect((await repositorio.vinculoPorHash(uidHash))?.salId).toBe(await idDoSal(config.salHex))
+  })
+
+  it('uids.csv guarda o hash que liga ao vínculo, mesmo cadastrado num sal antigo', async () => {
+    const { repositorio, config } = await montarBancada()
+    const doVinculo = await calcularUidHash(config.salHex, CRACHA)
+    await repositorio.gravarVinculo({ uidHash: doVinculo, papel: 'aluno', nome: 'Maria', criadoEm: '' })
+    await repositorio.definirSal('00112233445566778899aabbccddeeff')
+    const atual = await repositorio.lerConfig()
+
+    esquecerAuditoria()
+    const { handle } = criarPastaFalsa()
+    await anotarUid(handle, () => identificarCracha(repositorio, atual, CRACHA).then((r) => r.uidHash), CRACHA, new Date(), 'Dongle USB')
+
+    const linha = (await ler(handle, CAMINHO_DA_AUDITORIA))!.trim().split('\n')[1]
+    // É esta igualdade que refaz a base sem recadastro: uid_hex ao lado do
+    // mesmo texto que está em vinculos.json.
+    expect(linha.split(';').slice(0, 2)).toEqual(['3770f213', doVinculo])
   })
 
   it('crachá desconhecido cai no sal atual, que é onde o cadastro nasce', async () => {

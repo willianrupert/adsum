@@ -363,12 +363,15 @@ export function Fluxo() {
     if (!pasta) return
     return leitor.aoLer((leitura) => {
       if (!auditoriaDeUidsLigada()) return
-      anotarUid(pasta, config.salHex, leitura.uid, leitura.em, leitura.origem).then(
+      // O hash do vínculo achado, em qualquer sal do chaveiro — ou o do sal
+      // atual, que é onde o cadastro de um crachá novo nasce.
+      const hash = () => identificarCracha(repositorio, config, leitura.uid).then((r) => r.uidHash)
+      anotarUid(pasta, hash, leitura.uid, leitura.em, leitura.origem).then(
         (novo) => novo && registrar('uid_anotado'),
         (erro: Error) => registrar('erro_auditoria', { mensagem: erro.message }),
       )
     })
-  }, [leitor, pasta, config.salHex])
+  }, [leitor, pasta, repositorio, config])
 
   // Uma leitura que chegou e **não virou crachá** nunca mais fica muda: era
   // o "apitou e nada aconteceu" (15 e 17/09/2026). Vale em qualquer tela,

@@ -63,6 +63,24 @@ export const curto = (uidHash: string | undefined) => uidHash?.slice(0, 8)
 export function ligarDiario(nova: FileSystemDirectoryHandle | undefined): void {
   pasta = nova
   agendar()
+  ouvirSaida()
+}
+
+/**
+ * Aba escondida ou fechando: grava o lote na hora, sem esperar os 5 s. É o
+ * momento em que o diário mais importa — a aula que terminou com o
+ * computador desligando — e o único em que esperar perde as últimas linhas.
+ * Não há garantia de que o navegador deixe terminar uma gravação ao fechar;
+ * `visibilitychange` chega antes, com a página ainda viva, e costuma bastar.
+ */
+let ouvindoSaida = false
+function ouvirSaida(): void {
+  if (ouvindoSaida || typeof document === 'undefined') return
+  ouvindoSaida = true
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') void descarregar()
+  })
+  window.addEventListener('pagehide', () => void descarregar())
 }
 
 export function linhasDoDiario(): readonly string[] {
