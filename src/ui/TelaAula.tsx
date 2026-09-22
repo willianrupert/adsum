@@ -319,13 +319,43 @@ export function TelaAula({
     const hashesDeProfessor = new Set(
       vinculosAtuais.filter((v) => v.papel === 'professor').map((v) => v.uidHash),
     )
-    const conjunto = new Set(
+    // `jaPresentes.current`: só crachá real, por `uidHash` — é o que
+    // `decidir()` usa pra distinguir presença nova de "repetido" na fila de
+    // leitura em tempo real (`nucleo/sessao.ts`). Presença manual não entra
+    // aqui: ela não carrega um `uidHash` de verdade (usa
+    // `uidHashSintetico()`, sorteado a cada clique), e misturar quebraria
+    // esse dedup — não é o mesmo problema do contador abaixo.
+    const porCrachaReal = new Set(
       daAula
         .filter((e) => e.origem === 'cracha' && e.resultado === 'ok' && !hashesDeProfessor.has(e.uidHash))
         .map((e) => e.uidHash),
     )
-    jaPresentes.current = conjunto
-    setPresentes(conjunto)
+    jaPresentes.current = porCrachaReal
+
+    // `presentes`: o contador grande do topo — "quantas pessoas estão na
+    // sala agora". Achado em 22/09/2026: ficava contando só crachá, e
+    // travava em zero a aula inteira quando o professor seguia pela via
+    // manual (dongle ausente ou quebrado) — o oposto do que essa tela
+    // precisa mostrar bem na hora em que o crachá falhou.
+    //
+    // Reaproveita `presencasDoDia`, não uma união de "ok" à parte: um "não
+    // presente" depois de um crachá já aceito precisa **descontar**, e só a
+    // regra de "manual mais recente vence" (a mesma do selo por linha,
+    // abaixo) resolve isso — uma união simples de eventos "ok" nunca
+    // esqueceria alguém removido. `hashesDeProfessor` sai antes de entrar
+    // na conta: o crachá do professor grava `origem: 'cracha'` como
+    // qualquer outro (`decidir()`/`contaPresenca`, em `nucleo/sessao.ts`),
+    // e sem filtrar aqui ele contaria como um aluno presente.
+    const semCrachaDeProfessor = daAula.filter(
+      (e) => !(e.origem === 'cracha' && hashesDeProfessor.has(e.uidHash)),
+    )
+    setPresentes(
+      new Set(
+        [...presencasDoDia(semCrachaDeProfessor, sessao.turma, dia)]
+          .filter(([, v]) => v.presente)
+          .map(([chave]) => chave),
+      ),
+    )
     setPresencasHoje(presencasDoDia(daAula, sessao.turma, dia))
     setLinhas(
       daAula
@@ -453,11 +483,13 @@ export function TelaAula({
    * própria tela que acabou de gravá-lo nunca o via. Achado pelo teste, não
    * a olho.
    *
-   * Não mexe no contador do topo (`presentes.size`) — esse é o dedup em
-   * tempo real da fila de leitura, com garantia própria contra crachá
-   * duplo; misturar os dois aqui trocaria uma contagem defendida por
-   * comentário por uma nova, sem a mesma garantia. `presencasHoje` é a
-   * fonte certa pra "esta linha está presente agora".
+   * O contador do topo (`presentes.size`) conta este evento também, desde
+   * 22/09/2026 — achado numa sessão de testes: o professor sem dongle (ou
+   * com o dongle quebrado, o caminho que este arquivo inteiro discute)
+   * segue pela via manual, e o contador travado em zero a aula inteira era
+   * o oposto do que ele precisa ver bem na hora. A contagem em si não
+   * acontece aqui — é `recarregar()`, abaixo, relendo o log — este
+   * `useCallback` só grava o evento.
    */
   const alterarPresenca = useCallback(
     async (p: Matriculado, presente: boolean) => {

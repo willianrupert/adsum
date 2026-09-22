@@ -379,6 +379,52 @@ describe('presença manual na lista de alunos', () => {
     const linhaDaLista = await screen.findByText('Ana Paula', { selector: '.coleta__linha--removido span' })
     expect(linhaDaLista).toBeInTheDocument()
   })
+
+  // Achado em 22/09/2026: o contador grande do topo contava só crachá — quem
+  // seguia pela via manual (dongle ausente ou quebrado, o cenário que este
+  // arquivo inteiro discute) via o número travado em zero a aula inteira,
+  // mesmo marcando todo mundo presente. O selo por linha (`presencasHoje`)
+  // já mudava; o contador, não.
+  it('presença manual soma no contador grande do topo, igual a um crachá', async () => {
+    const usuario = userEvent.setup()
+    montar([ANA, BRENO])
+    const status = screen.getByRole('status')
+    expect(status).toHaveAttribute('aria-label', '0')
+
+    const linhaDaAna = screen.getByLabelText(`nome de ${ANA.nomeCompleto}`).closest('tr')!
+    await usuario.click(within(linhaDaAna).getByRole('button', { name: 'Presente' }))
+    await waitFor(() => expect(status).toHaveAttribute('aria-label', '1'))
+
+    const linhaDoBreno = screen.getByLabelText(`nome de ${BRENO.nomeCompleto}`).closest('tr')!
+    await usuario.click(within(linhaDoBreno).getByRole('button', { name: 'Presente' }))
+    await waitFor(() => expect(status).toHaveAttribute('aria-label', '2'))
+
+    // E desfazer também desconta — não é só ida, é o par completo.
+    await usuario.click(await within(linhaDaAna).findByRole('button', { name: 'Não presente' }))
+    await waitFor(() => expect(status).toHaveAttribute('aria-label', '1'))
+  })
+
+  it('crachá de verdade e presença manual contam juntos, sem duplicar a mesma pessoa', async () => {
+    const usuario = userEvent.setup()
+    await comCrachaDaAna()
+    montar([BRENO])
+    const status = screen.getByRole('status')
+
+    await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await waitFor(() => expect(status).toHaveAttribute('aria-label', '1'))
+
+    const linhaDoBreno = screen.getByLabelText(`nome de ${BRENO.nomeCompleto}`).closest('tr')!
+    await usuario.click(within(linhaDoBreno).getByRole('button', { name: 'Presente' }))
+    await waitFor(() => expect(status).toHaveAttribute('aria-label', '2'))
+
+    // Marcar a Ana presente à mão de novo (já tem crachá lido) não soma uma
+    // segunda vez — mesma pessoa, identificada pela matrícula, não pelo
+    // `uidHash` sorteado do clique manual.
+    const linhaDaAna = screen.getByLabelText(`nome de ${ANA.nomeCompleto}`).closest('tr')!
+    await usuario.click(within(linhaDaAna).getByRole('button', { name: 'Não presente' }))
+    await usuario.click(await within(linhaDaAna).findByRole('button', { name: 'Presente' }))
+    await waitFor(() => expect(status).toHaveAttribute('aria-label', '2'))
+  })
 })
 
 // Mesmo padrão de `TelaRepositorio.tsx` (Ajustes → Vínculos): editar aqui
