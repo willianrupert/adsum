@@ -27,7 +27,7 @@
 // declarar.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { calcularUidHash, uidHashSintetico } from '../nucleo/hash.ts'
+import { idDoSal, uidHashSintetico } from '../nucleo/hash.ts'
 import {
   contaPresenca,
   decidir,
@@ -42,7 +42,7 @@ import { chaveDeIdentidade, diaLocal, presencasDoDia } from '../nucleo/faltas.ts
 import type { Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { ehConfirmavel, ehSimulavel } from '../portas/LeitorDeCracha.ts'
-import { gravarEventoNovo } from '../portas/Repositorio.ts'
+import { gravarEventoNovo, identificarCracha } from '../portas/Repositorio.ts'
 import { useAdsum } from './adsum.ts'
 import { definirProfessorAtual, modoDev, professorAtual } from '../ambiente/preferencias.ts'
 import { Busca } from './componentes/Busca.tsx'
@@ -308,6 +308,12 @@ export function TelaAula({
 
   // Reabrir o app no meio da aula tem que reencontrar quem já passou. A fonte
   // é o log, não a memória da tela — fechar o notebook não pode zerar a chamada.
+  //
+  // **Uma chamada por turma por dia**, como no SIGAA. Até 22/09/2026 a conta
+  // começava em `abertaEm`: encerrar e reabrir voltava a zero, e o professor
+  // via a turma inteira sumir no meio da aula. Agora vale o dia de `abertaEm`
+  // inteiro — reabrir é continuar, e quem já passou é "repetido", não
+  // presença nova.
   const recarregar = useCallback(async () => {
     const [eventos, vinculosAtuais] = await Promise.all([
       // Só a turma desta aula: o índice já existe, e ler a base inteira do
@@ -317,9 +323,7 @@ export function TelaAula({
       repositorio.listarVinculos(),
     ])
     setVinculos(vinculosAtuais)
-    const daAula = eventos.filter(
-      (e) => e.turma === sessao.turma && e.quando >= sessao.abertaEm,
-    )
+    const daAula = eventos.filter((e) => e.turma === sessao.turma && diaLocal(e.quando) === dia)
     // Crachá de professor nunca conta presença — nem o próprio cadastro dele
     // (ver `contaPresenca`, em `nucleo/sessao.ts`). O evento no log não
     // carrega `papel` — não é dado da chamada, é dado da pessoa —, então quem
@@ -444,9 +448,11 @@ export function TelaAula({
         nome: pessoa.nome,
         matricula: pessoa.matricula || undefined,
         criadoEm: quando.toISOString(),
+        // Crachá sem dono é sempre calculado no sal atual (`identificarCracha`).
+        salId: await idDoSal(config.salHex),
       })
     },
-    [repositorio, vinculos],
+    [repositorio, vinculos, config.salHex],
   )
 
   /**
@@ -525,8 +531,7 @@ export function TelaAula({
       setUltimaAtividadeEm(leitura.em)
       void (async () => {
         const minha = ++geracao.current
-        const uidHash = await calcularUidHash(config.salHex, leitura.uid)
-        const vinculo = await repositorio.vinculoPorHash(uidHash)
+        const { uidHash, vinculo } = await identificarCracha(repositorio, config, leitura.uid)
         const decisao = decidir(uidHash, {
           sessao,
           vinculo,

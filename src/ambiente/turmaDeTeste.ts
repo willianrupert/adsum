@@ -7,7 +7,7 @@
 // gravar o mesmo vínculo duas vezes é o mesmo vínculo.
 
 import { adiarHorario } from './preferencias.ts'
-import { calcularUidHash, uidHashSintetico } from '../nucleo/hash.ts'
+import { calcularUidHash, idDoSal, uidHashSintetico } from '../nucleo/hash.ts'
 import { decimalParaBytes } from '../nucleo/digitacao.ts'
 import { matriculadosDeTeste, TURMA_DE_TESTE, uidCurtoDeTeste } from '../nucleo/suiteDeTestes.ts'
 import type { Config } from '../nucleo/tipos.ts'
@@ -80,6 +80,7 @@ export async function prepararTurmaDeTeste(repositorio: Repositorio, config: Con
       nome: matriculados[i].nome,
       matricula: matriculados[i].matricula,
       criadoEm: new Date().toISOString(),
+      salId: await idDoSal(config.salHex),
     })
   }
 

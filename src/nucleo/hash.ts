@@ -5,7 +5,7 @@
 // segundos. Como o `uid_hash` é justamente o que vai para a planilha, hash sem
 // sal transformaria "o nome não trafega" em promessa vazia.
 
-import type { Uid, UidHash } from './tipos.ts'
+import type { Config, Uid, UidHash } from './tipos.ts'
 
 export const BYTES_DO_SAL = 16
 const BYTES_DO_HASH = 8
@@ -55,4 +55,21 @@ export async function calcularUidHash(salHex: string, uid: Uid): Promise<UidHash
   return Array.from(new Uint8Array(digestao).slice(0, BYTES_DO_HASH), (b) =>
     b.toString(16).padStart(2, '0'),
   ).join('')
+}
+
+/** O sal atual primeiro, depois os anteriores, sem repetir. */
+export function saisConhecidos(config: Pick<Config, 'salHex' | 'saisAnteriores'>): string[] {
+  const todos = [config.salHex, ...(config.saisAnteriores ?? [])].map((s) => s.trim().toLowerCase())
+  return [...new Set(todos)].filter(salValido)
+}
+
+/**
+ * Impressão curta de um sal, para marcar vínculos. Mão única: SHA-256 de 16
+ * bytes sorteados não se desfaz, então guardar isto ao lado do vínculo não
+ * aproxima ninguém do UID. Prefixada, para nunca coincidir com um `uid_hash`.
+ */
+export async function idDoSal(salHex: string): Promise<string> {
+  const entrada = new Uint8Array([...new TextEncoder().encode('adsum-sal:'), ...salParaBytes(salHex)])
+  const digestao = await crypto.subtle.digest('SHA-256', entrada)
+  return Array.from(new Uint8Array(digestao).slice(0, 4), (b) => b.toString(16).padStart(2, '0')).join('')
 }

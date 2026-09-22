@@ -4,7 +4,7 @@
 // faltou. Recusa muda é indistinguível de coisa quebrada.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { calcularUidHash } from '../nucleo/hash.ts'
+import { calcularUidHash, idDoSal, saisConhecidos } from '../nucleo/hash.ts'
 import { uidLegivel, uidParaHex } from '../nucleo/uid.ts'
 import type { Aula, Evento, Matriculado, Vinculo } from '../nucleo/tipos.ts'
 import {
@@ -13,7 +13,7 @@ import {
   type DiagnosticoLeitor,
   type EstadoLeitor,
 } from '../portas/LeitorDeCracha.ts'
-import { podeApagar, type DiagnosticoRepositorio } from '../portas/Repositorio.ts'
+import { identificarCracha, podeApagar, vinculosSemSal, type DiagnosticoRepositorio } from '../portas/Repositorio.ts'
 import { descreverAmbiente, levantarCapacidades } from '../ambiente/capacidades.ts'
 import { leitoresVisiveis, useAdsum } from './adsum.ts'
 import { PainelDeTestesFisicos } from './PainelDeTestesFisicos.tsx'
@@ -95,6 +95,8 @@ export function TelaDiagnostico() {
   const [matriculados, setMatriculados] = useState<Matriculado[]>([])
   const [totalEventos, setTotalEventos] = useState(0)
   const [importacao, setImportacao] = useState<Resultado>()
+  /** Crachás cujo sal não está no chaveiro. Ver `vinculosSemSal`. */
+  const [semSal, setSemSal] = useState<Vinculo[]>([])
 
   useEffect(() => {
     setEstadoLeitor(leitor.estado())
@@ -111,6 +113,7 @@ export function TelaDiagnostico() {
       repositorio.listarMatriculados(),
       repositorio.contarEventos(),
     ])
+    setSemSal(await vinculosSemSal(repositorio, config))
     setDiagLeitor(dl)
     setDiagRepo(dr)
     setEventos(ev)
@@ -118,7 +121,7 @@ export function TelaDiagnostico() {
     setAulas(a)
     setMatriculados(m)
     setTotalEventos(te)
-  }, [leitor, repositorio])
+  }, [leitor, repositorio, config])
 
   useEffect(() => {
     void atualizar()
@@ -137,8 +140,7 @@ export function TelaDiagnostico() {
     return leitor.aoLer((leitura) => {
       void (async () => {
         const hex = uidParaHex(leitura.uid)
-        const uidHash = await calcularUidHash(config.salHex, leitura.uid)
-        const vinculo = await repositorio.vinculoPorHash(uidHash)
+        const { uidHash, vinculo } = await identificarCracha(repositorio, config, leitura.uid)
         setLeituras((antes) =>
           [
             {
@@ -155,7 +157,7 @@ export function TelaDiagnostico() {
         void atualizar()
       })()
     })
-  }, [leitor, repositorio, config.salHex, atualizar])
+  }, [leitor, repositorio, config, atualizar])
 
   // O que importa não é "existe registro", é **esta página está controlada**:
   // sem controlador, o próximo carregamento ainda depende da rede. E o registro
@@ -233,6 +235,7 @@ export function TelaDiagnostico() {
           papel,
           nome,
           criadoEm: agora.toISOString(),
+          salId: await idDoSal(config.salHex),
         })
         return { uidHash, papel, nome }
       }),
@@ -589,6 +592,27 @@ export function TelaDiagnostico() {
         }
       >
         <Linha rotulo="linhas gravadas">{totalEventos}</Linha>
+      </Painel>
+
+      {/* Aberto e fora de "Estado do app" de propósito: é o único painel
+          daqui que fala de aluno que pode deixar de ser reconhecido, que é a
+          pior perda que o app tem. Em 17/09/2026 isso aconteceu com 40
+          crachás sem que nada na tela dissesse. */}
+      <Painel titulo="Segredo dos crachás" legenda="O que liga cada crachá ao seu dono.">
+        <Linha rotulo="segredos guardados">
+          <code>{saisConhecidos(config).length}</code>
+        </Linha>
+        <Linha rotulo="crachás sem segredo">
+          <Selo tom={semSal.length === 0 ? 'ok' : 'grave'}>{semSal.length}</Selo>
+        </Linha>
+        {semSal.length > 0 && (
+          <p className="ferramentas__nota">
+            Estes crachás foram cadastrados com um segredo que este navegador não tem, e por isso
+            não são reconhecidos: {semSal.map((v) => v.nome).join(', ')}. Ligue a pasta do cofre de
+            onde eles vieram, ou importe o arquivo de crachás, e eles voltam sozinhos. Se nenhum dos
+            dois existir, cada um encosta o crachá de novo uma vez.
+          </p>
+        )}
       </Painel>
 
       <Painel

@@ -9,12 +9,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { decidirRota } from '../nucleo/rota.ts'
-import { calcularUidHash, uidHashSintetico } from '../nucleo/hash.ts'
+import { calcularUidHash, saisConhecidos, uidHashSintetico } from '../nucleo/hash.ts'
 import { uidInedito, hexParaUid } from '../nucleo/uid.ts'
 import { ehQueRecusa, ehSimulavel, type Recusa } from '../portas/LeitorDeCracha.ts'
 import { IndicadorDoLeitor } from './IndicadorDoLeitor.tsx'
-import { gravarEventoNovo, podeApagar } from '../portas/Repositorio.ts'
+import { gravarEventoNovo, identificarCracha, podeApagar } from '../portas/Repositorio.ts'
 import { eventoDe, quemFalta, type Sessao } from '../nucleo/sessao.ts'
+import { diaLocal } from '../nucleo/faltas.ts'
 import {
   abrirSozinhoEntreProfessores,
   aulasAgora,
@@ -58,6 +59,7 @@ import {
   caminhoDosRegistros,
   gravarFaltas,
   repararLog,
+  lembrarSaisDaPasta,
   restaurar,
   sincronizar,
 } from '../ambiente/sincronia.ts'
@@ -141,7 +143,25 @@ export function Fluxo() {
   const [falhaNaPasta, setFalhaNaPasta] = useState<string>()
   // Sem pasta, isto é a única memória de que existe trabalho fora do disco.
   const [pendencias, setPendencias] = useState<Pendencia[]>([])
-  const [proxima, setProxima] = useState<{ turma: string; quando: Date }>()
+  /**
+   * O relógio da tela de repouso, de minuto em minuto. A grade (`proxima`,
+   * `comecarEm`) é conta sobre **agora**, e era feita só quando a base
+   * mudava: com o app aberto desde antes da aula, o ponto azul de "é agora"
+   * nunca acendia, porque nada relia a grade quando a hora chegava
+   * (22/09/2026).
+   */
+  const [agora, setAgora] = useState(() => new Date())
+  useEffect(() => {
+    const relogio = setInterval(() => setAgora(new Date()), 30_000)
+    return () => clearInterval(relogio)
+  }, [])
+  /** A grade e os professores dela, como `recontar` os leu da base. */
+  const [grade, setGrade] = useState<{ aulas: Aula[]; hashes: string[] }>({ aulas: [], hashes: [] })
+  const proxima = useMemo(() => {
+    if (grade.hashes.length === 0) return undefined
+    const vem = proximaAulaDeQualquer(grade.aulas, grade.hashes, agora)
+    return vem && { turma: vem.aula.turma, quando: vem.quando }
+  }, [grade, agora])
   /**
    * A turma que a grade identificou como acontecendo agora — a mesma conta
    * de `abrirSozinho`, que decide o auto-abrir do relógio logo abaixo. Não é
@@ -156,7 +176,20 @@ export function Fluxo() {
    * verdade pelo autor: 13:58, dentro do bloco de uma turma, "Sua próxima
    * aula" apontava outra.
    */
-  const [comecarEm, setComecarEm] = useState<string>()
+  // A mesma conta de `abrirSozinhoEntreProfessores`. Nada de fallback de "só
+  // existe uma turma" (isso é só para o clique deliberado, em
+  // `abrirComProfessor`): a tela só anuncia uma turma se o relógio de fato a
+  // identificou, e duas turmas batendo "agora" entre professores diferentes é
+  // ambiguidade, não escolha. `encerradas()` importa tanto quanto o horário —
+  // sem checá-la, encerrar uma aula e voltar ao repouso mostrava "Começar
+  // chamada em X" de novo, a mesma turma que acabou de ser fechada.
+  const comecarEm = useMemo(
+    () =>
+      grade.hashes.length > 0
+        ? abrirSozinhoEntreProfessores(grade.aulas, grade.hashes, agora, encerradas())
+        : undefined,
+    [grade, agora],
+  )
   const [semHorario, setSemHorario] = useState<{ turma: string; aulas: Aula[] }>()
   const [uidDoProfessor, setUidDoProfessor] = useState('')
   /** Nome de quem marcou "Sou eu" — personaliza a saudação do repouso. Ver
@@ -219,17 +252,25 @@ export function Fluxo() {
     setTurmaSelecionada(turmaSugerida)
   }, [turmaSugerida, listaDeTurmas, turmaSelecionada])
 
-  /** A hora que a chamada abriria agora — editável. Sem edição, continua
-      viva (o relógio de verdade); editada uma vez, para de andar sozinha
-      até a próxima chamada aberta, quando volta a seguir o relógio. */
-  const [horaSelecionada, setHoraSelecionada] = useState(() => new Date())
-  const [horaEditada, setHoraEditada] = useState(false)
-
-  useEffect(() => {
-    if (horaEditada) return
-    const relogio = setInterval(() => setHoraSelecionada(new Date()), 1000)
-    return () => clearInterval(relogio)
-  }, [horaEditada])
+  /**
+   * O dia da chamada — editável, para lançar a aula de um dia em que ela não
+   * foi feita. Só o dia, sem hora: no SIGAA é uma chamada por turma por dia,
+   * e é assim que `TelaAula` conta (22/09/2026). A hora escolhida à mão não
+   * mudava nada que alguém fosse ler, e era um campo a mais para errar.
+   * `undefined` é hoje, e continua sendo hoje se a tela ficar aberta além
+   * da meia-noite.
+   */
+  const [diaEscolhido, setDiaEscolhido] = useState<string>()
+  const hoje = diaLocal(agora.toISOString())
+  const diaSelecionado = diaEscolhido ?? hoje
+  /** Quando a chamada abre: agora, ou a esta mesma hora do dia escolhido. */
+  const momentoDaChamada = useCallback(() => {
+    const instante = new Date()
+    if (!diaEscolhido || diaEscolhido === diaLocal(instante.toISOString())) return instante
+    const [ano, mes, dia] = diaEscolhido.split('-').map(Number)
+    instante.setFullYear(ano, mes - 1, dia)
+    return instante
+  }, [diaEscolhido])
 
   const ambienteQuebrado = levantarCapacidades().some((c) => c.peso === 'essencial' && !c.presente)
   // Lido uma vez: o modo de ensaio muda pelos Ajustes, e a folha recarrega a
@@ -377,26 +418,9 @@ export function Fluxo() {
     )
     setSemHorario(semGrade ? { turma: semGrade, aulas: [] } : undefined)
 
-    const hashesDeProfessor = vinculosDeProfessor.map((v) => v.uidHash)
-    const aulas = hashesDeProfessor.length > 0 ? todasAsAulas : []
-    const vem =
-      hashesDeProfessor.length > 0 ? proximaAulaDeQualquer(aulas, hashesDeProfessor, new Date()) : undefined
-    setProxima(vem && { turma: vem.aula.turma, quando: vem.quando })
-    // A mesma conta de `abrirSozinhoEntreProfessores` — a mesma que decide o
-    // auto-abrir do relógio, acima. Nada de fallback de "só existe uma turma"
-    // (isso é só para o clique deliberado, em `abrirComProfessor`): aqui a
-    // tela só pode anunciar uma turma se o relógio de fato a identificou, e
-    // duas turmas batendo "agora" entre professores diferentes é ambiguidade,
-    // não escolha — a função já recusa decidir sozinha. `encerradas()`
-    // importa tanto quanto o horário — sem checá-la, encerrar uma aula e
-    // voltar ao repouso mostrava "Começar chamada em X" de novo, a mesma
-    // turma que acabou de ser fechada, porque o horário dela ainda "bate
-    // agora"; a tela prometia reabrir o que o professor acabou de encerrar.
-    setComecarEm(
-      hashesDeProfessor.length > 0
-        ? abrirSozinhoEntreProfessores(aulas, hashesDeProfessor, new Date(), encerradas())
-        : undefined,
-    )
+    // `proxima` e `comecarEm` são contas sobre esta grade e o relógio — ver
+    // `agora`, lá em cima.
+    setGrade({ aulas: todasAsAulas, hashes: vinculosDeProfessor.map((v) => v.uidHash) })
     const faltando = quemFalta(matriculados, vinculos)
     setTurmas(listaDeTurmas.length)
     setListaDeTurmas(listaDeTurmas)
@@ -442,17 +466,19 @@ export function Fluxo() {
   // o app, a pasta devolveu o sal antigo, a tela seguiu com o recém-sorteado,
   // e a turma inteira foi recadastrada num sal que sumiu ao reabrir. No dia
   // 22 ninguém daquela manhã era reconhecido.
+  //
+  // Com base já cheia não se restaura, mas os sais do cofre vêm sempre: um
+  // crachá cadastrado em outro navegador, noutro sal, tem que ser reconhecido
+  // aqui também (ver `adotarSal`, em `ambiente/sincronia.ts`).
   useEffect(() => {
     if (!pasta) return
     void (async () => {
-      if ((await repositorio.listarVinculos()).length === 0) {
-        const antes = (await repositorio.lerConfig()).salHex
-        await restaurar(repositorio, pasta)
-        // Só quando o sal mudou: reler troca a identidade de
-        // `recarregarConfig`, que reroda este efeito — e com a pasta sem
-        // vínculos, reler sempre seria laço.
-        if ((await repositorio.lerConfig()).salHex !== antes) await recarregarConfig()
-      }
+      const antes = saisConhecidos(await repositorio.lerConfig()).join()
+      if ((await repositorio.listarVinculos()).length === 0) await restaurar(repositorio, pasta)
+      else await lembrarSaisDaPasta(repositorio, pasta)
+      // Só quando o chaveiro mudou: reler troca a identidade de
+      // `recarregarConfig`, que reroda este efeito — reler sempre seria laço.
+      if (saisConhecidos(await repositorio.lerConfig()).join() !== antes) await recarregarConfig()
       await recontar()
     })()
   }, [pasta, repositorio, recontar, recarregarConfig])
@@ -599,12 +625,12 @@ export function Fluxo() {
   const abrirComProfessor = useCallback(
     async (uidHash: string) => {
       if (!turmaSelecionada) return
-      await abrirChamada(turmaSelecionada, uidHash, horaSelecionada)
-      // Depois de abrir, a próxima chamada volta a sugerir a hora real —
-      // sem isto, uma edição de hoje ficaria presa, congelada, pra sempre.
-      setHoraEditada(false)
+      await abrirChamada(turmaSelecionada, uidHash, momentoDaChamada())
+      // Depois de abrir, a próxima chamada volta a ser de hoje — sem isto,
+      // um dia editado ficaria preso, congelado, pra sempre.
+      setDiaEscolhido(undefined)
     },
-    [turmaSelecionada, horaSelecionada, abrirChamada],
+    [turmaSelecionada, momentoDaChamada, abrirChamada],
   )
 
   /**
@@ -674,10 +700,10 @@ export function Fluxo() {
     if (!turmaSelecionada) return
     const [professor, aulas] = await Promise.all([garantirProfessor(), repositorio.listarAulas()])
     const aulaDaTurmaAgora = aulas.find(
-      (a) => a.turma === turmaSelecionada && aulasAgora([a], a.uidHashProfessor, horaSelecionada).length > 0,
+      (a) => a.turma === turmaSelecionada && aulasAgora([a], a.uidHashProfessor, momentoDaChamada()).length > 0,
     )
     await abrirComProfessor(aulaDaTurmaAgora?.uidHashProfessor ?? professor.uidHash)
-  }, [turmaSelecionada, horaSelecionada, garantirProfessor, repositorio, abrirComProfessor])
+  }, [turmaSelecionada, momentoDaChamada, garantirProfessor, repositorio, abrirComProfessor])
 
   /** -1 volta, 1 avança — circular: da última turma o → cai na primeira, e
       da primeira o ← cai na última. Com duas ou três turmas, chegar na ponta
@@ -695,11 +721,9 @@ export function Fluxo() {
     [listaDeTurmas],
   )
 
-  const editarHora = useCallback((valor: string) => {
-    const data = new Date(valor)
-    if (Number.isNaN(data.getTime())) return
-    setHoraEditada(true)
-    setHoraSelecionada(data)
+  const editarDia = useCallback((valor: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return
+    setDiaEscolhido(valor)
   }, [])
 
   // Não se reconta ao ouvir o crachá: a gravação acontece depois, e contar
@@ -714,8 +738,7 @@ export function Fluxo() {
     if (sessao) return
     return leitor.aoLer((leitura) => {
       void (async () => {
-        const uidHash = await calcularUidHash(config.salHex, leitura.uid)
-        const vinculo = await repositorio.vinculoPorHash(uidHash)
+        const { uidHash, vinculo } = await identificarCracha(repositorio, config, leitura.uid)
         // Abre a turma e a hora que a tela de repouso está mostrando — não
         // a hora real deste toque. Ver o comentário em `abrirComProfessor`.
         if (vinculo?.papel === 'professor') return await abrirComProfessor(uidHash)
@@ -845,6 +868,9 @@ export function Fluxo() {
     if (!emRepouso) return
     const aoTeclar = (evento: KeyboardEvent) => {
       if (evento.key === 'Enter') {
+        // `defaultPrevented`: é o Enter do dongle fechando um crachá (ver
+        // `LeitorTeclado`). Crachá no repouso só diz quem foi lido.
+        if (evento.defaultPrevented) return
         if (turmaSelecionada) void iniciarChamada()
         return
       }
@@ -1038,9 +1064,9 @@ export function Fluxo() {
           listaDeTurmas={listaDeTurmas}
           turmaSelecionada={turmaSelecionada}
           agoraNaGrade={comecarEm}
-          horaSelecionada={horaSelecionada}
+          diaSelecionado={diaSelecionado}
           aoMudarTurma={mudarTurma}
-          aoEditarHora={editarHora}
+          aoEditarDia={editarDia}
           aoIniciar={() => void iniciarChamada()}
           aoSalvar={(turma) => void salvarCopia(turma)}
           aoVerPresencas={() => setFolha('presencas')}
@@ -1338,22 +1364,15 @@ export function Fluxo() {
  * A pendência empurra o "encoste o crachá" para baixo de propósito: enquanto
  * houver aula só neste navegador, ela é a tarefa da tela, e não um rodapé.
  */
-/** `Date` local → o formato que `<input type="datetime-local">` espera
-    (`AAAA-MM-DDTHH:mm`, sem fuso — o próprio input já é "hora daqui"). */
-function paraDatetimeLocal(d: Date): string {
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
-}
-
 export function Repouso({
   pendencias,
   nomeDoProfessor,
   listaDeTurmas,
   turmaSelecionada,
   agoraNaGrade,
-  horaSelecionada,
+  diaSelecionado,
   aoMudarTurma,
-  aoEditarHora,
+  aoEditarDia,
   aoIniciar,
   aoSalvar,
   aoVerPresencas,
@@ -1375,13 +1394,12 @@ export function Repouso({
       recomendação" (sempre) e "é agora, de verdade, pela grade" (às vezes).
       Some ao trocar de turma pela seta; volta ao voltar pra ela. */
   agoraNaGrade?: string
-  /** Quando a chamada abriria — editável. Sem edição, é o relógio de
-      verdade, andando. */
-  horaSelecionada: Date
+  /** O dia da chamada, `AAAA-MM-DD` local — editável. Sem edição, é hoje. */
+  diaSelecionado: string
   /** -1 volta, 1 avança — mesma lógica de seta de "Chamar nomes"
       (`TelaAula`): não dá volta nas pontas. */
   aoMudarTurma: (direcao: -1 | 1) => void
-  aoEditarHora: (valor: string) => void
+  aoEditarDia: (valor: string) => void
   aoIniciar: () => void
   aoSalvar: (turma: string) => void
   aoVerPresencas: () => void
@@ -1455,19 +1473,18 @@ export function Repouso({
       </div>
       {listaDeTurmas.length > 1 && <p className="chamado__atalho">← e → trocam de turma</p>}
 
-      {/* Editável de propósito — dá ao professor o controle de registrar a
-          abertura numa hora diferente da do clique (esqueceu de abrir a
-          chamada na hora certa, por exemplo). Isto muda o registro de
-          verdade: o valor daqui vira `Sessao.abertaEm`, não é só mostrador.
-          Nativo (`datetime-local`), não um calendário customizado — o
-          navegador já desenha um seletor decente, e um componente novo
-          seria superfície de bug num app que hoje não tem nenhum. */}
+      {/* Editável de propósito — dá ao professor o controle de lançar a
+          chamada de outro dia (esqueceu de fazer na aula, por exemplo). Isto
+          muda o registro de verdade: o dia daqui é o dia da chamada. Só a
+          data: é uma chamada por turma por dia. Nativo (`date`), não um
+          calendário customizado — o navegador já desenha um seletor
+          decente. */}
       <input
-        type="datetime-local"
+        type="date"
         className="repouso__hora"
-        value={paraDatetimeLocal(horaSelecionada)}
-        onChange={(e) => aoEditarHora(e.target.value)}
-        aria-label="quando a chamada abre"
+        value={diaSelecionado}
+        onChange={(e) => aoEditarDia(e.target.value)}
+        aria-label="dia da chamada"
       />
 
       <button

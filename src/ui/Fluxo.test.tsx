@@ -16,6 +16,7 @@ import { hexParaUid } from '../nucleo/uid.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import * as arquivos from '../ambiente/arquivos.ts'
 import { MANUAL_URL } from '../nucleo/cofre.ts'
+import { diaLocal } from '../nucleo/faltas.ts'
 import { NOVIDADES } from '../nucleo/novidades.ts'
 
 let bancada: Bancada
@@ -700,9 +701,9 @@ describe('turma e hora por seta, sem tela "Qual turma?"', () => {
     )
   })
 
-  // O campo nativo já usa ← → pra andar entre dia/mês/ano/hora/minuto —
+  // O campo nativo já usa ← → pra andar entre dia/mês/ano —
   // roubar essas teclas pra trocar de turma quebraria a edição da data.
-  it('← → não trocam de turma quando o foco está no campo de data/hora', async () => {
+  it('← → não trocam de turma quando o foco está no campo de data', async () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     await bancada.repositorio.salvarTurma('IF969 · T02', [
@@ -713,34 +714,42 @@ describe('turma e hora por seta, sem tela "Qual turma?"', () => {
 
     await screen.findByText('IF685 · T01')
     await waitFor(() => expect(screen.getByRole('button', { name: 'próxima turma' })).toBeEnabled())
-    screen.getByLabelText('quando a chamada abre').focus()
+    screen.getByLabelText('dia da chamada').focus()
 
     await usuario.keyboard('{ArrowRight}')
     expect(screen.getByText('IF685 · T01')).toBeInTheDocument()
   })
 
-  it('editar a data/hora muda o registro de verdade — não é só mostrador', async () => {
+  // Só a data: é uma chamada por turma por dia (22/09/2026). A hora é a do
+  // clique, no dia escolhido.
+  it('editar a data muda o registro de verdade — não é só mostrador', async () => {
     const usuario = userEvent.setup()
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
 
-    // `datetime-local` é um campo segmentado (dia/mês/ano/hora/minuto) —
-    // `userEvent.type` não navega os segmentos como um input de texto
-    // comum. `fireEvent.change` grava o valor direto, do jeito que o
-    // próprio navegador entrega o `onChange` de um `datetime-local`.
-    const campo = await screen.findByLabelText('quando a chamada abre')
-    fireEvent.change(campo, { target: { value: '2026-03-02T08:15' } })
+    // `date` é um campo segmentado — `userEvent.type` não navega os
+    // segmentos. `fireEvent.change` grava o valor direto, do jeito que o
+    // próprio navegador entrega o `onChange`.
+    const campo = await screen.findByLabelText('dia da chamada')
+    fireEvent.change(campo, { target: { value: '2026-03-02' } })
     await usuario.click(screen.getByRole('button', { name: /Começar a chamada/ }))
 
     await waitFor(async () => {
       const sessao = await bancada.repositorio.sessaoAberta()
-      expect(sessao?.abertaEm).toBe(new Date('2026-03-02T08:15').toISOString())
+      expect(sessao && diaLocal(sessao.abertaEm)).toBe('2026-03-02')
     })
   })
 
-  // O crachá do professor faz o mesmo que o botão: abre a turma e a hora
-  // que a tela está mostrando, não a hora real do toque.
-  it('o crachá do professor também abre na hora editada, não na hora real do toque', async () => {
+  it('não há campo de hora: o dia basta', async () => {
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    const campo = await screen.findByLabelText('dia da chamada')
+    expect(campo).toHaveAttribute('type', 'date')
+  })
+
+  // O crachá do professor faz o mesmo que o botão: abre a turma e o dia
+  // que a tela está mostrando, não o dia real do toque.
+  it('o crachá do professor também abre no dia editado, não no dia real do toque', async () => {
     // `turmaInteiraComCracha()` grava um `uidHash` fixo, sem relação com
     // nenhum crachá simulável — serve pra clique de botão, não pra
     // `leitor.simular()`, que calcula o hash de verdade a partir do sal
@@ -763,14 +772,14 @@ describe('turma e hora por seta, sem tela "Qual turma?"', () => {
     // que `recontar()` (assíncrono) resolve. Encostar o crachá antes disso
     // seria testar contra `turmaSelecionada` ainda vazio.
     await screen.findByText('IF685 · T01')
-    const campo = screen.getByLabelText('quando a chamada abre')
-    fireEvent.change(campo, { target: { value: '2026-03-02T08:15' } })
+    const campo = screen.getByLabelText('dia da chamada')
+    fireEvent.change(campo, { target: { value: '2026-03-02' } })
 
     await act(async () => bancada.leitor.simular('04a23b91'))
 
     await waitFor(async () => {
       const sessao = await bancada.repositorio.sessaoAberta()
-      expect(sessao?.abertaEm).toBe(new Date('2026-03-02T08:15').toISOString())
+      expect(sessao && diaLocal(sessao.abertaEm)).toBe('2026-03-02')
     })
   })
 })

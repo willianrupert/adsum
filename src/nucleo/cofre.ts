@@ -231,6 +231,8 @@ export const paraJsonTurma = (pessoas: Matriculado[]) => embrulhar(pessoas)
  */
 export interface Compartilhamento {
   salHex: string
+  /** O chaveiro inteiro: os crachás da lista podem ser de qualquer um deles. */
+  saisAnteriores?: string[]
   vinculos: Vinculo[]
 }
 

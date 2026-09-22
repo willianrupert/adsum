@@ -19,7 +19,7 @@ import {
 } from '../nucleo/cofre.ts'
 import { cabecalhoCsv, deCsv, linhaCsv, nomeDoArquivo, nomeSeguroDeTurma, paraCsv, porTurma } from '../nucleo/csv.ts'
 import { planilhaDeFaltas, paraCsvDeFaltas } from '../nucleo/faltas.ts'
-import { salValido } from '../nucleo/hash.ts'
+import { saisConhecidos, salValido } from '../nucleo/hash.ts'
 import type { Evento } from '../nucleo/tipos.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
 import { acrescentar, escrever, ler, listarArquivos } from './pasta.ts'
@@ -178,29 +178,23 @@ export async function sincronizar(
 }
 
 /**
- * Adota o sal do cofre. **É o primeiro passo de qualquer restauração.**
+ * Traz o sal do cofre. **É o primeiro passo de qualquer restauração.**
  *
  * O sal é o que liga UID a `uid_hash`. Sem ele, restaurar devolve os nomes e
  * perde as pessoas: cada navegador sorteia o seu ao abrir, e com sal diferente
  * o mesmo crachá dá outro hash — a turma inteira vira gente desconhecida, sem
- * uma linha de erro. O professor recadastraria todo mundo por cima, criando
- * vínculos em dois sais para as mesmas pessoas.
+ * uma linha de erro.
  *
- * Era a promessa central do cofre falhando calada: "limpar dados do site apaga
- * o handle, não a pasta" só é verdade se o sal voltar junto. Os testes usavam
- * `esvaziarCache`, que preserva a config de propósito, e por isso nunca
- * exercitaram esse caminho — navegador de verdade perde a config junto.
+ * **Nenhum sal é descartado, dos dois lados.** Base vazia adota o sal do cofre
+ * como atual, e o que ela tinha sorteado vai para o chaveiro. Base com
+ * crachás mantém o atual e acrescenta os do cofre. Antes, com crachás dos
+ * dois lados, isto recusava e deixava os do cofre mortos; e com a base vazia
+ * o sal local era sobrescrito — que é como 40 vínculos de 17/09/2026 se
+ * perderam. Com o chaveiro, `identificarCracha` acha qualquer um.
  *
  * **Só o sal, e não o resto da config.** O `instalacaoId` prefixa o `evento_id`
  * e precisa continuar **diferente** em cada navegador: é ele que garante que
- * duas instalações nunca cunhem o mesmo id, e é o que deixa dois logs serem
- * concatenados na mesma pasta sem que a idempotência engula registro de
- * verdade. Restaurar o `instalacaoId` junto seria trocar um bug silencioso por
- * outro.
- *
- * **Não adota por cima de vínculos locais.** Trocar o sal com base própria no
- * lugar torna irreconhecíveis os crachás daqui. Essa decisão é humana, e já tem
- * caminho: "Passar os crachás a outro professor" pergunta antes de trocar.
+ * duas instalações nunca cunhem o mesmo id.
  */
 async function adotarSal(
   repositorio: Repositorio,
@@ -216,18 +210,29 @@ async function adotarSal(
     return
   }
 
+  const doCofre = saisConhecidos(conteudo)
   const local = await repositorio.lerConfig()
-  if (conteudo.salHex === local.salHex) return
-
-  if ((await repositorio.listarVinculos()).length > 0) {
-    problemas.push(
-      'Este cofre usa outro segredo, e já há crachás cadastrados aqui. ' +
-        'Nada foi trocado: use "Passar os crachás a outro professor" para decidir qual fica.',
-    )
-    return
+  if (conteudo.salHex !== local.salHex && (await repositorio.listarVinculos()).length === 0) {
+    await repositorio.definirSal(conteudo.salHex)
   }
+  await repositorio.lembrarSais(doCofre)
+}
 
-  await repositorio.definirSal(conteudo.salHex)
+/**
+ * Junta os sais do cofre ao chaveiro, sem restaurar mais nada.
+ *
+ * Para quando a base já tem crachás e por isso não se restaura: os sais
+ * precisam vir mesmo assim, ou os vínculos do cofre feitos em outro sal
+ * seguem irreconhecíveis aqui. Não mexe no sal atual.
+ */
+export async function lembrarSaisDaPasta(
+  repositorio: Repositorio,
+  pasta: FileSystemDirectoryHandle,
+): Promise<void> {
+  const texto = await ler(pasta, NOMES.config)
+  if (!texto) return
+  const { conteudo } = deJsonConfig(texto)
+  if (conteudo && salValido(conteudo.salHex)) await repositorio.lembrarSais(saisConhecidos(conteudo))
 }
 
 /**

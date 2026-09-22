@@ -384,3 +384,34 @@ em "Ver presenças", como evento novo, sem reescrever nada. Os 40 vínculos
 no sal perdido ficam inertes: quem só tinha esse vínculo cai na busca de
 crachá desconhecido e é recadastrado na próxima leitura, como aconteceu
 em 22/09.
+
+## 22/09/2026, tarde — o que o relato da aula pediu além do conserto
+
+**"Começou do nada" era o Enter do dongle.** Desde 17/09 à noite o repouso
+tinha um atalho: Enter começa a chamada. O dongle digita o UID e um Enter.
+O `LeitorTeclado` marcava esse Enter com `preventDefault`, mas o atalho não
+conferia, e qualquer crachá encostado na tela inicial abria a chamada. O
+mesmo Enter, com a busca de "de quem é?" aberta, escolhia o nome
+destacado. Agora o Enter que fecha uma rajada sai sempre marcado, e os dois
+atalhos ignoram Enter marcado.
+
+**Uma chamada por turma por dia**, pedido do professor e regra do SIGAA.
+`TelaAula` conta o dia inteiro de `abertaEm`, não desde a abertura: reabrir
+é continuar. Por isso fechar o app pode fechar a chamada
+(`fecharChamadaDeAntes`, ao abrir a base), sem evento `encerrar`, porque a
+hora seria a de reabrir. O repouso escolhe só o dia, não a hora.
+
+**Nenhum sal se perde.** `Config.saisAnteriores` é um chaveiro: `definirSal`
+arquiva o anterior, restaurar junta os sais do cofre aos daqui (antes
+recusava, ou sobrescrevia), importar crachás de outro professor junta em
+vez de trocar. `identificarCracha` procura o crachá em todos. Vínculo novo
+guarda `salId`, impressão do sal, e o Diagnóstico ganhou "Segredo dos
+crachás", que conta quem depende de um sal ausente e diz como recuperar.
+A marca de vínculo antigo espera o navegador ocioso: gravada a cada
+crachá, fez o teste de 100 alunos perder uma leitura.
+
+**O ponto azul** era calculado só quando a base mudava. Com o app aberto
+desde antes da aula, nunca acendia. Agora a grade é reavaliada pelo relógio.
+
+Limite que fica: os 40 vínculos do sal de 17/09 continuam perdidos. O sal
+existiu só na memória daquela aba. Cada um deles encosta de novo uma vez.

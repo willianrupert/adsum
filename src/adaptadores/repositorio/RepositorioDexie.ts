@@ -6,7 +6,7 @@
 // concedido. Sem essa checagem, "local" e "perdido" são indistinguíveis até o
 // dia em que somem.
 
-import { sortearSal } from '../../nucleo/hash.ts'
+import { saisConhecidos, sortearSal } from '../../nucleo/hash.ts'
 import type { Aula, Config, Evento, Matriculado, UidHash, Vinculo } from '../../nucleo/tipos.ts'
 import type { Sessao } from '../../nucleo/sessao.ts'
 import type { DiagnosticoRepositorio, Repositorio } from '../../portas/Repositorio.ts'
@@ -56,8 +56,24 @@ export class RepositorioDexie implements Repositorio {
     })
   }
 
+  // Campo novo no mesmo registro de config, como `exportado`: sem versão de
+  // esquema, porque nada o consulta por índice.
   async definirSal(salHex: string): Promise<void> {
-    await this.#banco.config.update(ID_DA_CONFIG, { salHex: salHex.trim().toLowerCase() })
+    const novo = salHex.trim().toLowerCase()
+    const atual = await this.lerConfig()
+    if (novo === atual.salHex) return
+    await this.#banco.config.update(ID_DA_CONFIG, {
+      salHex: novo,
+      saisAnteriores: saisConhecidos(atual).filter((s) => s !== novo),
+    })
+  }
+
+  async lembrarSais(sais: string[]): Promise<void> {
+    const atual = await this.lerConfig()
+    const antes = atual.saisAnteriores ?? []
+    const depois = saisConhecidos({ salHex: atual.salHex, saisAnteriores: [...antes, ...sais] }).slice(1)
+    if (depois.length === antes.length) return
+    await this.#banco.config.update(ID_DA_CONFIG, { saisAnteriores: depois })
   }
 
   async definirInstalacaoId(id: string): Promise<void> {

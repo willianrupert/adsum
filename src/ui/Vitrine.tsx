@@ -21,6 +21,9 @@ import { Busca } from './componentes/Busca.tsx'
 import { Baixar } from './componentes/Simbolos.tsx'
 import { GradeDePresencas } from './componentes/GradeDePresencas.tsx'
 import type { Evento, Matriculado } from '../nucleo/tipos.ts'
+import { diaLocal } from '../nucleo/faltas.ts'
+
+const diaHoje = diaLocal(new Date().toISOString())
 
 const TURMA = 'IF685 · T01'
 
@@ -240,9 +243,9 @@ export function Vitrine() {
           pendencias={[]}
           listaDeTurmas={[TURMA]}
           turmaSelecionada={TURMA}
-          horaSelecionada={new Date()}
+          diaSelecionado={diaHoje}
           aoMudarTurma={() => {}}
-          aoEditarHora={() => {}}
+          aoEditarDia={() => {}}
           aoIniciar={() => {}}
           aoSalvar={() => {}}
           aoVerPresencas={() => {}}
@@ -255,9 +258,9 @@ export function Vitrine() {
           pendencias={[]}
           listaDeTurmas={[TURMA, 'IF669 · T02']}
           turmaSelecionada={TURMA}
-          horaSelecionada={new Date()}
+          diaSelecionado={diaHoje}
           aoMudarTurma={() => {}}
-          aoEditarHora={() => {}}
+          aoEditarDia={() => {}}
           aoIniciar={() => {}}
           aoSalvar={() => {}}
           aoVerPresencas={() => {}}
@@ -289,9 +292,9 @@ export function Vitrine() {
           ]}
           listaDeTurmas={[TURMA, 'IF669 · T02']}
           turmaSelecionada={TURMA}
-          horaSelecionada={new Date()}
+          diaSelecionado={diaHoje}
           aoMudarTurma={() => {}}
-          aoEditarHora={() => {}}
+          aoEditarDia={() => {}}
           aoIniciar={() => {}}
           aoSalvar={() => {}}
           aoVerPresencas={() => {}}

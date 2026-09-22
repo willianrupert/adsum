@@ -97,9 +97,24 @@ export function abrirBase(): Promise<Base> {
   inicializacao ??= (async () => {
     const repositorio = new RepositorioDexie()
     await repositorio.abrir()
+    await fecharChamadaDeAntes(repositorio)
     return { repositorio, config: await repositorio.lerConfig() }
   })()
   return inicializacao
+}
+
+/**
+ * Fechar o app fecha a chamada. Pedido do professor (22/09/2026), e só é
+ * seguro porque reabrir não perde nada: é uma chamada por turma por dia, e
+ * `TelaAula` reencontra no log quem já passou. Antes, a chamada sobrevivia
+ * ao app fechado, e o app abria direto numa aula que ninguém tinha
+ * começado agora.
+ *
+ * Sem evento `encerrar` no log: a hora seria a de reabrir, não a de fechar,
+ * e o log só guarda o que aconteceu quando aconteceu.
+ */
+export async function fecharChamadaDeAntes(repositorio: Repositorio): Promise<void> {
+  if (await repositorio.sessaoAberta()) await repositorio.encerrarSessao()
 }
 
 export const ContextoAdsum = createContext<Adsum | undefined>(undefined)

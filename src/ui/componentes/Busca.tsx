@@ -72,7 +72,9 @@ export function Busca({
               })
               return
             }
-            if (e.key === 'Enter' && achados[destacado]) {
+            // O Enter do dongle (próximo crachá chegando com a busca aberta)
+            // vem marcado pelo `LeitorTeclado` e não escolhe ninguém.
+            if (e.key === 'Enter' && !e.nativeEvent.defaultPrevented && achados[destacado]) {
               e.preventDefault()
               aoEscolher(achados[destacado])
             }

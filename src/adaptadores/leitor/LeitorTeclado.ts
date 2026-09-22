@@ -188,6 +188,13 @@ export class LeitorTeclado implements LeitorQueRecusa {
     }
 
     if (evento.key === 'Enter') {
+      // O Enter que fecha uma rajada é do dongle, não de uma pessoa — mesmo
+      // quando a rajada for recusada. Marcado aqui, na captura, antes de
+      // qualquer outro ouvinte: sem isto, o Enter de um crachá encostado no
+      // repouso disparava "Começar a chamada" (22/09/2026, "começou do
+      // nada"), e na busca escolhia o nome destacado. Quem tem atalho de
+      // Enter confere `defaultPrevented`.
+      if (this.#teclas.length > 3) evento.preventDefault()
       this.#fechar(evento)
       return
     }

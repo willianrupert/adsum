@@ -312,10 +312,14 @@ describe('cofre em pasta', () => {
   // Trocar o sal com base própria no lugar torna irreconhecíveis os crachás
   // daqui. Recusar e dizer por quê é o único desfecho aceitável: adotar em
   // silêncio apagaria a turma de quem está usando.
-  it('não troca o sal por cima de crachás já cadastrados', async () => {
+  // Antes isto recusava, e os crachás do cofre ficavam mortos numa base que
+  // já tinha os seus. Agora os dois valem: o atual fica, o do cofre entra no
+  // chaveiro (17/09/2026, ver `adotarSal`).
+  it('com crachás dos dois lados, mantém o sal daqui e guarda o do cofre', async () => {
     const { handle } = criarPastaFalsa()
     await repo.gravarVinculo(VINCULO)
     await sincronizar(repo, handle)
+    const doCofre = (await repo.lerConfig()).salHex
 
     const ocupado = new RepositorioDexie(`adsum-cofre-${n++}`)
     await ocupado.abrir()
@@ -324,8 +328,26 @@ describe('cofre em pasta', () => {
 
     const { problemas } = await restaurar(ocupado, handle)
 
-    expect((await ocupado.lerConfig()).salHex).toBe(salDele)
-    expect(problemas.join(' ')).toMatch(/outro segredo/)
+    const depois = await ocupado.lerConfig()
+    expect(depois.salHex).toBe(salDele)
+    expect(depois.saisAnteriores).toContain(doCofre)
+    expect(problemas).toEqual([])
+  })
+
+  it('base vazia adota o sal do cofre sem jogar fora o que tinha sorteado', async () => {
+    const { handle } = criarPastaFalsa()
+    await repo.gravarVinculo(VINCULO)
+    await sincronizar(repo, handle)
+    const doCofre = (await repo.lerConfig()).salHex
+
+    const nova = new RepositorioDexie(`adsum-cofre-${n++}`)
+    await nova.abrir()
+    const sorteado = (await nova.lerConfig()).salHex
+    await restaurar(nova, handle)
+
+    const depois = await nova.lerConfig()
+    expect(depois.salHex).toBe(doCofre)
+    expect(depois.saisAnteriores).toContain(sorteado)
   })
 
   it('restaurar duas vezes não duplica evento', async () => {

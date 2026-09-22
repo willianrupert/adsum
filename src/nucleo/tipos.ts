@@ -40,6 +40,14 @@ export interface Vinculo {
    * tudo o mais: conta presença, encerra a sessão, aparece em "Quem falta".
    */
   sintetico?: boolean
+  /**
+   * Impressão do sal em que este crachá foi cadastrado (`idDoSal`, em
+   * `nucleo/hash.ts`) — não o sal, que não sai da config. Serve para o
+   * Diagnóstico saber, sem crachá nenhum na mão, quantos vínculos dependem de
+   * um sal que este navegador não tem. Vínculos de antes de 22/09/2026 não
+   * têm, e ganham na primeira vez que o crachá é lido.
+   */
+  salId?: string
 }
 
 /**
@@ -107,6 +115,17 @@ export interface Evento {
 export interface Config {
   /** 16 bytes em hexadecimal. Sem sal, o hash é o UID com outra roupa. */
   salHex: string
+  /**
+   * Todo sal que esta instalação já usou ou recebeu, fora o atual. Nunca
+   * aparece na tela e nunca é apagado.
+   *
+   * Existe por causa de 17/09/2026: trocar o sal jogava o anterior fora, e com
+   * ele todo crachá cadastrado naquele sal — 40 alunos e o professor, sem uma
+   * linha de erro. Com o chaveiro, trocar de sal não desfaz cadastro nenhum:
+   * o crachá é procurado em todos (`identificarCracha`, em
+   * `portas/Repositorio.ts`). Vai junto no `config.json` do cofre.
+   */
+  saisAnteriores?: string[]
   /** Distingue esta instalação de outra. Entra no `eventoId`. */
   instalacaoId: string
   criadoEm: string

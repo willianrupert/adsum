@@ -14,6 +14,7 @@ import {
 } from '../nucleo/cofre.ts'
 import type { Aula, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { quemFalta } from '../nucleo/sessao.ts'
+import { saisConhecidos } from '../nucleo/hash.ts'
 import { abrirTexto, salvarTexto, type ComoSalvou } from '../ambiente/arquivos.ts'
 import { pastaDisponivel } from '../ambiente/pasta.ts'
 import { comoInstalar, ehWebKit, instalado } from '../ambiente/instalacao.ts'
@@ -714,20 +715,10 @@ export function TelaRepositorio({
                 const { conteudo, problemas } = deJsonCompartilhado(arquivo.texto)
                 if (!conteudo) throw new Error(problemas[0]?.motivo ?? 'arquivo não reconhecido')
 
-                // Trocar o sal é o que faz os crachás recebidos funcionarem — e
-                // o que quebra os que já estavam aqui, se forem de outro sal.
-                const meus = vinculos.length
-                if (
-                  conteudo.salHex !== config.salHex &&
-                  meus > 0 &&
-                  !confirm(
-                    `Este arquivo vem de outra instalação e traz o segredo dela. Os ${meus} crachás já cadastrados aqui deixarão de ser reconhecidos. Continuar?`,
-                  )
-                ) {
-                  throw new Error('cancelado')
-                }
-
-                await repositorio.definirSal(conteudo.salHex)
+                // O segredo do arquivo entra no chaveiro, ao lado do daqui. Antes
+                // ele **substituía** o daqui, e todo crachá já cadastrado
+                // deixava de ser reconhecido; agora os dois lados valem.
+                await repositorio.lembrarSais(saisConhecidos(conteudo))
                 for (const vinculo of conteudo.vinculos) await repositorio.gravarVinculo(vinculo)
                 await recarregarConfig()
                 return `${conteudo.vinculos.length} crachás.`
@@ -740,7 +731,11 @@ export function TelaRepositorio({
                 comoFoi(
                   await salvarTexto(
                     'adsum-crachas.json',
-                    paraJsonCompartilhado({ salHex: config.salHex, vinculos }),
+                    paraJsonCompartilhado({
+                      salHex: config.salHex,
+                      saisAnteriores: config.saisAnteriores,
+                      vinculos,
+                    }),
                   ),
                   'adsum-crachas.json',
                 ),

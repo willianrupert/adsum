@@ -26,13 +26,15 @@ import { baterCrachasEmSequencia, gerarBaralho } from '../testes/simular.ts'
 import { criarPastaFalsa } from '../testes/pastaFalsa.ts'
 import { TelaAula } from './TelaAula.tsx'
 import { Fluxo } from './Fluxo.tsx'
-import { ContextoAdsum } from './adsum.ts'
-import { calcularUidHash } from '../nucleo/hash.ts'
+import { ContextoAdsum, fecharChamadaDeAntes } from './adsum.ts'
+import { calcularUidHash, idDoSal, saisConhecidos } from '../nucleo/hash.ts'
 import { hexParaUid } from '../nucleo/uid.ts'
 import { proximoEventoId } from '../nucleo/sessao.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import { adiarHorario } from '../ambiente/preferencias.ts'
-import { sincronizar } from '../ambiente/sincronia.ts'
+import { restaurar, sincronizar } from '../ambiente/sincronia.ts'
+import { LeitorTeclado } from '../adaptadores/leitor/LeitorTeclado.ts'
+import { identificarCracha, vinculosSemSal } from '../portas/Repositorio.ts'
 
 const TURMA = 'IF685 · T01'
 const OUTRA_TURMA = 'IF969 · T02'
@@ -205,5 +207,210 @@ describe('reinstalar e religar a pasta: o sal do cofre vale na hora, não só ao
     await act(async () => nova.leitor.simular(CRACHA))
 
     expect(await screen.findByText(/Maria Vitória foi lido/)).toBeInTheDocument()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// O que veio do relato, além dos dois defeitos de gravação.
+
+function tecla(caractere: string) {
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: caractere, bubbles: true, cancelable: true }))
+}
+
+const esperar = (ms: number) => new Promise((resolver) => setTimeout(resolver, ms))
+
+/** O dongle de verdade: dígitos a 16-32 ms, e um Enter no fim. */
+async function encostarNoDongle(decimal: string) {
+  for (const [i, c] of [...decimal].entries()) {
+    if (i > 0) await esperar(17)
+    tecla(c)
+  }
+  tecla('Enter')
+}
+
+describe('"começou do nada": o Enter do dongle não é o Enter de uma pessoa', () => {
+  beforeEach(() => window.localStorage.setItem('adsum.instalacao.dispensada', 'sim'))
+  afterEach(() => window.localStorage.clear())
+
+  it('crachá de aluno no repouso diz quem foi lido e não abre a chamada', async () => {
+    const bancada = await montarBancada()
+    const leitor = new LeitorTeclado()
+    await leitor.iniciar()
+    adiarHorario(TURMA)
+    await bancada.repositorio.salvarTurma(TURMA, [pessoa(0)])
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'aaaa000000000000',
+      papel: 'professor',
+      nome: 'Prof',
+      criadoEm: new Date().toISOString(),
+    })
+    // 2367396804 → 8d 1b 9b c4: um dos dois UIDs medidos no dongle real.
+    await bancada.repositorio.gravarVinculo({
+      uidHash: await calcularUidHash(bancada.config.salHex, hexParaUid('8d1b9bc4')),
+      papel: 'aluno',
+      nome: 'Maria Vitória',
+      matricula: pessoa(0).matricula,
+      criadoEm: new Date().toISOString(),
+    })
+    renderizarCom({ ...bancada, leitor } as unknown as Bancada, <Fluxo />)
+    await screen.findByText(/Começar a chamada/)
+
+    await act(async () => encostarNoDongle('2367396804'))
+
+    expect(await screen.findByText(/Maria Vitória foi lido/)).toBeInTheDocument()
+    await esperar(200)
+    expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
+    await leitor.parar()
+  })
+
+  it('Enter de gente, no teclado, continua começando a chamada', async () => {
+    const bancada = await montarBancada()
+    adiarHorario(TURMA)
+    await bancada.repositorio.salvarTurma(TURMA, [pessoa(0)])
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'aaaa000000000000',
+      papel: 'professor',
+      nome: 'Prof',
+      criadoEm: new Date().toISOString(),
+    })
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText(/Começar a chamada/)
+
+    await userEvent.setup().keyboard('{Enter}')
+
+    await waitFor(async () => expect(await bancada.repositorio.sessaoAberta()).toBeDefined())
+  })
+})
+
+describe('uma chamada por turma por dia', () => {
+  it('reabrir no mesmo dia continua de onde parou', async () => {
+    const bancada = await montarBancada()
+    const ALUNOS = [pessoa(0), pessoa(1)]
+    await bancada.repositorio.salvarTurma(TURMA, ALUNOS)
+    const agora = new Date()
+    // Dois presentes numa chamada anterior do mesmo dia, já encerrada.
+    for (const [i, aluno] of ALUNOS.entries()) {
+      await bancada.repositorio.acrescentarEvento({
+        eventoId: proximoEventoId(bancada.config.instalacaoId, agora, i + 1),
+        quando: new Date(agora.getTime() - (5 - i) * 60_000).toISOString(),
+        turma: TURMA,
+        matricula: aluno.matricula,
+        nome: aluno.nome,
+        origem: 'cracha',
+        resultado: 'ok',
+        uidHash: `bbbb${String(i).padStart(12, '0')}`,
+      })
+    }
+    const reaberta = { turma: TURMA, abertaEm: agora.toISOString(), uidHashProfessor: 'professor' }
+    await bancada.repositorio.abrirSessao(reaberta)
+
+    renderizarCom(
+      bancada,
+      <TelaAula sessao={reaberta} pendentes={[]} daTurma={ALUNOS} aoMudarBase={() => {}} />,
+    )
+
+    await waitFor(() => expect(screen.getByRole('status')).toHaveAttribute('aria-label', '2'))
+  })
+
+  it('outro dia é outra chamada', async () => {
+    const bancada = await montarBancada()
+    await bancada.repositorio.salvarTurma(TURMA, [pessoa(0)])
+    const ontem = new Date(Date.now() - 24 * 60 * 60_000)
+    await bancada.repositorio.acrescentarEvento({
+      eventoId: proximoEventoId(bancada.config.instalacaoId, ontem, 1),
+      quando: ontem.toISOString(),
+      turma: TURMA,
+      matricula: pessoa(0).matricula,
+      nome: pessoa(0).nome,
+      origem: 'cracha',
+      resultado: 'ok',
+      uidHash: 'bbbb000000000000',
+    })
+    const sessao = { turma: TURMA, abertaEm: new Date().toISOString(), uidHashProfessor: 'professor' }
+    await bancada.repositorio.abrirSessao(sessao)
+    renderizarCom(bancada, <TelaAula sessao={sessao} pendentes={[]} daTurma={[pessoa(0)]} aoMudarBase={() => {}} />)
+
+    await esperar(100)
+    expect(screen.getByRole('status')).toHaveAttribute('aria-label', '0')
+  })
+
+  it('abrir o app fecha a chamada que ficou aberta', async () => {
+    const bancada = await montarBancada()
+    await bancada.repositorio.abrirSessao({
+      turma: TURMA,
+      abertaEm: new Date().toISOString(),
+      uidHashProfessor: 'professor',
+    })
+    await fecharChamadaDeAntes(bancada.repositorio)
+    expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
+  })
+})
+
+describe('aluno cadastrado nunca se perde por troca de sal', () => {
+  const CRACHA = hexParaUid('3770f213')
+
+  it('trocar o sal guarda o anterior, e o crachá antigo segue reconhecido', async () => {
+    const { repositorio, config } = await montarBancada()
+    const uidHash = await calcularUidHash(config.salHex, CRACHA)
+    await repositorio.gravarVinculo({ uidHash, papel: 'aluno', nome: 'Maria', criadoEm: new Date().toISOString() })
+
+    await repositorio.definirSal('00112233445566778899aabbccddeeff')
+    const depois = await repositorio.lerConfig()
+    expect(depois.saisAnteriores).toContain(config.salHex)
+
+    const achado = await identificarCracha(repositorio, depois, CRACHA)
+    expect(achado.vinculo?.nome).toBe('Maria')
+    expect(achado.uidHash).toBe(uidHash)
+    // Vínculo antigo ganha a impressão do sal na primeira leitura.
+    const esperado = await idDoSal(config.salHex)
+    await waitFor(async () => expect((await repositorio.vinculoPorHash(uidHash))?.salId).toBe(esperado), {
+      timeout: 3000,
+    })
+  })
+
+  it('crachá desconhecido cai no sal atual, que é onde o cadastro nasce', async () => {
+    const { repositorio } = await montarBancada()
+    await repositorio.definirSal('00112233445566778899aabbccddeeff')
+    const config = await repositorio.lerConfig()
+    const achado = await identificarCracha(repositorio, config, CRACHA)
+    expect(achado.vinculo).toBeUndefined()
+    expect(achado.uidHash).toBe(await calcularUidHash(config.salHex, CRACHA))
+  })
+
+  it('o Diagnóstico conta os crachás de um sal que o navegador não tem', async () => {
+    const { repositorio, config } = await montarBancada()
+    await repositorio.gravarVinculo({
+      uidHash: 'cccc000000000000',
+      papel: 'aluno',
+      nome: 'Perdido',
+      criadoEm: new Date().toISOString(),
+      salId: await idDoSal('ffeeddccbbaa99887766554433221100'),
+    })
+    await repositorio.gravarVinculo({
+      uidHash: 'dddd000000000000',
+      papel: 'aluno',
+      nome: 'Em casa',
+      criadoEm: new Date().toISOString(),
+      salId: await idDoSal(config.salHex),
+    })
+    expect((await vinculosSemSal(repositorio, config)).map((v) => v.nome)).toEqual(['Perdido'])
+
+    await repositorio.lembrarSais(['ffeeddccbbaa99887766554433221100'])
+    expect(await vinculosSemSal(repositorio, await repositorio.lerConfig())).toEqual([])
+  })
+
+  it('o chaveiro vai para o cofre e volta na restauração', async () => {
+    const antiga = await montarBancada()
+    await antiga.repositorio.definirSal('00112233445566778899aabbccddeeff')
+    await antiga.repositorio.gravarVinculo({ uidHash: 'eeee000000000000', papel: 'aluno', nome: 'X', criadoEm: '' })
+    const { handle } = criarPastaFalsa()
+    await sincronizar(antiga.repositorio, handle)
+
+    const nova = await montarBancada()
+    await restaurar(nova.repositorio, handle)
+    const sais = saisConhecidos(await nova.repositorio.lerConfig())
+    expect(sais).toContain(antiga.config.salHex)
+    expect(sais).toContain('00112233445566778899aabbccddeeff')
+    expect(sais).toContain(nova.config.salHex)
   })
 })

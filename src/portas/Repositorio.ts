@@ -7,7 +7,8 @@
 // 2. Nada aqui fala de rede. A base é local; sincronizar é assunto de outra
 //    camada, e nunca do caminho da leitura.
 
-import type { Aula, Config, Evento, Matriculado, UidHash, Vinculo } from '../nucleo/tipos.ts'
+import type { Aula, Config, Evento, Matriculado, Uid, UidHash, Vinculo } from '../nucleo/tipos.ts'
+import { calcularUidHash, idDoSal, saisConhecidos } from '../nucleo/hash.ts'
 import { proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
 
 export interface DiagnosticoRepositorio {
@@ -34,7 +35,13 @@ export interface Repositorio {
   fechar(): Promise<void>
 
   lerConfig(): Promise<Config>
+  /**
+   * Troca o sal atual. **O anterior não se perde**: vai para
+   * `saisAnteriores`, e os crachás cadastrados nele continuam reconhecidos.
+   */
   definirSal(salHex: string): Promise<void>
+  /** Acrescenta sais ao chaveiro sem trocar o atual. Repetido não duplica. */
+  lembrarSais(sais: string[]): Promise<void>
   definirInstalacaoId(id: string): Promise<void>
   /**
    * Marca até onde a turma já foi exportada. Sem isto o app não distingue uma
@@ -147,6 +154,68 @@ export async function gravarEventoNovo(
     if (await repositorio.acrescentarEvento(evento)) return evento
   }
   throw new Error('Nenhum evento_id livre para gravar o evento. Nada foi salvo.')
+}
+
+/**
+ * De quem é este crachá — procurando em **todos** os sais do chaveiro, não só
+ * no atual.
+ *
+ * O `uidHash` devolvido é o do sal em que o vínculo foi achado, e o do sal
+ * atual quando ninguém é achado (é nele que um cadastro novo nasce). Assim o
+ * mesmo crachá dá sempre o mesmo hash, e a fila de "já passou" não se
+ * confunde.
+ *
+ * Vínculo antigo, sem `salId`, ganha a marca a partir daqui — é a única hora
+ * em que se sabe, com certeza, em que sal ele foi cadastrado.
+ */
+export async function identificarCracha(
+  repositorio: Repositorio,
+  config: Pick<Config, 'salHex' | 'saisAnteriores'>,
+  uid: Uid,
+): Promise<{ uidHash: UidHash; vinculo?: Vinculo }> {
+  const sais = saisConhecidos(config)
+  const doAtual = await calcularUidHash(sais[0], uid)
+  for (const [i, sal] of sais.entries()) {
+    const uidHash = i === 0 ? doAtual : await calcularUidHash(sal, uid)
+    const vinculo = await repositorio.vinculoPorHash(uidHash)
+    if (!vinculo) continue
+    if (!vinculo.salId) quandoOcioso(async () => {
+      // Relido na hora de gravar: entre a leitura e agora o vínculo pode ter
+      // sido renomeado ou removido, e a marca não pode desfazer isso.
+      const atual = await repositorio.vinculoPorHash(uidHash)
+      if (atual && !atual.salId) await repositorio.gravarVinculo({ ...atual, salId: await idDoSal(sal) })
+    })
+    return { uidHash, vinculo }
+  }
+  return { uidHash: doAtual }
+}
+
+/**
+ * A marca do sal espera o navegador ficar ocioso. Gravada no meio da fila,
+ * era uma escrita a mais por crachá, e o teste de 100 alunos passou a perder
+ * leitura — a marca serve ao Diagnóstico, não à chamada, e pode esperar.
+ */
+function quandoOcioso(tarefa: () => Promise<void>): void {
+  const rodar = () => void tarefa().catch(() => {})
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(rodar, { timeout: 10_000 })
+  else setTimeout(rodar, 1000)
+}
+
+/**
+ * Crachás que dependem de um sal que este navegador não tem.
+ *
+ * É o sinal que faltou em 17/09/2026: a turma inteira ficou irreconhecível e
+ * nada na tela disse. Só conta quem tem `salId` — vínculo antigo ainda não
+ * lido não tem como ser conferido, e contar ele seria alarme falso.
+ */
+export async function vinculosSemSal(
+  repositorio: Repositorio,
+  config: Pick<Config, 'salHex' | 'saisAnteriores'>,
+): Promise<Vinculo[]> {
+  const conhecidos = new Set(await Promise.all(saisConhecidos(config).map(idDoSal)))
+  return (await repositorio.listarVinculos()).filter(
+    (v) => !v.sintetico && v.salId !== undefined && !conhecidos.has(v.salId),
+  )
 }
 
 /**
