@@ -21,6 +21,7 @@ import { restaurar } from '../ambiente/sincronia.ts'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import { hexParaUid } from '../nucleo/uid.ts'
 import { INTERVALO_MINIMO_MS, proximoEventoId } from '../nucleo/sessao.ts'
+import { quemFalta } from '../nucleo/sessao.ts'
 import type { Matriculado } from '../nucleo/tipos.ts'
 import { TelaAula } from './TelaAula.tsx'
 
@@ -51,11 +52,17 @@ describe('a aula de quinta, sobre a base do professor', () => {
       bancada.config = await bancada.repositorio.lerConfig()
 
       const alunos = AULA_2209.turmas[TURMA].filter((p) => p.papel === 'aluno')
-      // A turma inteira menos os que ainda não têm crachá: é assim que a
-      // turma do professor está hoje, e é o número que importa — com menos
-      // gente, a numeração dos eventos não chega a se encontrar.
-      const cadastrados = alunos.slice(0, alunos.length - SEM_CRACHA)
-      const pendentes: Matriculado[] = alunos.slice(alunos.length - SEM_CRACHA)
+      // O estado exato da turma do professor hoje: a maioria com crachá que
+      // funciona, seis com vínculo gravado num sal que sumiu em 17/09, e seis
+      // que nunca cadastraram. Os vínculos do cofre saem antes, porque os
+      // crachás deles não têm UID conhecido para o ensaio encostar.
+      const daTurma = new Set(alunos.map((p) => p.matricula))
+      for (const v of await bancada.repositorio.listarVinculos()) {
+        if (v.matricula && daTurma.has(v.matricula)) await bancada.repositorio.removerVinculo(v.uidHash)
+      }
+      const cadastrados = alunos.slice(0, alunos.length - 2 * SEM_CRACHA)
+      const comSalPerdido = alunos.slice(alunos.length - 2 * SEM_CRACHA, alunos.length - SEM_CRACHA)
+      const doSalPerdido = comSalPerdido[0]
       for (const [i, p] of cadastrados.entries()) {
         await bancada.repositorio.gravarVinculo({
           uidHash: await calcularUidHash(bancada.config.salHex, hexParaUid(crachaDe(i))),
@@ -65,6 +72,20 @@ describe('a aula de quinta, sobre a base do professor', () => {
           criadoEm: '2026-09-22T12:55:00.000Z',
         })
       }
+      const salPerdido = '99999999999999999999999999999999'
+      for (const [i, p] of comSalPerdido.entries()) {
+        await bancada.repositorio.gravarVinculo({
+          uidHash: await calcularUidHash(salPerdido, hexParaUid(crachaDe(900 + i))),
+          papel: 'aluno',
+          nome: p.nome,
+          matricula: p.matricula,
+          criadoEm: '2026-09-17T14:25:00.000Z',
+        })
+      }
+      // A fila de pendentes é a do app, não uma lista escolhida a dedo: é ela
+      // que deixa de fora quem tem vínculo, mesmo que o vínculo não sirva.
+      const pendentes: Matriculado[] = quemFalta(alunos, await bancada.repositorio.listarVinculos())
+      expect(pendentes).toHaveLength(SEM_CRACHA)
 
       // Quinta-feira, depois que o app foi fechado e reaberto.
       vi.useFakeTimers({ toFake: ['Date'], now: QUINTA, shouldAdvanceTime: true })
@@ -98,9 +119,10 @@ describe('a aula de quinta, sobre a base do professor', () => {
       // Um crachá que ninguém conhece: a busca abre, o professor escolhe, e a
       // pessoa passa a contar — e na aula seguinte já é do grupo de cima.
       const novato = pendentes[0]
-      await encostar(bancada, crachaDe(900))
+      await encostar(bancada, crachaDe(700))
       const busca = await screen.findByRole('textbox', { name: 'Buscar na turma' })
-      await userEvent.setup({ advanceTimers: vi.advanceTimersByTime }).type(busca, novato.nome)
+      const usuario = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      await usuario.type(busca, novato.nome)
       const achado = await screen.findByRole('button', { name: new RegExp(novato.nome) })
       await act(async () => achado.click())
 
@@ -108,8 +130,26 @@ describe('a aula de quinta, sobre a base do professor', () => {
         expect(screen.getByRole('status')).toHaveAttribute('aria-label', String(cadastrados.length + 1)),
       )
       expect(await bancada.repositorio.vinculoPorHash(
-        await calcularUidHash(bancada.config.salHex, hexParaUid(crachaDe(900))),
+        await calcularUidHash(bancada.config.salHex, hexParaUid(crachaDe(700))),
       )).toMatchObject({ nome: novato.nome })
+
+      // O caso dos seis: vínculo existe, mas num sal que sumiu. Eles não
+      // aparecem na fila de pendentes, então o único caminho deles é a busca
+      // do crachá desconhecido — que varre a turma inteira, e não só a fila.
+      expect(pendentes.map((p) => p.matricula)).not.toContain(doSalPerdido.matricula)
+      await encostar(bancada, crachaDe(800))
+      const buscaDele = await screen.findByRole('textbox', { name: 'Buscar na turma' })
+      await usuario.type(buscaDele, doSalPerdido.nome)
+      const achadoDele = await screen.findByRole('button', { name: new RegExp(doSalPerdido.nome) })
+      await act(async () => achadoDele.click())
+
+      await waitFor(async () =>
+        expect(
+          await bancada.repositorio.vinculoPorHash(
+            await calcularUidHash(bancada.config.salHex, hexParaUid(crachaDe(800))),
+          ),
+        ).toMatchObject({ nome: doSalPerdido.nome, matricula: doSalPerdido.matricula }),
+      )
 
       // Nada do que já estava gravado foi tocado, e nenhum id se repetiu.
       const todos = await bancada.repositorio.listarEventos()
