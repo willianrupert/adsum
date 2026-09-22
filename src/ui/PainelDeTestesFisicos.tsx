@@ -17,7 +17,12 @@
 
 import { useEffect, useState } from 'react'
 import { RigDeCracha } from '../ambiente/rigDeCracha.ts'
-import { rodarCenarioAvancado, rodarChamadaComHistorico, rodarSuiteFisica } from '../ambiente/suiteFisica.ts'
+import {
+  rodarCenarioAvancado,
+  rodarChamadaComHistorico,
+  rodarFilaDeRadio,
+  rodarSuiteFisica,
+} from '../ambiente/suiteFisica.ts'
 import { prepararTurmaDeTeste, situacaoDaTurmaDeTeste, type SituacaoDaTurmaDeTeste } from '../ambiente/turmaDeTeste.ts'
 import type { ResultadoCenario } from '../nucleo/suiteDeTestes.ts'
 import type { Config } from '../nucleo/tipos.ts'
@@ -51,6 +56,7 @@ export function PainelDeTestesFisicos({
   const [preparando, setPreparando] = useState(false)
   const [rodandoAvancado, setRodandoAvancado] = useState(false)
   const [rodandoHistorico, setRodandoHistorico] = useState(false)
+  const [rodandoFila, setRodandoFila] = useState(false)
 
   // Reencontra o rig sozinho se a página acabou de recarregar por causa do
   // "Preparar" — sem isto, o professor precisaria clicar em "Conectar" de
@@ -134,6 +140,20 @@ export function PainelDeTestesFisicos({
     }
   }
 
+  const rodarFila = async () => {
+    setErro(undefined)
+    setRodandoFila(true)
+    try {
+      const resultado = await rodarFilaDeRadio(rig, repositorio, config, 12, setProgresso)
+      setResultados((antes) => [...(antes ?? []), resultado])
+    } catch (e) {
+      setErro((e as Error).message)
+    } finally {
+      setRodandoFila(false)
+      setProgresso(undefined)
+    }
+  }
+
   const rodarComHistorico = async () => {
     setErro(undefined)
     setRodandoHistorico(true)
@@ -177,7 +197,7 @@ export function PainelDeTestesFisicos({
         </button>
       )}
 
-      {(rodando || rodandoAvancado || rodandoHistorico) && progresso && <p className="vazio">{progresso}</p>}
+      {(rodando || rodandoAvancado || rodandoHistorico || rodandoFila) && progresso && <p className="vazio">{progresso}</p>}
 
       {/* O cenário avançado é uma seção à parte — depende de uma chamada
           aberta, e as outras quatro não. */}
@@ -197,6 +217,15 @@ export function PainelDeTestesFisicos({
       {situacaoDaTurma === 'pronta' && conectado && leitorId === 'dongle' && (
         <button disabled={rodandoAvancado || rodandoHistorico} onClick={() => void rodarAvancado()}>
           {rodandoAvancado ? 'Rodando...' : 'Rodar cenário avançado (dois crachás juntos)'}
+        </button>
+      )}
+
+      {/* O emulador de rádio, quando é ele do outro lado: uma turma inteira
+          passando no dongle de verdade. O rig de HID responde ERR ao FILA,
+          que é a resposta certa — o botão aparece igual, e o erro explica. */}
+      {situacaoDaTurma === 'pronta' && conectado && leitorId === 'dongle' && (
+        <button disabled={rodandoFila || rodandoAvancado || rodandoHistorico} onClick={() => void rodarFila()}>
+          {rodandoFila ? 'Rodando...' : 'Rodar fila de 12 pelo rádio (emulador)'}
         </button>
       )}
 

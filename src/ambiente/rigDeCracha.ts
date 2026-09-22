@@ -170,6 +170,20 @@ export class RigDeCracha {
     await this.enviar(`CARD ${indice}`, 3000)
   }
 
+  /**
+   * Uma fila inteira de uma vez, quando do outro lado está o emulador de
+   * rádio (`ferramentas/emulador-de-cracha`) e não o rig de HID. O rig de HID
+   * responde `ERR comando desconhecido`, que é a resposta certa: quem chama
+   * decide o que fazer com isso.
+   *
+   * O tempo limite acompanha a fila: cada aluno custa o tempo no ar mais o
+   * intervalo, e o reset entre eles custa mais uns 150 ms.
+   */
+  async fila(quantos: number, msNoAr: number, msEntre: number): Promise<string> {
+    const limite = quantos * (msNoAr + msEntre + 400) + 5000
+    return await this.enviar(`FILA ${quantos} ${msNoAr} ${msEntre}`, limite)
+  }
+
   async digitacaoHumana(texto: string, msPorCaractere: number): Promise<void> {
     await this.enviar(`HUMAN ${texto} ${msPorCaractere}`, texto.length * msPorCaractere + 2000)
   }

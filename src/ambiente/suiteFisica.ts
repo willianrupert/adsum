@@ -7,6 +7,8 @@
 
 import {
   avaliarChamadaComHistorico,
+  avaliarFilaDeRadio,
+  uidDaFilaDeRadio,
   avaliarCenario,
   avaliarDoisCrachasJuntos,
   avaliarPerdaDeFoco,
@@ -296,6 +298,73 @@ export async function rodarChamadaComHistorico(
       idsRepetidos: ids.length - new Set(ids).size,
       antigoReconhecidoComo: novos.find((e) => e.uidHash === hashAntigo)?.nome || undefined,
       esperadoParaOAntigo: dono.nome,
+    })
+  })
+}
+
+/**
+ * Uma turma inteira passando o crachá no dongle de verdade, pelo rádio.
+ *
+ * É o último pedaço do caminho que nenhum teste cobria: o crachá existe como
+ * campo eletromagnético, o dongle faz anticolisão e digita, e o app grava. O
+ * emulador (`ferramentas/emulador-de-cracha`) fala o mesmo protocolo do rig de
+ * HID, então quem chama não precisa saber qual dos dois está do outro lado —
+ * só o `FILA` é exclusivo dele, e o rig responde `ERR` a ele, o que é a
+ * resposta certa.
+ *
+ * Dois cuidados que a bancada de 22/09/2026 ensinou, e que valem mais que o
+ * código daqui:
+ *
+ * - **as antenas ficam a uns 3 cm**: encostadas, o acoplamento abafa a
+ *   resposta do alvo e quase nada é lido;
+ * - **o reset por fio entre um aluno e outro não é opcional**: sem ele, a
+ *   troca rápida faz o PN532 responder antes de ter o UID configurado, e o
+ *   dongle lê `08 08 08 08` — um aluno que não existe.
+ */
+export async function rodarFilaDeRadio(
+  rig: RigDeCracha,
+  repositorio: Repositorio,
+  config: Config,
+  quantos: number,
+  aoProgredir: (mensagem: string) => void,
+  dependencias: DependenciasDaSuite = {},
+): Promise<ResultadoCenario> {
+  const esperar = dependencias.esperar ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)))
+  return cenario('Fila pelo rádio (dongle de verdade)', async () => {
+    const matriculados = await repositorio.listarMatriculados(TURMA_DE_TESTE)
+    if (matriculados.length === 0) throw new Error('a turma de teste está vazia; prepare-a antes')
+    const alunos = Math.min(quantos, matriculados.length)
+
+    aoProgredir(`Cadastrando ${alunos} crachás da fila...`)
+    const hashes = new Map<string, number>()
+    for (let i = 0; i < alunos; i++) {
+      const uid = decimalParaBytes(uidDaFilaDeRadio(i))
+      if (!uid) continue
+      const uidHash = await calcularUidHash(config.salHex, uid)
+      hashes.set(uidHash, i)
+      await repositorio.gravarVinculo({
+        uidHash,
+        papel: 'aluno',
+        nome: matriculados[i].nome,
+        matricula: matriculados[i].matricula,
+        criadoEm: new Date().toISOString(),
+      })
+    }
+
+    const antes = new Set((await repositorio.listarEventos({ turma: TURMA_DE_TESTE })).map((e) => e.eventoId))
+    aoProgredir(`Disparando ${alunos} crachás pelo rádio — antenas a uns 3 cm...`)
+    await rig.fila(alunos, 400, 100)
+    // O dongle digita depois de ler, e o app grava depois de digitar: uma
+    // folga curta evita ler a base antes de a última presença chegar.
+    await esperar(1500)
+
+    const novos = (await repositorio.listarEventos({ turma: TURMA_DE_TESTE })).filter(
+      (e) => !antes.has(e.eventoId) && e.origem === 'cracha',
+    )
+    return avaliarFilaDeRadio({
+      disparados: alunos,
+      gravados: new Set(novos.filter((e) => hashes.has(e.uidHash)).map((e) => e.uidHash)).size,
+      fantasmas: novos.filter((e) => !hashes.has(e.uidHash)).length,
     })
   })
 }

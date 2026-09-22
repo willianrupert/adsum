@@ -30,6 +30,10 @@
 //                                 cada rodada de propósito: o dongle ignora o
 //                                 mesmo crachá parado no campo, e só lê de
 //                                 novo quando ele sai e outro entra
+//   RESET <ON|OFF>             -- liga ou desliga o reset por fio entre um
+//                                 aluno e outro. Com a antena na distância
+//                                 certa, trocar de UID pode bastar — e sem o
+//                                 reset a fila anda bem mais rápido
 //   LED                        -- pisca cinco vezes, para conferir a ligação
 //   HUMAN <texto> <ms>         -- aceito e ignorado: não há como "digitar
 //                                 devagar" por rádio, e o comando existe só
@@ -70,6 +74,8 @@ static const int PINO_LED = 3;
 static const int PINO_RESET = 10;
 /** Quanto tempo o módulo fica desligado entre um crachá e outro. */
 static const int MS_DESLIGADO = 120;
+/** Ligado por padrão; o comando `RESET OFF` desliga para medir sem ele. */
+bool usarReset = true;
 static const uint8_t ESCREVER = 0x01, LER_ESTADO = 0x02, LER_DADOS = 0x03;
 static const int CRACHAS = 16;
 
@@ -193,6 +199,12 @@ bool porNoAr(const Cracha& cracha) {
 void configurarSam();
 
 void tirarDoAr() {
+  if (!usarReset) {
+    // Sem reset: só sai do modo alvo. A configuração do chip sobrevive, então
+    // não precisa reenviar o SAM — e a fila anda muito mais rápido.
+    acordar();
+    return;
+  }
   digitalWrite(PINO_RESET, LOW);
   delay(MS_DESLIGADO);
   digitalWrite(PINO_RESET, HIGH);
@@ -353,6 +365,18 @@ void tratar(String linha) {
       delay((uint32_t)max(gap, 0));
     }
     Serial.printf("OK %010u %010u\n", primeiro, ultimo);
+    return;
+  }
+
+  if (comando == "RESET") {
+    const String valor = proximaPalavra(linha);
+    if (valor == "ON") usarReset = true;
+    else if (valor == "OFF") usarReset = false;
+    else {
+      Serial.println("ERR uso: RESET <ON|OFF>");
+      return;
+    }
+    Serial.printf("OK reset=%s\n", usarReset ? "on" : "off");
     return;
   }
 

@@ -203,3 +203,47 @@ export function avaliarChamadaComHistorico(medida: {
       }
     : { nome, aprovado: false, detalhe: problemas.join(' · ') }
 }
+
+/**
+ * O UID do enésimo aluno da fila emulada por rádio, no formato que o dongle
+ * digita (decimal de 10 dígitos).
+ *
+ * Firmware e app precisam concordar sobre isto sem combinar nada na hora: o
+ * emulador monta o crachá a partir do índice, e a suíte cria o vínculo do
+ * mesmo índice antes de disparar. A conta mora aqui para não existir em dois
+ * lugares.
+ *
+ * A faixa (`0xAD` no terceiro byte) é própria, longe dos UIDs medidos do
+ * dongle real e dos crachás do rig de HID: fila de teste não pode colidir com
+ * crachá de gente. O último byte é sempre `0x08`, que o firmware do PN532
+ * impõe a qualquer alvo emulado, e o primeiro carrega o índice — o dongle
+ * imprime os bytes na ordem inversa da que vão ao ar.
+ */
+export function uidDaFilaDeRadio(indice: number): string {
+  const valor = ((indice & 0xff) << 24) | (((indice >> 8) & 0xff) << 16) | (0xad << 8) | 0x08
+  return String(valor >>> 0).padStart(10, '0')
+}
+
+/**
+ * A fila pelo rádio: `disparados` crachás emitidos, `gravados` presenças que
+ * chegaram na base, `fantasmas` leituras que não pertencem à fila.
+ *
+ * Fantasma não é detalhe: sem o reset por fio entre um aluno e outro, o PN532
+ * responde antes de ter o UID configurado e o dongle lê `08 08 08 08`
+ * (medido em 22/09/2026). Num teste de carga isso viraria "um aluno que
+ * ninguém reconhece", e a investigação iria parar no app, que não tem culpa.
+ */
+export function avaliarFilaDeRadio(medida: {
+  disparados: number
+  gravados: number
+  fantasmas: number
+}): ResultadoCenario {
+  const nome = 'Fila pelo rádio (dongle de verdade)'
+  const perdidos = medida.disparados - medida.gravados
+  const problemas: string[] = []
+  if (medida.fantasmas > 0) problemas.push(`${medida.fantasmas} leitura(s) fora da fila`)
+  if (perdidos > 0) problemas.push(`${perdidos} de ${medida.disparados} não chegaram na base`)
+  return problemas.length === 0
+    ? { nome, aprovado: true, detalhe: `${medida.gravados} de ${medida.disparados} viraram presença.` }
+    : { nome, aprovado: false, detalhe: problemas.join(' · ') }
+}
