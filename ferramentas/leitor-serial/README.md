@@ -6,6 +6,32 @@ testado em hardware**: compila, e a lógica pura (quadros do PN532 e formato da
 linha) passa nos testes de `teste/`. O adaptador do app (`LeitorSerial`) ainda
 não existe.
 
+## O que a bancada de 22/09/2026 estabeleceu
+
+**O módulo só fala por SPI aqui, e com o protocolo do
+[Prismo](https://github.com/nu31hackerspace/prismo)** — mesmo par de hardware
+(C3 SuperMini + PN532), testado em placa real. HSU e I2C ficaram mudos em
+todas as posições de switch, com o módulo comprovadamente alimentado. O que
+destrava, e o que faltava em cada tentativa anterior:
+
+1. **acordar com rajada**: CS em baixo, dezesseis `0x55` e três `0x00`, 2 ms
+   de cada lado do CS — o pulso de CS sozinho não basta;
+2. **inverter os bits de cada byte à mão**, em SPI MSB: o PN532 fala LSB
+   primeiro, e pedir `LSBFIRST` ao periférico não produziu resposta;
+3. **ler ACK e resposta em separado**, cada um esperando o próprio estado
+   "pronto" (`0x01` depois de invertido) — ler os dois de uma vez traz o ACK
+   seguido de lixo.
+
+Ligação que funcionou: SCK=GPIO 4, MISO=5, MOSI=6, SS=7, VCC=3V3, no conector
+de 8 pinos, com os switches em SPI. O `diag_spi` confirma o firmware (1.6) e o
+`diag_cartao` lê o UID.
+
+**A ordem dos bytes do PN532 é o inverso da do dongle.** Medido com o mesmo
+crachá: o dongle digita `2367396804` (`8d 1b 9b c4`) e o PN532 devolve
+`c4 9b 1b 8d`. Um leitor serial que entregasse o UID na ordem do PN532 geraria
+outro `uid_hash` para o mesmo crachá, e a pessoa apareceria como desconhecida.
+Quem for escrever o firmware definitivo inverte antes de mandar.
+
 ## Ligação
 
 | PN532 (modo HSU, switches `0 0`) | ESP32-C3 SuperMini |
