@@ -50,7 +50,7 @@ function criarPlacaFalsa() {
   // `rigDeCracha.test.ts`.
   servico.getPorts = vi.fn(async () => [])
   servico.requestPort = vi.fn(async () => porta)
-  return { servico, responder, escritas }
+  return { servico, responder, escritas, porta }
 }
 
 let leitor: LeitorTeclado | undefined
@@ -67,7 +67,7 @@ async function montarPainel(leitorId: string, rig: RigDeCracha) {
   leitor = new LeitorTeclado()
   await leitor.iniciar()
   bancada = await montarBancada()
-  render(
+  const tela = render(
     <PainelDeTestesFisicos
       leitor={leitor}
       leitorId={leitorId}
@@ -76,7 +76,7 @@ async function montarPainel(leitorId: string, rig: RigDeCracha) {
       rig={rig}
     />,
   )
-  return bancada
+  return { ...bancada, ...tela }
 }
 
 describe('PainelDeTestesFisicos: rig', () => {
@@ -114,6 +114,23 @@ describe('PainelDeTestesFisicos: rig', () => {
     // resposta de propósito: não importa aqui se ele chega a terminar.
     await waitFor(() => expect(screen.getByRole('button', { name: 'Rodando...' })).toBeDisabled())
     expect(screen.getByText(/Preparando/)).toBeInTheDocument()
+  })
+
+  // Achado ao vivo em 22/09/2026: o Diagnóstico é uma folha — fecha e
+  // desmonta este painel, reabrir monta um `RigDeCracha` novo. Sem fechar a
+  // porta do antigo, o novo esbarrava nela como "já aberta" — o mesmo
+  // sintoma do bug de recarregamento, por um gatilho diferente.
+  it('desmontar (fechar a folha do Diagnóstico) fecha a porta do rig', async () => {
+    const { servico, responder, porta } = criarPlacaFalsa()
+    const tela = await montarPainel('dongle', new RigDeCracha({ serial: servico }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Conectar rig de teste' }))
+    responder('PONG\n')
+    await waitFor(() => expect(screen.getByText('conectado')).toBeInTheDocument())
+
+    tela.unmount()
+
+    await waitFor(() => expect(porta.close).toHaveBeenCalledOnce())
   })
 })
 

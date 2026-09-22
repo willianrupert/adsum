@@ -63,6 +63,16 @@ export function PainelDeTestesFisicos({
       .iniciar()
       .then(() => setConectado(rig.conectado))
       .catch(() => setConectado(false))
+
+    // Achado ao vivo em 22/09/2026: o Diagnóstico é uma folha — fecha e
+    // desmonta este painel inteiro, e reabrir monta um `PainelDeTestesFisicos`
+    // novo, com um `RigDeCracha` novo (`useState` acima). Sem isto, o rig
+    // antigo ficava esquecido com a porta ainda aberta pro navegador — nunca
+    // desconectado de verdade — e o novo, ao tentar reencontrar essa mesma
+    // porta (`iniciar()`, acima), esbarrava nela como "já aberta", igual ao
+    // bug do recarregamento que já tinha sido corrigido, só que por um
+    // gatilho diferente (fechar a folha, não recarregar a página).
+    return () => void rig.desconectar()
   }, [rig])
 
   useEffect(() => {
