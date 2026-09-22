@@ -413,6 +413,40 @@ describe('a grade recomenda, mas nunca abre sozinha', () => {
     expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
   })
 
+  // Pedido do autor (22/09/2026): um ponto azul ao lado do nome, só quando a
+  // grade diz que é **esta** turma, agora — não a mesma coisa que "é a
+  // sugestão inicial" (que também vale pra fallback sem grade nenhuma).
+  it('o ponto azul aparece só na turma que a grade diz que é agora, some ao trocar de turma', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    await bancada.repositorio.salvarTurma('IF969 · T02', [
+      { ...pessoa('9', 'Zeca'), turma: 'IF969 · T02' },
+    ])
+    adiarHorario('IF969 · T02')
+    await aulaAgora()
+    renderizarCom(bancada, <Fluxo />)
+
+    await screen.findByText('IF685 · T01')
+    expect(document.querySelector('.repouso__agora')).not.toBeNull()
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'próxima turma' })).toBeEnabled())
+    await usuario.click(screen.getByRole('button', { name: 'próxima turma' }))
+    expect(screen.getByText('IF969 · T02')).toBeInTheDocument()
+    // IF969 · T02 não tem aula agora na grade — sem ponto.
+    expect(document.querySelector('.repouso__agora')).toBeNull()
+
+    await usuario.click(screen.getByRole('button', { name: 'turma anterior' }))
+    expect(screen.getByText('IF685 · T01')).toBeInTheDocument()
+    expect(document.querySelector('.repouso__agora')).not.toBeNull()
+  })
+
+  it('sem grade nenhuma batendo agora, nenhuma turma ganha o ponto', async () => {
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText('IF685 · T01')
+    expect(document.querySelector('.repouso__agora')).toBeNull()
+  })
+
   // Nem o relógio de 30s existe mais: passar tempo não abre nada sozinho.
   it('o tempo passando não abre a chamada sozinha, mesmo com a aula batendo agora', async () => {
     await turmaInteiraComCracha()

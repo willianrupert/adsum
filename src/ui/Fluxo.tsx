@@ -1029,6 +1029,7 @@ export function Fluxo() {
           nomeDoProfessor={nomeDoProfessorAtual}
           listaDeTurmas={listaDeTurmas}
           turmaSelecionada={turmaSelecionada}
+          agoraNaGrade={comecarEm}
           horaSelecionada={horaSelecionada}
           aoMudarTurma={mudarTurma}
           aoEditarHora={editarHora}
@@ -1340,6 +1341,7 @@ export function Repouso({
   nomeDoProfessor,
   listaDeTurmas,
   turmaSelecionada,
+  agoraNaGrade,
   horaSelecionada,
   aoMudarTurma,
   aoEditarHora,
@@ -1358,6 +1360,12 @@ export function Repouso({
       `Fluxo`, onde a sugestão inicial é decidida (grade, se souber; senão a
       última usada; senão a primeira). */
   turmaSelecionada?: string
+  /** A turma que a grade diz que tem aula agora — `comecarEm`, em `Fluxo`.
+      Pedido do autor (22/09/2026): quando `turmaSelecionada` é esta,
+      o ponto ao lado do nome fica azul — é a diferença entre "é a próxima
+      recomendação" (sempre) e "é agora, de verdade, pela grade" (às vezes).
+      Some ao trocar de turma pela seta; volta ao voltar pra ela. */
+  agoraNaGrade?: string
   /** Quando a chamada abriria — editável. Sem edição, é o relógio de
       verdade, andando. */
   horaSelecionada: Date
@@ -1422,7 +1430,12 @@ export function Repouso({
         >
           ←
         </button>
-        <p className="repouso__acao">{turmaSelecionada ?? 'Nenhuma turma'}</p>
+        <p className="repouso__acao">
+          {turmaSelecionada ?? 'Nenhuma turma'}
+          {turmaSelecionada && turmaSelecionada === agoraNaGrade && (
+            <span className="repouso__agora" title="A grade diz que esta turma tem aula agora" aria-hidden="true" />
+          )}
+        </p>
         <button
           aria-label="próxima turma"
           onClick={() => aoMudarTurma(1)}

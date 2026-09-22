@@ -755,6 +755,21 @@ button:focus-visible {
   text-wrap: balance;
 }
 
+/* "É agora, pela grade" — um ponto só, sem texto, sem selo: a diferença
+   entre a sugestão de sempre e a hora batendo de verdade não precisa de
+   mais que isso. `em` acompanha `--t-grande` sem depender de um valor
+   fixo. */
+.repouso__agora {
+  display: inline-block;
+  width: 0.3em;
+  height: 0.3em;
+  margin-left: 0.35em;
+  margin-bottom: 0.2em;
+  border-radius: 50%;
+  background: var(--acao);
+  vertical-align: middle;
+}
+
 /* A turma por seta — mesma ideia de `.chamado__acoes` (os botões de
    "Chamar nomes"), centralizada em volta do nome da turma em vez de ficar
    embaixo dele. Os botões em si já herdam o `button` base do app. */
