@@ -121,6 +121,17 @@ export function TelaAula({
    */
   const geracao = useRef(0)
   const jaPresentes = useRef<Set<string>>(new Set())
+  /**
+   * Espelha `presentes` (estado), pra `aoEncerrar` poder ler a contagem sem
+   * cair no mesmo closure desatualizado que `jaPresentes` já existe para
+   * evitar (ver o comentário dela, acima) — os dois `aoEncerrar?.(...)`
+   * abaixo rodam dentro de handlers assíncronos que não recebem `presentes`
+   * como dependência fresca. Achado em 22/09/2026: sem isto, "Fim da aula"
+   * mostrava 0 presentes depois de uma chamada só com presença manual — a
+   * mesma tela ao vivo já contava certo, só o resumo do encerramento ainda
+   * lia o conjunto errado (só crachá).
+   */
+  const presentesRef = useRef<Set<string>>(new Set())
   const [linhas, setLinhas] = useState<Linha[]>([])
   const [recado, setRecado] = useState<string>()
   const [procurando, setProcurando] = useState<string>()
@@ -349,13 +360,13 @@ export function TelaAula({
     const semCrachaDeProfessor = daAula.filter(
       (e) => !(e.origem === 'cracha' && hashesDeProfessor.has(e.uidHash)),
     )
-    setPresentes(
-      new Set(
-        [...presencasDoDia(semCrachaDeProfessor, sessao.turma, dia)]
-          .filter(([, v]) => v.presente)
-          .map(([chave]) => chave),
-      ),
+    const presentesConjunto = new Set(
+      [...presencasDoDia(semCrachaDeProfessor, sessao.turma, dia)]
+        .filter(([, v]) => v.presente)
+        .map(([chave]) => chave),
     )
+    presentesRef.current = presentesConjunto
+    setPresentes(presentesConjunto)
     setPresencasHoje(presencasDoDia(daAula, sessao.turma, dia))
     setLinhas(
       daAula
@@ -614,7 +625,7 @@ export function TelaAula({
         if (decisao.tipo === 'encerrar') {
           await repositorio.encerrarSessao()
           aoEncerrar?.(
-            jaPresentes.current.size,
+            presentesRef.current.size,
             leitura.em.getTime() - Date.parse(sessao.abertaEm),
             estatisticaDeIntervalos(intervalos.current),
           )
@@ -670,7 +681,7 @@ export function TelaAula({
       await repositorio.encerrarSessao()
       tocar('encerramento')
       aoEncerrar?.(
-        jaPresentes.current.size,
+        presentesRef.current.size,
         agora.getTime() - Date.parse(sessao.abertaEm),
         estatisticaDeIntervalos(intervalos.current),
       )

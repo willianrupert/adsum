@@ -589,6 +589,46 @@ describe('o fim da aula', () => {
     expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
   })
 
+  // Achado pelo autor em 22/09/2026: o contador ao vivo já contava presença
+  // manual certo, mas "Fim da aula" mostrava 0 — `aoEncerrar` ainda lia
+  // `jaPresentes.current` (a ref só de crachá, de propósito, pro dedup de
+  // `decidir()`), não o conjunto que passou a incluir manual. Só crachá não
+  // reproduzia isto: precisa de presença **sem** nenhum crachá real no
+  // meio.
+  it('duas presenças manuais, sem nenhum crachá: "Fim da aula" mostra as duas, não zero', async () => {
+    const usuario = userEvent.setup()
+    const aoEncerrar = vi.fn()
+    renderizarCom(
+      bancada,
+      <TelaAula
+        sessao={SESSAO}
+        pendentes={[ANA, BRENO]}
+        daTurma={[ANA, BRENO]}
+        aoMudarBase={() => {}}
+        aoEncerrar={aoEncerrar}
+      />,
+    )
+
+    const linhaDaAna = screen.getByLabelText(`nome de ${ANA.nomeCompleto}`).closest('tr')!
+    await usuario.click(within(linhaDaAna).getByRole('button', { name: 'Presente' }))
+    const linhaDoBreno = screen.getByLabelText(`nome de ${BRENO.nomeCompleto}`).closest('tr')!
+    await usuario.click(within(linhaDoBreno).getByRole('button', { name: 'Presente' }))
+    await waitFor(() => expect(screen.getByRole('status')).toHaveAttribute('aria-label', '2'))
+
+    const uidProfessor = await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_NOVO))
+    await bancada.repositorio.gravarVinculo({
+      uidHash: uidProfessor,
+      papel: 'professor',
+      nome: 'Paulo Freitas',
+      criadoEm: new Date().toISOString(),
+    })
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+
+    await waitFor(() => expect(aoEncerrar).toHaveBeenCalled())
+    const [presentes] = aoEncerrar.mock.calls[0]
+    expect(presentes).toBe(2)
+  })
+
   // O dado que troca `INTERVALO_MINIMO_MS` de palpite por medição — ver
   // `estatisticaDeIntervalos`. Atraso real de propósito: sem pelo menos
   // 400 ms entre os dois crachás, o segundo seria recusado como "rápido
