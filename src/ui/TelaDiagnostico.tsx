@@ -16,6 +16,7 @@ import {
 import { podeApagar, type DiagnosticoRepositorio } from '../portas/Repositorio.ts'
 import { descreverAmbiente, levantarCapacidades } from '../ambiente/capacidades.ts'
 import { leitoresVisiveis, useAdsum } from './adsum.ts'
+import { PainelDeTestesFisicos } from './PainelDeTestesFisicos.tsx'
 import { definirModoDev, historicoDeChamadas, modoDev } from '../ambiente/preferencias.ts'
 import { estadoDoConvite } from '../ambiente/instalacao.ts'
 import { Linha, Painel, Selo } from './componentes/Painel.tsx'
@@ -400,6 +401,8 @@ export function TelaDiagnostico() {
           </div>
         )}
       </Painel>
+
+      {ensaio && <PainelDeTestesFisicos leitor={leitor} leitorId={leitorId} />}
 
       {/* Sem `recolhivel`: fica sempre aberto, à frente de "Últimas leituras"
           — é o resumo por sessão que calibra `INTERVALO_MINIMO_MS`, uso do

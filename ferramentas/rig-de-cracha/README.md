@@ -90,6 +90,28 @@ errado, não a rajada inteira. Ainda assim, clique na janela do Chrome com o
 Adsum antes de rodar — a checagem é uma rede de segurança, não substitui
 isso.
 
+## Suíte automática, direto do Chrome (sem Python)
+
+Desde 22/09/2026, o Diagnóstico do Adsum (modo de ensaio) tem um painel
+"Testes físicos com o rig" que fala com a placa pela porta ponte via **Web
+Serial**, no mesmo protocolo de linha deste `.ino` — nenhuma mudança de
+firmware precisa pra isso. Um clique conecta, outro roda quatro cenários
+(ritmo normal, fila apressada, digitação humana, perda de foco) e escuta o
+`leitor` de verdade do app (`aoLer`/`aoRecusar`) pra julgar sozinho se cada
+um passou — sem comparar contagem na tela a olho, sem terminal, sem Claude
+sentado junto. Código em `src/ambiente/rigDeCracha.ts`,
+`src/ambiente/suiteFisica.ts` e `src/nucleo/suiteDeTestes.ts`.
+
+O cenário de perda de foco usa uma janela auxiliar (`window.open`) pra
+roubar o foco de verdade — `window.blur()` sozinho o Chrome ignora. O que
+ele **não** cobre: `INTERVALO_MINIMO_MS` (dois crachás na mesma mão) só é
+decidido dentro de uma chamada aberta (`TelaAula`), fora do alcance do
+Diagnóstico — esse cenário continua sendo `rig.py` manual, com uma turma de
+teste e "Chamar nomes" de verdade.
+
+`rig.py` continua existindo e funcionando igual — a porta ponte aceita as
+duas pontas (Python ou o navegador), nunca as duas ao mesmo tempo.
+
 ## UIDs de teste
 
 `rig.py set` usa `1700000000 + índice*3` — bem longe dos dois UIDs medidos
