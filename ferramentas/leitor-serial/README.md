@@ -10,13 +10,38 @@ não existe.
 
 | PN532 (modo HSU, switches `0 0`) | ESP32-C3 SuperMini |
 | --- | --- |
-| VCC | 3V3 |
+| VCC | 3V3 (se não responder, tente 5V — a placa tem regulador próprio) |
 | GND | GND |
 | TXD | GPIO 20 |
 | RXD | GPIO 21 |
 
 Os fios TXD/RXD **se cruzam**. O LED verde vai no GPIO 3, com resistor de
 330 Ω em série, para o GND.
+
+**O conector é o de 4 pinos** (GND, VCC, SDA, SCL na frente). Em HSU esses
+dois últimos são TXD e RXD, e os rótulos estão **no verso da placa** — o
+conector de 8 pinos ao lado é o do SPI e não serve aqui. Qual dos dois é o TXD
+varia com a fabricação da placa: o `diag_uart4` testa os dois cruzamentos
+sozinho.
+
+## Quando o módulo não responde
+
+Foi onde esta bancada parou. `diag_uart4` separa as causas na ordem certa,
+começando pela que não precisa de nenhum byte: **um TX de UART em repouso fica
+em nível alto**. Se os dois pinos estiverem em nível baixo, não é velocidade
+nem cruzamento — é alimentação ou fio. Depois disso ele varre os dois
+cruzamentos nas duas velocidades de fábrica (115200 e 9600) e ecoa em
+hexadecimal o que chegar; `32` na resposta é a assinatura do PN532.
+
+Se nada responder em nenhuma combinação, na ordem:
+
+1. **Switches.** HSU costuma ser `0 0`, mas o silk de placa clone às vezes
+   está invertido. São três combinações a testar, e é barato.
+2. **5 V no VCC.** O módulo tem regulador e conversor de nível pensados para
+   5 V; parte das placas clone não acorda com 3,3 V.
+3. **Conector errado.** Ver acima: o de 4 pinos, nunca o do SPI.
+4. **Pino de reset.** Em algumas placas o `RSTPDN` precisa estar em nível
+   alto para o módulo sair do repouso.
 
 ## Protocolo
 
