@@ -8,7 +8,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { LeitorSerial } from './LeitorSerial.ts'
 import { uidParaHex } from '../../nucleo/uid.ts'
-import type { Leitura } from '../../portas/LeitorDeCracha.ts'
+import type { Leitura, Recusa } from '../../portas/LeitorDeCracha.ts'
 
 function criarPortaFalsa() {
   let controlador!: ReadableStreamDefaultController<Uint8Array>
@@ -100,6 +100,18 @@ describe('LeitorSerial: leitura', () => {
     await vi.waitFor(async () => expect((await leitor!.diagnostico()).detalhes['último sinal de vida']).not.toBe('—'))
     expect(leituras).toHaveLength(0)
     expect((await leitor!.diagnostico()).detalhes['linhas recusadas']).toBe('0')
+  })
+})
+
+describe('LeitorSerial: recusa avisada', () => {
+  it('linha que não é UID emite a recusa, e linha do aparelho (#) não', async () => {
+    const falsa = criarPortaFalsa()
+    await iniciarCom(falsa)
+    const recusas: Recusa[] = []
+    leitor!.aoRecusar((r) => recusas.push(r))
+    falsa.enviar('#HB pn532=ok\nlixo\n')
+    await vi.waitFor(() => expect(recusas).toHaveLength(1))
+    expect(recusas[0]).toMatchObject({ motivo: 'linha', cru: 'lixo' })
   })
 })
 

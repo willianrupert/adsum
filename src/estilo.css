@@ -38,6 +38,10 @@
   --alerta-fraca: #fdf1e5;
   --grave: #d70015;
   --grave-fraca: #fdecee;
+  /* O verde de "conectado", usado numa bolinha e mais nada. O resto do app
+     não tem verde de propósito (era o do Adsum A1); este só diz que o leitor
+     está vivo. É desenho, não texto: o texto ao lado usa `--tinta-fraca`. */
+  --conectado: #34c759;
   --separador: #d2d2d7;
 
   /* A ilustração do SIGAA (`ComoCopiar.tsx`) imita a página de verdade, que é
@@ -94,6 +98,7 @@
     --acao: #2997ff;
     --acao-viva: #4aa8ff;
     --acao-fraca: #12243a;
+  --conectado: #30d158;
     --alerta: #f5a623;
     --alerta-fraca: #2a2113;
     --grave: #ff453a;
@@ -1933,6 +1938,30 @@ button:focus-visible {
 }
 .ponto--grave {
   background: var(--grave);
+}
+
+/* O leitor: a mesma pílula quieta do canto, com a bolinha verde de "conectado".
+   Só a bolinha muda de cor quando está tudo bem; o texto continua neutro. */
+.ponto--leitor-ok {
+  background: var(--conectado);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--conectado) 22%, transparent);
+}
+.ponto--leitor-alerta {
+  background: var(--alerta);
+}
+.ponto--leitor-grave {
+  background: var(--grave);
+}
+.selo-status--leitor-grave {
+  color: var(--grave);
+  background: var(--grave-fraca);
+}
+
+/* "O leitor leu": o retorno de teste do repouso. Mesma forma do
+   `.aviso-leitura`, mas neutro, porque aqui não há nada de errado. */
+.aviso-leitura--ok {
+  background: var(--fundo-alt);
+  color: var(--tinta);
 }
 
 .folha__fundo {

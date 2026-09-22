@@ -14,7 +14,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { LeitorTeclado } from './LeitorTeclado.ts'
 import { uidParaHex } from '../../nucleo/uid.ts'
-import type { Leitura } from '../../portas/LeitorDeCracha.ts'
+import type { Leitura, Recusa } from '../../portas/LeitorDeCracha.ts'
 
 let leitor: LeitorTeclado | undefined
 
@@ -214,5 +214,52 @@ describe('diagnóstico do sintoma "apitou, nada na tela"', () => {
     window.dispatchEvent(new Event('blur'))
 
     expect((await leitor.diagnostico()).detalhes['janela perdeu o foco']).toBe('0×')
+  })
+})
+
+// O retorno que faltava: a recusa deixava de ser só um número no Diagnóstico e
+// passa a chegar à tela, para o professor ver na hora. Mas digitação comum
+// passa pelo mesmo caminho (a data que ele edita, por exemplo), então só o que
+// **quase foi crachá** pode avisar.
+describe('recusa avisada à tela', () => {
+  async function comOuvinte() {
+    leitor = new LeitorTeclado()
+    await leitor.iniciar()
+    const recusas: Recusa[] = []
+    leitor.aoRecusar((r) => recusas.push(r))
+    return recusas
+  }
+
+  it('UID bem formado que chegou devagar e fechou com Enter avisa "ritmo"', async () => {
+    const recusas = await comOuvinte()
+    await digitarComRitmo('0930148883', [120])
+    expect(recusas).toHaveLength(1)
+    expect(recusas[0]).toMatchObject({ motivo: 'ritmo', cru: '0930148883' })
+  })
+
+  it('rajada rápida em formato desconhecido avisa "formato"', async () => {
+    const recusas = await comOuvinte()
+    await digitarComRitmo('04a23b9112', [12])
+    expect(recusas).toHaveLength(1)
+    expect(recusas[0].motivo).toBe('formato')
+  })
+
+  it('digitação comum, sem Enter, nunca avisa: é gente editando um campo', async () => {
+    const recusas = await comOuvinte()
+    for (const c of '0930148883') {
+      tecla(c)
+      await esperar(120)
+    }
+    await esperar(450) // o silêncio fecha a rajada, sem Enter
+    expect(recusas).toHaveLength(0)
+    // A contagem do Diagnóstico continua registrando: só o aviso é seletivo.
+    expect((await leitor!.diagnostico()).detalhes['rajadas recusadas']).toBe('1')
+  })
+
+  it('tecla solta e leitura aceita não avisam', async () => {
+    const recusas = await comOuvinte()
+    await digitarComRitmo('abc', [12])
+    await digitarComRitmo('0930148883', [16])
+    expect(recusas).toHaveLength(0)
   })
 })

@@ -21,7 +21,9 @@ import type {
   EstadoLeitor,
   LeitorConectavel,
   LeitorConfirmavel,
+  LeitorQueRecusa,
   Leitura,
+  Recusa,
   SituacaoDoAparelho,
 } from '../../portas/LeitorDeCracha.ts'
 import { criarEmissor } from './emissor.ts'
@@ -44,7 +46,7 @@ export interface OpcoesDoLeitorSerial {
   agora?: () => number
 }
 
-export class LeitorSerial implements LeitorConectavel, LeitorConfirmavel {
+export class LeitorSerial implements LeitorConectavel, LeitorConfirmavel, LeitorQueRecusa {
   readonly nome = 'Leitor USB (serial)'
 
   #serial?: ServicoSerial
@@ -66,6 +68,7 @@ export class LeitorSerial implements LeitorConectavel, LeitorConfirmavel {
 
   #leituras = criarEmissor<Leitura>()
   #estados = criarEmissor<EstadoLeitor>()
+  #recusasEmitidas = criarEmissor<Recusa>()
 
   constructor(opcoes: OpcoesDoLeitorSerial = {}) {
     this.#serial = opcoes.serial ?? (typeof navigator !== 'undefined' ? navigator.serial : undefined)
@@ -122,6 +125,10 @@ export class LeitorSerial implements LeitorConectavel, LeitorConfirmavel {
 
   aoMudarEstado(escuta: (estado: EstadoLeitor) => void): Cancelar {
     return this.#estados.inscrever(escuta)
+  }
+
+  aoRecusar(escuta: (recusa: Recusa) => void): Cancelar {
+    return this.#recusasEmitidas.inscrever(escuta)
   }
 
   /** O app diz "gravei": o LED do aparelho pisca. Sem porta aberta, não faz nada. */
@@ -243,6 +250,9 @@ export class LeitorSerial implements LeitorConectavel, LeitorConfirmavel {
       this.#recusados++
       this.#recusas.unshift({ quando: new Date(), cru: linha })
       this.#recusas.length = Math.min(this.#recusas.length, RECUSAS_GUARDADAS)
+      // Toda linha que não é do aparelho (#) veio de máquina: recusar uma é
+      // sempre coisa que o professor precisa saber, nunca ruído de digitação.
+      this.#recusasEmitidas.emitir({ motivo: 'linha', cru: linha, em: new Date() })
       return
     }
     this.#lidos++

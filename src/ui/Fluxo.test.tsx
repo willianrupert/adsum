@@ -745,14 +745,37 @@ describe('turma e hora por seta, sem tela "Qual turma?"', () => {
 // aberta, não produzia nada — nem som, nem texto. Indistinguível de um leitor
 // quebrado.
 describe('crachá fora de aula aberta', () => {
-  it('avisa em vez de ficar mudo', async () => {
+  it('avisa em vez de ficar mudo, e diz que o leitor está funcionando', async () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
     await screen.findByText(/Começar a chamada/)
 
     await act(async () => bancada.leitor.simular('04e05f1a'))
 
-    expect(await screen.findByText(/Nenhuma aula aberta agora/)).toBeInTheDocument()
+    expect(await screen.findByText(/Crachá lido, mas ainda sem dono/)).toBeInTheDocument()
+    expect(screen.getByText(/O leitor está funcionando/)).toBeInTheDocument()
+  })
+
+  // É o teste que o professor faz antes da aula: encosta um crachá só para
+  // ver se o leitor está lendo. Saber **quem** foi lido responde isso, e o UID
+  // nunca aparece: num projetor ele permite clonar o crachá.
+  it('crachá conhecido aparece pelo nome, sem mostrar o UID', async () => {
+    await turmaInteiraComCracha()
+    await bancada.repositorio.gravarVinculo({
+      uidHash: await calcularUidHash(bancada.config.salHex, hexParaUid('3770f213')),
+      papel: 'aluno',
+      nome: 'Maria Vitória',
+      matricula: '77',
+      criadoEm: new Date().toISOString(),
+    })
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText(/Começar a chamada/)
+
+    await act(async () => bancada.leitor.simular('3770f213'))
+
+    expect(await screen.findByText(/Maria Vitória foi lido/)).toBeInTheDocument()
+    expect(document.body.textContent).not.toContain('3770f213')
+    expect(document.body.textContent).not.toContain('0930148883')
   })
 })
 

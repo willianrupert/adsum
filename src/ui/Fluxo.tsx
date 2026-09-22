@@ -11,7 +11,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { decidirRota } from '../nucleo/rota.ts'
 import { calcularUidHash, uidHashSintetico } from '../nucleo/hash.ts'
 import { uidInedito, hexParaUid } from '../nucleo/uid.ts'
-import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
+import { ehQueRecusa, ehSimulavel, type Recusa } from '../portas/LeitorDeCracha.ts'
+import { IndicadorDoLeitor } from './IndicadorDoLeitor.tsx'
 import { podeApagar } from '../portas/Repositorio.ts'
 import { eventoDe, proximoEventoId, quemFalta, type Sessao } from '../nucleo/sessao.ts'
 import {
@@ -82,6 +83,13 @@ import { ConteudoDePresencas } from './TelaPresencas.tsx'
 
 type Folha = 'ajustes' | 'presencas' | 'diagnostico'
 
+/** Duas frases curtas e sem travessão, que é a voz de tela deste app. */
+function mensagemDeRecusa(recusa: Recusa): string {
+  return recusa.motivo === 'ritmo'
+    ? 'Uma leitura chegou devagar demais e foi recusada. Encoste o crachá de novo.'
+    : 'Uma leitura chegou, mas não parece um crachá. Encoste o crachá de novo.'
+}
+
 export function Fluxo() {
   const { leitor, repositorio, config } = useAdsum()
 
@@ -123,6 +131,9 @@ export function Fluxo() {
    * que ela mudou sem ninguém tocar em nada.
    */
   const [avisoLeitura, setAvisoLeitura] = useState<string>()
+  /** Retorno de "o leitor leu" no repouso: o teste que o professor faz antes
+      de a aula começar, encostando um crachá só para ver. */
+  const [leituraOk, setLeituraOk] = useState<string>()
   /** Resumo da versão mais nova de `nucleo/novidades.ts`, quando ainda não
       vista neste navegador. Some sozinho, mesma forma de `dicaDeEnsaio`. */
   const [novidade, setNovidade] = useState<string>()
@@ -260,6 +271,24 @@ export function Fluxo() {
     const relogio = setTimeout(() => setAvisoLeitura(undefined), 6000)
     return () => clearTimeout(relogio)
   }, [avisoLeitura])
+
+  useEffect(() => {
+    if (!leituraOk) return
+    const relogio = setTimeout(() => setLeituraOk(undefined), 6000)
+    return () => clearTimeout(relogio)
+  }, [leituraOk])
+
+  // Uma leitura que chegou e **não virou crachá** nunca mais fica muda: era
+  // o "apitou e nada aconteceu" (15 e 17/09/2026). Vale em qualquer tela,
+  // inclusive durante a chamada, que é onde ele custa presença.
+  useEffect(() => {
+    if (!ehQueRecusa(leitor)) return
+    return leitor.aoRecusar((recusa) => {
+      tocar('desconhecido')
+      setLeituraOk(undefined)
+      setAvisoLeitura(mensagemDeRecusa(recusa))
+    })
+  }, [leitor])
 
   // Uma vez por versão nova: marca como vista já ao mostrar, não só ao
   // sumir — senão fechar a aba no meio dos 12 segundos faria o toast voltar
@@ -686,7 +715,15 @@ export function Fluxo() {
         // tem o que fazer — mas ficar mudo sobre isso é indistinguível de um
         // leitor quebrado. Dizer o que aconteceu é mais barato que a dúvida.
         tocar('desconhecido')
-        setAvisoLeitura('Nenhuma aula aberta agora. Peça ao professor para começar.')
+        // O professor encosta um crachá aqui para ver se o leitor está lendo.
+        // Dizer **quem** foi lido responde isso sem mostrar o UID, que numa
+        // tela de projetor é o dado que permite clonar o crachá.
+        setAvisoLeitura(undefined)
+        setLeituraOk(
+          vinculo
+            ? `${vinculo.nome} foi lido. O leitor está funcionando. Nenhuma aula aberta agora.`
+            : 'Crachá lido, mas ainda sem dono. O leitor está funcionando.',
+        )
       })()
     })
   }, [leitor, repositorio, config, sessao, abrirComProfessor])
@@ -1063,6 +1100,7 @@ export function Fluxo() {
 
       {dicaDeEnsaio && <p className="dica-ensaio">{dicaDeEnsaio}</p>}
       {avisoLeitura && <p className="aviso-leitura">{avisoLeitura}</p>}
+      {leituraOk && <p className="aviso-leitura aviso-leitura--ok">{leituraOk}</p>}
       {novidade && (
         <p className="toast-novidade">
           {novidade}
@@ -1140,6 +1178,8 @@ export function Fluxo() {
             {camadas}
           </span>
         )}
+
+        <IndicadorDoLeitor leitor={leitor} />
 
         <button
           className="engrenagem"

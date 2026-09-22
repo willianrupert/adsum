@@ -88,3 +88,25 @@ export interface LeitorConfirmavel extends LeitorDeCracha {
 export function ehConfirmavel(leitor: LeitorDeCracha): leitor is LeitorConfirmavel {
   return 'confirmarGravacao' in leitor && typeof (leitor as LeitorConfirmavel).confirmarGravacao === 'function'
 }
+
+/**
+ * Algo chegou do leitor e **não virou crachá**. É o sinal que faltava: sem
+ * ele, "recusada" e "nunca chegou" eram indistinguíveis para quem está na
+ * sala (o "apitou e nada aconteceu" de 15 e 17/09/2026). Fica fora da porta
+ * como as outras extensões: nem todo leitor tem o que recusar.
+ */
+export interface Recusa {
+  /** `ritmo`: parecia digitação humana. `formato`/`linha`: chegou como
+      máquina mas não é um UID que se reconheça. */
+  motivo: 'ritmo' | 'formato' | 'linha'
+  cru: string
+  em: Date
+}
+
+export interface LeitorQueRecusa extends LeitorDeCracha {
+  aoRecusar(escuta: (recusa: Recusa) => void): Cancelar
+}
+
+export function ehQueRecusa(leitor: LeitorDeCracha): leitor is LeitorQueRecusa {
+  return 'aoRecusar' in leitor && typeof (leitor as LeitorQueRecusa).aoRecusar === 'function'
+}

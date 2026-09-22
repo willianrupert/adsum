@@ -10,15 +10,25 @@
 // onde o foco estiver, e por isso a rajada é interrompida assim que se reconhece
 // como crachá.
 
-import { foiDigitadoPorMaquina, interpretarDigitacao, type Digitacao, type Tecla } from '../../nucleo/digitacao.ts'
+import {
+  foiDigitadoPorMaquina,
+  interpretarDigitacao,
+  interpretarTexto,
+  type Digitacao,
+  type Tecla,
+} from '../../nucleo/digitacao.ts'
 import type {
   Cancelar,
   DiagnosticoLeitor,
   EstadoLeitor,
-  LeitorDeCracha,
+  LeitorQueRecusa,
   Leitura,
+  Recusa,
 } from '../../portas/LeitorDeCracha.ts'
 import { criarEmissor } from './emissor.ts'
+
+/** Menos que isto não é UID nenhum, é tecla solta. */
+const MINIMO_DE_CARACTERES = 6
 
 /** Depois disto, o que estava no buffer era outra coisa. */
 const ESQUECER_APOS_MS = 400
@@ -27,7 +37,7 @@ const ESQUECER_APOS_MS = 400
     o fim de uma aula sem virar um log sem limite. */
 const RECUSAS_GUARDADAS = 5
 
-export class LeitorTeclado implements LeitorDeCracha {
+export class LeitorTeclado implements LeitorQueRecusa {
   readonly nome = 'Dongle USB'
 
   #estado: EstadoLeitor = 'parado'
@@ -41,6 +51,7 @@ export class LeitorTeclado implements LeitorDeCracha {
   #ultimoUid?: string
   #leituras = criarEmissor<Leitura>()
   #estados = criarEmissor<EstadoLeitor>()
+  #recusasEmitidas = criarEmissor<Recusa>()
 
   // Instrumentação de diagnóstico, sem efeito nenhum na decisão de aceitar ou
   // recusar — só existe para reconstruir, depois do fato, o que aconteceu
@@ -105,6 +116,10 @@ export class LeitorTeclado implements LeitorDeCracha {
 
   aoMudarEstado(escuta: (estado: EstadoLeitor) => void): Cancelar {
     return this.#estados.inscrever(escuta)
+  }
+
+  aoRecusar(escuta: (recusa: Recusa) => void): Cancelar {
+    return this.#recusasEmitidas.inscrever(escuta)
   }
 
   async diagnostico(): Promise<DiagnosticoLeitor> {
@@ -216,6 +231,18 @@ export class LeitorTeclado implements LeitorDeCracha {
       this.#ultimoFormato = undefined
       this.#ultimoInvertido = undefined
       this.#ultimoUid = undefined
+
+      // Avisar só o que **quase foi crachá**. Qualquer digitação passa por
+      // aqui, e um professor editando a data não pode ver "leitura recusada"
+      // a cada campo. Duas situações são de crachá de verdade: uma rajada
+      // rápida em formato desconhecido, e um UID bem formado que chegou
+      // devagar demais e foi fechado pelo Enter do dongle, que é exatamente
+      // o "apitou e nada aconteceu" de 15/09/2026.
+      const cru = this.#ultimaCrua
+      const quaseCracha =
+        cru.length >= MINIMO_DE_CARACTERES &&
+        (motivo === 'formato' || (evento?.key === 'Enter' && interpretarTexto(cru) !== undefined))
+      if (quaseCracha) this.#recusasEmitidas.emitir({ motivo, cru, em: new Date() })
       return
     }
 
