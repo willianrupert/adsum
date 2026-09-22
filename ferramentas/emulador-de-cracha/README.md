@@ -20,6 +20,9 @@ diferença. `PING`, `SET <indice> <uid> <matiz>`, `CARD <indice> [ms]`,
 | SS | GPIO 7 |
 | VCC | 3V3 |
 | GND | GND |
+| RSTPDN (reset) | GPIO 10 |
+
+O fio do `RSTPDN` é o que faz a fila funcionar: ver abaixo.
 
 LED verde no GPIO 3 com 330 Ω para o GND: pulsa devagar quando ocioso, fica
 aceso com crachá no ar, pisca três vezes se o alvo for selecionado.
@@ -43,9 +46,26 @@ e o próprio dado desmentia — o módulo continuava respondendo à SPI antes e
 depois de cada tentativa, e queda de alimentação derrubaria as duas coisas.
 
 **O dongle ignora o mesmo crachá parado no campo** (observação do autor na
-bancada): ele só lê de novo quando o cartão sai e outro entra. Por isso o
-comando `FILA` troca de UID a cada aluno, e é assim que uma turma inteira
-passa com o dongle imóvel.
+bancada): ele só lê de novo quando o cartão **sai** — e trocar o UID não
+conta como sair. Numa fila de dez, com o dongle imóvel, ele leu sete; com
+pausas maiores, leu um. O que fazia voltar a ler era o autor afastar o
+dispositivo com a mão.
+
+Três tentativas de produzir essa saída por software falharam, todas
+registradas porque custaram tempo:
+
+| Tentativa | Resultado |
+| --- | --- |
+| Sair do modo alvo com a rajada de acordar | dongle continua vendo cartão |
+| Desligar o rádio (`RFConfiguration` 0x01 0x00) | idem |
+| Dormir (`PowerDown`) | idem |
+
+**A saída é por fio:** `RSTPDN` num GPIO (10), segurando em nível baixo por
+~120 ms entre um aluno e outro. Desligado, o módulo não tem como responder ao
+campo, que é o equivalente exato a tirar o crachá da mão. Depois do reset o
+chip esquece a configuração, então o firmware manda `SAMConfiguration` de
+novo — sem isso o modo alvo não funciona, que foi o que travou esta bancada
+por horas.
 
 ## Limites que não são bug
 

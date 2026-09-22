@@ -54,6 +54,22 @@ static const int PINO_SCK = 4, PINO_MISO = 5, PINO_MOSI = 6, PINO_CS = 7;
     fica aceso enquanto um crachá está no ar, e dá três piscadas rápidas
     quando o alvo chega a ser selecionado. */
 static const int PINO_LED = 3;
+/**
+ * `RSTPDN` do PN532 (pino de reset), no GPIO 10.
+ *
+ * É o que faz o crachá **sair da mão de verdade**. Três tentativas por
+ * software falharam em produzir essa saída — sair do modo alvo, desligar o
+ * rádio por `RFConfiguration`, e dormir por `PowerDown`: em todas, o dongle
+ * continuou enxergando "cartão presente" e só voltou a ler quando o autor
+ * afastava o dispositivo com a mão. Segurar o reset em nível baixo desliga o
+ * módulo inteiro, e aí não há o que responder ao campo.
+ *
+ * Sem o fio ligado, o pino fica solto e o resto do firmware funciona igual —
+ * só o `FILA` volta a ler menos crachás.
+ */
+static const int PINO_RESET = 10;
+/** Quanto tempo o módulo fica desligado entre um crachá e outro. */
+static const int MS_DESLIGADO = 120;
 static const uint8_t ESCREVER = 0x01, LER_ESTADO = 0x02, LER_DADOS = 0x03;
 static const int CRACHAS = 16;
 
@@ -160,9 +176,31 @@ bool porNoAr(const Cracha& cracha) {
   return true;
 }
 
-/** Tira o crachá do ar: o próximo `CARD` começa limpo. */
+/**
+ * Tira o crachá do ar de verdade: manda o PN532 **dormir**.
+ *
+ * O dongle não relê um crachá que continua no campo — ele espera o cartão
+ * sair. Duas tentativas não bastaram para produzir essa saída: sair do modo
+ * alvo com a rajada de acordar, e desligar o rádio com `RFConfiguration`. Nas
+ * duas, o dongle só voltava a ler quando o autor afastava o dispositivo com a
+ * mão, ou seja, quando o acoplamento se quebrava de verdade.
+ *
+ * `PowerDown` (D4 16) desliga o analógico do chip: dormindo, ele não responde
+ * ao campo, que é o mesmo que o crachá ter saído da mão. A rajada de 0x55
+ * acorda de volta. Se nem isso bastar, sobra o caminho por fio: `RSTPDN` num
+ * GPIO, resetando o módulo entre um aluno e outro.
+ */
+void configurarSam();
+
 void tirarDoAr() {
+  digitalWrite(PINO_RESET, LOW);
+  delay(MS_DESLIGADO);
+  digitalWrite(PINO_RESET, HIGH);
+  delay(30);
   acordar();
+  // O reset apaga a configuração do chip, e o modo alvo não funciona sem ela
+  // — foi o que travou esta bancada por horas. Reconfigura sempre.
+  configurarSam();
 }
 
 /**
@@ -349,6 +387,10 @@ void setup() {
   delay(500);
   acordar();
 
+  pinMode(PINO_RESET, OUTPUT);
+  digitalWrite(PINO_RESET, HIGH);
+  delay(50);
+
   // SAMConfiguration antes de qualquer coisa. Descoberto por eliminação em
   // 22/09/2026: as duas únicas emulações que o dongle leu aconteceram com o
   // PN532 ainda configurado pelo sketch anterior — regravar o ESP32 não
@@ -367,16 +409,20 @@ void setup() {
       ok = r[7] == 0x32;
     }
   }
+  const bool samOk = true;
+  configurarSam();
+  Serial.printf("#ADSUM-EMULADOR 1 pn532=%s sam=%s\n", ok ? "ok" : "erro", samOk ? "ok" : "erro");
+}
+
+/** O modo normal do chip, exigido antes de entrar em modo alvo. */
+void configurarSam() {
+  const uint8_t sam[] = {0xD4, 0x14, 0x01, 0x14, 0x01};
+  uint8_t r[12];
   enviarComando(sam, sizeof sam);
-  bool samOk = false;
   if (esperar(40)) {
     lerQuadro(r, 6);
-    if (esperar(40)) {
-      lerQuadro(r, 9);
-      samOk = true;
-    }
+    if (esperar(40)) lerQuadro(r, 9);
   }
-  Serial.printf("#ADSUM-EMULADOR 1 pn532=%s sam=%s\n", ok ? "ok" : "erro", samOk ? "ok" : "erro");
 }
 
 void loop() {
