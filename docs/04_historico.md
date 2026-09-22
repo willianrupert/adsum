@@ -463,3 +463,21 @@ sentidos. Ensaio com a cópia real do cofre: as 168 linhas dos dois arquivos
 entram na base, e as 13 presenças que a base do professor tinha perdido
 (8 em 22/09, 5 em 17/09 — ids colidindo também entre as duas turmas, que a
 primeira contagem não viu) voltam sozinhas ao ligar a pasta.
+
+**22/09/2026, fim do dia — o número do evento deixa de ser uma contagem.**
+A recuperação por tentativa (pegar o próximo livre) consertava a colisão, mas
+mantinha a colisão possível. `Config.proximaSequencia` é um contador que só
+anda para frente, reservado numa transação do IndexedDB — duas abas na mesma
+base nunca recebem o mesmo número, e nenhum número é reutilizado depois de um
+`esvaziarCache` ou de uma restauração com o log de outra instalação junto. Em
+base anterior ao campo, ele nasce depois do maior número já usado por aquela
+instalação, e não da contagem de eventos, que tem buracos. A tentativa
+continua, como rede para o que este código não controla (um log trazido de
+fora com id desta instalação). Testes: 50 reservas simultâneas dão 50 números
+distintos, e 30 eventos gravados ao mesmo tempo dão 30 ids distintos.
+
+Também nesta passada: o manual de LGPD ganhou a seção 4.5, descrevendo o
+diário de diagnóstico e o arquivo de códigos dos crachás — inclusive o que
+ele custa ("quem tiver este arquivo consegue copiar um crachá") e como
+desligá-lo —, e as três afirmações do documento que diziam que o número do
+crachá nunca é guardado foram corrigidas.

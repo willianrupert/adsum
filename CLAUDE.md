@@ -111,9 +111,10 @@ Específicas do app:
   escolhe só a data, sem hora. **Recarregar a mesma janela não é fechar**
   (`chamadaViva`, no `sessionStorage`), e a versão nova do app espera a
   chamada terminar para entrar.
-- **Evento novo só por `gravarEventoNovo`.** Contador de sequência por tela
-  fez dois `evento_id` iguais em 22/09, e a base recusou calada metade da
-  chamada.
+- **Evento novo só por `gravarEventoNovo`**, e o número vem de
+  `reservarSequencia` (`Config.proximaSequencia`), que só anda para frente e
+  é reservado em transação. Contar eventos para numerar foi o que fez dois
+  `evento_id` iguais em 22/09, com a base recusando calada metade da chamada.
 - **O Enter do dongle não é o Enter de uma pessoa.** O `LeitorTeclado` marca
   com `preventDefault` o Enter que fecha uma rajada; todo atalho de Enter
   confere `defaultPrevented`. Sem isso, encostar um crachá abria a chamada.

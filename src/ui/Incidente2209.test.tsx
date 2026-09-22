@@ -38,7 +38,7 @@ import { LeitorTeclado } from '../adaptadores/leitor/LeitorTeclado.ts'
 import { esquecerDiario, linhasDoDiario } from '../ambiente/diario.ts'
 import { anotarUid, CAMINHO_DA_AUDITORIA, esquecerAuditoria } from '../ambiente/auditoriaDeUids.ts'
 import { ler } from '../ambiente/pasta.ts'
-import { gravarMarcasPendentes, identificarCracha, vinculosSemSal } from '../portas/Repositorio.ts'
+import { gravarEventoNovo, gravarMarcasPendentes, identificarCracha, vinculosSemSal } from '../portas/Repositorio.ts'
 
 const TURMA = 'IF685 · T01'
 const OUTRA_TURMA = 'IF969 · T02'
@@ -128,6 +128,25 @@ describe('base com duas turmas: cada evento novo ganha um id que ainda não exis
 
     await waitFor(() => expect(status).toHaveAttribute('aria-label', '1'))
     expect(await within(linha).findByRole('button', { name: 'Não presente' })).toBeInTheDocument()
+  })
+
+  it('trinta eventos gravados ao mesmo tempo ganham trinta ids diferentes', async () => {
+    const { repositorio, config } = bancada
+    const gravados = await Promise.all(
+      Array.from({ length: 30 }, (_, i) =>
+        gravarEventoNovo(repositorio, config.instalacaoId, new Date(), (eventoId) => ({
+          eventoId,
+          quando: new Date().toISOString(),
+          turma: TURMA,
+          nome: `Aluno ${i}`,
+          origem: 'manual' as const,
+          resultado: 'ok' as const,
+          uidHash: `cafe${String(i).padStart(12, '0')}`,
+        })),
+      ),
+    )
+    const ids = gravados.map((e) => e.eventoId)
+    expect(new Set(ids).size).toBe(30)
   })
 
   it('nenhum id se repete no log, nem entre as duas turmas', async () => {

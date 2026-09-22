@@ -233,3 +233,31 @@ describe('listar tudo', () => {
     expect(await repo.listarEventos()).toHaveLength(60)
   })
 })
+
+// O número do evento não pode se repetir nunca — foi um id repetido que parou
+// a chamada de 22/09/2026. Contar eventos repetia; reservar, não.
+describe('sequência de evento_id', () => {
+  it('nunca devolve o mesmo número duas vezes, nem com pedidos ao mesmo tempo', async () => {
+    const reservados = await Promise.all(Array.from({ length: 50 }, () => repo.reservarSequencia()))
+    expect(new Set(reservados).size).toBe(50)
+    expect(Math.min(...reservados)).toBe(1)
+    expect(Math.max(...reservados)).toBe(50)
+  })
+
+  it('só anda para frente: eventos apagados da base não devolvem números', async () => {
+    const primeiro = await repo.reservarSequencia()
+    await repo.acrescentarEvento(evento({ eventoId: `web-a1b2-20260818-${String(primeiro).padStart(4, '0')}` }))
+    await repo.esvaziarCache()
+    expect(await repo.reservarSequencia()).toBe(primeiro + 1)
+  })
+
+  // Base de antes deste campo: o contador não pode nascer na contagem de
+  // eventos, porque o log tem buracos (restauração traz o de outra instalação).
+  it('numa base antiga, começa depois do maior número já usado por esta instalação', async () => {
+    const { instalacaoId } = await repo.lerConfig()
+    await repo.acrescentarEvento(evento({ eventoId: `${instalacaoId}-20260818-0136` }))
+    await repo.acrescentarEvento(evento({ eventoId: `${instalacaoId}-20260818-0007` }))
+    await repo.acrescentarEvento(evento({ eventoId: 'web-outra-20260818-9999' }))
+    expect(await repo.reservarSequencia()).toBe(137)
+  })
+})

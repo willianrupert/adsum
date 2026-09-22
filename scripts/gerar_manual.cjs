@@ -292,9 +292,17 @@ const corpo = [
   h2('4.4 O que o programa deliberadamente não faz'),
   item('Não envia dado nenhum pela rede. Não há telemetria, não há analytics, não há fonte remota e não há CDN. O programa funciona offline, do começo ao fim.'),
   item('Não usa cookies de terceiros nem identificadores de publicidade.'),
-  item('Não guarda o número do crachá, o login do SIGAA, e-mail ou foto.'),
+  item('Não guarda o login do SIGAA, e-mail ou foto.'),
+  item([t('Não guarda o número do crachá, '), t('com uma exceção que o professor liga e desliga', { bold: true }), t(' — ver a seção 4.5.')]),
   item('Não tem administrador, e não existe visão central: cada professor tem a sua base, no seu computador.'),
   item('Não apaga nem reescreve registro de presença — nem o próprio programa consegue, porque a operação não existe no código.'),
+
+  h2('4.5 Os dois arquivos que a pasta ganhou em 22/09/2026'),
+  p('Uma aula real falhou: metade da turma apareceu como crachá desconhecido, e no meio da chamada as presenças deixaram de ser contadas. As causas foram achadas e corrigidas, e duas coisas novas passaram a ser gravadas na pasta por causa disso.'),
+  p([t('A primeira é o diário: '), mono('diagnostico/<dia>.log'), t('. Uma linha por leitura, decisão, gravação e erro, com a hora e o tempo que cada etapa levou. Ele não guarda nome nem número de crachá: cada crachá aparece pelos oito primeiros caracteres do resumo, o bastante para seguir a mesma pessoa dentro do dia e nada mais. Serve para que uma aula que dá errado possa ser entendida depois, em vez de virar suposição.')]),
+  p([t('A segunda é a auditoria de crachás: '), mono('auditoria/uids.csv'), t('. '), t('Este arquivo guarda o número de série do crachá', { bold: true }), t(', ao lado do resumo dele, uma linha por crachá, na primeira vez que é lido. É a exceção à regra do resto do documento, e existe por um motivo prático: quando o segredo da instalação se perde, os crachás cadastrados deixam de ser reconhecidos e a turma inteira precisa se recadastrar. Com este arquivo, o vínculo é refeito sem incomodar ninguém.')]),
+  p([t('O que isso custa, dito sem rodeio: quem tiver este arquivo consegue copiar um crachá. Ele não tem nome nem matrícula — o nome só aparece cruzando com '), mono('vinculos.json'), t(' —, mas quem tem a pasta tem os dois. Por isso: o arquivo é separado dos registros de presença, apagá-lo não afeta a chamada, e ele pode ser desligado a qualquer momento em Ajustes → Diagnóstico → "Códigos dos crachás", onde o programa avisa enquanto estiver ligado.')]),
+  p('Ele nasce ligado nesta fase de testes, que é uma escolha deliberada do autor enquanto o programa ainda está sendo posto à prova em sala. Quando essa fase terminar, a decisão deve ser revista, e o padrão deve voltar a ser não guardar.'),
 
   // ── 5 ─────────────────────────────────────────────────────────────
   h1('5. O tratamento, para fins de LGPD', { pageBreakBefore: true }),
@@ -313,14 +321,16 @@ const corpo = [
     ['Categoria', 'Dados', 'Origem'],
     [
       ['Identificação do aluno', 'Nome completo, nome curto, matrícula', 'Lista de participantes do SIGAA, colada pelo professor'],
-      ['Identificação do crachá', 'Resumo criptográfico do número de série (8 bytes)', 'Leitura por aproximação, no momento da presença'],
+      ['Identificação do crachá', 'Resumo criptográfico do número de série (8 bytes) e, enquanto a auditoria estiver ligada, o próprio número de série (seção 4.5)', 'Leitura por aproximação, no momento da presença'],
+      ['Diagnóstico', 'Hora de cada leitura, decisão, tempo de gravação e erros, com o crachá identificado por oito caracteres do resumo', 'Gerado pelo programa (seção 4.5)'],
       ['Registro de presença', 'Data, hora, turma, resultado da leitura', 'Gerado pelo programa'],
       ['Dados do professor', 'Nome, matrícula, resumo do crachá, horários de aula', 'Mesma lista e mesma leitura'],
     ],
     [2200, 3600, 3226],
   ),
   p(''),
-  p('Não são tratados: número do crachá, login de acesso, e-mail, telefone, endereço, imagem, dados biométricos, geolocalização, nem qualquer categoria de dado sensível na acepção do art. 5º, II da Lei 13.709/2018.'),
+  p('Não são tratados: login de acesso, e-mail, telefone, endereço, imagem, dados biométricos, geolocalização, nem qualquer categoria de dado sensível na acepção do art. 5º, II da Lei 13.709/2018.'),
+  p([t('O número do crachá é tratado apenas enquanto a auditoria da seção 4.5 estiver ligada, e fica só na pasta do professor. Desligada, ele volta a não ser guardado em momento algum.')]),
 
   h2('5.3 Quem faz o quê'),
   p('Do ponto de vista prático, e sem prejuízo da qualificação que a instituição fizer:'),
@@ -338,8 +348,8 @@ const corpo = [
   p('Todo compartilhamento é gesto explícito do professor: exportar a planilha e entregá-la a quem de direito. Há também uma função de passar os crachás vinculados a outro professor; ela leva o sal junto, necessariamente, e a tela avisa que o arquivo liga crachás a pessoas e merece o mesmo cuidado que a lista da turma.'),
 
   h2('5.6 Segurança'),
-  item('O número do crachá não é armazenado em momento algum — apenas seu resumo com sal, do qual não se volta.'),
-  item('O sal é sorteado por instalação, não é exibido nem exportável pela interface, e sem ele os resumos são inúteis para reidentificar um crachá.'),
+  item([t('O número do crachá não é armazenado — apenas seu resumo com sal, do qual não se volta. '), t('A exceção é a auditoria da seção 4.5, que o professor liga e desliga, e cujo arquivo fica na pasta dele.')]),
+  item('O sal é sorteado por instalação e não aparece na interface. Desde 22/09/2026 nenhum sal é descartado: quando ele muda, o anterior fica guardado, senão os crachás cadastrados nele deixam de ser reconhecidos — foi o que aconteceu numa aula, com quarenta alunos.'),
   item('Os dados não trafegam: não há conexão de rede depois que a página carrega.'),
   item('O registro é somente-acréscimo, o que torna a adulteração silenciosa de um histórico de presença mais difícil do que numa planilha comum.'),
   item('O programa é de código aberto: qualquer afirmação deste documento pode ser conferida na fonte.'),

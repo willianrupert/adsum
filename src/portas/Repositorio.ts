@@ -86,6 +86,12 @@ export interface Repositorio {
   encerrarSessao(): Promise<void>
 
   /**
+   * Reserva o próximo número de `evento_id`, para sempre. Dois pedidos nunca
+   * devolvem o mesmo número, nem em duas abas: ver `Config.proximaSequencia`.
+   */
+  reservarSequencia(): Promise<number>
+
+  /**
    * Único caminho de escrita de evento. `eventoId` repetido não grava e
    * devolve `false` — é a idempotência de reler um arquivo. Evento **novo**
    * não chama isto direto: passa por `gravarEventoNovo`, que não aceita o
@@ -120,8 +126,8 @@ export interface Repositorio {
   diagnostico(): Promise<DiagnosticoRepositorio>
 }
 
-/** Muito acima de qualquer aula: bater nisto é defeito, não fila longa. */
-const TENTATIVAS_DE_ID = 1000
+/** Com número reservado, bater nisto é defeito grave, não fila longa. */
+const TENTATIVAS_DE_ID = 100
 
 /**
  * Grava um evento que acabou de acontecer, com um `evento_id` que ainda não
@@ -150,9 +156,12 @@ export async function gravarEventoNovo(
   /** Cada id que já existia. Normal é nunca chamar; chamar sempre é defeito. */
   aoColidir?: (eventoId: string) => void,
 ): Promise<Evento> {
-  const inicio = (await repositorio.contarEventos()) + 1
-  for (let n = inicio; n < inicio + TENTATIVAS_DE_ID; n++) {
-    const evento = montar(proximoEventoId(instalacaoId, cunhadoEm, n))
+  for (let tentativa = 0; tentativa < TENTATIVAS_DE_ID; tentativa++) {
+    // Número reservado, não contado: `reservarSequencia` nunca devolve duas
+    // vezes o mesmo. A repetição abaixo é rede de segurança para o que este
+    // código não controla — um log trazido de fora com um id desta
+    // instalação, por exemplo —, e não o mecanismo.
+    const evento = montar(proximoEventoId(instalacaoId, cunhadoEm, await repositorio.reservarSequencia()))
     if (await repositorio.acrescentarEvento(evento)) return evento
     aoColidir?.(evento.eventoId)
   }

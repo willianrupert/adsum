@@ -128,6 +128,18 @@ export interface Config {
   saisAnteriores?: string[]
   /** Distingue esta instalação de outra. Entra no `eventoId`. */
   instalacaoId: string
+  /**
+   * O próximo número de `evento_id` desta instalação. **Só anda para frente,
+   * e nunca é reutilizado.**
+   *
+   * Antes o número vinha de contar os eventos da base, e contagem coincide:
+   * duas telas contando coisas diferentes cunharam o mesmo id em 22/09/2026,
+   * e a base recusou metade da chamada. Um contador guardado não tem como
+   * repetir, mesmo com eventos vindos de outra instalação, dias diferentes
+   * ou uma restauração no meio. Reservado em transação, então duas abas
+   * também nunca pegam o mesmo (`reservarSequencia`).
+   */
+  proximaSequencia?: number
   criadoEm: string
   /**
    * Turma → `quando` do último evento já exportado. Só faz sentido onde não há

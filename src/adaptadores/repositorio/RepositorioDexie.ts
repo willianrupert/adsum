@@ -214,6 +214,36 @@ export class RepositorioDexie implements Repositorio {
     return await (limite === undefined ? ordenados : ordenados.limit(limite)).toArray()
   }
 
+  /**
+   * O número seguinte, reservado numa transação: duas abas na mesma base
+   * nunca recebem o mesmo. A primeira chamada numa base anterior a este
+   * campo olha o maior número já usado por esta instalação — contar eventos
+   * não serve, porque o log pode ter buracos (uma restauração traz junto o
+   * log de outra instalação) e o contador cairia em cima de números gastos.
+   */
+  async reservarSequencia(): Promise<number> {
+    let reservado = 0
+    await this.#banco.transaction('rw', this.#banco.config, this.#banco.eventos, async () => {
+      const config = (await this.#banco.config.get(ID_DA_CONFIG))!
+      const proxima = config.proximaSequencia ?? (await this.#maiorSequenciaUsada(config.instalacaoId)) + 1
+      reservado = proxima
+      await this.#banco.config.update(ID_DA_CONFIG, { proximaSequencia: proxima + 1 })
+    })
+    this.#config = undefined
+    return reservado
+  }
+
+  async #maiorSequenciaUsada(instalacaoId: string): Promise<number> {
+    let maior = 0
+    await this.#banco.eventos.each((evento) => {
+      if (!evento.eventoId.startsWith(`${instalacaoId}-`)) return
+      // `web-8c56-20260922-0098`, e também o `-0098.2` de uma reimportação.
+      const numero = Number.parseInt(evento.eventoId.split('-').pop() ?? '', 10)
+      if (Number.isFinite(numero) && numero > maior) maior = numero
+    })
+    return maior
+  }
+
   async contarEventos(): Promise<number> {
     return await this.#banco.eventos.count()
   }
