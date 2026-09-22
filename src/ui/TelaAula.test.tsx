@@ -157,9 +157,13 @@ describe('quem falta', () => {
       const vinculos = await bancada.repositorio.listarVinculos()
       expect(vinculos.map((v) => v.nome)).toEqual(['Ana Paula'])
     })
-    // A mesma leitura virou presença, não só cadastro.
-    const eventos = await bancada.repositorio.listarEventos()
-    expect(eventos[0]).toMatchObject({ nome: 'Ana Paula', resultado: 'ok', origem: 'cracha' })
+    // A mesma leitura virou presença, não só cadastro. Esperado, e não lido
+    // na hora: o vínculo é gravado antes do evento (ver `vincularCracha`), e
+    // numa máquina lenta a asserção chegava no meio dos dois.
+    await waitFor(async () => {
+      const [evento] = await bancada.repositorio.listarEventos()
+      expect(evento).toMatchObject({ nome: 'Ana Paula', resultado: 'ok', origem: 'cracha' })
+    })
     // Confirmar na busca não chama Breno sozinho — o convite continua ali.
     expect(screen.queryByText('Breno Oliveira', { selector: '.chamado__nome' })).not.toBeInTheDocument()
     expect(screen.getByRole('switch', { name: 'Chamar nomes' })).toBeInTheDocument()
@@ -195,9 +199,13 @@ describe('quem falta', () => {
       const vinculos = await bancada.repositorio.listarVinculos()
       expect(vinculos.map((v) => v.nome)).toEqual(['Ana Paula'])
     })
-    // A mesma leitura virou presença, não só cadastro.
-    const eventos = await bancada.repositorio.listarEventos()
-    expect(eventos[0]).toMatchObject({ nome: 'Ana Paula', resultado: 'ok', origem: 'cracha' })
+    // A mesma leitura virou presença, não só cadastro. Esperado, e não lido
+    // na hora: o vínculo é gravado antes do evento (ver `vincularCracha`), e
+    // numa máquina lenta a asserção chegava no meio dos dois.
+    await waitFor(async () => {
+      const [evento] = await bancada.repositorio.listarEventos()
+      expect(evento).toMatchObject({ nome: 'Ana Paula', resultado: 'ok', origem: 'cracha' })
+    })
     // Avançou sozinha para quem sobrou, sem ninguém clicar.
     expect(await screen.findByText('Breno Oliveira', { selector: '.chamado__nome' })).toBeInTheDocument()
   })
