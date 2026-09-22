@@ -43,6 +43,7 @@ import type { Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { ehConfirmavel, ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { gravarEventoNovo, identificarCracha } from '../portas/Repositorio.ts'
+import { curto, registrar } from '../ambiente/diario.ts'
 import { useAdsum } from './adsum.ts'
 import { definirProfessorAtual, modoDev, professorAtual } from '../ambiente/preferencias.ts'
 import { Busca } from './componentes/Busca.tsx'
@@ -519,6 +520,7 @@ export function TelaAula({
         resultado: presente ? 'ok' : 'removido',
         uidHash: uidHashSintetico(),
       }))
+      registrar('manual', { resultado: evento.resultado, evento: evento.eventoId })
       await aoRegistrar?.(evento)
       await recarregar()
       aoMudarBase()
@@ -531,7 +533,11 @@ export function TelaAula({
       setUltimaAtividadeEm(leitura.em)
       void (async () => {
         const minha = ++geracao.current
-        const { uidHash, vinculo } = await identificarCracha(repositorio, config, leitura.uid)
+        // Uma linha no diário por crachá, com o tempo de cada etapa: é o que
+        // mostra, sem reconstruir nada à mão, se uma aula ficou lenta e onde.
+        const inicio = performance.now()
+        const { uidHash, vinculo, sal } = await identificarCracha(repositorio, config, leitura.uid)
+        const identificadoEm = performance.now()
         const decisao = decidir(uidHash, {
           sessao,
           vinculo,
@@ -621,10 +627,14 @@ export function TelaAula({
 
         const evento =
           rascunho &&
-          (await gravarEventoNovo(repositorio, config.instalacaoId, leitura.em, (eventoId) => ({
-            ...rascunho,
-            eventoId,
-          })))
+          (await gravarEventoNovo(
+            repositorio,
+            config.instalacaoId,
+            leitura.em,
+            (eventoId) => ({ ...rascunho, eventoId }),
+            (ocupado) => registrar('id_ocupado', { evento: ocupado }),
+          ))
+        const gravadoEm = performance.now()
         if (evento) {
           await aoRegistrar?.(evento)
           // O LED do leitor serial significa "está salvo", como o bipe: só
@@ -643,7 +653,24 @@ export function TelaAula({
         confirmar(decisao, evento, minha)
         await recarregar()
         aoMudarBase()
-      })()
+        const fim = performance.now()
+        registrar('cracha', {
+          hash: curto(uidHash),
+          sal: vinculo ? sal : undefined,
+          vinculo: vinculo ? vinculo.papel : 'nenhum',
+          decisao: decisao.tipo,
+          evento: evento?.eventoId,
+          identificar_ms: Math.round(identificadoEm - inicio),
+          gravar_ms: Math.round(gravadoEm - identificadoEm),
+          tela_ms: Math.round(fim - gravadoEm),
+        })
+      })().catch((erro: Error) => {
+        // Antes a falha aqui era uma promessa rejeitada sem dono: nada na tela,
+        // nada em lugar nenhum. O crachá não contou, e ninguém soube por quê.
+        registrar('erro_na_leitura', { mensagem: erro?.message })
+        setRecado('A leitura falhou e não foi gravada. Encoste o crachá de novo.')
+        tocar('desconhecido')
+      })
     })
   }, [
     leitor,
@@ -683,6 +710,7 @@ export function TelaAula({
           ...rascunho,
           eventoId,
         }))
+        registrar('encerrar', { como: 'botao', evento: evento.eventoId, presentes: presentesRef.current.size })
         await aoRegistrar?.(evento)
       }
       await repositorio.encerrarSessao()
@@ -1236,6 +1264,7 @@ export function TelaAula({
                   ...rascunho,
                   eventoId,
                 }))
+                registrar('busca_desistiu', { hash: curto(uidHash), evento: evento.eventoId })
                 await aoRegistrar?.(evento)
               }
               await recarregar()
@@ -1267,6 +1296,7 @@ export function TelaAula({
                   ...rascunho,
                   eventoId,
                 }))
+                registrar('busca_escolheu', { hash: curto(uidHash), papel: pessoa.papel, evento: evento.eventoId })
                 await aoRegistrar?.(evento)
               }
               tocar('ok')

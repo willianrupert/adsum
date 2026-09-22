@@ -13,7 +13,9 @@ import { calcularUidHash, saisConhecidos, uidHashSintetico } from '../nucleo/has
 import { uidInedito, hexParaUid } from '../nucleo/uid.ts'
 import { ehQueRecusa, ehSimulavel, type Recusa } from '../portas/LeitorDeCracha.ts'
 import { IndicadorDoLeitor } from './IndicadorDoLeitor.tsx'
-import { gravarEventoNovo, identificarCracha, podeApagar } from '../portas/Repositorio.ts'
+import { gravarEventoNovo, gravarMarcasPendentes, identificarCracha, podeApagar } from '../portas/Repositorio.ts'
+import { curto, ligarDiario, registrar } from '../ambiente/diario.ts'
+import { anotarUid } from '../ambiente/auditoriaDeUids.ts'
 import { eventoDe, quemFalta, type Sessao } from '../nucleo/sessao.ts'
 import { diaLocal } from '../nucleo/faltas.ts'
 import {
@@ -52,11 +54,13 @@ import {
   professorAtual,
   registrarChamadaEncerrada,
   versaoDeNovidadeVista,
+  auditoriaDeUidsLigada,
 } from '../ambiente/preferencias.ts'
 import { NOVIDADES } from '../nucleo/novidades.ts'
 import {
   acrescentarNoLog,
   caminhoDosRegistros,
+  conferirLog,
   gravarFaltas,
   repararLog,
   lembrarSaisDaPasta,
@@ -319,12 +323,61 @@ export function Fluxo() {
     return () => clearTimeout(relogio)
   }, [leituraOk])
 
+  // O diário grava na pasta quando ela existe; sem ela, fica só na memória,
+  // visível no Diagnóstico. Ver `ambiente/diario.ts`.
+  useEffect(() => ligarDiario(pasta), [pasta])
+
+  // Uma vez por abertura: com que versão e leitor a aula aconteceu é a
+  // primeira pergunta de qualquer diagnóstico, e era a que não tinha resposta.
+  useEffect(() => {
+    registrar('app_aberto', { versao: __CARIMBO__, leitor: leitor.nome, instalacao: config.instalacaoId })
+    // Só na montagem: `leitor` e `config` mudam depois, e isso não é
+    // "abrir o app" de novo.
+  }, [])
+
+  // Erro que ninguém pegou, e a janela perdendo o foco — as duas coisas que
+  // até hoje só se descobriam pela ausência de presença no fim da aula.
+  useEffect(() => {
+    const aoErrar = (e: ErrorEvent) => registrar('erro', { mensagem: e.message, onde: e.filename?.split('/').pop() })
+    const aoRejeitar = (e: PromiseRejectionEvent) =>
+      registrar('erro', { mensagem: (e.reason as Error)?.message ?? String(e.reason) })
+    const aoPerderFoco = () => registrar('foco', { janela: 'perdeu' })
+    const aoGanharFoco = () => registrar('foco', { janela: 'voltou' })
+    window.addEventListener('error', aoErrar)
+    window.addEventListener('unhandledrejection', aoRejeitar)
+    window.addEventListener('blur', aoPerderFoco)
+    window.addEventListener('focus', aoGanharFoco)
+    return () => {
+      window.removeEventListener('error', aoErrar)
+      window.removeEventListener('unhandledrejection', aoRejeitar)
+      window.removeEventListener('blur', aoPerderFoco)
+      window.removeEventListener('focus', aoGanharFoco)
+    }
+  }, [])
+
+  // O código real de cada crachá, na primeira vez que ele aparece — ver
+  // `ambiente/auditoriaDeUids.ts`, e a decisão de 22/09/2026 por trás.
+  // Em qualquer tela, não só na chamada: o crachá encostado no repouso para
+  // testar o leitor também é de alguém.
+  useEffect(() => {
+    if (!pasta) return
+    return leitor.aoLer((leitura) => {
+      if (!auditoriaDeUidsLigada()) return
+      anotarUid(pasta, config.salHex, leitura.uid, leitura.em, leitura.origem).then(
+        (novo) => novo && registrar('uid_anotado'),
+        (erro: Error) => registrar('erro_auditoria', { mensagem: erro.message }),
+      )
+    })
+  }, [leitor, pasta, config.salHex])
+
   // Uma leitura que chegou e **não virou crachá** nunca mais fica muda: era
   // o "apitou e nada aconteceu" (15 e 17/09/2026). Vale em qualquer tela,
   // inclusive durante a chamada, que é onde ele custa presença.
   useEffect(() => {
     if (!ehQueRecusa(leitor)) return
     return leitor.aoRecusar((recusa) => {
+      // O tamanho, não o texto: o texto cru é o UID.
+      registrar('recusa', { motivo: recusa.motivo, caracteres: recusa.cru.length })
       tocar('desconhecido')
       setLeituraOk(undefined)
       setAvisoLeitura(mensagemDeRecusa(recusa))
@@ -456,6 +509,29 @@ export function Fluxo() {
     })()
   }, [repositorio])
 
+  /** Planilha contra base, com o resultado no diário. Ver `conferirLog`. */
+  const conferir = useCallback(
+    async (turma?: string) => {
+      if (!pasta) return
+      try {
+        for (const c of await conferirLog(repositorio, pasta, turma)) {
+          const divergiu = c.acrescentados > 0 || c.soNoArquivo > 0 || c.repetidos > 0
+          registrar(divergiu ? 'conferencia_divergiu' : 'conferencia_ok', {
+            turma: c.turma,
+            base: c.naBase,
+            arquivo: c.noArquivo,
+            acrescentados: c.acrescentados,
+            so_no_arquivo: c.soNoArquivo,
+            repetidos: c.repetidos,
+          })
+        }
+      } catch (erro) {
+        registrar('erro_conferencia', { mensagem: (erro as Error).message })
+      }
+    },
+    [pasta, repositorio],
+  )
+
   // A pasta é a dona: se o cache está vazio e ela tem conteúdo, quem manda é
   // ela. É este caminho que transforma "perdi tudo" em "cliquei de novo".
   //
@@ -474,14 +550,20 @@ export function Fluxo() {
     if (!pasta) return
     void (async () => {
       const antes = saisConhecidos(await repositorio.lerConfig()).join()
-      if ((await repositorio.listarVinculos()).length === 0) await restaurar(repositorio, pasta)
+      const vazia = (await repositorio.listarVinculos()).length === 0
+      if (vazia) await restaurar(repositorio, pasta)
       else await lembrarSaisDaPasta(repositorio, pasta)
+      registrar('pasta_ligada', {
+        restaurou: vazia,
+        sais: saisConhecidos(await repositorio.lerConfig()).length,
+      })
+      await conferir()
       // Só quando o chaveiro mudou: reler troca a identidade de
       // `recarregarConfig`, que reroda este efeito — reler sempre seria laço.
       if (saisConhecidos(await repositorio.lerConfig()).join() !== antes) await recarregarConfig()
       await recontar()
     })()
-  }, [pasta, repositorio, recontar, recarregarConfig])
+  }, [pasta, repositorio, recontar, recarregarConfig, conferir])
 
   // Gravação que falha em silêncio é o pior defeito possível aqui: a aula segue
   // parecendo salva e só se descobre depois. O erro vira estado visível, e o
@@ -495,15 +577,24 @@ export function Fluxo() {
   const gravarNaPasta = useCallback(
     async (turma?: string) => {
       if (!pasta) return
+      const inicio = performance.now()
       try {
         await sincronizar(repositorio, pasta, turma)
+        const sincronizadoEm = performance.now()
         // A planilha organizada (nome completo, faltas por dia) recalculada e
         // reescrita a cada mudança — a mesma regra de "sem botão de exportar"
         // que já vale para `registros/`. Ver o comentário em `gravarFaltas`.
         await gravarFaltas(repositorio, pasta, turma)
         setFalhaNaPasta(undefined)
+        // Roda a cada crachá aceito, e reescreve vários arquivos: é o candidato
+        // natural a pesar numa turma grande. Medido, não suposto.
+        registrar('pasta', {
+          cadastro_ms: Math.round(sincronizadoEm - inicio),
+          faltas_ms: Math.round(performance.now() - sincronizadoEm),
+        })
       } catch (erro) {
         setFalhaNaPasta((erro as Error).message)
+        registrar('erro_pasta', { mensagem: (erro as Error).message })
       }
     },
     [pasta, repositorio],
@@ -517,6 +608,7 @@ export function Fluxo() {
         setFalhaNaPasta(undefined)
       } catch (erro) {
         setFalhaNaPasta((erro as Error).message)
+        registrar('erro_log', { evento: evento.eventoId, mensagem: (erro as Error).message })
       }
     },
     [pasta],
@@ -603,6 +695,7 @@ export function Fluxo() {
           eventoId,
         }))
         await gravarLinha(evento)
+        registrar('abrir', { evento: evento.eventoId, dia: diaLocal(em.toISOString()) })
       }
       await repositorio.abrirSessao({ turma, abertaEm: em.toISOString(), uidHashProfessor: uidHash })
       tocar('abertura')
@@ -739,6 +832,7 @@ export function Fluxo() {
     return leitor.aoLer((leitura) => {
       void (async () => {
         const { uidHash, vinculo } = await identificarCracha(repositorio, config, leitura.uid)
+        registrar('cracha_no_repouso', { hash: curto(uidHash), vinculo: vinculo?.papel ?? 'nenhum' })
         // Abre a turma e a hora que a tela de repouso está mostrando — não
         // a hora real deste toque. Ver o comentário em `abrirComProfessor`.
         if (vinculo?.papel === 'professor') return await abrirComProfessor(uidHash)
@@ -1021,6 +1115,10 @@ export function Fluxo() {
           aoEncerrar={(presentes, duracaoMs, intervalos) => {
             // Sem esta marca o relógio reabriria a aula que acabou de fechar.
             marcarEncerrada(sessao.turma, new Date().toISOString())
+            // A fila acabou: é a hora de gravar o que foi adiado para não
+            // pesar nela. Ver `gravarMarcasPendentes`.
+            void gravarMarcasPendentes()
+            void conferir(sessao.turma)
             setResumo({ sessao, presentes })
             // Diagnóstico, não a tela de fim de aula: é dado para calibrar
             // `INTERVALO_MINIMO_MS`, não algo que toda aula precisa mostrar.

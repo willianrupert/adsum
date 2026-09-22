@@ -3,6 +3,7 @@ import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts
 import { criarPastaFalsa } from '../testes/pastaFalsa.ts'
 import {
   acrescentarNoLog,
+  conferirLog,
   gravarFaltas,
   repararLog,
   restaurar,
@@ -412,3 +413,44 @@ function deCsvTeste(texto: string): string[] {
     .slice(1)
     .map((l) => l.split(';')[0])
 }
+
+// 22/09/2026: a planilha e a base divergiram calado. A conferência compara as
+// duas e só acrescenta — nunca reescreve o que já foi gravado.
+describe('conferência da planilha contra a base', () => {
+  const SEGUNDO = { ...EVENTO, eventoId: 'web-a1b2-20260818-0002', quando: '2026-08-18T10:07:00.000Z' }
+
+  it('evento que a pasta perdeu volta para o fim do arquivo', async () => {
+    const { handle } = criarPastaFalsa()
+    await repo.acrescentarEvento(EVENTO)
+    await acrescentarNoLog(handle, EVENTO)
+    // Gravou na base, e a gravação na pasta falhou.
+    await repo.acrescentarEvento(SEGUNDO)
+
+    const [c] = await conferirLog(repo, handle)
+    expect(c).toMatchObject({ naBase: 2, noArquivo: 1, acrescentados: 1, soNoArquivo: 0, repetidos: 0 })
+
+    const [depois] = await conferirLog(repo, handle)
+    expect(depois).toMatchObject({ naBase: 2, noArquivo: 2, acrescentados: 0 })
+  })
+
+  it('denuncia, sem apagar, a linha repetida que a base recusou', async () => {
+    const { handle } = criarPastaFalsa()
+    await repo.acrescentarEvento(EVENTO)
+    await acrescentarNoLog(handle, EVENTO)
+    // O defeito de 22/09: mesmo id, outra pessoa, só no arquivo.
+    await acrescentarNoLog(handle, { ...EVENTO, nome: 'Outra Pessoa', quando: '2026-08-18T10:09:00.000Z' })
+
+    const [c] = await conferirLog(repo, handle)
+    expect(c).toMatchObject({ naBase: 1, noArquivo: 2, acrescentados: 0, repetidos: 1 })
+  })
+
+  it('linha no arquivo que a base não tem é contada', async () => {
+    const { handle } = criarPastaFalsa()
+    await repo.acrescentarEvento(EVENTO)
+    await acrescentarNoLog(handle, EVENTO)
+    await acrescentarNoLog(handle, SEGUNDO)
+
+    const [c] = await conferirLog(repo, handle)
+    expect(c).toMatchObject({ soNoArquivo: 1, acrescentados: 0 })
+  })
+})

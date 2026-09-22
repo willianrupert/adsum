@@ -147,11 +147,14 @@ export async function gravarEventoNovo(
   instalacaoId: string,
   cunhadoEm: Date,
   montar: (eventoId: string) => Evento,
+  /** Cada id que já existia. Normal é nunca chamar; chamar sempre é defeito. */
+  aoColidir?: (eventoId: string) => void,
 ): Promise<Evento> {
   const inicio = (await repositorio.contarEventos()) + 1
   for (let n = inicio; n < inicio + TENTATIVAS_DE_ID; n++) {
     const evento = montar(proximoEventoId(instalacaoId, cunhadoEm, n))
     if (await repositorio.acrescentarEvento(evento)) return evento
+    aoColidir?.(evento.eventoId)
   }
   throw new Error('Nenhum evento_id livre para gravar o evento. Nada foi salvo.')
 }
@@ -172,33 +175,55 @@ export async function identificarCracha(
   repositorio: Repositorio,
   config: Pick<Config, 'salHex' | 'saisAnteriores'>,
   uid: Uid,
-): Promise<{ uidHash: UidHash; vinculo?: Vinculo }> {
+): Promise<{ uidHash: UidHash; vinculo?: Vinculo; sal?: number }> {
   const sais = saisConhecidos(config)
   const doAtual = await calcularUidHash(sais[0], uid)
   for (const [i, sal] of sais.entries()) {
     const uidHash = i === 0 ? doAtual : await calcularUidHash(sal, uid)
     const vinculo = await repositorio.vinculoPorHash(uidHash)
     if (!vinculo) continue
-    if (!vinculo.salId) quandoOcioso(async () => {
-      // Relido na hora de gravar: entre a leitura e agora o vínculo pode ter
-      // sido renomeado ou removido, e a marca não pode desfazer isso.
-      const atual = await repositorio.vinculoPorHash(uidHash)
-      if (atual && !atual.salId) await repositorio.gravarVinculo({ ...atual, salId: await idDoSal(sal) })
-    })
-    return { uidHash, vinculo }
+    if (!vinculo.salId) marcarDepois(repositorio, uidHash, sal)
+    // `sal`: 0 é o atual; maior que zero é um do chaveiro, e diz no diário
+    // que o crachá só foi achado porque o sal antigo não foi jogado fora.
+    return { uidHash, vinculo, sal: i }
   }
   return { uidHash: doAtual }
 }
 
 /**
- * A marca do sal espera o navegador ficar ocioso. Gravada no meio da fila,
- * era uma escrita a mais por crachá, e o teste de 100 alunos passou a perder
- * leitura — a marca serve ao Diagnóstico, não à chamada, e pode esperar.
+ * A marca do sal nunca é gravada no meio da fila. Gravada a cada crachá, era
+ * uma escrita a mais por leitura; adiada crachá a crachá, as escritas caíam
+ * no meio das rajadas seguintes — o teste de 100 alunos passou a perder
+ * leitura nos dois casos. Ela serve ao Diagnóstico, não à chamada: fica em
+ * memória e vai num lote só, com o navegador ocioso ou quando a chamada
+ * termina (`gravarMarcasPendentes`).
  */
-function quandoOcioso(tarefa: () => Promise<void>): void {
-  const rodar = () => void tarefa().catch(() => {})
-  if (typeof requestIdleCallback === 'function') requestIdleCallback(rodar, { timeout: 10_000 })
-  else setTimeout(rodar, 1000)
+const marcasPendentes = new Map<UidHash, { repositorio: Repositorio; sal: string }>()
+let ociosoAgendado = false
+
+function marcarDepois(repositorio: Repositorio, uidHash: UidHash, sal: string): void {
+  marcasPendentes.set(uidHash, { repositorio, sal })
+  if (ociosoAgendado || typeof requestIdleCallback !== 'function') return
+  ociosoAgendado = true
+  requestIdleCallback(() => {
+    ociosoAgendado = false
+    void gravarMarcasPendentes()
+  })
+}
+
+export async function gravarMarcasPendentes(): Promise<void> {
+  const lote = [...marcasPendentes]
+  marcasPendentes.clear()
+  for (const [uidHash, { repositorio, sal }] of lote) {
+    // Relido na hora de gravar: entre a leitura e agora o vínculo pode ter
+    // sido renomeado ou removido, e a marca não pode desfazer isso.
+    try {
+      const atual = await repositorio.vinculoPorHash(uidHash)
+      if (atual && !atual.salId) await repositorio.gravarVinculo({ ...atual, salId: await idDoSal(sal) })
+    } catch {
+      // Base fechada ou trocada no meio: a marca volta na próxima leitura.
+    }
+  }
 }
 
 /**

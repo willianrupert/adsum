@@ -17,7 +17,15 @@ import { identificarCracha, podeApagar, vinculosSemSal, type DiagnosticoReposito
 import { descreverAmbiente, levantarCapacidades } from '../ambiente/capacidades.ts'
 import { leitoresVisiveis, useAdsum } from './adsum.ts'
 import { PainelDeTestesFisicos } from './PainelDeTestesFisicos.tsx'
-import { definirModoDev, historicoDeChamadas, modoDev } from '../ambiente/preferencias.ts'
+import {
+  auditoriaDeUidsLigada,
+  definirAuditoriaDeUids,
+  definirModoDev,
+  historicoDeChamadas,
+  modoDev,
+} from '../ambiente/preferencias.ts'
+import { caminhoDoDiario, linhasDoDiario } from '../ambiente/diario.ts'
+import { CAMINHO_DA_AUDITORIA } from '../ambiente/auditoriaDeUids.ts'
 import { estadoDoConvite } from '../ambiente/instalacao.ts'
 import { Linha, Painel, Selo } from './componentes/Painel.tsx'
 import { deCsv, nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'
@@ -95,6 +103,7 @@ export function TelaDiagnostico() {
   const [matriculados, setMatriculados] = useState<Matriculado[]>([])
   const [totalEventos, setTotalEventos] = useState(0)
   const [importacao, setImportacao] = useState<Resultado>()
+  const [auditoria, setAuditoria] = useState(auditoriaDeUidsLigada)
   /** Crachás cujo sal não está no chaveiro. Ver `vinculosSemSal`. */
   const [semSal, setSemSal] = useState<Vinculo[]>([])
 
@@ -718,6 +727,42 @@ export function TelaDiagnostico() {
             </tbody>
           </table>
         )}
+      </Painel>
+
+      {/* O diário que o zip da pasta leva junto. Aqui aparecem as linhas
+          desta abertura do app; o arquivo inteiro fica na pasta, um por dia. */}
+      <Painel
+        titulo="Diário"
+        recolhivel
+        legenda={`Cada leitura, decisão e erro. Na pasta, em ${caminhoDoDiario('AAAA-MM-DD')}.`}
+      >
+        {linhasDoDiario().length === 0 ? (
+          <p className="ferramentas__nota">Nada registrado desde que o app abriu.</p>
+        ) : (
+          <pre className="diario">{[...linhasDoDiario()].slice(-60).reverse().join('\n')}</pre>
+        )}
+      </Painel>
+
+      {/* Aberto, com aviso: guardar o código real do crachá é exceção à regra
+          do projeto, decidida para a fase de testes (22/09/2026). Tem que
+          estar à vista enquanto estiver ligada. */}
+      <Painel titulo="Códigos dos crachás" legenda={`Na pasta, em ${CAMINHO_DA_AUDITORIA}.`}>
+        <Linha rotulo="guardar o código de cada crachá">
+          <Selo tom={auditoria ? 'alerta' : 'ok'}>{auditoria ? 'ligado' : 'desligado'}</Selo>{' '}
+          <button
+            onClick={() => {
+              definirAuditoriaDeUids(!auditoria)
+              setAuditoria(!auditoria)
+            }}
+          >
+            {auditoria ? 'Desligar' : 'Ligar'}
+          </button>
+        </Linha>
+        <p className="ferramentas__nota">
+          {auditoria
+            ? 'Ligado para a fase de testes. Com o código guardado, nenhum aluno precisa recadastrar o crachá, mas quem tiver este arquivo consegue copiar crachás. Não compartilhe a pasta com quem não precisa.'
+            : 'Desligado. Os crachás continuam funcionando normalmente; só o código deixa de ser guardado.'}
+        </p>
       </Painel>
 
       {/* Por último, e discreto: quem chega aqui está consertando algo, e este

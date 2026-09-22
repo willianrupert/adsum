@@ -415,3 +415,35 @@ desde antes da aula, nunca acendia. Agora a grade é reavaliada pelo relógio.
 
 Limite que fica: os 40 vínculos do sal de 17/09 continuam perdidos. O sal
 existiu só na memória daquela aba. Cada um deles encosta de novo uma vez.
+
+## 22/09/2026, noite — códigos dos crachás, diário, conferência
+
+**Guardar o UID real, por decisão do autor.** Durante a fase de testes,
+`auditoria/uids.csv` na pasta do cofre recebe o código de cada crachá na
+primeira leitura. Fica ligado por padrão, com o aviso e o interruptor no
+Diagnóstico. É exceção deliberada à regra do sal: o recadastro de uma turma
+custou mais que o risco de guardar, e o LEIA-ME diz que é o arquivo mais
+sensível da pasta. Uma linha por crachá, na primeira vez que ele aparece; as
+leituras seguintes não custam nada.
+
+**Diário de diagnóstico.** `diagnostico/<dia>.log`: abertura do app, cada
+leitura (hash curto, sal em que foi achado, decisão, `evento_id`, tempo de
+identificar, gravar e redesenhar), recusas do leitor pelo tamanho, gravação
+na pasta com tempo, foco, erros sem dono, `evento_id` que já existia. Sem
+nome e sem UID. Gravado em lote a cada 5 s. Se existisse em 22/09, `id_ocupado`
+repetido teria dito a causa na primeira ocorrência.
+
+**Por que parou no trigésimo, medido.** Não foi CPU. `TelaAula` começou a
+numerar de 0063; o `abrir` da chamada, numerado pela base inteira, já tinha
+levado 0098. Trinta e cinco eventos depois o contador chegou a 0098 e travou.
+O "apita e nada acontece" de 17/09 foi o mesmo desencontro, noutra conta.
+
+**Conferência planilha × base** (`conferirLog`), ao ligar a pasta e ao
+encerrar: evento que a pasta perdeu é acrescentado; linha que só o arquivo
+tem, ou `evento_id` repetido, vai para o diário como divergência.
+
+**Um achado de CPU no caminho.** A marca de sal dos vínculos antigos,
+gravada a cada leitura (e depois adiada leitura a leitura), fez o teste de
+100 alunos perder uma rajada. Agora fica em memória e grava num lote, com o
+navegador ocioso ou no fim da chamada. O diário mostrou que, sem isso, cada
+crachá custa ~30-50 ms no jsdom e nenhuma rajada é recusada.

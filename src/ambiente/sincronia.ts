@@ -103,6 +103,58 @@ export async function acrescentarNoLog(
   )
 }
 
+export interface Conferencia {
+  turma: string
+  naBase: number
+  noArquivo: number
+  /** Estavam na base e faltavam no arquivo; foram acrescentados agora. */
+  acrescentados: number
+  /** Estão no arquivo e a base não tem. Não se conserta sozinho: só se denuncia. */
+  soNoArquivo: number
+  /** `evento_id` que aparece mais de uma vez no arquivo. */
+  repetidos: number
+}
+
+/**
+ * Confere o log da pasta contra a base, turma a turma. **Só acrescenta.**
+ *
+ * Existe por causa de 22/09/2026: a planilha tinha linhas que a base não
+ * tinha, e nada comparava as duas. O arquivo é a planilha que o professor
+ * entrega; a base é o que a tela mostra. Divergirem calado é o pior defeito
+ * possível aqui.
+ *
+ * - Evento na base e fora do arquivo (a gravação na pasta falhou): vai para
+ *   o fim do arquivo agora. Não reescreve nada; é o mesmo append de sempre.
+ * - Linha no arquivo e fora da base: não tem como entrar sem reescrever o que
+ *   já foi gravado, então fica como está e é contada — quem chama registra no
+ *   diário.
+ */
+export async function conferirLog(
+  repositorio: Repositorio,
+  pasta: FileSystemDirectoryHandle,
+  turma?: string,
+): Promise<Conferencia[]> {
+  const eventos = turma ? await repositorio.listarEventos({ turma }) : await repositorio.listarEventos()
+  const resultado: Conferencia[] = []
+  for (const [t, daBase] of porTurma([...eventos].reverse())) {
+    const texto = await ler(pasta, caminhoDosRegistros(t))
+    const doArquivo = texto ? deCsv(texto).itens : []
+    const idsNoArquivo = new Set(doArquivo.map((e) => e.eventoId))
+    const idsNaBase = new Set(daBase.map((e) => e.eventoId))
+    const faltando = daBase.filter((e) => !idsNoArquivo.has(e.eventoId))
+    for (const evento of faltando) await acrescentarNoLog(pasta, evento)
+    resultado.push({
+      turma: t,
+      naBase: daBase.length,
+      noArquivo: doArquivo.length,
+      acrescentados: faltando.length,
+      soNoArquivo: doArquivo.filter((e) => !idsNaBase.has(e.eventoId)).length,
+      repetidos: doArquivo.length - idsNoArquivo.size,
+    })
+  }
+  return resultado
+}
+
 /**
  * Reescreve os arquivos de log a partir do cache. **Só para conserto.**
  *

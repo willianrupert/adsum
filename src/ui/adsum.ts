@@ -12,6 +12,7 @@ import type { Config } from '../nucleo/tipos.ts'
 import type { LeitorDeCracha } from '../portas/LeitorDeCracha.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
 import { modoDev } from '../ambiente/preferencias.ts'
+import { registrar } from '../ambiente/diario.ts'
 
 export interface OpcaoDeLeitor {
   id: string
@@ -114,7 +115,10 @@ export function abrirBase(): Promise<Base> {
  * e o log só guarda o que aconteceu quando aconteceu.
  */
 export async function fecharChamadaDeAntes(repositorio: Repositorio): Promise<void> {
-  if (await repositorio.sessaoAberta()) await repositorio.encerrarSessao()
+  const aberta = await repositorio.sessaoAberta()
+  if (!aberta) return
+  await repositorio.encerrarSessao()
+  registrar('chamada_fechada_ao_abrir', { aberta_em: aberta.abertaEm })
 }
 
 export const ContextoAdsum = createContext<Adsum | undefined>(undefined)

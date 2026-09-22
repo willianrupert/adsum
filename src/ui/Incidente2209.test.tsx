@@ -34,7 +34,8 @@ import type { Matriculado } from '../nucleo/tipos.ts'
 import { adiarHorario } from '../ambiente/preferencias.ts'
 import { restaurar, sincronizar } from '../ambiente/sincronia.ts'
 import { LeitorTeclado } from '../adaptadores/leitor/LeitorTeclado.ts'
-import { identificarCracha, vinculosSemSal } from '../portas/Repositorio.ts'
+import { esquecerDiario, linhasDoDiario } from '../ambiente/diario.ts'
+import { gravarMarcasPendentes, identificarCracha, vinculosSemSal } from '../portas/Repositorio.ts'
 
 const TURMA = 'IF685 · T01'
 const OUTRA_TURMA = 'IF969 · T02'
@@ -253,7 +254,10 @@ describe('"começou do nada": o Enter do dongle não é o Enter de uma pessoa', 
       criadoEm: new Date().toISOString(),
     })
     renderizarCom({ ...bancada, leitor } as unknown as Bancada, <Fluxo />)
-    await screen.findByText(/Começar a chamada/)
+    // Com a turma já firmada: senão o Enter não abriria nada de qualquer
+    // jeito, e o teste passaria sem provar coisa nenhuma.
+    await screen.findByText(TURMA)
+    await waitFor(() => expect(screen.getByRole('button', { name: /Começar a chamada/ })).toBeEnabled())
 
     await act(async () => encostarNoDongle('2367396804'))
 
@@ -274,7 +278,10 @@ describe('"começou do nada": o Enter do dongle não é o Enter de uma pessoa', 
       criadoEm: new Date().toISOString(),
     })
     renderizarCom(bancada, <Fluxo />)
-    await screen.findByText(/Começar a chamada/)
+    // A turma só se firma depois de `recontar()`; Enter antes disso não tem o
+    // que abrir, e o teste mediria a corrida, não o atalho.
+    await screen.findByText(TURMA)
+    await waitFor(() => expect(screen.getByRole('button', { name: /Começar a chamada/ })).toBeEnabled())
 
     await userEvent.setup().keyboard('{Enter}')
 
@@ -362,10 +369,10 @@ describe('aluno cadastrado nunca se perde por troca de sal', () => {
     expect(achado.vinculo?.nome).toBe('Maria')
     expect(achado.uidHash).toBe(uidHash)
     // Vínculo antigo ganha a impressão do sal na primeira leitura.
-    const esperado = await idDoSal(config.salHex)
-    await waitFor(async () => expect((await repositorio.vinculoPorHash(uidHash))?.salId).toBe(esperado), {
-      timeout: 3000,
-    })
+    // A marca não é gravada durante a leitura — só no lote, depois.
+    expect((await repositorio.vinculoPorHash(uidHash))?.salId).toBeUndefined()
+    await gravarMarcasPendentes()
+    expect((await repositorio.vinculoPorHash(uidHash))?.salId).toBe(await idDoSal(config.salHex))
   })
 
   it('crachá desconhecido cai no sal atual, que é onde o cadastro nasce', async () => {
@@ -412,5 +419,35 @@ describe('aluno cadastrado nunca se perde por troca de sal', () => {
     expect(sais).toContain(antiga.config.salHex)
     expect(sais).toContain('00112233445566778899aabbccddeeff')
     expect(sais).toContain(nova.config.salHex)
+  })
+})
+
+describe('diário da chamada', () => {
+  afterEach(esquecerDiario)
+
+  it('cada crachá vira uma linha com decisão, id e tempos, e nunca com o código do crachá', async () => {
+    const bancada = await montarBancada()
+    const aluno = pessoa(0)
+    await bancada.repositorio.salvarTurma(TURMA, [aluno])
+    await bancada.repositorio.gravarVinculo({
+      uidHash: await calcularUidHash(bancada.config.salHex, hexParaUid('04a23b91')),
+      papel: 'aluno',
+      nome: aluno.nome,
+      matricula: aluno.matricula,
+      criadoEm: new Date().toISOString(),
+    })
+    const sessao = { turma: TURMA, abertaEm: new Date().toISOString(), uidHashProfessor: 'professor' }
+    await bancada.repositorio.abrirSessao(sessao)
+    renderizarCom(bancada, <TelaAula sessao={sessao} pendentes={[]} daTurma={[aluno]} aoMudarBase={() => {}} />)
+
+    await act(async () => bancada.leitor.simular('04a23b91'))
+
+    await waitFor(() => expect(linhasDoDiario().some((l) => l.includes('| cracha |'))).toBe(true))
+    const linha = linhasDoDiario().find((l) => l.includes('| cracha |'))!
+    expect(linha).toMatch(/decisao=presenca/)
+    expect(linha).toMatch(/evento=\S+/)
+    expect(linha).toMatch(/identificar_ms=\d+ \| gravar_ms=\d+ \| tela_ms=\d+/)
+    expect(linhasDoDiario().join('\n')).not.toContain('04a23b91')
+    expect(linhasDoDiario().join('\n')).not.toContain(aluno.nome)
   })
 })

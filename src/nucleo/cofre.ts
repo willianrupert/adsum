@@ -159,6 +159,17 @@ O QUE TEM AQUI
       de aula por coluna, faltas contadas. Recalculada do zero a cada
       mudança — é relatório, não registro; quem manda é registros/.
 
+  diagnostico/
+      Um arquivo por dia com o que o Adsum fez: cada leitura, o que
+      decidiu, quanto tempo levou e todo erro. Sem nome e sem código de
+      crachá. É o que ajuda a entender uma aula que deu errado.
+
+  auditoria/uids.csv
+      O código real de cada crachá já lido, enquanto isso estiver
+      ligado no Diagnóstico. Serve para nenhum aluno precisar
+      recadastrar. É o arquivo mais sensível da pasta: com ele, dá
+      para copiar crachás.
+
 
 COMO RECUPERAR TUDO
 -------------------

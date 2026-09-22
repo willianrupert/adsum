@@ -38,6 +38,17 @@ Herdadas do aparelho (justificativa em `../Adsum/CLAUDE.md`):
   não é o nome: sem ele, quem obtiver o `registros.csv` recupera o UID por força
   bruta em segundos e pode **clonar o crachá**. Nome e matrícula já estão no
   arquivo; o UID é o único dado ali que dá poder novo a quem o lê.
+- **Nenhum sal é descartado** (desde 22/09/2026). `Config.saisAnteriores` é
+  um chaveiro: trocar, restaurar e importar só acrescentam, e
+  `identificarCracha` procura o crachá em todos. Em 17/09 um sal sobrescrito
+  levou 40 vínculos junto, sem uma linha de erro. **Aluno cadastrado nunca
+  pode ser perdido**: caminho novo que descarte sal é bug.
+- **Exceção temporária, decidida pelo autor em 22/09/2026:** durante a fase
+  de testes o app guarda o UID real de cada crachá lido em
+  `auditoria/uids.csv`, na pasta do cofre, ligado por padrão e desligável no
+  Diagnóstico. Pedir que a turma recadastre custava mais que guardar. O
+  arquivo não tem nome, é separado do log de presença, e é o mais sensível da
+  pasta. Revisitar ao fim da fase de testes; não estender a outros lugares.
 - **Sem hora confiável, a sessão não abre.**
 - **O nome não trafega.** Sai `uid_hash`; a planilha resolve.
 
@@ -94,6 +105,21 @@ Específicas do app:
 - **Tela também se testa.** As telas rodam em jsdom contra o `RepositorioDexie`
   de verdade e o `LeitorSimulado` — sem dublê. Dublê que concorda com tudo é
   como se descobre tarde que a tela e o adaptador discordavam.
+- **Uma chamada por turma por dia**, como no SIGAA. `TelaAula` conta o dia
+  inteiro de `abertaEm`: encerrar e reabrir continua de onde parou. Por isso
+  **fechar o app fecha a chamada** (`fecharChamadaDeAntes`), e o repouso
+  escolhe só a data, sem hora.
+- **Evento novo só por `gravarEventoNovo`.** Contador de sequência por tela
+  fez dois `evento_id` iguais em 22/09, e a base recusou calada metade da
+  chamada.
+- **O Enter do dongle não é o Enter de uma pessoa.** O `LeitorTeclado` marca
+  com `preventDefault` o Enter que fecha uma rajada; todo atalho de Enter
+  confere `defaultPrevented`. Sem isso, encostar um crachá abria a chamada.
+- **O diário (`ambiente/diario.ts`) registra cada leitura, decisão, tempo e
+  erro** em `diagnostico/<dia>.log` na pasta, em lote, sem nome e sem UID.
+  Nada no caminho de cada crachá grava em disco além do evento: o que puder
+  esperar (marca de sal, diário) espera. A conferência planilha × base
+  (`conferirLog`) roda ao ligar a pasta e ao encerrar, e só acrescenta.
 - **Crachá desconhecido sempre abre a busca**, sobre a turma inteira e não só
   a fila de pendentes. Quem perdeu o crachá e trouxe outro **já tem** vínculo,
   logo não está na fila — e antes disto não havia como encontrá-lo no dia em

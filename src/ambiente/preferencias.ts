@@ -23,6 +23,7 @@ const CHAVES = {
   professorAtual: 'adsum.professor.atual',
   versaoDeNovidadeVista: 'adsum.novidade.versao',
   modoDeGrade: 'adsum.grade.modo',
+  auditoriaDeUids: 'adsum.auditoria.uids',
 } as const
 
 function ler(chave: string): string | undefined {
@@ -66,6 +67,19 @@ export function definirModoDev(ligado: boolean): void {
  * Sem isto, escolher o dongle durava até a próxima abertura — e o professor
  * reescolhia todo dia sem entender por quê.
  */
+/**
+ * Guardar o código real de cada crachá (`ambiente/auditoriaDeUids.ts`).
+ * **Ligado por padrão** durante a fase de testes, decisão de 22/09/2026: a
+ * marca guardada é a de desligado, e sem marca vale ligado.
+ */
+export function auditoriaDeUidsLigada(): boolean {
+  return ler(CHAVES.auditoriaDeUids) !== 'nao'
+}
+
+export function definirAuditoriaDeUids(ligada: boolean): void {
+  gravar(CHAVES.auditoriaDeUids, ligada ? undefined : 'nao')
+}
+
 export function leitorEscolhido(): string | undefined {
   return ler(CHAVES.leitor)
 }
