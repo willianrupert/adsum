@@ -42,7 +42,7 @@ import {
 import { chaveDeIdentidade, diaLocal, presencasDoDia } from '../nucleo/faltas.ts'
 import type { Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
-import { ehSimulavel } from '../portas/LeitorDeCracha.ts'
+import { ehConfirmavel, ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { useAdsum } from './adsum.ts'
 import { definirProfessorAtual, modoDev, professorAtual } from '../ambiente/preferencias.ts'
 import { Busca } from './componentes/Busca.tsx'
@@ -575,6 +575,9 @@ export function TelaAula({
         if (evento) {
           await repositorio.acrescentarEvento(evento)
           await aoRegistrar?.(evento)
+          // O LED do leitor serial significa "está salvo", como o bipe: só
+          // depois da gravação. Leitor de teclado não tem como confirmar.
+          if (ehConfirmavel(leitor)) void leitor.confirmarGravacao()
         }
         if (decisao.tipo === 'encerrar') {
           await repositorio.encerrarSessao()

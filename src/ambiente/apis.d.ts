@@ -31,9 +31,27 @@ declare global {
     }) => Promise<FileSystemDirectoryHandle>
   }
 
+  /** Web Serial, só o que o `LeitorSerial` usa. Chrome e Edge. */
+  interface PortaSerial {
+    readable: ReadableStream<Uint8Array> | null
+    writable: WritableStream<Uint8Array> | null
+    open(opcoes: { baudRate: number }): Promise<void>
+    close(): Promise<void>
+    getInfo(): { usbVendorId?: number; usbProductId?: number }
+  }
+
+  interface ServicoSerial extends EventTarget {
+    /** Só as portas que o professor já autorizou. Nunca abre diálogo. */
+    getPorts(): Promise<PortaSerial[]>
+    /** Abre o diálogo do Chrome. Exige gesto do usuário (um clique). */
+    requestPort(opcoes?: {
+      filters?: { usbVendorId?: number; usbProductId?: number }[]
+    }): Promise<PortaSerial>
+  }
+
   interface Navigator {
-    /** WebSerial. O dongle de hoje é HID de teclado e não precisa dela. */
-    serial?: unknown
+    /** Web Serial. O dongle de teclado não precisa dela; o leitor serial sim. */
+    serial?: ServicoSerial
   }
 
   /**

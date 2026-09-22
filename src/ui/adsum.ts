@@ -3,6 +3,7 @@
 // portas, nunca as implementações.
 
 import { createContext, useContext } from 'react'
+import { LeitorSerial } from '../adaptadores/leitor/LeitorSerial.ts'
 import { LeitorSimulado } from '../adaptadores/leitor/LeitorSimulado.ts'
 import { LeitorTeclado } from '../adaptadores/leitor/LeitorTeclado.ts'
 import { LeitorWebNfc } from '../adaptadores/leitor/LeitorWebNfc.ts'
@@ -28,6 +29,12 @@ export const LEITORES: OpcaoDeLeitor[] = [
     nome: 'Dongle USB',
     quando: 'o leitor na mesa',
     criar: () => new LeitorTeclado(),
+  },
+  {
+    id: 'serial',
+    nome: 'Leitor USB (serial)',
+    quando: 'o leitor ESP32, no Chrome ou Edge',
+    criar: () => new LeitorSerial(),
   },
   {
     id: 'simulado',

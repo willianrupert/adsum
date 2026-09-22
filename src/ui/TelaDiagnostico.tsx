@@ -8,6 +8,7 @@ import { calcularUidHash } from '../nucleo/hash.ts'
 import { uidLegivel, uidParaHex } from '../nucleo/uid.ts'
 import type { Aula, Evento, Matriculado, Vinculo } from '../nucleo/tipos.ts'
 import {
+  ehConectavel,
   ehSimulavel,
   type DiagnosticoLeitor,
   type EstadoLeitor,
@@ -334,6 +335,11 @@ export function TelaDiagnostico() {
           <>
             <button onClick={tentar('Iniciar', () => leitor.iniciar())}>Iniciar</button>
             <button onClick={tentar('Parar', () => leitor.parar())}>Parar</button>
+            {ehConectavel(leitor) && (
+              <button onClick={tentar('Conectar leitor USB', () => leitor.conectar())}>
+                Conectar leitor USB
+              </button>
+            )}
           </>
         }
       >

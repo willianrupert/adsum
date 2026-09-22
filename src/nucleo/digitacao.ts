@@ -94,25 +94,39 @@ function inverter(bytes: Uint8Array): string {
     .join('')
 }
 
-export function interpretarDigitacao(teclas: Tecla[]): Digitacao | undefined {
-  if (!foiDigitadoPorMaquina(teclas)) return undefined
-
-  const cru = teclas.map((t) => t.caractere).join('').trim()
+/**
+ * O texto de um crachá, já sem a pergunta "foi máquina?" — para quem entrega
+ * a linha inteira e não uma rajada de teclas (o leitor serial). Nunca
+ * adivinha: comprimento fora do padrão é recusa.
+ */
+export function interpretarTexto(cru: string): Digitacao | undefined {
+  const texto = cru.trim()
+  // A mesma guarda de `foiDigitadoPorMaquina`: um decimal curto é número
+  // válido em 32 bits, e sem isto "12345" viraria um crachá.
+  if (texto.length < MINIMO_DE_CARACTERES) return undefined
 
   // De fábrica, esses leitores costumam separar os bytes com dois-pontos —
   // `1D:F3:1F:D3:1B:10:80`. Recusar por causa do separador seria recusar o
   // dongle no estado em que ele chega da caixa.
-  const limpo = cru.replace(/[\s:.-]/g, '')
+  const limpo = texto.replace(/[\s:.-]/g, '')
 
   if (/^[0-9a-fA-F]+$/.test(limpo) && [8, 14, 20].includes(limpo.length)) {
     const uid = hexParaBytes(limpo.toLowerCase())
-    return { uid, cru, formato: 'hexadecimal', invertido: inverter(uid) }
+    return { uid, cru: texto, formato: 'hexadecimal', invertido: inverter(uid) }
   }
 
   if (/^\d+$/.test(limpo)) {
     const uid = decimalParaBytes(limpo)
-    if (uid) return { uid, cru, formato: 'decimal', invertido: inverter(uid) }
+    if (uid) return { uid, cru: texto, formato: 'decimal', invertido: inverter(uid) }
   }
 
   return undefined
+}
+
+export function interpretarDigitacao(teclas: Tecla[]): Digitacao | undefined {
+  if (!foiDigitadoPorMaquina(teclas)) return undefined
+  const cru = teclas.map((t) => t.caractere).join('').trim()
+  const lido = interpretarTexto(cru)
+  // `cru` de antes: quem lê o diagnóstico vê a rajada como veio.
+  return lido && { ...lido, cru }
 }
