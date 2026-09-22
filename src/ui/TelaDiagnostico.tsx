@@ -402,7 +402,9 @@ export function TelaDiagnostico() {
         )}
       </Painel>
 
-      {ensaio && <PainelDeTestesFisicos leitor={leitor} leitorId={leitorId} />}
+      {ensaio && (
+        <PainelDeTestesFisicos leitor={leitor} leitorId={leitorId} repositorio={repositorio} config={config} />
+      )}
 
       {/* Sem `recolhivel`: fica sempre aberto, à frente de "Últimas leituras"
           — é o resumo por sessão que calibra `INTERVALO_MINIMO_MS`, uso do

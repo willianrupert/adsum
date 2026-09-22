@@ -5,8 +5,18 @@
 // lá); depende de `LeitorTeclado`, porque só ele recebe teclado do sistema
 // operacional — quem chama confere `leitorId === 'dongle'` antes de rodar.
 
-import { avaliarCenario, avaliarPerdaDeFoco, uidDeTeste, type EventoObservado, type ResultadoCenario } from '../nucleo/suiteDeTestes.ts'
+import {
+  avaliarCenario,
+  avaliarDoisCrachasJuntos,
+  avaliarPerdaDeFoco,
+  TURMA_DE_TESTE,
+  uidCurtoDeTeste,
+  uidDeTeste,
+  type EventoObservado,
+  type ResultadoCenario,
+} from '../nucleo/suiteDeTestes.ts'
 import { ehQueRecusa, type LeitorDeCracha } from '../portas/LeitorDeCracha.ts'
+import type { Repositorio } from '../portas/Repositorio.ts'
 import type { RigDeCracha } from './rigDeCracha.ts'
 
 const QUANTIDADE = 12
@@ -155,4 +165,43 @@ export async function rodarSuiteFisica(
 
   aoProgredir('Suíte concluída.')
   return resultados
+}
+
+/**
+ * O cenário que só existe dentro de uma chamada aberta de verdade — quem
+ * chama já garantiu isso com `turmaDeTeste.ts`. Redefine os índices 0 e 1
+ * do rig com o UID curto (`uidCurtoDeTeste`): a margem de tempo importa
+ * mais aqui do que nos outros quatro cenários, porque o que se mede é se os
+ * dois ficam sob 400 ms — não só se os dois chegaram.
+ */
+export async function rodarCenarioAvancado(
+  rig: RigDeCracha,
+  repositorio: Repositorio,
+  aoProgredir: (mensagem: string) => void,
+): Promise<ResultadoCenario> {
+  return cenario('Dois crachás juntos (INTERVALO_MINIMO_MS)', async () => {
+    aoProgredir('Preparando os dois crachás do cenário avançado...')
+    await rig.definir(0, uidCurtoDeTeste(0), 10)
+    await rig.definir(1, uidCurtoDeTeste(1), 10)
+
+    aoProgredir('Disparando os dois crachás quase juntos...')
+    await rig.disparar(0)
+    await rig.disparar(1)
+
+    // O rig não sabe quando o app terminou de gravar — só quando terminou
+    // de digitar. Uma folga curta garante que os dois eventos já estão no
+    // repositório antes de ler de volta.
+    await new Promise((r) => setTimeout(r, 300))
+
+    const [maisRecente, anterior] = await repositorio.listarEventos({ turma: TURMA_DE_TESTE, limite: 2 })
+    if (!maisRecente || !anterior) {
+      return {
+        nome: 'Dois crachás juntos (INTERVALO_MINIMO_MS)',
+        aprovado: false,
+        detalhe: 'Não achei dois eventos novos na turma de teste — os crachás chegaram a ser lidos?',
+      }
+    }
+    const gapMs = new Date(maisRecente.quando).getTime() - new Date(anterior.quando).getTime()
+    return avaliarDoisCrachasJuntos({ gapMs, resultados: [anterior.resultado, maisRecente.resultado] })
+  })
 }

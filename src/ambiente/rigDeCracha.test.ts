@@ -74,6 +74,29 @@ describe('RigDeCracha: conexão', () => {
   })
 })
 
+describe('RigDeCracha: iniciar() — reconexão sem diálogo', () => {
+  it('com porta já autorizada, reconecta sozinho e confirma com PING', async () => {
+    const falsa = criarPortaFalsa()
+    rig = new RigDeCracha({ serial: servicoCom(falsa.porta) })
+    const iniciar = rig.iniciar()
+    await vi.waitFor(() => expect(falsa.escritas.join('')).toBe('PING\n'))
+    falsa.responder('PONG\n')
+    await iniciar
+    expect(rig.conectado).toBe(true)
+  })
+
+  it('sem porta nenhuma autorizada, fica quieto — quem chama decide se é problema', async () => {
+    const servico = new EventTarget() as ServicoSerial
+    servico.getPorts = vi.fn(async () => [])
+    servico.requestPort = vi.fn()
+    rig = new RigDeCracha({ serial: servico })
+
+    await expect(rig.iniciar()).resolves.toBeUndefined()
+    expect(rig.conectado).toBe(false)
+    expect(servico.requestPort).not.toHaveBeenCalled()
+  })
+})
+
 describe('RigDeCracha: protocolo de comando', () => {
   async function conectado() {
     const falsa = criarPortaFalsa()

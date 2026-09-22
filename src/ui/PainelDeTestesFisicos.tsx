@@ -7,21 +7,35 @@
 // perda de foco, em `ambiente/suiteFisica.ts`) — é esperado que o foco pisque
 // por um instante durante a corrida. Fechar essa janela no meio interrompe só
 // aquele cenário; os outros já rodaram e continuam no relatório.
+//
+// O cenário avançado ("dois crachás juntos") precisa de uma chamada aberta
+// de verdade — `INTERVALO_MINIMO_MS` só é decidido dentro dela
+// (`nucleo/sessao.ts`), fora do alcance do que o Diagnóstico sozinho vê.
+// "Preparar" recarrega a página de propósito: é o mesmo mecanismo que o
+// resto do app já usa pra sincronizar estado com o banco — mais simples e
+// mais confiável que empurrar a rota de dentro do Diagnóstico.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { RigDeCracha } from '../ambiente/rigDeCracha.ts'
-import { rodarSuiteFisica } from '../ambiente/suiteFisica.ts'
+import { rodarCenarioAvancado, rodarSuiteFisica } from '../ambiente/suiteFisica.ts'
+import { prepararTurmaDeTeste, situacaoDaTurmaDeTeste, type SituacaoDaTurmaDeTeste } from '../ambiente/turmaDeTeste.ts'
 import type { ResultadoCenario } from '../nucleo/suiteDeTestes.ts'
+import type { Config } from '../nucleo/tipos.ts'
 import type { LeitorDeCracha } from '../portas/LeitorDeCracha.ts'
+import type { Repositorio } from '../portas/Repositorio.ts'
 import { Linha, Painel, Selo } from './componentes/Painel.tsx'
 
 export function PainelDeTestesFisicos({
   leitor,
   leitorId,
+  repositorio,
+  config,
   rig: rigInjetado,
 }: {
   leitor: LeitorDeCracha
   leitorId: string
+  repositorio: Repositorio
+  config: Config
   /** Para teste. Em produção, sempre um `RigDeCracha` novo. */
   rig?: RigDeCracha
 }) {
@@ -32,6 +46,21 @@ export function PainelDeTestesFisicos({
   const [progresso, setProgresso] = useState<string>()
   const [resultados, setResultados] = useState<ResultadoCenario[]>()
   const [erro, setErro] = useState<string>()
+
+  const [situacaoDaTurma, setSituacaoDaTurma] = useState<SituacaoDaTurmaDeTeste>()
+  const [preparando, setPreparando] = useState(false)
+  const [rodandoAvancado, setRodandoAvancado] = useState(false)
+
+  // Reencontra o rig sozinho se a página acabou de recarregar por causa do
+  // "Preparar" — sem isto, o professor precisaria clicar em "Conectar" de
+  // novo só porque a aba reabriu.
+  useEffect(() => {
+    void rig.iniciar().then(() => setConectado(rig.conectado))
+  }, [rig])
+
+  useEffect(() => {
+    void situacaoDaTurmaDeTeste(repositorio).then(setSituacaoDaTurma)
+  }, [repositorio])
 
   const conectar = async () => {
     setErro(undefined)
@@ -57,6 +86,32 @@ export function PainelDeTestesFisicos({
       setErro((e as Error).message)
     } finally {
       setRodando(false)
+      setProgresso(undefined)
+    }
+  }
+
+  const preparar = async () => {
+    setErro(undefined)
+    setPreparando(true)
+    try {
+      await prepararTurmaDeTeste(repositorio, config)
+      window.location.reload()
+    } catch (e) {
+      setErro((e as Error).message)
+      setPreparando(false)
+    }
+  }
+
+  const rodarAvancado = async () => {
+    setErro(undefined)
+    setRodandoAvancado(true)
+    try {
+      const resultado = await rodarCenarioAvancado(rig, repositorio, setProgresso)
+      setResultados((antes) => [...(antes ?? []), resultado])
+    } catch (e) {
+      setErro((e as Error).message)
+    } finally {
+      setRodandoAvancado(false)
       setProgresso(undefined)
     }
   }
@@ -90,7 +145,28 @@ export function PainelDeTestesFisicos({
         </button>
       )}
 
-      {rodando && progresso && <p className="vazio">{progresso}</p>}
+      {(rodando || rodandoAvancado) && progresso && <p className="vazio">{progresso}</p>}
+
+      {/* O cenário avançado é uma seção à parte — depende de uma chamada
+          aberta, e as outras quatro não. */}
+      {situacaoDaTurma === 'outra_sessao_aberta' && (
+        <p className="vazio">
+          Há uma chamada de verdade aberta agora. O cenário "dois crachás juntos" espera ela encerrar — não
+          mexe numa aula que não é de teste.
+        </p>
+      )}
+
+      {situacaoDaTurma === 'precisa_preparar' && (
+        <button disabled={preparando} onClick={() => void preparar()}>
+          {preparando ? 'Preparando...' : 'Preparar turma de teste e abrir a chamada'}
+        </button>
+      )}
+
+      {situacaoDaTurma === 'pronta' && conectado && leitorId === 'dongle' && (
+        <button disabled={rodandoAvancado} onClick={() => void rodarAvancado()}>
+          {rodandoAvancado ? 'Rodando...' : 'Rodar cenário avançado (dois crachás juntos)'}
+        </button>
+      )}
 
       {erro && (
         <div className="aviso aviso--grave">

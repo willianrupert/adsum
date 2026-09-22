@@ -43,6 +43,26 @@ export class RigDeCracha {
   async conectar(): Promise<void> {
     if (!this.#serial) throw new Error('Este navegador não tem Web Serial. Use o Chrome ou o Edge.')
     const porta = await this.#serial.requestPort()
+    await this.#abrir(porta)
+  }
+
+  /**
+   * Reencontra uma porta já autorizada antes, sem diálogo nenhum — o mesmo
+   * padrão do `LeitorSerial`. Existe para o fluxo da turma de teste: ele
+   * recarrega a página (`turmaDeTeste.ts`), e sem isto o professor teria
+   * que clicar em "Conectar" de novo toda vez, só porque a aba reabriu.
+   * Silencioso quando não há porta nenhuma — quem chama decide se isso é
+   * problema (normalmente não é: a primeira conexão sempre passa por
+   * `conectar()`, com o clique).
+   */
+  async iniciar(): Promise<void> {
+    if (!this.#serial) return
+    const portas = await this.#serial.getPorts()
+    if (portas.length === 0) return
+    await this.#abrir(portas[0])
+  }
+
+  async #abrir(porta: PortaSerial): Promise<void> {
     await porta.open({ baudRate: VELOCIDADE })
     if (!porta.readable || !porta.writable) {
       throw new Error('A porta abriu, mas não é legível.')

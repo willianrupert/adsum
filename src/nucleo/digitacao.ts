@@ -63,7 +63,7 @@ function hexParaBytes(hex: string): Uint8Array {
  * **e é justamente por não haver certeza que o diagnóstico mostra o cru**: com
  * o dongle na mão, um toque diz qual dos dois é.
  */
-function decimalParaBytes(texto: string): Uint8Array | undefined {
+export function decimalParaBytes(texto: string): Uint8Array | undefined {
   const valor = Number(texto)
   if (!Number.isSafeInteger(valor) || valor < 0 || valor > 0xffffffff) return undefined
   return Uint8Array.from([

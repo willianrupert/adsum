@@ -4,7 +4,10 @@
 // emitiu durante a janela de cada cenário — nunca antes, nunca depois.
 
 import { describe, expect, it, vi } from 'vitest'
-import { rodarSuiteFisica } from './suiteFisica.ts'
+import { rodarCenarioAvancado, rodarSuiteFisica } from './suiteFisica.ts'
+import { montarBancada } from '../testes/montar.tsx'
+import { TURMA_DE_TESTE } from '../nucleo/suiteDeTestes.ts'
+import type { Evento } from '../nucleo/tipos.ts'
 import { criarEmissor } from '../adaptadores/leitor/emissor.ts'
 import type { Cancelar, EstadoLeitor, LeitorQueRecusa, Leitura, Recusa } from '../portas/LeitorDeCracha.ts'
 import type { RigDeCracha } from './rigDeCracha.ts'
@@ -184,5 +187,66 @@ describe('rodarSuiteFisica', () => {
 
     expect(progresso[0]).toContain('Preparando')
     expect(progresso.at(-1)).toContain('concluída')
+  })
+})
+
+describe('rodarCenarioAvancado', () => {
+  async function repositorioComEventos(eventos: { quando: string; resultado: string; atraso?: number }[]) {
+    const bancada = await montarBancada()
+    let seq = 0
+    for (const e of eventos) {
+      await bancada.repositorio.acrescentarEvento({
+        eventoId: `teste-${++seq}`,
+        quando: e.quando,
+        turma: TURMA_DE_TESTE,
+        uidHash: `hash-${seq}`,
+        nome: `Teste ${seq}`,
+        origem: 'cracha',
+        resultado: e.resultado as Evento['resultado'],
+      })
+    }
+    return bancada
+  }
+
+  it('dois eventos certos, bem próximos: aprovado', async () => {
+    const base = Date.parse('2026-09-22T10:00:00.000Z')
+    const bancada = await repositorioComEventos([
+      { quando: new Date(base).toISOString(), resultado: 'ok' },
+      { quando: new Date(base + 150).toISOString(), resultado: 'rapido_demais' },
+    ])
+    const rig = { definir: async () => {}, disparar: async () => {} } as unknown as RigDeCracha
+
+    const resultado = await rodarCenarioAvancado(rig, bancada.repositorio, () => {})
+
+    expect(resultado.aprovado).toBe(true)
+    expect(resultado.detalhe).toContain('anti-fraude funcionou')
+    await bancada.repositorio.fechar()
+  })
+
+  it('erro do rig vira relatório, não exceção', async () => {
+    const bancada = await montarBancada()
+    const rig = {
+      definir: async () => {
+        throw new Error('ERR indice fora do intervalo')
+      },
+      disparar: async () => {},
+    } as unknown as RigDeCracha
+
+    const resultado = await rodarCenarioAvancado(rig, bancada.repositorio, () => {})
+
+    expect(resultado.aprovado).toBe(false)
+    expect(resultado.detalhe).toContain('ERR indice fora do intervalo')
+    await bancada.repositorio.fechar()
+  })
+
+  it('menos de dois eventos na turma de teste: relatório claro, não estoura', async () => {
+    const bancada = await montarBancada()
+    const rig = { definir: async () => {}, disparar: async () => {} } as unknown as RigDeCracha
+
+    const resultado = await rodarCenarioAvancado(rig, bancada.repositorio, () => {})
+
+    expect(resultado.aprovado).toBe(false)
+    expect(resultado.detalhe).toContain('Não achei dois eventos')
+    await bancada.repositorio.fechar()
   })
 })

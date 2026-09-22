@@ -9,6 +9,8 @@
 // alguém sentado com o rig e `rig.py`, digitando comando por comando; esta
 // suíte automatiza o julgamento, não só o disparo.
 
+import type { Matriculado } from './tipos.ts'
+
 export type MotivoDeRecusa = 'ritmo' | 'formato' | 'linha'
 
 export interface EventoObservado {
@@ -88,4 +90,77 @@ export function avaliarPerdaDeFoco(
     detalhe = 'O foco voltou, mas a leitura não voltou a funcionar — ficou travada.'
   }
   return { nome: 'Perda de foco', aprovado, detalhe }
+}
+
+// A turma sintética: só existe pra exercitar cenários que dependem de uma
+// chamada aberta de verdade (`decidir()`, em `nucleo/sessao.ts`) — o "dois
+// crachás juntos" é o primeiro caso, e é o único motivo de tudo daqui pra
+// baixo. Nome inconfundível de teste, nunca parecido com turma real — a
+// mesma regra do `LeitorSimulavel`.
+
+
+export const TURMA_DE_TESTE = '🧪 Suíte de testes (Diagnóstico)'
+
+/**
+ * UID curto (6 dígitos, o mínimo que `interpretarTexto` aceita), numa faixa
+ * própria (510000+) que nunca cruza nem com `uidDeTeste` nem com os UIDs
+ * medidos do dongle real. Existe só para o cenário "dois crachás juntos":
+ * ele precisa que a rajada inteira termine rápido, pra sobrar margem real
+ * sob os 400 ms de `INTERVALO_MINIMO_MS` — com o UID de 10 dígitos normal,
+ * o tempo de digitação do segundo crachá sozinho já cegaria boa parte
+ * dessa janela.
+ */
+export function uidCurtoDeTeste(indice: number): string {
+  return String(510_000 + indice)
+}
+
+/** N alunos inventados, óbvios como teste — nunca parecidos com gente real
+    (o inverso da regra "dado real não entra no repositório": dado de
+    teste não pode parecer real). */
+export function matriculadosDeTeste(n: number): Matriculado[] {
+  return Array.from({ length: n }, (_, i) => {
+    const numero = String(i + 1).padStart(2, '0')
+    return {
+      turma: TURMA_DE_TESTE,
+      chave: `teste-${numero}`,
+      matricula: `TESTE${numero}`,
+      nomeCompleto: `TESTE ${numero} DA SUÍTE FÍSICA`,
+      nome: `Teste ${numero}`,
+      papel: 'aluno' as const,
+    }
+  })
+}
+
+/**
+ * O cenário que só existe dentro de uma chamada de verdade: dois crachás
+ * diferentes, quase juntos, têm que virar "um presente, um recusado por
+ * rápido demais" — não duas presenças. `gapMs` é o intervalo real medido
+ * entre os dois eventos gravados, não o que se pediu ao rig: hardware é
+ * hardware, e o que importa é o que aconteceu, não a intenção.
+ *
+ * Gap acima de `INTERVALO_MINIMO_MS` não é reprovação — é inconclusivo: o
+ * hardware não chegou perto o suficiente pra testar a regra, e dizer
+ * "falhou" seria confundir "não deu pra saber" com "sei que está errado".
+ */
+export function avaliarDoisCrachasJuntos(dados: {
+  gapMs: number
+  resultados: [primeiro: string, segundo: string]
+}): ResultadoCenario {
+  const nome = 'Dois crachás juntos (INTERVALO_MINIMO_MS)'
+  const [primeiro, segundo] = dados.resultados
+  const gap = `${Math.round(dados.gapMs)} ms de intervalo real entre os dois`
+
+  if (dados.gapMs >= 400) {
+    return {
+      nome,
+      aprovado: false,
+      detalhe: `Inconclusivo: ${gap} — acima dos 400 ms de INTERVALO_MINIMO_MS, então a regra nem chegou a ser testada. Rode de novo.`,
+    }
+  }
+
+  const aprovado = primeiro === 'ok' && segundo === 'rapido_demais'
+  const detalhe = aprovado
+    ? `${gap}. O primeiro contou presença; o segundo foi recusado como rápido demais — o anti-fraude funcionou.`
+    : `${gap}, dentro da janela de 400 ms — mas o resultado esperado era "ok" seguido de "rapido_demais", e veio "${primeiro}" seguido de "${segundo}".`
+  return { nome, aprovado, detalhe }
 }
