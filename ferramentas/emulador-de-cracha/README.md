@@ -60,7 +60,18 @@ registradas porque custaram tempo:
 | Desligar o rádio (`RFConfiguration` 0x01 0x00) | idem |
 | Dormir (`PowerDown`) | idem |
 
-**A saída é por fio:** `RSTPDN` num GPIO (10), segurando em nível baixo por
+**E a causa de verdade era a distância.** Com as antenas encostadas, a fila
+falhava de todo jeito; **a 3 cm, os doze alunos passaram em ordem, com o
+dongle parado**. Antenas coladas demais se abafam — o acoplamento fica tão
+forte que a modulação do cartão quase não chega ao leitor. Todo o resto desta
+seção foi investigado antes de alguém desconfiar da distância, e fica
+registrado porque cada tentativa custou tempo.
+
+Na hora de montar a bancada: **3 cm entre a antena do PN532 e o dongle**, os
+dois apoiados em algo firme. Se a fila falhar, a primeira coisa a variar é a
+distância, não o código.
+
+**O reset por fio continua valendo:** `RSTPDN` num GPIO (10), segurando em nível baixo por
 ~120 ms entre um aluno e outro. Desligado, o módulo não tem como responder ao
 campo, que é o equivalente exato a tirar o crachá da mão. Depois do reset o
 chip esquece a configuração, então o firmware manda `SAMConfiguration` de
