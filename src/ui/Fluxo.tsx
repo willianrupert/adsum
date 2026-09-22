@@ -16,6 +16,7 @@ import { IndicadorDoLeitor } from './IndicadorDoLeitor.tsx'
 import { gravarEventoNovo, gravarMarcasPendentes, identificarCracha, podeApagar } from '../portas/Repositorio.ts'
 import { curto, ligarDiario, registrar } from '../ambiente/diario.ts'
 import { anotarUid } from '../ambiente/auditoriaDeUids.ts'
+import { marcarChamadaViva } from '../ambiente/chamadaViva.ts'
 import { eventoDe, quemFalta, type Sessao } from '../nucleo/sessao.ts'
 import { diaLocal } from '../nucleo/faltas.ts'
 import {
@@ -327,6 +328,9 @@ export function Fluxo() {
   // visível no Diagnóstico. Ver `ambiente/diario.ts`.
   useEffect(() => ligarDiario(pasta), [pasta])
 
+  // A janela sabe se tem chamada aberta — ver `ambiente/chamadaViva.ts`.
+  useEffect(() => marcarChamadaViva(!!sessao), [sessao])
+
   // Uma vez por abertura: com que versão e leitor a aula aconteceu é a
   // primeira pergunta de qualquer diagnóstico, e era a que não tinha resposta.
   useEffect(() => {
@@ -365,7 +369,7 @@ export function Fluxo() {
       if (!auditoriaDeUidsLigada()) return
       // O hash do vínculo achado, em qualquer sal do chaveiro — ou o do sal
       // atual, que é onde o cadastro de um crachá novo nasce.
-      const hash = () => identificarCracha(repositorio, config, leitura.uid).then((r) => r.uidHash)
+      const hash = () => identificarCracha(repositorio, leitura.uid).then((r) => r.uidHash)
       anotarUid(pasta, hash, leitura.uid, leitura.em, leitura.origem).then(
         (novo) => novo && registrar('uid_anotado'),
         (erro: Error) => registrar('erro_auditoria', { mensagem: erro.message }),
@@ -841,7 +845,7 @@ export function Fluxo() {
     if (sessao) return
     return leitor.aoLer((leitura) => {
       void (async () => {
-        const { uidHash, vinculo } = await identificarCracha(repositorio, config, leitura.uid)
+        const { uidHash, vinculo } = await identificarCracha(repositorio, leitura.uid)
         registrar('cracha_no_repouso', { hash: curto(uidHash), vinculo: vinculo?.papel ?? 'nenhum' })
         // Abre a turma e a hora que a tela de repouso está mostrando — não
         // a hora real deste toque. Ver o comentário em `abrirComProfessor`.

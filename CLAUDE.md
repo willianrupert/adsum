@@ -108,7 +108,9 @@ Específicas do app:
 - **Uma chamada por turma por dia**, como no SIGAA. `TelaAula` conta o dia
   inteiro de `abertaEm`: encerrar e reabrir continua de onde parou. Por isso
   **fechar o app fecha a chamada** (`fecharChamadaDeAntes`), e o repouso
-  escolhe só a data, sem hora.
+  escolhe só a data, sem hora. **Recarregar a mesma janela não é fechar**
+  (`chamadaViva`, no `sessionStorage`), e a versão nova do app espera a
+  chamada terminar para entrar.
 - **Evento novo só por `gravarEventoNovo`.** Contador de sequência por tela
   fez dois `evento_id` iguais em 22/09, e a base recusou calada metade da
   chamada.
@@ -120,6 +122,16 @@ Específicas do app:
   Nada no caminho de cada crachá grava em disco além do evento: o que puder
   esperar (marca de sal, diário) espera. A conferência planilha × base
   (`conferirLog`) roda ao ligar a pasta e ao encerrar, e só acrescenta.
+- **O sal para calcular hash vem da base, nunca de cópia na tela.**
+  `identificarCracha` lê o chaveiro de `repositorio.lerConfig()` (em cache no
+  adaptador) a cada crachá. A cópia em memória foi o que perdeu a turma em
+  17/09.
+- **Teste de conserto roda sobre base com histórico.** Base limpa esconde
+  todos os defeitos de 15 a 22/09 (`docs/06_falhas_em_sala.md`). Cofre de
+  aula com problema vira `src/testes/cofres/*.json` pelo
+  `scripts/anonimizar_cofre.py` antes do conserto: é a única forma de dado de
+  turma entrar no repositório, e o script recusa gravar se sobrar um nome,
+  matrícula, hash ou sal original.
 - **Crachá desconhecido sempre abre a busca**, sobre a turma inteira e não só
   a fila de pendentes. Quem perdeu o crachá e trouxe outro **já tem** vínculo,
   logo não está na fila — e antes disto não havia como encontrá-lo no dia em

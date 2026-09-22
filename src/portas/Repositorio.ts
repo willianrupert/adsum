@@ -173,10 +173,12 @@ export async function gravarEventoNovo(
  */
 export async function identificarCracha(
   repositorio: Repositorio,
-  config: Pick<Config, 'salHex' | 'saisAnteriores'>,
   uid: Uid,
 ): Promise<{ uidHash: UidHash; vinculo?: Vinculo; sal?: number }> {
-  const sais = saisConhecidos(config)
+  // Os sais vêm da base, a cada crachá, e nunca de uma cópia que a tela
+  // guardou: foi uma cópia desatualizada que perdeu a turma em 17/09/2026.
+  // `lerConfig` é cache no adaptador, então isto não custa uma ida ao disco.
+  const sais = saisConhecidos(await repositorio.lerConfig())
   const doAtual = await calcularUidHash(sais[0], uid)
   for (const [i, sal] of sais.entries()) {
     const uidHash = i === 0 ? doAtual : await calcularUidHash(sal, uid)

@@ -449,11 +449,12 @@ export function TelaAula({
         nome: pessoa.nome,
         matricula: pessoa.matricula || undefined,
         criadoEm: quando.toISOString(),
-        // Crachá sem dono é sempre calculado no sal atual (`identificarCracha`).
-        salId: await idDoSal(config.salHex),
+        // Crachá sem dono é sempre calculado no sal atual da base
+        // (`identificarCracha`) — e é dela, não da cópia da tela, que se lê.
+        salId: await idDoSal((await repositorio.lerConfig()).salHex),
       })
     },
-    [repositorio, vinculos, config.salHex],
+    [repositorio, vinculos],
   )
 
   /**
@@ -536,7 +537,7 @@ export function TelaAula({
         // Uma linha no diário por crachá, com o tempo de cada etapa: é o que
         // mostra, sem reconstruir nada à mão, se uma aula ficou lenta e onde.
         const inicio = performance.now()
-        const { uidHash, vinculo, sal } = await identificarCracha(repositorio, config, leitura.uid)
+        const { uidHash, vinculo, sal } = await identificarCracha(repositorio, leitura.uid)
         const identificadoEm = performance.now()
         const decisao = decidir(uidHash, {
           sessao,

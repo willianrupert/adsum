@@ -17,7 +17,7 @@
 
 import { useEffect, useState } from 'react'
 import { RigDeCracha } from '../ambiente/rigDeCracha.ts'
-import { rodarCenarioAvancado, rodarSuiteFisica } from '../ambiente/suiteFisica.ts'
+import { rodarCenarioAvancado, rodarChamadaComHistorico, rodarSuiteFisica } from '../ambiente/suiteFisica.ts'
 import { prepararTurmaDeTeste, situacaoDaTurmaDeTeste, type SituacaoDaTurmaDeTeste } from '../ambiente/turmaDeTeste.ts'
 import type { ResultadoCenario } from '../nucleo/suiteDeTestes.ts'
 import type { Config } from '../nucleo/tipos.ts'
@@ -50,6 +50,7 @@ export function PainelDeTestesFisicos({
   const [situacaoDaTurma, setSituacaoDaTurma] = useState<SituacaoDaTurmaDeTeste>()
   const [preparando, setPreparando] = useState(false)
   const [rodandoAvancado, setRodandoAvancado] = useState(false)
+  const [rodandoHistorico, setRodandoHistorico] = useState(false)
 
   // Reencontra o rig sozinho se a página acabou de recarregar por causa do
   // "Preparar" — sem isto, o professor precisaria clicar em "Conectar" de
@@ -133,6 +134,20 @@ export function PainelDeTestesFisicos({
     }
   }
 
+  const rodarComHistorico = async () => {
+    setErro(undefined)
+    setRodandoHistorico(true)
+    try {
+      const resultado = await rodarChamadaComHistorico(rig, repositorio, config, setProgresso)
+      setResultados((antes) => [...(antes ?? []), resultado])
+    } catch (e) {
+      setErro((e as Error).message)
+    } finally {
+      setRodandoHistorico(false)
+      setProgresso(undefined)
+    }
+  }
+
   return (
     <Painel
       titulo="Testes físicos com o rig"
@@ -162,7 +177,7 @@ export function PainelDeTestesFisicos({
         </button>
       )}
 
-      {(rodando || rodandoAvancado) && progresso && <p className="vazio">{progresso}</p>}
+      {(rodando || rodandoAvancado || rodandoHistorico) && progresso && <p className="vazio">{progresso}</p>}
 
       {/* O cenário avançado é uma seção à parte — depende de uma chamada
           aberta, e as outras quatro não. */}
@@ -180,8 +195,17 @@ export function PainelDeTestesFisicos({
       )}
 
       {situacaoDaTurma === 'pronta' && conectado && leitorId === 'dongle' && (
-        <button disabled={rodandoAvancado} onClick={() => void rodarAvancado()}>
+        <button disabled={rodandoAvancado || rodandoHistorico} onClick={() => void rodarAvancado()}>
           {rodandoAvancado ? 'Rodando...' : 'Rodar cenário avançado (dois crachás juntos)'}
+        </button>
+      )}
+
+      {/* A aula de 22/09 em miniatura: ids ocupados e um sal antigo antes
+          dos crachás. É o único cenário que confere a base, e não só o
+          leitor — o defeito daquele dia estava depois da leitura. */}
+      {situacaoDaTurma === 'pronta' && conectado && leitorId === 'dongle' && (
+        <button disabled={rodandoAvancado || rodandoHistorico} onClick={() => void rodarComHistorico()}>
+          {rodandoHistorico ? 'Rodando...' : 'Rodar chamada com histórico (22/09)'}
         </button>
       )}
 

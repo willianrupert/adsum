@@ -13,6 +13,7 @@ import type { LeitorDeCracha } from '../portas/LeitorDeCracha.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
 import { modoDev } from '../ambiente/preferencias.ts'
 import { registrar } from '../ambiente/diario.ts'
+import { chamadaViva } from '../ambiente/chamadaViva.ts'
 
 export interface OpcaoDeLeitor {
   id: string
@@ -117,6 +118,11 @@ export function abrirBase(): Promise<Base> {
 export async function fecharChamadaDeAntes(repositorio: Repositorio): Promise<void> {
   const aberta = await repositorio.sessaoAberta()
   if (!aberta) return
+  // Recarregar a mesma janela não é fechar o app. Ver `chamadaViva`.
+  if (chamadaViva()) {
+    registrar('chamada_mantida_ao_recarregar', { aberta_em: aberta.abertaEm })
+    return
+  }
   await repositorio.encerrarSessao()
   registrar('chamada_fechada_ao_abrir', { aberta_em: aberta.abertaEm })
 }

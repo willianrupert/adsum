@@ -1,4 +1,5 @@
 import { registerSW } from 'virtual:pwa-register'
+import { chamadaViva } from './ambiente/chamadaViva.ts'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './estilo.css'
@@ -16,8 +17,15 @@ const atualizar = registerSW({
   onRegisteredSW(_url, registro) {
     if (registro) setInterval(() => void registro.update(), 60 * 60 * 1000)
   },
+  // Com chamada aberta, a versão nova espera: recarregar no meio da fila é
+  // perder o crachá que estava chegando, e a aula não é hora de atualizar.
+  // Confere de novo a cada 30 s e entra assim que a chamada terminar.
   onNeedRefresh() {
-    void atualizar(true)
+    const entrarQuandoPuder = () => {
+      if (chamadaViva()) setTimeout(entrarQuandoPuder, 30_000)
+      else void atualizar(true)
+    }
+    entrarQuandoPuder()
   },
 })
 

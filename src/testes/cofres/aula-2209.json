@@ -1,0 +1,3308 @@
+{
+ "origem": "Gerado por scripts/anonimizar_cofre.py a partir de um cofre real. Nenhum nome, matrícula, hash ou sal é o original.",
+ "config": {
+  "salHex": "06e7980ac910e139bd52430095d1cab8",
+  "instalacaoId": "web-8c56",
+  "criadoEm": "2026-09-17T14:20:56.206Z"
+ },
+ "vinculos": [
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:21:36.110Z",
+   "uidHash": "99d6b21a2b9cb3e5",
+   "nome": "Aluno 049",
+   "matricula": "2026000049"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:41:46.954Z",
+   "uidHash": "a59d9efe1f304d15",
+   "nome": "Aluno 001",
+   "matricula": "2026000001"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:41:59.031Z",
+   "uidHash": "f7c39b4a45e76723",
+   "nome": "Aluno 002",
+   "matricula": "2026000002"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:53:33.084Z",
+   "uidHash": "6b57444748de3d0b",
+   "nome": "Aluno 050",
+   "matricula": "2026000050"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:23:33.351Z",
+   "uidHash": "42d357d4a6ac3c0a",
+   "nome": "Aluno 050",
+   "matricula": "2026000050"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:23:49.197Z",
+   "uidHash": "b1995c79efa4daa6",
+   "nome": "Aluno 051",
+   "matricula": "2026000051"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:42:31.460Z",
+   "uidHash": "25d26ce07908bbf3",
+   "nome": "Aluno 004",
+   "matricula": "2026000004"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:56:54.478Z",
+   "uidHash": "cc140eeaf92ed56f",
+   "nome": "Aluno 052",
+   "matricula": "2026000052"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:24:07.114Z",
+   "uidHash": "8d0bdb4ad44c9bcf",
+   "nome": "Aluno 052",
+   "matricula": "2026000052"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:42:49.635Z",
+   "uidHash": "ba18340d49d60a45",
+   "nome": "Aluno 005",
+   "matricula": "2026000005"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:56:00.721Z",
+   "uidHash": "d98c5522b9b10b05",
+   "nome": "Aluno 053",
+   "matricula": "2026000053"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:24:18.886Z",
+   "uidHash": "0b42019a04842b5b",
+   "nome": "Aluno 053",
+   "matricula": "2026000053"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T13:01:09.450Z",
+   "uidHash": "094376292bfe2605",
+   "nome": "Aluno 054",
+   "matricula": "2026000054"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:43:03.243Z",
+   "uidHash": "36999ff424ebc007",
+   "nome": "Aluno 006",
+   "matricula": "2026000006"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:54:56.308Z",
+   "uidHash": "4d76f39ecab08963",
+   "nome": "Aluno 055",
+   "matricula": "2026000055"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:24:32.356Z",
+   "uidHash": "0dde3d1c9e624b13",
+   "nome": "Aluno 055",
+   "matricula": "2026000055"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:43:07.361Z",
+   "uidHash": "c80858a6d3bf133b",
+   "nome": "Aluno 007",
+   "matricula": "2026000007"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:43:20.588Z",
+   "uidHash": "83bc9bf7afca38b0",
+   "nome": "Aluno 008",
+   "matricula": "2026000008"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:43:26.222Z",
+   "uidHash": "f744e6f63b46d9e5",
+   "nome": "Aluno 009",
+   "matricula": "2026000009"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T19:34:21.257Z",
+   "uidHash": "ee6944b65fb6c4c6",
+   "nome": "Aluno 010",
+   "matricula": "2026000010"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:57:56.054Z",
+   "uidHash": "4b088911b883a269",
+   "nome": "Aluno 056",
+   "matricula": "2026000056"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:24:54.951Z",
+   "uidHash": "72b958e45a44e138",
+   "nome": "Aluno 057",
+   "matricula": "2026000057"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T13:00:41.029Z",
+   "uidHash": "43483d22d9fd99e5",
+   "nome": "Aluno 057",
+   "matricula": "2026000057"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:25:07.491Z",
+   "uidHash": "aa1437ffaedaaa0b",
+   "nome": "Aluno 058",
+   "matricula": "2026000058"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:25:17.761Z",
+   "uidHash": "9d3b7fad9412cb29",
+   "nome": "Aluno 059",
+   "matricula": "2026000059"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:56:35.130Z",
+   "uidHash": "66bd9329ea8d9ef2",
+   "nome": "Aluno 059",
+   "matricula": "2026000059"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:43:50.697Z",
+   "uidHash": "20ae954b15caddd4",
+   "nome": "Aluno 013",
+   "matricula": "2026000013"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:21:47.244Z",
+   "uidHash": "0fb5d41dcc26a1fc",
+   "nome": "Aluno 060",
+   "matricula": "2026000060"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:53:11.685Z",
+   "uidHash": "b36d966b42abcc2f",
+   "nome": "Aluno 060",
+   "matricula": "2026000060"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:25:36.018Z",
+   "uidHash": "b704d2ce48abb713",
+   "nome": "Aluno 061",
+   "matricula": "2026000061"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:56:46.191Z",
+   "uidHash": "642e41f98b4bb57e",
+   "nome": "Aluno 061",
+   "matricula": "2026000061"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:52:42.192Z",
+   "uidHash": "07cb8f86247a2ec0",
+   "nome": "Aluno 062",
+   "matricula": "2026000062"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:25:48.740Z",
+   "uidHash": "d153b1722e088658",
+   "nome": "Aluno 062",
+   "matricula": "2026000062"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:25:57.103Z",
+   "uidHash": "32060e1271de079d",
+   "nome": "Aluno 063",
+   "matricula": "2026000063"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:52:23.944Z",
+   "uidHash": "0d36a00027a073da",
+   "nome": "Aluno 063",
+   "matricula": "2026000063"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:58:40.255Z",
+   "uidHash": "f81e78fd8d45de68",
+   "nome": "Aluno 064",
+   "matricula": "2026000064"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:26:11.733Z",
+   "uidHash": "19c5afbfa5163f88",
+   "nome": "Aluno 064",
+   "matricula": "2026000064"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:44:20.950Z",
+   "uidHash": "b303bb1bd6494611",
+   "nome": "Aluno 017",
+   "matricula": "2026000017"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:44:35.053Z",
+   "uidHash": "232f25d4fac19a51",
+   "nome": "Aluno 019",
+   "matricula": "2026000019"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:55:42.471Z",
+   "uidHash": "dbe35dbaecdcf1ee",
+   "nome": "Aluno 066",
+   "matricula": "2026000066"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:26:33.265Z",
+   "uidHash": "f9596e717c771889",
+   "nome": "Aluno 066",
+   "matricula": "2026000066"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T19:35:50.799Z",
+   "uidHash": "603dde1f54e6c908",
+   "nome": "Aluno 020",
+   "matricula": "2026000020"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:44:52.276Z",
+   "uidHash": "251e5bb21746222c",
+   "nome": "Aluno 021",
+   "matricula": "2026000021"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:45:01.803Z",
+   "uidHash": "8d80eec583a0ee05",
+   "nome": "Aluno 022",
+   "matricula": "2026000022"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:58:03.616Z",
+   "uidHash": "37e671aa326bc581",
+   "nome": "Aluno 067",
+   "matricula": "2026000067"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:56:25.841Z",
+   "uidHash": "2b52069201668e99",
+   "nome": "Aluno 068",
+   "matricula": "2026000068"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:45:26.929Z",
+   "uidHash": "962766195ae1c667",
+   "nome": "Aluno 024",
+   "matricula": "2026000024"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:57:14.322Z",
+   "uidHash": "56f0d55c659ff698",
+   "nome": "Aluno 070",
+   "matricula": "2026000070"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:27:17.604Z",
+   "uidHash": "0d461707d800d748",
+   "nome": "Aluno 073",
+   "matricula": "2026000073"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:53:05.404Z",
+   "uidHash": "5e5f46c54331e85a",
+   "nome": "Aluno 073",
+   "matricula": "2026000073"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:45:35.810Z",
+   "uidHash": "3833f0f27c235c5d",
+   "nome": "Aluno 025",
+   "matricula": "2026000025"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:45:44.491Z",
+   "uidHash": "20694d69c8ab9e85",
+   "nome": "Aluno 026",
+   "matricula": "2026000026"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:27:27.796Z",
+   "uidHash": "7f4e6aeccc329c27",
+   "nome": "Aluno 074",
+   "matricula": "2026000074"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:54:34.164Z",
+   "uidHash": "fa1c0b111f6af974",
+   "nome": "Aluno 074",
+   "matricula": "2026000074"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:27:37.761Z",
+   "uidHash": "fc2242b8f8ccd19f",
+   "nome": "Aluno 075",
+   "matricula": "2026000075"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:54:48.306Z",
+   "uidHash": "a924c7338511a736",
+   "nome": "Aluno 076",
+   "matricula": "2026000076"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:27:47.114Z",
+   "uidHash": "c2d78a43606562c4",
+   "nome": "Aluno 076",
+   "matricula": "2026000076"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:45:58.567Z",
+   "uidHash": "90d0ef97139cf89c",
+   "nome": "Aluno 027",
+   "matricula": "2026000027"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:28:02.085Z",
+   "uidHash": "983b046178170af8",
+   "nome": "Aluno 077",
+   "matricula": "2026000077"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:56:11.689Z",
+   "uidHash": "549516504feabc51",
+   "nome": "Aluno 077",
+   "matricula": "2026000077"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:46:07.864Z",
+   "uidHash": "402a917ea3aeae70",
+   "nome": "Aluno 028",
+   "matricula": "2026000028"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T19:37:39.595Z",
+   "uidHash": "4bd99a57e224b1a2",
+   "nome": "Aluno 028",
+   "matricula": "2026000029"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:46:34.801Z",
+   "uidHash": "82217bb09f14a364",
+   "nome": "Aluno 030",
+   "matricula": "2026000030"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-15T17:46:44.345Z",
+   "uidHash": "2cc99556a86a3b07",
+   "nome": "Aluno 031",
+   "matricula": "2026000031"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T13:00:20.290Z",
+   "uidHash": "5e7bafff591c38b4",
+   "nome": "Aluno 078",
+   "matricula": "2026000078"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:28:14.846Z",
+   "uidHash": "2917a7c3e42048d4",
+   "nome": "Aluno 078",
+   "matricula": "2026000078"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:56:18.983Z",
+   "uidHash": "2eb19f415a187f40",
+   "nome": "Aluno 079",
+   "matricula": "2026000079"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:28:22.700Z",
+   "uidHash": "afb460f400020b92",
+   "nome": "Aluno 079",
+   "matricula": "2026000079"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:28:32.061Z",
+   "uidHash": "7bd6db34f47e6184",
+   "nome": "Aluno 080",
+   "matricula": "2026000080"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:59:59.394Z",
+   "uidHash": "06dd9188b6d60f93",
+   "nome": "Aluno 080",
+   "matricula": "2026000080"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:52:34.437Z",
+   "uidHash": "2f9b62bd4c800270",
+   "nome": "Aluno 081",
+   "matricula": "2026000081"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:54:16.360Z",
+   "uidHash": "2420c5715d5b1b9c",
+   "nome": "Aluno 082",
+   "matricula": "2026000082"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:28:57.753Z",
+   "uidHash": "aeb21afdde64cb1f",
+   "nome": "Aluno 082",
+   "matricula": "2026000082"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:55:13.250Z",
+   "uidHash": "6ba2e9accf390de5",
+   "nome": "Aluno 083",
+   "matricula": "2026000083"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T19:34:09.242Z",
+   "uidHash": "e52963763210f40f",
+   "nome": "Aluno 035",
+   "matricula": "2026000035"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:29:15.003Z",
+   "uidHash": "39073fd238be04f0",
+   "nome": "Aluno 084",
+   "matricula": "2026000084"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T13:00:54.048Z",
+   "uidHash": "f7547136d18fde7f",
+   "nome": "Aluno 084",
+   "matricula": "2026000084"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:29:24.015Z",
+   "uidHash": "63bf055b43adb620",
+   "nome": "Aluno 085",
+   "matricula": "2026000085"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:55:04.250Z",
+   "uidHash": "1f14a67b3f35df4f",
+   "nome": "Aluno 085",
+   "matricula": "2026000085"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:29:35.832Z",
+   "uidHash": "99c706a5c4d195d5",
+   "nome": "Aluno 086",
+   "matricula": "2026000086"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:55:52.157Z",
+   "uidHash": "4be0fb706ff3e72d",
+   "nome": "Aluno 086",
+   "matricula": "2026000086"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:54:05.676Z",
+   "uidHash": "4e9f11e4f3cdfb5d",
+   "nome": "Aluno 087",
+   "matricula": "2026000087"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:55:24.210Z",
+   "uidHash": "d12f4294b9c9b819",
+   "nome": "Aluno 088",
+   "matricula": "2026000088"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:29:55.991Z",
+   "uidHash": "c0ecf528fd7c8049",
+   "nome": "Aluno 088",
+   "matricula": "2026000088"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:53:46.077Z",
+   "uidHash": "6650f25b0192ae5a",
+   "nome": "Aluno 089",
+   "matricula": "2026000089"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:30:09.138Z",
+   "uidHash": "8d11b51e3f362ab2",
+   "nome": "Aluno 089",
+   "matricula": "2026000089"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:30:15.816Z",
+   "uidHash": "0f4030d390bdf6cb",
+   "nome": "Aluno 090",
+   "matricula": "2026000090"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:53:51.316Z",
+   "uidHash": "262c94360970de16",
+   "nome": "Aluno 090",
+   "matricula": "2026000090"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:59:01.534Z",
+   "uidHash": "66f149ba29bd7017",
+   "nome": "Aluno 091",
+   "matricula": "2026000091"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:30:22.818Z",
+   "uidHash": "ee2c52cc5bd78a6b",
+   "nome": "Aluno 091",
+   "matricula": "2026000091"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:30:32.005Z",
+   "uidHash": "eb5e283e9d4e480c",
+   "nome": "Aluno 092",
+   "matricula": "2026000092"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:54:27.064Z",
+   "uidHash": "e8c82be9bc86e7f4",
+   "nome": "Aluno 093",
+   "matricula": "2026000093"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:30:49.512Z",
+   "uidHash": "5569e3a624bb8312",
+   "nome": "Aluno 094",
+   "matricula": "2026000094"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:53:59.368Z",
+   "uidHash": "84557a12388c24ad",
+   "nome": "Aluno 094",
+   "matricula": "2026000094"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:31:01.002Z",
+   "uidHash": "94f983c4635ae260",
+   "nome": "Aluno 095",
+   "matricula": "2026000095"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:54:41.150Z",
+   "uidHash": "ec73d5fbcfd2811d",
+   "nome": "Aluno 095",
+   "matricula": "2026000095"
+  },
+  {
+   "papel": "professor",
+   "criadoEm": "2026-09-17T14:21:56.062Z",
+   "uidHash": "3abb2ac08db02b3e",
+   "nome": "Professor 041"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T13:00:07.450Z",
+   "uidHash": "515d3abbb2628124",
+   "nome": "Aluno 099",
+   "matricula": "2026000099"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:31:22.110Z",
+   "uidHash": "85fcefec16244427",
+   "nome": "Aluno 099",
+   "matricula": "2026000099"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:31:40.724Z",
+   "uidHash": "5477b39bf00b9d90",
+   "nome": "Aluno 101",
+   "matricula": "2026000101"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:55:32.485Z",
+   "uidHash": "a9dc4e23ccf5494c",
+   "nome": "Aluno 101",
+   "matricula": "2026000101"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:31:56.057Z",
+   "uidHash": "702fffe8bb05907c",
+   "nome": "Aluno 102",
+   "matricula": "2026000102"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:57:02.025Z",
+   "uidHash": "4606830621c71aba",
+   "nome": "Aluno 103",
+   "matricula": "2026000103"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:32:20.248Z",
+   "uidHash": "49709551a11cc4cb",
+   "nome": "Aluno 104",
+   "matricula": "2026000104"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-22T12:53:20.274Z",
+   "uidHash": "cefd44092df47134",
+   "nome": "Aluno 104",
+   "matricula": "2026000104"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T19:33:59.679Z",
+   "uidHash": "411e50182ab0f90a",
+   "nome": "Aluno 047",
+   "matricula": "2026000047"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:21:30.387Z",
+   "uidHash": "4f4317a15b5a22dc",
+   "nome": "Aluno 105",
+   "matricula": "2026000105"
+  },
+  {
+   "papel": "aluno",
+   "criadoEm": "2026-09-17T14:13:08.169Z",
+   "uidHash": "6f6c6e2f64ccef38",
+   "nome": "Aluno 105",
+   "matricula": "2026000105"
+  }
+ ],
+ "grade": [
+  {
+   "uidHashProfessor": "3abb2ac08db02b3e",
+   "dia": 2,
+   "inicio": "08:00",
+   "fim": "09:50",
+   "turma": "2026.2 - TESTE02 - TURMA B",
+   "id": 1
+  },
+  {
+   "uidHashProfessor": "3abb2ac08db02b3e",
+   "dia": 2,
+   "inicio": "13:00",
+   "fim": "14:50",
+   "turma": "2026.2 - TESTE01 - TURMA A",
+   "id": 2
+  },
+  {
+   "uidHashProfessor": "3abb2ac08db02b3e",
+   "dia": 4,
+   "inicio": "10:00",
+   "fim": "11:50",
+   "turma": "2026.2 - TESTE02 - TURMA B",
+   "id": 3
+  },
+  {
+   "uidHashProfessor": "3abb2ac08db02b3e",
+   "dia": 4,
+   "inicio": "15:00",
+   "fim": "16:50",
+   "turma": "2026.2 - TESTE01 - TURMA A",
+   "id": 4
+  }
+ ],
+ "turmas": {
+  "2026.2 - TESTE01 - TURMA A": [
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000001",
+    "matricula": "2026000001",
+    "nome": "Aluno 001",
+    "nomeCompleto": "ALUNO 001 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000002",
+    "matricula": "2026000002",
+    "nome": "Aluno 002",
+    "nomeCompleto": "ALUNO 002 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000003",
+    "matricula": "2026000003",
+    "nome": "Aluno 003",
+    "nomeCompleto": "ALUNO 003 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000004",
+    "matricula": "2026000004",
+    "nome": "Aluno 004",
+    "nomeCompleto": "ALUNO 004 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000005",
+    "matricula": "2026000005",
+    "nome": "Aluno 005",
+    "nomeCompleto": "ALUNO 005 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000006",
+    "matricula": "2026000006",
+    "nome": "Aluno 006",
+    "nomeCompleto": "ALUNO 006 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000007",
+    "matricula": "2026000007",
+    "nome": "Aluno 007",
+    "nomeCompleto": "ALUNO 007 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000008",
+    "matricula": "2026000008",
+    "nome": "Aluno 008",
+    "nomeCompleto": "ALUNO 008 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000009",
+    "matricula": "2026000009",
+    "nome": "Aluno 009",
+    "nomeCompleto": "ALUNO 009 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000010",
+    "matricula": "2026000010",
+    "nome": "Aluno 010",
+    "nomeCompleto": "ALUNO 010 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000011",
+    "matricula": "2026000011",
+    "nome": "Aluno 011",
+    "nomeCompleto": "ALUNO 011 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000012",
+    "matricula": "2026000012",
+    "nome": "Aluno 012",
+    "nomeCompleto": "ALUNO 012 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000013",
+    "matricula": "2026000013",
+    "nome": "Aluno 013",
+    "nomeCompleto": "ALUNO 013 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000014",
+    "matricula": "2026000014",
+    "nome": "Aluno 014",
+    "nomeCompleto": "ALUNO 014 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000015",
+    "matricula": "2026000015",
+    "nome": "Aluno 015",
+    "nomeCompleto": "ALUNO 015 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000016",
+    "matricula": "2026000016",
+    "nome": "Aluno 016",
+    "nomeCompleto": "ALUNO 016 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000017",
+    "matricula": "2026000017",
+    "nome": "Aluno 017",
+    "nomeCompleto": "ALUNO 017 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000018",
+    "matricula": "2026000018",
+    "nome": "Aluno 018",
+    "nomeCompleto": "ALUNO 018 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000019",
+    "matricula": "2026000019",
+    "nome": "Aluno 019",
+    "nomeCompleto": "ALUNO 019 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000020",
+    "matricula": "2026000020",
+    "nome": "Aluno 020",
+    "nomeCompleto": "ALUNO 020 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000021",
+    "matricula": "2026000021",
+    "nome": "Aluno 021",
+    "nomeCompleto": "ALUNO 021 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000022",
+    "matricula": "2026000022",
+    "nome": "Aluno 022",
+    "nomeCompleto": "ALUNO 022 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000023",
+    "matricula": "2026000023",
+    "nome": "Aluno 023",
+    "nomeCompleto": "ALUNO 023 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000024",
+    "matricula": "2026000024",
+    "nome": "Aluno 024",
+    "nomeCompleto": "ALUNO 024 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000025",
+    "matricula": "2026000025",
+    "nome": "Aluno 025",
+    "nomeCompleto": "ALUNO 025 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000026",
+    "matricula": "2026000026",
+    "nome": "Aluno 026",
+    "nomeCompleto": "ALUNO 026 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000027",
+    "matricula": "2026000027",
+    "nome": "Aluno 027",
+    "nomeCompleto": "ALUNO 027 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000028",
+    "matricula": "2026000028",
+    "nome": "Aluno 028",
+    "nomeCompleto": "ALUNO 028 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000029",
+    "matricula": "2026000029",
+    "nome": "Aluno 028",
+    "nomeCompleto": "ALUNO 029 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000030",
+    "matricula": "2026000030",
+    "nome": "Aluno 030",
+    "nomeCompleto": "ALUNO 030 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000031",
+    "matricula": "2026000031",
+    "nome": "Aluno 031",
+    "nomeCompleto": "ALUNO 031 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000032",
+    "matricula": "2026000032",
+    "nome": "Aluno 032",
+    "nomeCompleto": "ALUNO 032 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000033",
+    "matricula": "2026000033",
+    "nome": "Aluno 033",
+    "nomeCompleto": "ALUNO 033 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "9999000100",
+    "matricula": "",
+    "nome": "Professor 034",
+    "nomeCompleto": "PROFESSOR 034 TESTE",
+    "papel": "professor"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000035",
+    "matricula": "2026000035",
+    "nome": "Aluno 035",
+    "nomeCompleto": "ALUNO 035 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000036",
+    "matricula": "2026000036",
+    "nome": "Aluno 036",
+    "nomeCompleto": "ALUNO 036 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000037",
+    "matricula": "2026000037",
+    "nome": "Aluno 037",
+    "nomeCompleto": "ALUNO 037 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000038",
+    "matricula": "2026000038",
+    "nome": "Aluno 038",
+    "nomeCompleto": "ALUNO 038 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "9999000101",
+    "matricula": "",
+    "nome": "Professor 039",
+    "nomeCompleto": "PROFESSOR 039 TESTE",
+    "papel": "professor"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000040",
+    "matricula": "2026000040",
+    "nome": "Aluno 040",
+    "nomeCompleto": "ALUNO 040 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "9999000102",
+    "matricula": "",
+    "nome": "Professor 041",
+    "nomeCompleto": "PROFESSOR 041 TESTE",
+    "papel": "professor"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000042",
+    "matricula": "2026000042",
+    "nome": "Aluno 042",
+    "nomeCompleto": "ALUNO 042 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000043",
+    "matricula": "2026000043",
+    "nome": "Aluno 043",
+    "nomeCompleto": "ALUNO 043 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000044",
+    "matricula": "2026000044",
+    "nome": "Aluno 044",
+    "nomeCompleto": "ALUNO 044 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000045",
+    "matricula": "2026000045",
+    "nome": "Aluno 045",
+    "nomeCompleto": "ALUNO 045 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000046",
+    "matricula": "2026000046",
+    "nome": "Aluno 046",
+    "nomeCompleto": "ALUNO 046 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000047",
+    "matricula": "2026000047",
+    "nome": "Aluno 047",
+    "nomeCompleto": "ALUNO 047 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "chave": "2026000048",
+    "matricula": "2026000048",
+    "nome": "Aluno 048",
+    "nomeCompleto": "ALUNO 048 TESTE",
+    "papel": "aluno"
+   }
+  ],
+  "2026.2 - TESTE02 - TURMA B": [
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000049",
+    "matricula": "2026000049",
+    "nome": "Aluno 049",
+    "nomeCompleto": "ALUNO 049 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000050",
+    "matricula": "2026000050",
+    "nome": "Aluno 050",
+    "nomeCompleto": "ALUNO 050 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000051",
+    "matricula": "2026000051",
+    "nome": "Aluno 051",
+    "nomeCompleto": "ALUNO 051 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000052",
+    "matricula": "2026000052",
+    "nome": "Aluno 052",
+    "nomeCompleto": "ALUNO 052 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000053",
+    "matricula": "2026000053",
+    "nome": "Aluno 053",
+    "nomeCompleto": "ALUNO 053 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000054",
+    "matricula": "2026000054",
+    "nome": "Aluno 054",
+    "nomeCompleto": "ALUNO 054 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000055",
+    "matricula": "2026000055",
+    "nome": "Aluno 055",
+    "nomeCompleto": "ALUNO 055 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000056",
+    "matricula": "2026000056",
+    "nome": "Aluno 056",
+    "nomeCompleto": "ALUNO 056 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000057",
+    "matricula": "2026000057",
+    "nome": "Aluno 057",
+    "nomeCompleto": "ALUNO 057 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000058",
+    "matricula": "2026000058",
+    "nome": "Aluno 058",
+    "nomeCompleto": "ALUNO 058 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000059",
+    "matricula": "2026000059",
+    "nome": "Aluno 059",
+    "nomeCompleto": "ALUNO 059 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000060",
+    "matricula": "2026000060",
+    "nome": "Aluno 060",
+    "nomeCompleto": "ALUNO 060 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000061",
+    "matricula": "2026000061",
+    "nome": "Aluno 061",
+    "nomeCompleto": "ALUNO 061 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000062",
+    "matricula": "2026000062",
+    "nome": "Aluno 062",
+    "nomeCompleto": "ALUNO 062 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000063",
+    "matricula": "2026000063",
+    "nome": "Aluno 063",
+    "nomeCompleto": "ALUNO 063 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000064",
+    "matricula": "2026000064",
+    "nome": "Aluno 064",
+    "nomeCompleto": "ALUNO 064 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000065",
+    "matricula": "2026000065",
+    "nome": "Aluno 065",
+    "nomeCompleto": "ALUNO 065 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000066",
+    "matricula": "2026000066",
+    "nome": "Aluno 066",
+    "nomeCompleto": "ALUNO 066 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000067",
+    "matricula": "2026000067",
+    "nome": "Aluno 067",
+    "nomeCompleto": "ALUNO 067 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000068",
+    "matricula": "2026000068",
+    "nome": "Aluno 068",
+    "nomeCompleto": "ALUNO 068 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000069",
+    "matricula": "2026000069",
+    "nome": "Aluno 069",
+    "nomeCompleto": "ALUNO 069 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000070",
+    "matricula": "2026000070",
+    "nome": "Aluno 070",
+    "nomeCompleto": "ALUNO 070 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000071",
+    "matricula": "2026000071",
+    "nome": "Aluno 071",
+    "nomeCompleto": "ALUNO 071 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000072",
+    "matricula": "2026000072",
+    "nome": "Aluno 072",
+    "nomeCompleto": "ALUNO 072 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000073",
+    "matricula": "2026000073",
+    "nome": "Aluno 073",
+    "nomeCompleto": "ALUNO 073 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000074",
+    "matricula": "2026000074",
+    "nome": "Aluno 074",
+    "nomeCompleto": "ALUNO 074 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000075",
+    "matricula": "2026000075",
+    "nome": "Aluno 075",
+    "nomeCompleto": "ALUNO 075 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000076",
+    "matricula": "2026000076",
+    "nome": "Aluno 076",
+    "nomeCompleto": "ALUNO 076 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000077",
+    "matricula": "2026000077",
+    "nome": "Aluno 077",
+    "nomeCompleto": "ALUNO 077 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000078",
+    "matricula": "2026000078",
+    "nome": "Aluno 078",
+    "nomeCompleto": "ALUNO 078 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000079",
+    "matricula": "2026000079",
+    "nome": "Aluno 079",
+    "nomeCompleto": "ALUNO 079 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000080",
+    "matricula": "2026000080",
+    "nome": "Aluno 080",
+    "nomeCompleto": "ALUNO 080 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000081",
+    "matricula": "2026000081",
+    "nome": "Aluno 081",
+    "nomeCompleto": "ALUNO 081 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000082",
+    "matricula": "2026000082",
+    "nome": "Aluno 082",
+    "nomeCompleto": "ALUNO 082 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000083",
+    "matricula": "2026000083",
+    "nome": "Aluno 083",
+    "nomeCompleto": "ALUNO 083 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000084",
+    "matricula": "2026000084",
+    "nome": "Aluno 084",
+    "nomeCompleto": "ALUNO 084 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000085",
+    "matricula": "2026000085",
+    "nome": "Aluno 085",
+    "nomeCompleto": "ALUNO 085 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000086",
+    "matricula": "2026000086",
+    "nome": "Aluno 086",
+    "nomeCompleto": "ALUNO 086 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000087",
+    "matricula": "2026000087",
+    "nome": "Aluno 087",
+    "nomeCompleto": "ALUNO 087 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000088",
+    "matricula": "2026000088",
+    "nome": "Aluno 088",
+    "nomeCompleto": "ALUNO 088 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000089",
+    "matricula": "2026000089",
+    "nome": "Aluno 089",
+    "nomeCompleto": "ALUNO 089 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000090",
+    "matricula": "2026000090",
+    "nome": "Aluno 090",
+    "nomeCompleto": "ALUNO 090 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000091",
+    "matricula": "2026000091",
+    "nome": "Aluno 091",
+    "nomeCompleto": "ALUNO 091 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000092",
+    "matricula": "2026000092",
+    "nome": "Aluno 092",
+    "nomeCompleto": "ALUNO 092 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000093",
+    "matricula": "2026000093",
+    "nome": "Aluno 093",
+    "nomeCompleto": "ALUNO 093 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "9999000101",
+    "matricula": "",
+    "nome": "Professor 039",
+    "nomeCompleto": "PROFESSOR 039 TESTE",
+    "papel": "professor"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000094",
+    "matricula": "2026000094",
+    "nome": "Aluno 094",
+    "nomeCompleto": "ALUNO 094 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000095",
+    "matricula": "2026000095",
+    "nome": "Aluno 095",
+    "nomeCompleto": "ALUNO 095 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "9999000103",
+    "matricula": "",
+    "nome": "Professor 096",
+    "nomeCompleto": "PROFESSOR 096 TESTE",
+    "papel": "professor"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "9999000102",
+    "matricula": "",
+    "nome": "Professor 041",
+    "nomeCompleto": "PROFESSOR 041 TESTE",
+    "papel": "professor"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000097",
+    "matricula": "2026000097",
+    "nome": "Aluno 097",
+    "nomeCompleto": "ALUNO 097 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000098",
+    "matricula": "2026000098",
+    "nome": "Aluno 098",
+    "nomeCompleto": "ALUNO 098 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000099",
+    "matricula": "2026000099",
+    "nome": "Aluno 099",
+    "nomeCompleto": "ALUNO 099 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "9999000104",
+    "matricula": "",
+    "nome": "Professor 100",
+    "nomeCompleto": "PROFESSOR 100 TESTE",
+    "papel": "professor"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000101",
+    "matricula": "2026000101",
+    "nome": "Aluno 101",
+    "nomeCompleto": "ALUNO 101 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000102",
+    "matricula": "2026000102",
+    "nome": "Aluno 102",
+    "nomeCompleto": "ALUNO 102 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000103",
+    "matricula": "2026000103",
+    "nome": "Aluno 103",
+    "nomeCompleto": "ALUNO 103 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000104",
+    "matricula": "2026000104",
+    "nome": "Aluno 104",
+    "nomeCompleto": "ALUNO 104 TESTE",
+    "papel": "aluno"
+   },
+   {
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "chave": "2026000105",
+    "matricula": "2026000105",
+    "nome": "Aluno 105",
+    "nomeCompleto": "ALUNO 105 TESTE",
+    "papel": "aluno"
+   }
+  ]
+ },
+ "registros": {
+  "2026.2 - TESTE01 - TURMA A": [
+   {
+    "eventoId": "web-7c3f-20260915-0001",
+    "quando": "2026-09-15T13:20:13.973Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 039",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "33b102ab7cecf590"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0002",
+    "quando": "2026-09-15T13:21:46.188Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "d877f695d9d9da6d"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0003",
+    "quando": "2026-09-15T13:23:13.451Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "d877f695d9d9da6d"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0004",
+    "quando": "2026-09-15T13:23:23.689Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "33b102ab7cecf590"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0005",
+    "quando": "2026-09-15T17:41:46.954Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000001",
+    "nome": "Aluno 001",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "a59d9efe1f304d15"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0006",
+    "quando": "2026-09-15T17:41:59.031Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000002",
+    "nome": "Aluno 002",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "f7c39b4a45e76723"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0007",
+    "quando": "2026-09-15T17:42:31.460Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000004",
+    "nome": "Aluno 004",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "25d26ce07908bbf3"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0008",
+    "quando": "2026-09-15T17:42:49.635Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000005",
+    "nome": "Aluno 005",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "ba18340d49d60a45"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0009",
+    "quando": "2026-09-15T17:43:03.243Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000006",
+    "nome": "Aluno 006",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "36999ff424ebc007"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0010",
+    "quando": "2026-09-15T17:43:07.361Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000007",
+    "nome": "Aluno 007",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "c80858a6d3bf133b"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0011",
+    "quando": "2026-09-15T17:43:20.588Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000008",
+    "nome": "Aluno 008",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "83bc9bf7afca38b0"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0012",
+    "quando": "2026-09-15T17:43:26.222Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000009",
+    "nome": "Aluno 009",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "f744e6f63b46d9e5"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0013",
+    "quando": "2026-09-15T17:43:50.697Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000013",
+    "nome": "Aluno 013",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "20ae954b15caddd4"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0014",
+    "quando": "2026-09-15T17:44:20.950Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000017",
+    "nome": "Aluno 017",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "b303bb1bd6494611"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0015",
+    "quando": "2026-09-15T17:44:35.053Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000019",
+    "nome": "Aluno 019",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "232f25d4fac19a51"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0016",
+    "quando": "2026-09-15T17:44:46.989Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000020",
+    "nome": "Aluno 020",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "603dde1f54e6c908"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0017",
+    "quando": "2026-09-15T17:44:52.276Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000021",
+    "nome": "Aluno 021",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "251e5bb21746222c"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0018",
+    "quando": "2026-09-15T17:45:01.803Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000022",
+    "nome": "Aluno 022",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "8d80eec583a0ee05"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0019",
+    "quando": "2026-09-15T17:45:26.929Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000024",
+    "nome": "Aluno 024",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "962766195ae1c667"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0020",
+    "quando": "2026-09-15T17:45:35.810Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000025",
+    "nome": "Aluno 025",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "3833f0f27c235c5d"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0021",
+    "quando": "2026-09-15T17:45:44.491Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000026",
+    "nome": "Aluno 026",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "20694d69c8ab9e85"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0022",
+    "quando": "2026-09-15T17:45:58.567Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000027",
+    "nome": "Aluno 027",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "90d0ef97139cf89c"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0023",
+    "quando": "2026-09-15T17:46:07.864Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000028",
+    "nome": "Aluno 028",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "402a917ea3aeae70"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0024",
+    "quando": "2026-09-15T17:46:34.801Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000030",
+    "nome": "Aluno 030",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "82217bb09f14a364"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0025",
+    "quando": "2026-09-15T17:46:44.345Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000031",
+    "nome": "Aluno 031",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "2cc99556a86a3b07"
+   },
+   {
+    "eventoId": "web-7c3f-20260915-0026",
+    "quando": "2026-09-15T18:10:52.444Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "33b102ab7cecf590"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0086",
+    "quando": "2026-09-17T19:32:25.242Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0028",
+    "quando": "2026-09-17T19:32:31.725Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0088",
+    "quando": "2026-09-17T19:32:46.277Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0030",
+    "quando": "2026-09-17T19:33:44.331Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000005",
+    "nome": "Aluno 005",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "ba18340d49d60a45"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0031",
+    "quando": "2026-09-17T19:33:49.901Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000019",
+    "nome": "Aluno 019",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "232f25d4fac19a51"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0032",
+    "quando": "2026-09-17T19:33:59.679Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000047",
+    "nome": "Aluno 047",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "411e50182ab0f90a"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0033",
+    "quando": "2026-09-17T19:34:09.242Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000035",
+    "nome": "Aluno 035",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "e52963763210f40f"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0034",
+    "quando": "2026-09-17T19:34:12.514Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000001",
+    "nome": "Aluno 001",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "a59d9efe1f304d15"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0035",
+    "quando": "2026-09-17T19:34:21.257Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000010",
+    "nome": "Aluno 010",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "ee6944b65fb6c4c6"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0035",
+    "quando": "2026-09-17T19:34:28.539Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000010",
+    "nome": "Aluno 010",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "ee6944b65fb6c4c6"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0035",
+    "quando": "2026-09-17T19:34:34.174Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000002",
+    "nome": "Aluno 002",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "f7c39b4a45e76723"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0035",
+    "quando": "2026-09-17T19:34:46.571Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000020",
+    "nome": "Aluno 020",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "603dde1f54e6c908"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0035",
+    "quando": "2026-09-17T19:35:31.039Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0094",
+    "quando": "2026-09-17T19:35:33.392Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0036",
+    "quando": "2026-09-17T19:35:37.050Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000020",
+    "nome": "Aluno 020",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "603dde1f54e6c908"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0036",
+    "quando": "2026-09-17T19:35:50.799Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000020",
+    "nome": "Aluno 020",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "603dde1f54e6c908"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0036",
+    "quando": "2026-09-17T19:36:29.318Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0095",
+    "quando": "2026-09-17T19:36:31.115Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0037",
+    "quando": "2026-09-17T19:36:33.355Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0096",
+    "quando": "2026-09-17T19:36:35.510Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0038",
+    "quando": "2026-09-17T19:37:39.595Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000029",
+    "nome": "Aluno 028",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "4bd99a57e224b1a2"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0038",
+    "quando": "2026-09-17T19:37:46.441Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0097",
+    "quando": "2026-09-17T19:38:11.349Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0039",
+    "quando": "2026-09-17T19:38:11.657Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "matricula": "2026000009",
+    "nome": "Aluno 009",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "f744e6f63b46d9e5"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0039",
+    "quando": "2026-09-17T19:38:14.470Z",
+    "turma": "2026.2 - TESTE01 - TURMA A",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   }
+  ],
+  "2026.2 - TESTE02 - TURMA B": [
+   {
+    "eventoId": "web-7c3f-20260917-0027",
+    "quando": "2026-09-17T14:09:24.956Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "d877f695d9d9da6d"
+   },
+   {
+    "eventoId": "web-7c3f-20260917-0028",
+    "quando": "2026-09-17T14:12:28.807Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "d877f695d9d9da6d"
+   },
+   {
+    "eventoId": "web-7c3f-20260917-0029",
+    "quando": "2026-09-17T14:12:36.082Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "d877f695d9d9da6d"
+   },
+   {
+    "eventoId": "web-7c3f-20260917-0030",
+    "quando": "2026-09-17T14:13:08.169Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000105",
+    "nome": "Aluno 105",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "6f6c6e2f64ccef38"
+   },
+   {
+    "eventoId": "web-7c3f-20260917-0031",
+    "quando": "2026-09-17T14:16:02.184Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "d877f695d9d9da6d"
+   },
+   {
+    "eventoId": "web-7c3f-20260917-0032",
+    "quando": "2026-09-17T14:16:08.899Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "d877f695d9d9da6d"
+   },
+   {
+    "eventoId": "web-7c3f-20260917-0033",
+    "quando": "2026-09-17T14:17:15.047Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "d877f695d9d9da6d"
+   },
+   {
+    "eventoId": "web-7c3f-20260917-0034",
+    "quando": "2026-09-17T14:17:35.871Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "d877f695d9d9da6d"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0035",
+    "quando": "2026-09-17T14:21:15.703Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "d877f695d9d9da6d"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0036",
+    "quando": "2026-09-17T14:21:30.387Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000105",
+    "nome": "Aluno 105",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "4f4317a15b5a22dc"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0037",
+    "quando": "2026-09-17T14:21:36.110Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000049",
+    "nome": "Aluno 049",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "99d6b21a2b9cb3e5"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0038",
+    "quando": "2026-09-17T14:21:47.244Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000060",
+    "nome": "Aluno 060",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "0fb5d41dcc26a1fc"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0039",
+    "quando": "2026-09-17T14:21:56.062Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0040",
+    "quando": "2026-09-17T14:23:33.351Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000050",
+    "nome": "Aluno 050",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "42d357d4a6ac3c0a"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0041",
+    "quando": "2026-09-17T14:23:49.197Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000051",
+    "nome": "Aluno 051",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "b1995c79efa4daa6"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0042",
+    "quando": "2026-09-17T14:24:07.114Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000052",
+    "nome": "Aluno 052",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "8d0bdb4ad44c9bcf"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0043",
+    "quando": "2026-09-17T14:24:18.886Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000053",
+    "nome": "Aluno 053",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "0b42019a04842b5b"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0044",
+    "quando": "2026-09-17T14:24:32.356Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000055",
+    "nome": "Aluno 055",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "0dde3d1c9e624b13"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0045",
+    "quando": "2026-09-17T14:24:54.951Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000057",
+    "nome": "Aluno 057",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "72b958e45a44e138"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0046",
+    "quando": "2026-09-17T14:25:07.491Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000058",
+    "nome": "Aluno 058",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "aa1437ffaedaaa0b"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0047",
+    "quando": "2026-09-17T14:25:17.761Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000059",
+    "nome": "Aluno 059",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "9d3b7fad9412cb29"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0048",
+    "quando": "2026-09-17T14:25:36.018Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000061",
+    "nome": "Aluno 061",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "b704d2ce48abb713"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0049",
+    "quando": "2026-09-17T14:25:48.740Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000062",
+    "nome": "Aluno 062",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "d153b1722e088658"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0050",
+    "quando": "2026-09-17T14:25:57.103Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000063",
+    "nome": "Aluno 063",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "32060e1271de079d"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0051",
+    "quando": "2026-09-17T14:26:11.733Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000064",
+    "nome": "Aluno 064",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "19c5afbfa5163f88"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0052",
+    "quando": "2026-09-17T14:26:33.265Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000066",
+    "nome": "Aluno 066",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "f9596e717c771889"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0053",
+    "quando": "2026-09-17T14:27:17.604Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000073",
+    "nome": "Aluno 073",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "0d461707d800d748"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0054",
+    "quando": "2026-09-17T14:27:27.796Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000074",
+    "nome": "Aluno 074",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "7f4e6aeccc329c27"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0055",
+    "quando": "2026-09-17T14:27:37.761Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000075",
+    "nome": "Aluno 075",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "fc2242b8f8ccd19f"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0056",
+    "quando": "2026-09-17T14:27:47.114Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000076",
+    "nome": "Aluno 076",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "c2d78a43606562c4"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0057",
+    "quando": "2026-09-17T14:28:02.085Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000077",
+    "nome": "Aluno 077",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "983b046178170af8"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0058",
+    "quando": "2026-09-17T14:28:14.846Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000078",
+    "nome": "Aluno 078",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "2917a7c3e42048d4"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0059",
+    "quando": "2026-09-17T14:28:22.700Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000079",
+    "nome": "Aluno 079",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "afb460f400020b92"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0060",
+    "quando": "2026-09-17T14:28:32.061Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000080",
+    "nome": "Aluno 080",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "7bd6db34f47e6184"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0061",
+    "quando": "2026-09-17T14:28:57.753Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000082",
+    "nome": "Aluno 082",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "aeb21afdde64cb1f"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0062",
+    "quando": "2026-09-17T14:29:15.003Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000084",
+    "nome": "Aluno 084",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "39073fd238be04f0"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0063",
+    "quando": "2026-09-17T14:29:24.015Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000085",
+    "nome": "Aluno 085",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "63bf055b43adb620"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0064",
+    "quando": "2026-09-17T14:29:35.832Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000086",
+    "nome": "Aluno 086",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "99c706a5c4d195d5"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0065",
+    "quando": "2026-09-17T14:29:55.991Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000088",
+    "nome": "Aluno 088",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "c0ecf528fd7c8049"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0066",
+    "quando": "2026-09-17T14:30:09.138Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000089",
+    "nome": "Aluno 089",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "8d11b51e3f362ab2"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0067",
+    "quando": "2026-09-17T14:30:15.816Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000090",
+    "nome": "Aluno 090",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "0f4030d390bdf6cb"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0068",
+    "quando": "2026-09-17T14:30:22.818Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000091",
+    "nome": "Aluno 091",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "ee2c52cc5bd78a6b"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0069",
+    "quando": "2026-09-17T14:30:32.005Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000092",
+    "nome": "Aluno 092",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "eb5e283e9d4e480c"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0070",
+    "quando": "2026-09-17T14:30:49.512Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000094",
+    "nome": "Aluno 094",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "5569e3a624bb8312"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0071",
+    "quando": "2026-09-17T14:31:01.002Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000095",
+    "nome": "Aluno 095",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "94f983c4635ae260"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0072",
+    "quando": "2026-09-17T14:31:22.110Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000099",
+    "nome": "Aluno 099",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "85fcefec16244427"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0073",
+    "quando": "2026-09-17T14:31:40.724Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000101",
+    "nome": "Aluno 101",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "5477b39bf00b9d90"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0074",
+    "quando": "2026-09-17T14:31:56.057Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000102",
+    "nome": "Aluno 102",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "702fffe8bb05907c"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0075",
+    "quando": "2026-09-17T14:32:20.248Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000104",
+    "nome": "Aluno 104",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "49709551a11cc4cb"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0076",
+    "quando": "2026-09-17T14:32:24.834Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "d877f695d9d9da6d"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0078",
+    "quando": "2026-09-17T14:54:43.524Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0079",
+    "quando": "2026-09-17T14:55:00.524Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0080",
+    "quando": "2026-09-17T12:00:00.000Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000069",
+    "nome": "Aluno 069",
+    "origem": "manual",
+    "resultado": "removido",
+    "uidHash": "4173c73028f702eb"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0081",
+    "quando": "2026-09-17T12:00:00.000Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000069",
+    "nome": "Aluno 069",
+    "origem": "manual",
+    "resultado": "ok",
+    "uidHash": "729dc131b23f6d2e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0082",
+    "quando": "2026-09-17T12:00:00.000Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000069",
+    "nome": "Aluno 069",
+    "origem": "manual",
+    "resultado": "removido",
+    "uidHash": "94eb9fcc24adef09"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0083",
+    "quando": "2026-09-17T12:00:00.000Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000069",
+    "nome": "Aluno 069",
+    "origem": "manual",
+    "resultado": "ok",
+    "uidHash": "7660b9ad66b13921"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0084",
+    "quando": "2026-09-17T14:57:47.816Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0059",
+    "quando": "2026-09-17T14:58:03.024Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0085",
+    "quando": "2026-09-17T15:00:52.733Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260917-0060",
+    "quando": "2026-09-17T15:01:10.996Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0098",
+    "quando": "2026-09-22T12:50:09.064Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0061",
+    "quando": "2026-09-22T12:50:17.547Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0100",
+    "quando": "2026-09-22T12:50:38.336Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0063",
+    "quando": "2026-09-22T12:50:59.700Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000105",
+    "nome": "Aluno 105",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "6f6c6e2f64ccef38"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0064",
+    "quando": "2026-09-22T12:52:23.944Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000063",
+    "nome": "Aluno 063",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "0d36a00027a073da"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0065",
+    "quando": "2026-09-22T12:52:34.437Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000081",
+    "nome": "Aluno 081",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "2f9b62bd4c800270"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0066",
+    "quando": "2026-09-22T12:52:42.192Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000062",
+    "nome": "Aluno 062",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "07cb8f86247a2ec0"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0067",
+    "quando": "2026-09-22T12:53:05.404Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000073",
+    "nome": "Aluno 073",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "5e5f46c54331e85a"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0068",
+    "quando": "2026-09-22T12:53:11.685Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000060",
+    "nome": "Aluno 060",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "b36d966b42abcc2f"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0069",
+    "quando": "2026-09-22T12:53:20.274Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000104",
+    "nome": "Aluno 104",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "cefd44092df47134"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0070",
+    "quando": "2026-09-22T12:53:33.084Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000050",
+    "nome": "Aluno 050",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "6b57444748de3d0b"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0071",
+    "quando": "2026-09-22T12:53:46.077Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000089",
+    "nome": "Aluno 089",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "6650f25b0192ae5a"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0072",
+    "quando": "2026-09-22T12:53:51.316Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000090",
+    "nome": "Aluno 090",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "262c94360970de16"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0073",
+    "quando": "2026-09-22T12:53:59.368Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000094",
+    "nome": "Aluno 094",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "84557a12388c24ad"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0074",
+    "quando": "2026-09-22T12:54:05.676Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000087",
+    "nome": "Aluno 087",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "4e9f11e4f3cdfb5d"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0075",
+    "quando": "2026-09-22T12:54:16.360Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000082",
+    "nome": "Aluno 082",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "2420c5715d5b1b9c"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0076",
+    "quando": "2026-09-22T12:54:27.064Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000093",
+    "nome": "Aluno 093",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "e8c82be9bc86e7f4"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0077",
+    "quando": "2026-09-22T12:54:34.164Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000074",
+    "nome": "Aluno 074",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "fa1c0b111f6af974"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0078",
+    "quando": "2026-09-22T12:54:41.150Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000095",
+    "nome": "Aluno 095",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "ec73d5fbcfd2811d"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0079",
+    "quando": "2026-09-22T12:54:48.306Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000076",
+    "nome": "Aluno 076",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "a924c7338511a736"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0080",
+    "quando": "2026-09-22T12:54:56.308Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000055",
+    "nome": "Aluno 055",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "4d76f39ecab08963"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0081",
+    "quando": "2026-09-22T12:55:04.250Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000085",
+    "nome": "Aluno 085",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "1f14a67b3f35df4f"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0082",
+    "quando": "2026-09-22T12:55:13.250Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000083",
+    "nome": "Aluno 083",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "6ba2e9accf390de5"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0083",
+    "quando": "2026-09-22T12:55:24.210Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000088",
+    "nome": "Aluno 088",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "d12f4294b9c9b819"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0084",
+    "quando": "2026-09-22T12:55:32.485Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000101",
+    "nome": "Aluno 101",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "a9dc4e23ccf5494c"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0085",
+    "quando": "2026-09-22T12:55:42.471Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000066",
+    "nome": "Aluno 066",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "dbe35dbaecdcf1ee"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0086",
+    "quando": "2026-09-22T12:55:52.157Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000086",
+    "nome": "Aluno 086",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "4be0fb706ff3e72d"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0087",
+    "quando": "2026-09-22T12:56:00.721Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000053",
+    "nome": "Aluno 053",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "d98c5522b9b10b05"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0088",
+    "quando": "2026-09-22T12:56:11.689Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000077",
+    "nome": "Aluno 077",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "549516504feabc51"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0089",
+    "quando": "2026-09-22T12:56:18.983Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000079",
+    "nome": "Aluno 079",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "2eb19f415a187f40"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0090",
+    "quando": "2026-09-22T12:56:25.841Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000068",
+    "nome": "Aluno 068",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "2b52069201668e99"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0091",
+    "quando": "2026-09-22T12:56:35.130Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000059",
+    "nome": "Aluno 059",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "66bd9329ea8d9ef2"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0092",
+    "quando": "2026-09-22T12:56:46.191Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000061",
+    "nome": "Aluno 061",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "642e41f98b4bb57e"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0093",
+    "quando": "2026-09-22T12:56:54.478Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000052",
+    "nome": "Aluno 052",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "cc140eeaf92ed56f"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0094",
+    "quando": "2026-09-22T12:57:02.025Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000103",
+    "nome": "Aluno 103",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "4606830621c71aba"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0095",
+    "quando": "2026-09-22T12:57:14.322Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000070",
+    "nome": "Aluno 070",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "56f0d55c659ff698"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0096",
+    "quando": "2026-09-22T12:57:56.054Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000056",
+    "nome": "Aluno 056",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "4b088911b883a269"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0097",
+    "quando": "2026-09-22T12:58:03.616Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000067",
+    "nome": "Aluno 067",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "37e671aa326bc581"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0098",
+    "quando": "2026-09-22T12:58:13.459Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000075",
+    "nome": "Aluno 075",
+    "origem": "manual",
+    "resultado": "ok",
+    "uidHash": "344d4b9fca19d7c0"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0098",
+    "quando": "2026-09-22T12:58:16.414Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000075",
+    "nome": "Aluno 075",
+    "origem": "manual",
+    "resultado": "ok",
+    "uidHash": "470a02dc4680e717"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0098",
+    "quando": "2026-09-22T12:58:18.025Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000075",
+    "nome": "Aluno 075",
+    "origem": "manual",
+    "resultado": "ok",
+    "uidHash": "fc4c96f9bf703324"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0098",
+    "quando": "2026-09-22T12:58:18.573Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000075",
+    "nome": "Aluno 075",
+    "origem": "manual",
+    "resultado": "ok",
+    "uidHash": "4966285b6b1e3833"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0098",
+    "quando": "2026-09-22T12:58:18.758Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000075",
+    "nome": "Aluno 075",
+    "origem": "manual",
+    "resultado": "ok",
+    "uidHash": "64ed81281c431f31"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0098",
+    "quando": "2026-09-22T12:58:19.251Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000075",
+    "nome": "Aluno 075",
+    "origem": "manual",
+    "resultado": "ok",
+    "uidHash": "292cbbefeaed0290"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0098",
+    "quando": "2026-09-22T12:58:19.411Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000075",
+    "nome": "Aluno 075",
+    "origem": "manual",
+    "resultado": "ok",
+    "uidHash": "8856de4a2a399239"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0098",
+    "quando": "2026-09-22T12:58:40.255Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000064",
+    "nome": "Aluno 064",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "f81e78fd8d45de68"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0098",
+    "quando": "2026-09-22T12:58:44.110Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000064",
+    "nome": "Aluno 064",
+    "origem": "manual",
+    "resultado": "ok",
+    "uidHash": "fa1bd22cb194c3d6"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0098",
+    "quando": "2026-09-22T12:59:01.534Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000091",
+    "nome": "Aluno 091",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "66f149ba29bd7017"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0098",
+    "quando": "2026-09-22T12:59:17.073Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0136",
+    "quando": "2026-09-22T12:59:27.340Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0099",
+    "quando": "2026-09-22T12:59:59.394Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000080",
+    "nome": "Aluno 080",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "06dd9188b6d60f93"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0100",
+    "quando": "2026-09-22T13:00:07.450Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000099",
+    "nome": "Aluno 099",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "515d3abbb2628124"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0100",
+    "quando": "2026-09-22T13:00:20.290Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000078",
+    "nome": "Aluno 078",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "5e7bafff591c38b4"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0100",
+    "quando": "2026-09-22T13:00:41.029Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000057",
+    "nome": "Aluno 057",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "43483d22d9fd99e5"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0100",
+    "quando": "2026-09-22T13:00:54.048Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000084",
+    "nome": "Aluno 084",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "f7547136d18fde7f"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0100",
+    "quando": "2026-09-22T13:01:09.450Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "matricula": "2026000054",
+    "nome": "Aluno 054",
+    "origem": "cracha",
+    "resultado": "ok",
+    "uidHash": "094376292bfe2605"
+   },
+   {
+    "eventoId": "web-8c56-20260922-0100",
+    "quando": "2026-09-22T13:01:23.301Z",
+    "turma": "2026.2 - TESTE02 - TURMA B",
+    "nome": "Professor 041",
+    "origem": "professor",
+    "resultado": "ok",
+    "uidHash": "3abb2ac08db02b3e"
+   }
+  ]
+ }
+}

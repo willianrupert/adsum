@@ -6,6 +6,7 @@
 // operacional — quem chama confere `leitorId === 'dongle'` antes de rodar.
 
 import {
+  avaliarChamadaComHistorico,
   avaliarCenario,
   avaliarDoisCrachasJuntos,
   avaliarPerdaDeFoco,
@@ -18,6 +19,10 @@ import {
 import { ehQueRecusa, type LeitorDeCracha } from '../portas/LeitorDeCracha.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
 import type { RigDeCracha } from './rigDeCracha.ts'
+import { calcularUidHash, sortearSal, uidHashSintetico } from '../nucleo/hash.ts'
+import { decimalParaBytes } from '../nucleo/digitacao.ts'
+import { proximoEventoId } from '../nucleo/sessao.ts'
+import type { Config } from '../nucleo/tipos.ts'
 
 const QUANTIDADE = 12
 
@@ -203,5 +208,94 @@ export async function rodarCenarioAvancado(
     }
     const gapMs = new Date(maisRecente.quando).getTime() - new Date(anterior.quando).getTime()
     return avaliarDoisCrachasJuntos({ gapMs, resultados: [anterior.resultado, maisRecente.resultado] })
+  })
+}
+
+/**
+ * A chamada com histórico, pelo rig de verdade. Quem chama já garantiu a
+ * turma de teste com a chamada aberta (`turmaDeTeste.ts`).
+ *
+ * Antes de disparar, a base fica como estava a do professor em 22/09/2026:
+ * - os ids em que os próximos crachás cairiam já estão tomados, por eventos
+ *   de teste com `origem: 'professor'` (não contam presença);
+ * - um crachá a mais foi cadastrado num sal que não é o atual, guardado só
+ *   no chaveiro.
+ *
+ * Os eventos semeados ficam no log da turma de teste para sempre: o log não
+ * apaga nada, e isto é turma de teste de nome inconfundível. É o preço de
+ * testar na base de verdade.
+ */
+export async function rodarChamadaComHistorico(
+  rig: RigDeCracha,
+  repositorio: Repositorio,
+  config: Config,
+  aoProgredir: (mensagem: string) => void,
+  dependencias: DependenciasDaSuite = {},
+): Promise<ResultadoCenario> {
+  const nome = 'Chamada com histórico (22/09)'
+  const esperar = dependencias.esperar ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)))
+  return cenario(nome, async () => {
+    const matriculados = await repositorio.listarMatriculados(TURMA_DE_TESTE)
+    const disparos = Math.min(QUANTIDADE, matriculados.length)
+    if (disparos === 0) throw new Error('a turma de teste está vazia; prepare-a antes')
+
+    aoProgredir('Ocupando os ids em que os próximos crachás cairiam...')
+    const agora = new Date()
+    const base = await repositorio.contarEventos()
+    for (let k = 1; k <= disparos; k++) {
+      await repositorio.acrescentarEvento({
+        eventoId: proximoEventoId(config.instalacaoId, agora, base + disparos + k),
+        quando: agora.toISOString(),
+        turma: TURMA_DE_TESTE,
+        nome: '🧪 id ocupado de propósito',
+        origem: 'professor',
+        resultado: 'ok',
+        uidHash: uidHashSintetico(),
+      })
+    }
+
+    aoProgredir('Cadastrando um crachá num sal antigo...')
+    const salAntigo = sortearSal()
+    await repositorio.lembrarSais([salAntigo])
+    const uidAntigo = uidCurtoDeTeste(QUANTIDADE + 1)
+    const hashAntigo = await calcularUidHash(salAntigo, decimalParaBytes(uidAntigo)!)
+    const dono = matriculados[0]
+    await repositorio.gravarVinculo({
+      uidHash: hashAntigo,
+      papel: 'aluno',
+      nome: dono.nome,
+      matricula: dono.matricula,
+      criadoEm: agora.toISOString(),
+    })
+
+    const hashes = new Set([hashAntigo])
+    for (let i = 0; i < disparos; i++) {
+      hashes.add(await calcularUidHash(config.salHex, decimalParaBytes(uidCurtoDeTeste(i))!))
+    }
+    const antes = new Set((await repositorio.listarEventos({ turma: TURMA_DE_TESTE })).map((e) => e.eventoId))
+
+    aoProgredir(`Disparando ${disparos + 1} crachás pelo rig...`)
+    for (let i = 0; i < disparos; i++) {
+      await rig.definir(i, uidCurtoDeTeste(i), 60)
+      await rig.disparar(i)
+      // Acima de INTERVALO_MINIMO_MS com folga: o que se mede aqui é a
+      // gravação, não a regra dos dois crachás juntos.
+      await esperar(900)
+    }
+    await rig.definir(0, uidAntigo, 300)
+    await rig.disparar(0)
+    await esperar(1500)
+
+    const novos = (await repositorio.listarEventos({ turma: TURMA_DE_TESTE })).filter(
+      (e) => !antes.has(e.eventoId) && hashes.has(e.uidHash),
+    )
+    const ids = novos.map((e) => e.eventoId)
+    return avaliarChamadaComHistorico({
+      disparados: disparos + 1,
+      gravados: novos.length,
+      idsRepetidos: ids.length - new Set(ids).size,
+      antigoReconhecidoComo: novos.find((e) => e.uidHash === hashAntigo)?.nome || undefined,
+      esperadoParaOAntigo: dono.nome,
+    })
   })
 }

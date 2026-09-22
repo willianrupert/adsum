@@ -39,8 +39,23 @@ export class RepositorioDexie implements Repositorio {
     this.#banco.close()
   }
 
+  /**
+   * Em cache, relida só depois de uma escrita. `identificarCracha` lê o
+   * chaveiro de sais daqui a cada crachá — e não de uma cópia em memória na
+   * tela, que foi o que divergiu da base em 17/09/2026 —, então esta leitura
+   * está no caminho de cada leitura e não pode ir ao IndexedDB toda vez.
+   */
+  #config?: Config
+
   async lerConfig(): Promise<Config> {
-    return await this.#garantirConfig()
+    this.#config ??= await this.#garantirConfig()
+    return { ...this.#config }
+  }
+
+  async #mudarConfig(mudanca: Partial<Config>): Promise<void> {
+    this.#config = undefined
+    await this.#banco.config.update(ID_DA_CONFIG, mudanca)
+    this.#config = undefined
   }
 
   /**
@@ -51,7 +66,7 @@ export class RepositorioDexie implements Repositorio {
    */
   async marcarExportado(turma: string, ate: string): Promise<void> {
     const atual = await this.lerConfig()
-    await this.#banco.config.update(ID_DA_CONFIG, {
+    await this.#mudarConfig({
       exportado: { ...atual.exportado, [turma]: ate },
     })
   }
@@ -62,7 +77,7 @@ export class RepositorioDexie implements Repositorio {
     const novo = salHex.trim().toLowerCase()
     const atual = await this.lerConfig()
     if (novo === atual.salHex) return
-    await this.#banco.config.update(ID_DA_CONFIG, {
+    await this.#mudarConfig({
       salHex: novo,
       saisAnteriores: saisConhecidos(atual).filter((s) => s !== novo),
     })
@@ -73,11 +88,11 @@ export class RepositorioDexie implements Repositorio {
     const antes = atual.saisAnteriores ?? []
     const depois = saisConhecidos({ salHex: atual.salHex, saisAnteriores: [...antes, ...sais] }).slice(1)
     if (depois.length === antes.length) return
-    await this.#banco.config.update(ID_DA_CONFIG, { saisAnteriores: depois })
+    await this.#mudarConfig({ saisAnteriores: depois })
   }
 
   async definirInstalacaoId(id: string): Promise<void> {
-    await this.#banco.config.update(ID_DA_CONFIG, { instalacaoId: id })
+    await this.#mudarConfig({ instalacaoId: id })
   }
 
   async vinculoPorHash(uidHash: UidHash): Promise<Vinculo | undefined> {
@@ -255,6 +270,7 @@ export class RepositorioDexie implements Repositorio {
   async apagarTudo(): Promise<void> {
     await this.#banco.delete()
     this.#banco = criarBanco(this.nome.split(' · ')[1] ?? NOME_DO_BANCO)
+    this.#config = undefined
     await this.abrir()
   }
 

@@ -49,8 +49,18 @@ function uidDecimalParaBytes(texto: string): Uint8Array {
   return Uint8Array.from([(valor >>> 24) & 0xff, (valor >>> 16) & 0xff, (valor >>> 8) & 0xff, valor & 0xff])
 }
 
-function tecla(caractere: string) {
-  window.dispatchEvent(new KeyboardEvent('keydown', { key: caractere, bubbles: true, cancelable: true }))
+/**
+ * Uma tecla com o carimbo de hora de quando o dongle a mandou, não de quando
+ * o JavaScript conseguiu despachá-la. É o que o navegador de verdade faz — o
+ * `timeStamp` vem da chegada da tecla — e é nele que `LeitorTeclado` confia
+ * desde 15/09/2026. Sem isto, no jsdom o carimbo é a hora do despacho, e uma
+ * pausa qualquer da máquina de teste (coleta de lixo depois de um arquivo
+ * pesado) parecia digitação humana: o teste media a máquina, não o app.
+ */
+function tecla(caractere: string, carimbo?: number) {
+  const evento = new KeyboardEvent('keydown', { key: caractere, bubbles: true, cancelable: true })
+  if (carimbo !== undefined) Object.defineProperty(evento, 'timeStamp', { value: carimbo })
+  window.dispatchEvent(evento)
 }
 
 function esperar(ms: number): Promise<void> {
@@ -60,11 +70,16 @@ function esperar(ms: number): Promise<void> {
 /** Mesmo ritmo medido do dongle real: 16-32 ms entre teclas. */
 async function digitarRajada(texto: string) {
   const deltas = [16, 32, 17, 17, 17]
+  let carimbo = performance.now()
   for (let i = 0; i < texto.length; i++) {
-    if (i > 0) await esperar(deltas[(i - 1) % deltas.length])
-    tecla(texto[i])
+    if (i > 0) {
+      const delta = deltas[(i - 1) % deltas.length]
+      await esperar(delta)
+      carimbo += delta
+    }
+    tecla(texto[i], carimbo)
   }
-  tecla('Enter')
+  tecla('Enter', carimbo + 17)
 }
 
 let repositorio: RepositorioDexie

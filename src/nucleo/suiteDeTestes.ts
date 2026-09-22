@@ -164,3 +164,42 @@ export function avaliarDoisCrachasJuntos(dados: {
     : `${gap}, dentro da janela de 400 ms — mas o resultado esperado era "ok" seguido de "rapido_demais", e veio "${primeiro}" seguido de "${segundo}".`
   return { nome, aprovado, detalhe }
 }
+
+/**
+ * A chamada com histórico: o que a aula de 22/09/2026 tinha e a turma de
+ * teste limpa não tinha — ids do dia já ocupados exatamente onde os próximos
+ * crachás cairiam, e um crachá cadastrado num sal que já não é o atual.
+ *
+ * Passa só se **cada** crachá disparado virou um evento gravado, sem id
+ * repetido, e o crachá do sal antigo foi reconhecido pelo nome. É a primeira
+ * medida da suíte que olha a base, e não só o leitor: em 22/09 o leitor leu
+ * tudo, e o defeito estava depois.
+ */
+export function avaliarChamadaComHistorico(medida: {
+  disparados: number
+  gravados: number
+  idsRepetidos: number
+  antigoReconhecidoComo?: string
+  esperadoParaOAntigo: string
+}): ResultadoCenario {
+  const nome = 'Chamada com histórico (22/09)'
+  const problemas: string[] = []
+  if (medida.gravados !== medida.disparados) {
+    problemas.push(`${medida.gravados} de ${medida.disparados} crachás gravados`)
+  }
+  if (medida.idsRepetidos > 0) problemas.push(`${medida.idsRepetidos} evento_id repetido(s)`)
+  if (medida.antigoReconhecidoComo !== medida.esperadoParaOAntigo) {
+    problemas.push(
+      medida.antigoReconhecidoComo
+        ? `crachá do sal antigo lido como ${medida.antigoReconhecidoComo}`
+        : 'crachá do sal antigo não foi reconhecido',
+    )
+  }
+  return problemas.length === 0
+    ? {
+        nome,
+        aprovado: true,
+        detalhe: `${medida.gravados} de ${medida.disparados} gravados com ids ocupados no caminho, e o crachá do sal antigo reconhecido.`,
+      }
+    : { nome, aprovado: false, detalhe: problemas.join(' · ') }
+}

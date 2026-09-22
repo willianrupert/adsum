@@ -149,7 +149,7 @@ export function TelaDiagnostico() {
     return leitor.aoLer((leitura) => {
       void (async () => {
         const hex = uidParaHex(leitura.uid)
-        const { uidHash, vinculo } = await identificarCracha(repositorio, config, leitura.uid)
+        const { uidHash, vinculo } = await identificarCracha(repositorio, leitura.uid)
         setLeituras((antes) =>
           [
             {

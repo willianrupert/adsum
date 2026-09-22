@@ -27,6 +27,7 @@ import { criarPastaFalsa } from '../testes/pastaFalsa.ts'
 import { TelaAula } from './TelaAula.tsx'
 import { Fluxo } from './Fluxo.tsx'
 import { ContextoAdsum, fecharChamadaDeAntes } from './adsum.ts'
+import { marcarChamadaViva } from '../ambiente/chamadaViva.ts'
 import { calcularUidHash, idDoSal, saisConhecidos } from '../nucleo/hash.ts'
 import { hexParaUid } from '../nucleo/uid.ts'
 import { proximoEventoId } from '../nucleo/sessao.ts'
@@ -343,6 +344,20 @@ describe('uma chamada por turma por dia', () => {
     expect(screen.getByRole('status')).toHaveAttribute('aria-label', '0')
   })
 
+  it('recarregar a mesma janela não fecha a chamada; fechar a janela, sim', async () => {
+    const bancada = await montarBancada()
+    const sessao = { turma: TURMA, abertaEm: new Date().toISOString(), uidHashProfessor: 'professor' }
+    await bancada.repositorio.abrirSessao(sessao)
+
+    marcarChamadaViva(true) // a janela tinha chamada aberta e recarregou
+    await fecharChamadaDeAntes(bancada.repositorio)
+    expect(await bancada.repositorio.sessaoAberta()).toMatchObject(sessao)
+
+    marcarChamadaViva(false) // janela nova: o sessionStorage morreu com a antiga
+    await fecharChamadaDeAntes(bancada.repositorio)
+    expect(await bancada.repositorio.sessaoAberta()).toBeUndefined()
+  })
+
   it('abrir o app fecha a chamada que ficou aberta', async () => {
     const bancada = await montarBancada()
     await bancada.repositorio.abrirSessao({
@@ -367,7 +382,7 @@ describe('aluno cadastrado nunca se perde por troca de sal', () => {
     const depois = await repositorio.lerConfig()
     expect(depois.saisAnteriores).toContain(config.salHex)
 
-    const achado = await identificarCracha(repositorio, depois, CRACHA)
+    const achado = await identificarCracha(repositorio, CRACHA)
     expect(achado.vinculo?.nome).toBe('Maria')
     expect(achado.uidHash).toBe(uidHash)
     // Vínculo antigo ganha a impressão do sal na primeira leitura.
@@ -382,11 +397,10 @@ describe('aluno cadastrado nunca se perde por troca de sal', () => {
     const doVinculo = await calcularUidHash(config.salHex, CRACHA)
     await repositorio.gravarVinculo({ uidHash: doVinculo, papel: 'aluno', nome: 'Maria', criadoEm: '' })
     await repositorio.definirSal('00112233445566778899aabbccddeeff')
-    const atual = await repositorio.lerConfig()
 
     esquecerAuditoria()
     const { handle } = criarPastaFalsa()
-    await anotarUid(handle, () => identificarCracha(repositorio, atual, CRACHA).then((r) => r.uidHash), CRACHA, new Date(), 'Dongle USB')
+    await anotarUid(handle, () => identificarCracha(repositorio, CRACHA).then((r) => r.uidHash), CRACHA, new Date(), 'Dongle USB')
 
     const linha = (await ler(handle, CAMINHO_DA_AUDITORIA))!.trim().split('\n')[1]
     // É esta igualdade que refaz a base sem recadastro: uid_hex ao lado do
@@ -398,7 +412,7 @@ describe('aluno cadastrado nunca se perde por troca de sal', () => {
     const { repositorio } = await montarBancada()
     await repositorio.definirSal('00112233445566778899aabbccddeeff')
     const config = await repositorio.lerConfig()
-    const achado = await identificarCracha(repositorio, config, CRACHA)
+    const achado = await identificarCracha(repositorio, CRACHA)
     expect(achado.vinculo).toBeUndefined()
     expect(achado.uidHash).toBe(await calcularUidHash(config.salHex, CRACHA))
   })
