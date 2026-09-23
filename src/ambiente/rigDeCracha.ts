@@ -179,9 +179,9 @@ export class RigDeCracha {
    * O tempo limite acompanha a fila: cada aluno custa o tempo no ar mais o
    * intervalo, e o reset entre eles custa mais uns 150 ms.
    */
-  async fila(quantos: number, msNoAr: number, msEntre: number): Promise<string> {
-    const limite = quantos * (msNoAr + msEntre + 400) + 5000
-    return await this.enviar(`FILA ${quantos} ${msNoAr} ${msEntre}`, limite)
+  async fila(quantos: number, msNoAr: number, msEntre: number, msAntes = 0): Promise<string> {
+    const limite = quantos * (msNoAr + msEntre + 400) + msAntes + 5000
+    return await this.enviar(`FILA ${quantos} ${msNoAr} ${msEntre} ${msAntes}`, limite)
   }
 
   async digitacaoHumana(texto: string, msPorCaractere: number): Promise<void> {

@@ -237,13 +237,18 @@ export function avaliarFilaDeRadio(medida: {
   disparados: number
   gravados: number
   fantasmas: number
+  /** Média por crachá, do diário: onde o tempo foi parar. */
+  tempos?: { identificar: number; gravar: number; tela: number }
 }): ResultadoCenario {
   const nome = 'Fila pelo rádio (dongle de verdade)'
   const perdidos = medida.disparados - medida.gravados
   const problemas: string[] = []
   if (medida.fantasmas > 0) problemas.push(`${medida.fantasmas} leitura(s) fora da fila`)
   if (perdidos > 0) problemas.push(`${perdidos} de ${medida.disparados} não chegaram na base`)
+  const tempos = medida.tempos
+    ? ` Por crachá: ${medida.tempos.identificar} ms para identificar, ${medida.tempos.gravar} para gravar, ${medida.tempos.tela} para a tela.`
+    : ''
   return problemas.length === 0
-    ? { nome, aprovado: true, detalhe: `${medida.gravados} de ${medida.disparados} viraram presença.` }
-    : { nome, aprovado: false, detalhe: problemas.join(' · ') }
+    ? { nome, aprovado: true, detalhe: `${medida.gravados} de ${medida.disparados} viraram presença.${tempos}` }
+    : { nome, aprovado: false, detalhe: problemas.join(' · ') + '.' + tempos }
 }

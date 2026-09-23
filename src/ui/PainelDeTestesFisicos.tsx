@@ -140,6 +140,23 @@ export function PainelDeTestesFisicos({
     }
   }
 
+  /**
+   * A fila para **assistir**, não para medir: começa depois de alguns
+   * segundos, o bastante para fechar o Diagnóstico e ver os nomes entrando na
+   * chamada. Quem dispara é o ESP32, que não depende desta tela continuar
+   * aberta — fechar a folha desliga a porta serial, e a fila segue.
+   */
+  const rodarFilaParaAssistir = async () => {
+    setErro(undefined)
+    try {
+      await rig.fila(12, 900, 400, 6000)
+    } catch (e) {
+      // Fechar o Diagnóstico derruba a porta antes da resposta chegar: é o
+      // esperado neste modo, e não é erro que valha mostrar.
+      if (!(e as Error).message.includes('porta')) setErro((e as Error).message)
+    }
+  }
+
   const rodarFila = async () => {
     setErro(undefined)
     setRodandoFila(true)
@@ -227,6 +244,18 @@ export function PainelDeTestesFisicos({
         <button disabled={rodandoFila || rodandoAvancado || rodandoHistorico} onClick={() => void rodarFila()}>
           {rodandoFila ? 'Rodando...' : 'Rodar fila de 12 pelo rádio (emulador)'}
         </button>
+      )}
+
+      {situacaoDaTurma === 'pronta' && conectado && leitorId === 'dongle' && (
+        <>
+          <button disabled={rodandoFila || rodandoAvancado || rodandoHistorico} onClick={() => void rodarFilaParaAssistir()}>
+            Fila de 12 para assistir (começa em 6 s)
+          </button>
+          <p className="ferramentas__nota">
+            Clique, feche o Diagnóstico e olhe a chamada: os nomes entram sozinhos, um a cada 1,3 s.
+            O LED pisca depressa durante a contagem. Este modo não confere nada, só mostra.
+          </p>
+        </>
       )}
 
       {/* A aula de 22/09 em miniatura: ids ocupados e um sal antigo antes

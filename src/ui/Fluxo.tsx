@@ -284,7 +284,17 @@ export function Fluxo() {
   // Com pasta nada fica pendente: cada evento é gravado no ato.
   const porSalvar = pasta ? 0 : totalNaoSalvo(pendencias)
 
-  useEffect(() => leitor.aoMudarEstado((e) => setLendo(e === 'lendo')), [leitor])
+  // Perguntar o estado **antes** de ouvir, e a cada troca de leitor: o
+  // `useState` acima só roda na primeira montagem, e um leitor novo já pode
+  // ter começado a ler antes deste efeito assinar. Achado ao vivo em
+  // 22/09/2026 trocando de adaptador no Diagnóstico: o app ficava preso em
+  // "o leitor caiu no meio da aula" com o dongle lendo normalmente, e o
+  // "Tentar de novo" não resolvia — `iniciar()` num leitor que já lê não
+  // muda estado, logo não avisa ninguém.
+  useEffect(() => {
+    setLendo(leitor.estado() === 'lendo')
+    return leitor.aoMudarEstado((e) => setLendo(e === 'lendo'))
+  }, [leitor])
 
   // Fechar a aba com aula por salvar é a forma mais fácil de perder trabalho:
   // um gesto de um segundo, sem confirmação, e a chamada some no prazo do
@@ -1046,7 +1056,11 @@ export function Fluxo() {
           também não. */}
       <div aria-hidden={folha ? true : undefined}>
       {rota === 'problema' && (
-        <TelaProblema aoAbrirAjustes={() => setFolha('ajustes')} sessao={sessao} />
+        <TelaProblema
+          aoAbrirAjustes={() => setFolha('ajustes')}
+          sessao={sessao}
+          aoTentar={() => setLendo(leitor.estado() === 'lendo')}
+        />
       )}
       {rota === 'pasta' && (
         <TelaPasta

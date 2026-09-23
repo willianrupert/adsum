@@ -21,6 +21,7 @@ import {
 import { ehQueRecusa, type LeitorDeCracha } from '../portas/LeitorDeCracha.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
 import type { RigDeCracha } from './rigDeCracha.ts'
+import { linhasDoDiario } from './diario.ts'
 import { calcularUidHash, sortearSal, uidHashSintetico } from '../nucleo/hash.ts'
 import { decimalParaBytes } from '../nucleo/digitacao.ts'
 import { proximoEventoId } from '../nucleo/sessao.ts'
@@ -365,6 +366,34 @@ export async function rodarFilaDeRadio(
       disparados: alunos,
       gravados: new Set(novos.filter((e) => hashes.has(e.uidHash)).map((e) => e.uidHash)).size,
       fantasmas: novos.filter((e) => !hashes.has(e.uidHash)).length,
+      // O que o app levou por crachá, do diário desta mesma rodada: é onde
+      // aparece uma aula ficando lenta, e de qual etapa é a culpa.
+      tempos: temposDoDiario(novos.length),
     })
   })
+}
+
+/**
+ * Os tempos por crachá das últimas leituras, lidos do diário
+ * (`ambiente/diario.ts`), que já mede identificar, gravar e redesenhar.
+ *
+ * Medir aqui de novo seria medir outra coisa: o diário marca o que o app
+ * levou **de verdade** em cada etapa, enquanto qualquer cronômetro daqui
+ * mediria o caminho inteiro, rádio incluído.
+ */
+function temposDoDiario(quantas: number): { identificar: number; gravar: number; tela: number } | undefined {
+  const linhas = linhasDoDiario()
+    .filter((l) => l.includes('| cracha |'))
+    .slice(-Math.max(quantas, 1))
+  if (linhas.length === 0) return undefined
+  const somar = (campo: string) =>
+    linhas.reduce((total, linha) => {
+      const achado = new RegExp(`${campo}=(\\d+)`).exec(linha)
+      return total + (achado ? Number(achado[1]) : 0)
+    }, 0)
+  return {
+    identificar: Math.round(somar('identificar_ms') / linhas.length),
+    gravar: Math.round(somar('gravar_ms') / linhas.length),
+    tela: Math.round(somar('tela_ms') / linhas.length),
+  }
 }

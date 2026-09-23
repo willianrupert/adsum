@@ -13,6 +13,7 @@ import { matriculadosDeTeste, TURMA_DE_TESTE, uidCurtoDeTeste } from '../nucleo/
 import type { Config } from '../nucleo/tipos.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
 
+/** O padrão: uma turma pequena, para os cenários do dia a dia da bancada. */
 const QUANTIDADE = 12
 const NOME_PROFESSOR_DE_TESTE = 'Professor de teste (Diagnóstico)'
 
@@ -52,7 +53,11 @@ async function garantirProfessorDeTeste(repositorio: Repositorio): Promise<strin
  * "recusar em vez de arriscar" vale a segunda conferência: entre checar e
  * chamar, o professor pode ter começado a aula dele.
  */
-export async function prepararTurmaDeTeste(repositorio: Repositorio, config: Config): Promise<void> {
+export async function prepararTurmaDeTeste(
+  repositorio: Repositorio,
+  config: Config,
+  quantos = QUANTIDADE,
+): Promise<void> {
   const sessao = await repositorio.sessaoAberta()
   if (sessao && sessao.turma !== TURMA_DE_TESTE) {
     throw new Error(
@@ -60,7 +65,7 @@ export async function prepararTurmaDeTeste(repositorio: Repositorio, config: Con
     )
   }
 
-  const matriculados = matriculadosDeTeste(QUANTIDADE)
+  const matriculados = matriculadosDeTeste(quantos)
   await repositorio.salvarTurma(TURMA_DE_TESTE, matriculados)
   // Sem isto, `decidirRota` (`nucleo/rota.ts`) manda pro cronograma antes de
   // deixar ver a chamada — turma sem grade nenhuma vem antes de sessão
@@ -70,7 +75,7 @@ export async function prepararTurmaDeTeste(repositorio: Repositorio, config: Con
   // cronograma de verdade oferece, aplicado sozinho.
   adiarHorario(TURMA_DE_TESTE)
 
-  for (let i = 0; i < QUANTIDADE; i++) {
+  for (let i = 0; i < quantos; i++) {
     const uid = decimalParaBytes(uidCurtoDeTeste(i))
     if (!uid) continue // não deveria acontecer — uidCurtoDeTeste é sempre numérico
     const uidHash = await calcularUidHash(config.salHex, uid)

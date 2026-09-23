@@ -533,3 +533,31 @@ describe('diário da chamada', () => {
     expect(linhasDoDiario().join('\n')).not.toContain(aluno.nome)
   })
 })
+
+// Achado ao vivo em 22/09/2026, testando o emulador: trocar de adaptador no
+// Diagnóstico prendia o app em "o leitor caiu no meio da aula", com o dongle
+// lendo normalmente, e o "Tentar de novo" não saía de lá.
+describe('leitor trocado não prende a tela de problema', () => {
+  beforeEach(() => window.localStorage.setItem('adsum.instalacao.dispensada', 'sim'))
+  afterEach(() => window.localStorage.clear())
+
+  it('leitor já lendo quando a tela monta não cai no problema', async () => {
+    const bancada = await montarBancada()
+    adiarHorario(TURMA)
+    await bancada.repositorio.salvarTurma(TURMA, [pessoa(0)])
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'aaaa000000000000',
+      papel: 'professor',
+      nome: 'Prof',
+      criadoEm: new Date().toISOString(),
+    })
+    const leitor = new LeitorTeclado()
+    await leitor.iniciar() // já lendo antes de qualquer tela existir
+
+    renderizarCom({ ...bancada, leitor } as unknown as Bancada, <Fluxo />)
+
+    expect(await screen.findByText(/Começar a chamada/)).toBeInTheDocument()
+    expect(screen.queryByText(/não está lendo/)).not.toBeInTheDocument()
+    await leitor.parar()
+  })
+})

@@ -21,8 +21,16 @@ import { useAdsum } from './adsum.ts'
 export function TelaProblema({
   aoAbrirAjustes,
   sessao,
+  aoTentar,
 }: {
   aoAbrirAjustes: () => void
+  /**
+   * Avisa quem chamou para reperguntar o estado do leitor depois da
+   * tentativa. Sem isto, um leitor que **já estava lendo** continuava preso
+   * aqui: `iniciar()` não muda estado nenhum, então nenhum aviso é emitido e
+   * a tela nunca sai (22/09/2026).
+   */
+  aoTentar?: () => void
   /**
    * A sessão que já estava aberta quando o leitor caiu.
    *
@@ -69,6 +77,7 @@ export function TelaProblema({
       .catch(() => {})
       .finally(() => {
         setTentando(false)
+        aoTentar?.()
         void leitor.diagnostico().then(setDiag)
       })
   }
