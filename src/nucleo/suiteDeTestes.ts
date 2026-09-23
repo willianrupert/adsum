@@ -239,6 +239,8 @@ export function avaliarFilaDeRadio(medida: {
   fantasmas: number
   /** Média por crachá, do diário: onde o tempo foi parar. */
   tempos?: { identificar: number; gravar: number; tela: number }
+  /** Presenças gravadas por minuto, do primeiro ao último crachá da fila. */
+  porMinuto?: number
 }): ResultadoCenario {
   const nome = 'Fila pelo rádio (dongle de verdade)'
   const perdidos = medida.disparados - medida.gravados
@@ -248,7 +250,8 @@ export function avaliarFilaDeRadio(medida: {
   const tempos = medida.tempos
     ? ` Por crachá: ${medida.tempos.identificar} ms para identificar, ${medida.tempos.gravar} para gravar, ${medida.tempos.tela} para a tela.`
     : ''
+  const ritmo = medida.porMinuto ? ` Ritmo: ${medida.porMinuto} por minuto.` : ''
   return problemas.length === 0
-    ? { nome, aprovado: true, detalhe: `${medida.gravados} de ${medida.disparados} viraram presença.${tempos}` }
-    : { nome, aprovado: false, detalhe: problemas.join(' · ') + '.' + tempos }
+    ? { nome, aprovado: true, detalhe: `${medida.gravados} de ${medida.disparados} viraram presença.${ritmo}${tempos}` }
+    : { nome, aprovado: false, detalhe: problemas.join(' · ') + '.' + ritmo + tempos }
 }

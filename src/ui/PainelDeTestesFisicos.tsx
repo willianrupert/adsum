@@ -19,6 +19,7 @@ import { semDono } from '../ambiente/diario.ts'
 import { useEffect, useState } from 'react'
 import { RigDeCracha } from '../ambiente/rigDeCracha.ts'
 import {
+  CADENCIA_PADRAO,
   cadastrarFilaDeRadio,
   rodarCenarioAvancado,
   rodarChamadaComHistorico,
@@ -26,7 +27,7 @@ import {
   rodarSuiteFisica,
 } from '../ambiente/suiteFisica.ts'
 import { prepararTurmaDeTeste, situacaoDaTurmaDeTeste, type SituacaoDaTurmaDeTeste } from '../ambiente/turmaDeTeste.ts'
-import type { ResultadoCenario } from '../nucleo/suiteDeTestes.ts'
+import { TURMA_DE_TESTE, type ResultadoCenario } from '../nucleo/suiteDeTestes.ts'
 import type { Config } from '../nucleo/tipos.ts'
 import type { LeitorDeCracha } from '../portas/LeitorDeCracha.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
@@ -59,6 +60,14 @@ export function PainelDeTestesFisicos({
   const [rodandoAvancado, setRodandoAvancado] = useState(false)
   const [rodandoHistorico, setRodandoHistorico] = useState(false)
   const [rodandoFila, setRodandoFila] = useState(false)
+  // A fila grande (300 a 1 s) mede quantos alunos por minuto o dongle
+  // aguenta. O tamanho da fila é o da turma de teste: aumentar a turma
+  // recarrega a página, como o "Preparar", para a chamada aberta conhecer
+  // os alunos novos em vez de perguntar de quem é cada crachá.
+  const [alunosNaTurma, setAlunosNaTurma] = useState(0)
+  const [alunosPedidos, setAlunosPedidos] = useState('')
+  const [msNoAr, setMsNoAr] = useState(String(CADENCIA_PADRAO.msNoAr))
+  const [msEntre, setMsEntre] = useState(String(CADENCIA_PADRAO.msEntre))
 
   // Reencontra o rig sozinho se a página acabou de recarregar por causa do
   // "Preparar" — sem isto, o professor precisaria clicar em "Conectar" de
@@ -85,9 +94,12 @@ export function PainelDeTestesFisicos({
   }, [rig])
 
   useEffect(() => {
-    semDono('situação da turma de teste', async () =>
-      setSituacaoDaTurma(await situacaoDaTurmaDeTeste(repositorio)),
-    )
+    semDono('situação da turma de teste', async () => {
+      setSituacaoDaTurma(await situacaoDaTurmaDeTeste(repositorio))
+      const tamanho = (await repositorio.listarMatriculados(TURMA_DE_TESTE)).length
+      setAlunosNaTurma(tamanho)
+      setAlunosPedidos((antes) => antes || String(tamanho))
+    })
   }, [repositorio])
 
   const conectar = async () => {
@@ -123,6 +135,24 @@ export function PainelDeTestesFisicos({
     setPreparando(true)
     try {
       await prepararTurmaDeTeste(repositorio, config)
+      window.location.reload()
+    } catch (e) {
+      setErro((e as Error).message)
+      setPreparando(false)
+    }
+  }
+
+  const alunosDaFila = Math.max(1, Math.min(1000, Math.floor(Number(alunosPedidos)) || alunosNaTurma))
+  const cadencia = {
+    msNoAr: Math.max(100, Math.floor(Number(msNoAr)) || CADENCIA_PADRAO.msNoAr),
+    msEntre: Math.max(0, Math.floor(Number(msEntre)) || 0),
+  }
+
+  const refazerTurma = async () => {
+    setErro(undefined)
+    setPreparando(true)
+    try {
+      await prepararTurmaDeTeste(repositorio, config, alunosDaFila)
       window.location.reload()
     } catch (e) {
       setErro((e as Error).message)
@@ -169,7 +199,7 @@ export function PainelDeTestesFisicos({
     setErro(undefined)
     setRodandoFila(true)
     try {
-      const resultado = await rodarFilaDeRadio(rig, repositorio, config, 12, setProgresso)
+      const resultado = await rodarFilaDeRadio(rig, repositorio, config, alunosDaFila, setProgresso, {}, cadencia)
       setResultados((antes) => [...(antes ?? []), resultado])
     } catch (e) {
       setErro((e as Error).message)
@@ -249,9 +279,57 @@ export function PainelDeTestesFisicos({
           passando no dongle de verdade. O rig de HID responde ERR ao FILA,
           que é a resposta certa — o botão aparece igual, e o erro explica. */}
       {situacaoDaTurma === 'pronta' && conectado && leitorId === 'dongle' && (
-        <button disabled={rodandoFila || rodandoAvancado || rodandoHistorico} onClick={() => void rodarFila()}>
-          {rodandoFila ? 'Rodando...' : 'Rodar fila de 12 pelo rádio (emulador)'}
-        </button>
+        <div className="ferramentas">
+          <label>
+            Alunos{' '}
+            <input
+              inputMode="numeric"
+              value={alunosPedidos}
+              onChange={(e) => setAlunosPedidos(e.target.value)}
+              aria-label="Alunos na fila"
+              size={4}
+            />
+          </label>
+          <label>
+            No ar (ms){' '}
+            <input
+              inputMode="numeric"
+              value={msNoAr}
+              onChange={(e) => setMsNoAr(e.target.value)}
+              aria-label="Milissegundos no ar"
+              size={4}
+            />
+          </label>
+          <label>
+            Entre (ms){' '}
+            <input
+              inputMode="numeric"
+              value={msEntre}
+              onChange={(e) => setMsEntre(e.target.value)}
+              aria-label="Milissegundos entre crachás"
+              size={4}
+            />
+          </label>
+          {rodandoFila && (
+            <button onClick={() => semDono('parar a fila', () => rig.pararFila())}>Parar a fila</button>
+          )}
+          {/* Refazer também para menos: o custo de redesenhar a chamada
+              cresce com a turma, e medir com o tamanho de uma turma real
+              (55 em CIN0144) é o que diz se o atraso visto com 300 importa. */}
+          {alunosDaFila !== alunosNaTurma ? (
+            <button disabled={preparando || rodandoFila} onClick={() => void refazerTurma()}>
+              {preparando ? 'Preparando...' : `Refazer a turma de teste com ${alunosDaFila}`}
+            </button>
+          ) : (
+            <button disabled={rodandoFila || rodandoAvancado || rodandoHistorico} onClick={() => void rodarFila()}>
+              {rodandoFila ? 'Rodando...' : `Rodar fila de ${alunosDaFila} pelo rádio (emulador)`}
+            </button>
+          )}
+          <p className="ferramentas__nota">
+            A turma de teste tem {alunosNaTurma}. Um crachá por segundo: 700 no ar e 150 entre. O resultado
+            mostra quantos por minuto chegaram na base. Parar só funciona com o Diagnóstico aberto.
+          </p>
+        </div>
       )}
 
       {situacaoDaTurma === 'pronta' && conectado && leitorId === 'dongle' && (

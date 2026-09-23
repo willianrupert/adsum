@@ -338,6 +338,15 @@ export async function cadastrarFilaDeRadio(
   return hashes
 }
 
+/** Quanto cada crachá fica no ar e quanto o emulador espera até o próximo. */
+export type CadenciaDaFila = { msNoAr: number; msEntre: number }
+
+/** A cadência da bancada de 22/09/2026: a mais apertada que o dongle leu inteira. */
+export const CADENCIA_PADRAO: CadenciaDaFila = { msNoAr: 400, msEntre: 100 }
+
+/** O reset por fio (~120 ms) e o `SAMConfiguration` que vem depois dele. */
+const RESET_POR_ALUNO_MS = 150
+
 /**
  * Uma turma inteira passando o crachá no dongle de verdade, pelo rádio.
  *
@@ -364,6 +373,7 @@ export async function rodarFilaDeRadio(
   quantos: number,
   aoProgredir: (mensagem: string) => void,
   dependencias: DependenciasDaSuite = {},
+  cadencia: CadenciaDaFila = CADENCIA_PADRAO,
 ): Promise<ResultadoCenario> {
   const esperar = dependencias.esperar ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)))
   return cenario('Fila pelo rádio (dongle de verdade)', async () => {
@@ -375,8 +385,20 @@ export async function rodarFilaDeRadio(
     const hashes = await cadastrarFilaDeRadio(repositorio, config, alunos)
 
     const antes = new Set((await repositorio.listarEventos({ turma: TURMA_DE_TESTE })).map((e) => e.eventoId))
-    aoProgredir(`Disparando ${alunos} crachás pelo rádio — antenas a uns 3 cm...`)
-    await rig.fila(alunos, 400, 100)
+    // O emulador não sabe quando o dongle leu (`TgInitAsTarget` não
+    // retorna), então cada aluno paga o tempo no ar inteiro, mais o
+    // intervalo, mais o reset por fio.
+    const porAluno = cadencia.msNoAr + cadencia.msEntre + RESET_POR_ALUNO_MS
+    const minutos = Math.max(1, Math.round((alunos * porAluno) / 60_000))
+    aoProgredir(
+      `Disparando ${alunos} crachás pelo rádio, um a cada ${(porAluno / 1000).toFixed(1)} s ` +
+        `(cerca de ${minutos} min). Antenas a uns 3 cm, e o foco nesta janela.`,
+    )
+    const resposta = await rig.fila(alunos, cadencia.msNoAr, cadencia.msEntre)
+    // "OK parado 57 de 300": a fila foi interrompida, e só os que saíram
+    // contam como disparados — senão o resto vira "não chegou na base".
+    const parado = /^OK parado (\d+)/.exec(resposta)
+    const disparados = parado ? Number(parado[1]) : alunos
     // O dongle digita depois de ler, e o app grava depois de digitar: uma
     // folga curta evita ler a base antes de a última presença chegar.
     await esperar(1500)
@@ -385,14 +407,30 @@ export async function rodarFilaDeRadio(
       (e) => !antes.has(e.eventoId) && e.origem === 'cracha',
     )
     return avaliarFilaDeRadio({
-      disparados: alunos,
+      disparados,
       gravados: new Set(novos.filter((e) => hashes.has(e.uidHash)).map((e) => e.uidHash)).size,
       fantasmas: novos.filter((e) => !hashes.has(e.uidHash)).length,
       // O que o app levou por crachá, do diário desta mesma rodada: é onde
       // aparece uma aula ficando lenta, e de qual etapa é a culpa.
       tempos: temposDoDiario(novos.length),
+      porMinuto: porMinutoMedido(novos.filter((e) => hashes.has(e.uidHash))),
     })
   })
+}
+
+/**
+ * Quantos crachás por minuto chegaram na base, do primeiro ao último gravado.
+ *
+ * Medido pelo `quando` dos eventos, e não pelo relógio de quem disparou: é o
+ * número que importa na sala, o de presenças gravadas, e já inclui o que o
+ * dongle e o app levaram.
+ */
+function porMinutoMedido(eventos: { quando: string }[]): number | undefined {
+  if (eventos.length < 2) return undefined
+  const instantes = eventos.map((e) => Date.parse(e.quando)).sort((a, b) => a - b)
+  const duracao = instantes[instantes.length - 1] - instantes[0]
+  if (duracao <= 0) return undefined
+  return Math.round(((eventos.length - 1) * 60_000) / duracao)
 }
 
 /**

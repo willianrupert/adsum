@@ -709,6 +709,27 @@ describe('o fim da aula', () => {
   })
 })
 
+describe('Encerrar com a tela atrasada', () => {
+  it('vários cliques gravam um encerramento só', async () => {
+    const aoEncerrar = vi.fn()
+    renderizarCom(
+      bancada,
+      <TelaAula sessao={SESSAO} pendentes={[BRENO]} daTurma={[ANA, BRENO]} aoMudarBase={() => {}} aoEncerrar={aoEncerrar} />,
+    )
+    const botao = screen.getByRole('button', { name: 'Encerrar' })
+
+    await act(async () => {
+      botao.click()
+      botao.click()
+      botao.click()
+    })
+
+    await waitFor(() => expect(aoEncerrar).toHaveBeenCalled())
+    const eventos = await bancada.repositorio.listarEventos()
+    expect(eventos.filter((e) => e.origem === 'professor')).toHaveLength(1)
+  })
+})
+
 // Pedido pelo Prof. Paulo. Dois crachás empilhados numa mão são lidos em
 // centenas de milissegundos; duas pessoas numa fila levam segundos. Antes,
 // só a chamada do dia a dia tinha essa proteção — a cerimônia, o momento de
@@ -771,6 +792,49 @@ describe('dois crachás de uma vez', () => {
     expect(recusa?.uidHash).toBe(
       await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_NOVO)),
     )
+  })
+})
+
+// Fila de 300 pelo emulador, 23/09/2026: alunos a 0,7 s um do outro foram
+// recusados como "dois crachás quase juntos". Com a aba ocupada, a
+// identificação de um crachá terminava depois da do seguinte, e ele era
+// comparado com um crachá que chegou **depois** dele: intervalo negativo,
+// menor que 400. Aqui o atraso é forçado no primeiro crachá.
+describe('crachás que terminam de identificar fora de ordem', () => {
+  it('dois alunos a 1 s um do outro contam os dois, mesmo com o primeiro atrasado', async () => {
+    await comCrachaDaAna()
+    const hashDoBreno = await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_NOVO))
+    await bancada.repositorio.gravarVinculo({
+      uidHash: hashDoBreno,
+      papel: 'aluno',
+      nome: BRENO.nome,
+      matricula: BRENO.matricula,
+      criadoEm: new Date().toISOString(),
+    })
+    const hashDaAna = await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_DA_ANA))
+    const original = bancada.repositorio.vinculoPorHash.bind(bancada.repositorio)
+    vi.spyOn(bancada.repositorio, 'vinculoPorHash').mockImplementation(async (hash) => {
+      if (hash === hashDaAna) await new Promise((r) => setTimeout(r, 80))
+      return original(hash)
+    })
+    montar([])
+
+    const agora = Date.now()
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      vi.setSystemTime(agora)
+      await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+      vi.setSystemTime(agora + 1000)
+      await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+    } finally {
+      vi.useRealTimers()
+    }
+
+    await waitFor(async () => {
+      const eventos = await bancada.repositorio.listarEventos()
+      expect(eventos.map((e) => e.resultado).sort()).toEqual(['ok', 'ok'])
+    })
+    expect(screen.queryByText(/Dois crachás quase juntos/)).not.toBeInTheDocument()
   })
 })
 

@@ -4,9 +4,12 @@
 // emitiu durante a janela de cada cenário — nunca antes, nunca depois.
 
 import { describe, expect, it, vi } from 'vitest'
-import { rodarCenarioAvancado, rodarSuiteFisica } from './suiteFisica.ts'
+import { rodarCenarioAvancado, rodarFilaDeRadio, rodarSuiteFisica } from './suiteFisica.ts'
+import { prepararTurmaDeTeste } from './turmaDeTeste.ts'
+import { calcularUidHash } from '../nucleo/hash.ts'
+import { decimalParaBytes } from '../nucleo/digitacao.ts'
 import { montarBancada } from '../testes/montar.tsx'
-import { TURMA_DE_TESTE } from '../nucleo/suiteDeTestes.ts'
+import { TURMA_DE_TESTE, uidDaFilaDeRadio } from '../nucleo/suiteDeTestes.ts'
 import type { Evento } from '../nucleo/tipos.ts'
 import { criarEmissor } from '../adaptadores/leitor/emissor.ts'
 import type { Cancelar, EstadoLeitor, LeitorQueRecusa, Leitura, Recusa } from '../portas/LeitorDeCracha.ts'
@@ -248,5 +251,71 @@ describe('rodarCenarioAvancado', () => {
     expect(resultado.aprovado).toBe(false)
     expect(resultado.detalhe).toContain('Não achei dois eventos')
     await bancada.repositorio.fechar()
+  })
+})
+
+describe('rodarFilaDeRadio', () => {
+  it('manda a cadência pedida ao emulador e mede quantos por minuto chegaram na base', async () => {
+    const bancada = await montarBancada()
+    const { repositorio, config } = bancada
+    await prepararTurmaDeTeste(repositorio, config, 5)
+    const pedidos: unknown[][] = []
+    const inicio = Date.parse('2026-09-23T10:00:00.000Z')
+    // O "dongle" daqui grava um crachá da fila por segundo, como faria a
+    // chamada aberta ao receber o que o emulador pôs no ar.
+    const rig = {
+      async fila(...args: unknown[]) {
+        pedidos.push(args)
+        for (let i = 0; i < 5; i++) {
+          await repositorio.acrescentarEvento({
+            eventoId: `fila-${i}`,
+            quando: new Date(inicio + i * 1000).toISOString(),
+            turma: TURMA_DE_TESTE,
+            uidHash: await calcularUidHash(config.salHex, decimalParaBytes(uidDaFilaDeRadio(i))!),
+            nome: `Teste ${i}`,
+            origem: 'cracha',
+            resultado: 'ok',
+          })
+        }
+        return 'OK'
+      },
+    } as unknown as RigDeCracha
+
+    const resultado = await rodarFilaDeRadio(rig, repositorio, config, 5, () => {}, { esperar: semEspera }, {
+      msNoAr: 700,
+      msEntre: 150,
+    })
+
+    expect(pedidos).toEqual([[5, 700, 150]])
+    expect(resultado.aprovado).toBe(true)
+    expect(resultado.detalhe).toContain('5 de 5 viraram presença')
+    expect(resultado.detalhe).toContain('60 por minuto')
+    await repositorio.fechar()
+  })
+
+  it('parada no meio conta só os crachás que chegaram a sair', async () => {
+    const bancada = await montarBancada()
+    const { repositorio, config } = bancada
+    await prepararTurmaDeTeste(repositorio, config, 5)
+    const rig = {
+      async fila() {
+        await repositorio.acrescentarEvento({
+          eventoId: 'fila-0',
+          quando: new Date().toISOString(),
+          turma: TURMA_DE_TESTE,
+          uidHash: await calcularUidHash(config.salHex, decimalParaBytes(uidDaFilaDeRadio(0))!),
+          nome: 'Teste 0',
+          origem: 'cracha',
+          resultado: 'ok',
+        })
+        return 'OK parado 1 de 5'
+      },
+    } as unknown as RigDeCracha
+
+    const resultado = await rodarFilaDeRadio(rig, repositorio, config, 5, () => {}, { esperar: semEspera })
+
+    expect(resultado.aprovado).toBe(true)
+    expect(resultado.detalhe).toContain('1 de 1 viraram presença')
+    await repositorio.fechar()
   })
 })

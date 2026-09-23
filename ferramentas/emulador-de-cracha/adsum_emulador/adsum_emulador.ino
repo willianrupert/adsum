@@ -363,6 +363,19 @@ void tratar(String linha) {
 
     uint32_t primeiro = 0, ultimo = 0;
     for (int i = 0; i < quantos; i++) {
+      // PARAR interrompe entre um aluno e outro. Sem isto, a única saída de
+      // uma fila de 300 era puxar o cabo (bancada de 23/09/2026). Qualquer
+      // outra coisa que chegue aqui é descartada: no meio de uma fila não há
+      // outro comando que faça sentido.
+      if (Serial.available()) {
+        const String pedido = Serial.readStringUntil('\n');
+        if (pedido.startsWith("PARAR")) {
+          tirarDoAr();
+          digitalWrite(PINO_LED, LOW);
+          Serial.printf("OK parado %d de %d\n", i, quantos);
+          return;
+        }
+      }
       Cracha c;
       c.definido = true;
       c.uid[0] = 0xAD;

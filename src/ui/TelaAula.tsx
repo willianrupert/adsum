@@ -121,6 +121,9 @@ export function TelaAula({
    * sobrepõem do mesmo jeito que numa mão com dois cartões.
    */
   const geracao = useRef(0)
+  const encerrando = useRef(false)
+  /** A fila de identificar e decidir. Ver o comentário em `aoLer`, abaixo. */
+  const ordemDasLeituras = useRef<Promise<unknown>>(Promise.resolve())
   const jaPresentes = useRef<Set<string>>(new Set())
   /**
    * Espelha `presentes` (estado), pra `aoEncerrar` poder ler a contagem sem
@@ -537,42 +540,57 @@ export function TelaAula({
         // Uma linha no diário por crachá, com o tempo de cada etapa: é o que
         // mostra, sem reconstruir nada à mão, se uma aula ficou lenta e onde.
         const inicio = performance.now()
-        const { uidHash, vinculo, sal } = await identificarCracha(repositorio, leitura.uid)
-        const identificadoEm = performance.now()
-        const decisao = decidir(uidHash, {
-          sessao,
-          vinculo,
-          chamado: aCadastrar,
-          jaPresentes: jaPresentes.current,
-          ultima: ultima.current,
-          agora: leitura.em,
+        // Identificar e decidir andam em fila, na ordem em que os crachás
+        // chegaram. Soltos, a identificação de um podia terminar depois da do
+        // seguinte, e ele era comparado com um crachá que chegou **depois**
+        // dele: intervalo negativo, "dois crachás quase juntos", aluno presente
+        // recusado. Visto na fila de 300 pelo emulador, 23/09/2026, com a aba
+        // ocupada redesenhando a turma. Só esta parte espera a anterior: gravar
+        // e redesenhar continuam soltos, como antes.
+        const passo = ordemDasLeituras.current.then(async () => {
+          const identificado = await identificarCracha(repositorio, leitura.uid)
+          return { ...identificado, identificadoEm: performance.now(), ...decidirEMarcar(identificado) }
         })
+        ordemDasLeituras.current = passo.catch(() => undefined)
+        const { uidHash, vinculo, sal, identificadoEm, decisao } = await passo
 
-        // Antes de qualquer `await`, como `jaPresentes`: dois crachás de uma mão
-        // chegam em centenas de milissegundos, e o segundo não pode encontrar
-        // este valor desatualizado — seria a fraude passando pela porta que a
-        // regra existe para fechar.
-        //
-        // A recusa **não** conta como leitura: assim a janela segue medida a
-        // partir do último crachá aceito, e insistir depressa não a reinicia.
-        //
-        // Só `presenca`/`cadastro` vira amostra: `repetido` é o mesmo crachá
-        // relido (outro ritmo, não interessa aqui), e sem `ultima.current`
-        // ainda não há par para medir — é o primeiro crachá da fila.
-        if (ultima.current && (decisao.tipo === 'presenca' || decisao.tipo === 'cadastro')) {
-          intervalos.current.push(leitura.em.getTime() - ultima.current.em.getTime())
-        }
-        if (decisao.tipo !== 'rapido_demais' && vinculo?.papel !== 'professor') {
-          ultima.current = { uidHash, em: leitura.em }
-        }
+        function decidirEMarcar({ uidHash, vinculo }: { uidHash: string; vinculo?: Vinculo }) {
+          const decisao = decidir(uidHash, {
+            sessao,
+            vinculo,
+            chamado: aCadastrar,
+            jaPresentes: jaPresentes.current,
+            ultima: ultima.current,
+            agora: leitura.em,
+          })
 
-        // Entra no conjunto antes de qualquer `await`: é isso que faz a leitura
-        // seguinte já saber que esta pessoa passou. Cadastro de professor
-        // (o "Cadastrar" explícito da seção de professores) não entra — ver
-        // `contaPresenca`: é o professor gravando o próprio crachá, não
-        // alguém chegando como aluno.
-        if (contaPresenca(decisao)) {
-          jaPresentes.current.add(uidHash)
+          // Antes de qualquer `await`, como `jaPresentes`: dois crachás de uma mão
+          // chegam em centenas de milissegundos, e o segundo não pode encontrar
+          // este valor desatualizado — seria a fraude passando pela porta que a
+          // regra existe para fechar.
+          //
+          // A recusa **não** conta como leitura: assim a janela segue medida a
+          // partir do último crachá aceito, e insistir depressa não a reinicia.
+          //
+          // Só `presenca`/`cadastro` vira amostra: `repetido` é o mesmo crachá
+          // relido (outro ritmo, não interessa aqui), e sem `ultima.current`
+          // ainda não há par para medir — é o primeiro crachá da fila.
+          if (ultima.current && (decisao.tipo === 'presenca' || decisao.tipo === 'cadastro')) {
+            intervalos.current.push(leitura.em.getTime() - ultima.current.em.getTime())
+          }
+          if (decisao.tipo !== 'rapido_demais' && vinculo?.papel !== 'professor') {
+            ultima.current = { uidHash, em: leitura.em }
+          }
+
+          // Entra no conjunto antes de qualquer `await`: é isso que faz a leitura
+          // seguinte já saber que esta pessoa passou. Cadastro de professor
+          // (o "Cadastrar" explícito da seção de professores) não entra — ver
+          // `contaPresenca`: é o professor gravando o próprio crachá, não
+          // alguém chegando como aluno.
+          if (contaPresenca(decisao)) {
+            jaPresentes.current.add(uidHash)
+          }
+          return { decisao }
         }
 
         // Crachá que ninguém reconhece, sem ninguém chamado (modo comum):
@@ -699,6 +717,11 @@ export function TelaAula({
    * crachá, e um clique não tem esse problema.
    */
   const aoEncerrarAgora = useCallback(() => {
+    // Um clique encerra. Com a aba ocupada, a tela demorava a responder, e
+    // cada clique a mais gravava outro encerramento (cinco em 2,5 s na fila
+    // de 300, 23/09/2026).
+    if (encerrando.current) return
+    encerrando.current = true
     semDono('encerrar pelo botão', async () => {
       const agora = new Date()
       const vinculo = vinculos.find((v) => v.uidHash === sessao.uidHashProfessor)

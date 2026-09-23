@@ -184,6 +184,17 @@ export class RigDeCracha {
     return await this.enviar(`FILA ${quantos} ${msNoAr} ${msEntre} ${msAntes}`, limite)
   }
 
+  /**
+   * Interrompe uma fila em andamento. Fura a regra de uma pergunta por vez
+   * de propósito: quem responde é o `FILA` pendente, com `OK parado`, e é
+   * essa resposta que libera quem esperava por ele. Sem fila rodando, o
+   * emulador responde `ERR comando desconhecido` e ninguém está esperando.
+   */
+  async pararFila(): Promise<void> {
+    if (!this.#escritor) throw new Error('O rig não está conectado.')
+    await this.#escritor.write(new TextEncoder().encode('PARAR\n'))
+  }
+
   async digitacaoHumana(texto: string, msPorCaractere: number): Promise<void> {
     await this.enviar(`HUMAN ${texto} ${msPorCaractere}`, texto.length * msPorCaractere + 2000)
   }

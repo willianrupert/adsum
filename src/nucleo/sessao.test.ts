@@ -256,6 +256,17 @@ describe('dois crachás quase juntos', () => {
     expect(decisao.tipo).toBe('presenca')
   })
 
+  // Fila de 300 pelo emulador, 23/09/2026: o "último aceito" era um crachá
+  // que encostou depois deste. Ordem de processamento não é mão com dois
+  // cartões.
+  it('não recusa quem encostou antes do último aceito', () => {
+    const decisao = decidir(BRENO.uidHash, ctx({
+      vinculo: BRENO,
+      ultima: { uidHash: ANA.uidHash, em: em(700) },
+    }))
+    expect(decisao.tipo).toBe('presenca')
+  })
+
   // O mesmo crachá duas vezes é outro assunto, e já tinha resposta.
   it('o mesmo crachá de novo continua sendo repetido, não recusa', () => {
     const decisao = decidir(ANA.uidHash, ctx({

@@ -481,3 +481,44 @@ diário de diagnóstico e o arquivo de códigos dos crachás — inclusive o que
 ele custa ("quem tiver este arquivo consegue copiar um crachá") e como
 desligá-lo —, e as três afirmações do documento que diziam que o número do
 crachá nunca é guardado foram corrigidas.
+
+## 23/09/2026 — a fila de 300 pelo rádio
+
+Primeira medida de capacidade com o caminho inteiro de verdade: o emulador
+(`ferramentas/emulador-de-cracha`) põe cada crachá no ar, o dongle lê e
+digita, a chamada grava. O painel da fila ganhou tamanho e cadência
+configuráveis, o ritmo medido no resultado, e "Parar a fila" (comando
+`PARAR` no firmware). Rodado no localhost, não publicado.
+
+**Primeira rodada, 0,72 s por crachá: três defeitos do app.**
+
+- **Aluno recusado como "dois crachás quase juntos" a 0,7 s do anterior.**
+  Cada crachá era identificado solto, e com a aba ocupada a identificação de
+  um terminava depois da do seguinte; ele era então comparado com um crachá
+  que encostou **depois** dele, e o intervalo negativo passava por menor que
+  400 ms. Quatro alunos em ~110. Conserto: identificar e decidir andam em
+  fila, na ordem de chegada (`TelaAula`), e intervalo negativo nunca é
+  recusa (`decidir`). Um teste para cada.
+- **O Encerrar gravava um encerramento por clique** — cinco em 2,5 s, porque
+  a tela demorava a responder e o professor insistia. Agora um clique só.
+- **A tela não acompanha uma turma de 300.** O diário mostrou o tempo de
+  identificar em degraus de ~240 ms: cada crachá esperava os redesenhos dos
+  anteriores. A tela mostrava o passado (a impressão de "um em cada três"), e
+  os cliques entravam na fila. **Não consertado**: nenhuma turma real tem
+  300, e o custo do redesenho cresce com o tamanho da turma. Fica registrado
+  como o ponto a atacar.
+
+A mesma rodada perdeu 5 crachás para o chat (foco fora do Chrome: o dongle
+digitou os números lá) e ~17 com a chamada fechada — ambos esperados.
+
+**Segunda rodada, com o conserto: 300 de 300.** Nenhum "rápido demais",
+nenhum crachá perdido, nenhum intervalo acima de 1,6 s, nenhum `evento_id`
+repetido, um encerramento só. 300 crachás em 5 min 34 s, mediana de 1,2 s
+entre um e outro: **~54 por minuto**, ditado pela cadência do emulador (700
+no ar, 150 entre, mais o reset por fio), não pelo dongle. A primeira rodada
+mostra que o dongle lê a ~83 por minuto; o teto dele continua sem medir.
+A tela seguiu atrasada (até ~2 s para redesenhar), sem perder nada.
+
+**O que isto não prova:** a máquina do Paulo, a versão publicada e
+instalada, base com histórico, crachá real na mão de gente. Os sete passos
+com o dongle continuam sendo o que decide a aula.

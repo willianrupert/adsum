@@ -175,7 +175,10 @@ export function decidir(uidHash: string, ctx: Contexto): Decisao {
   // assunto e já tem resposta.
   if (ctx.ultima && ctx.ultima.uidHash !== uidHash) {
     const desde = agora.getTime() - ctx.ultima.em.getTime()
-    if (desde < INTERVALO_MINIMO_MS) {
+    // Negativo é um crachá chegando para decisão depois de outro que encostou
+    // depois dele: ordem de processamento, não mão com dois cartões. Recusar
+    // aí foi o que derrubou alunos a 0,7 s um do outro na fila de 23/09/2026.
+    if (desde >= 0 && desde < INTERVALO_MINIMO_MS) {
       return { tipo: 'rapido_demais', faltamMs: INTERVALO_MINIMO_MS - desde }
     }
   }
