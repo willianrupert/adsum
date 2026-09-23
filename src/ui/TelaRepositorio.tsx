@@ -1,3 +1,4 @@
+import { semDono } from '../ambiente/diario.ts'
 // Tela do repositório: vínculos, grade, registros e sal.
 //
 // Os arquivos daqui são os mesmos do cofre em pasta — ver `docs/01_cofre.md`.
@@ -248,7 +249,7 @@ export function TelaRepositorio({
   }, [repositorio])
 
   useEffect(() => {
-    void carregar()
+    semDono('carregar ajustes', carregar)
   }, [carregar])
 
   function tentar(rotulo: string, acao: () => Promise<string | void>) {

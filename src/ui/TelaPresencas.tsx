@@ -1,3 +1,4 @@
+import { semDono } from '../ambiente/diario.ts'
 // O popup de presenças — o "leitor de CSV" pedido, à mão.
 //
 // Não é Ajustes. Ajustes é para quem está mexendo em configuração; isto é
@@ -67,7 +68,7 @@ export function ConteudoDePresencas({
   }, [repositorio])
 
   useEffect(() => {
-    void carregar()
+    semDono('carregar presenças', carregar)
   }, [carregar])
 
   /**

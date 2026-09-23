@@ -24,7 +24,7 @@ import {
   historicoDeChamadas,
   modoDev,
 } from '../ambiente/preferencias.ts'
-import { caminhoDoDiario, linhasDoDiario } from '../ambiente/diario.ts'
+import { caminhoDoDiario, linhasDoDiario, semDono } from '../ambiente/diario.ts'
 import { CAMINHO_DA_AUDITORIA } from '../ambiente/auditoriaDeUids.ts'
 import { estadoDoConvite } from '../ambiente/instalacao.ts'
 import { Linha, Painel, Selo } from './componentes/Painel.tsx'
@@ -133,7 +133,7 @@ export function TelaDiagnostico() {
   }, [leitor, repositorio, config])
 
   useEffect(() => {
-    void atualizar()
+    semDono('atualizar diagnóstico', atualizar)
   }, [atualizar])
 
   useEffect(() => leitor.aoMudarEstado(setEstadoLeitor), [leitor])
@@ -147,7 +147,7 @@ export function TelaDiagnostico() {
 
   useEffect(() => {
     return leitor.aoLer((leitura) => {
-      void (async () => {
+      semDono('leitura no diagnóstico', async () => {
         const hex = uidParaHex(leitura.uid)
         const { uidHash, vinculo } = await identificarCracha(repositorio, leitura.uid)
         setLeituras((antes) =>
@@ -163,8 +163,8 @@ export function TelaDiagnostico() {
             ...antes,
           ].slice(0, 8),
         )
-        void atualizar()
-      })()
+        semDono('atualizar diagnóstico', atualizar)
+      })
     })
   }, [leitor, repositorio, config, atualizar])
 

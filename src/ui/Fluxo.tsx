@@ -14,7 +14,7 @@ import { uidInedito, hexParaUid } from '../nucleo/uid.ts'
 import { ehQueRecusa, ehSimulavel, type Recusa } from '../portas/LeitorDeCracha.ts'
 import { IndicadorDoLeitor } from './IndicadorDoLeitor.tsx'
 import { gravarEventoNovo, gravarMarcasPendentes, identificarCracha, podeApagar } from '../portas/Repositorio.ts'
-import { curto, ligarDiario, registrar } from '../ambiente/diario.ts'
+import { curto, ligarDiario, registrar, semDono } from '../ambiente/diario.ts'
 import { anotarUid } from '../ambiente/auditoriaDeUids.ts'
 import { marcarChamadaViva } from '../ambiente/chamadaViva.ts'
 import { eventoDe, quemFalta, type Sessao } from '../nucleo/sessao.ts'
@@ -420,18 +420,6 @@ export function Fluxo() {
     return () => clearTimeout(relogio)
   }, [novidade])
 
-  /**
-   * Cadeia "dispare e esqueça" que não vira promessa sem dono.
-   *
-   * Efeito de tela não tem quem espere por ele: se a base fecha no meio (a aba
-   * indo embora, o banco trocado por uma restauração), a rejeição some no
-   * console — ou reprova a suíte, que foi como isto apareceu em 23/09/2026.
-   * O erro vai para o diário, que é onde se olha depois.
-   */
-  const semDono = (onde: string, tarefa: () => Promise<unknown>) => {
-    void tarefa().catch((erro: Error) => registrar('erro_em_efeito', { onde, mensagem: erro?.message }))
-  }
-
   const recontar = useCallback(async () => {
     const [listaDeTurmas, matriculados, vinculos, aberta, atual] = await Promise.all([
       repositorio.listarTurmas(),
@@ -521,7 +509,7 @@ export function Fluxo() {
   }, [repositorio, pasta])
 
   useEffect(() => {
-    void recontar()
+    semDono('recontar', recontar)
   }, [recontar])
 
   // Na volta de uma sessão, a pasta é reencontrada sozinha; só a permissão
@@ -931,7 +919,7 @@ export function Fluxo() {
 
       if (evento.key.toLowerCase() === 'p') {
         evento.preventDefault()
-        void (async () => {
+        semDono('efeito', async () => {
           const professor = (await repositorio.listarVinculos()).find(
             (v) => v.papel === 'professor',
           )
@@ -950,7 +938,7 @@ export function Fluxo() {
             const hash = await calcularUidHash(config.salHex, hexParaUid(hex))
             if (hash === professor.uidHash) return simulado.simular(hex)
           }
-        })()
+        })
       }
     }
 
@@ -978,7 +966,7 @@ export function Fluxo() {
   // recalcula para 'chamada' no instante seguinte, e é `TelaAula` — com a
   // turma inteira pendente — quem aparece, não uma tela à parte.
   useEffect(() => {
-    if (rota === 'cerimonia') void iniciarChamada()
+    if (rota === 'cerimonia') semDono('abrir sozinho', iniciarChamada)
   }, [rota, iniciarChamada])
 
   /**
@@ -1001,7 +989,7 @@ export function Fluxo() {
         // `defaultPrevented`: é o Enter do dongle fechando um crachá (ver
         // `LeitorTeclado`). Crachá no repouso só diz quem foi lido.
         if (evento.defaultPrevented) return
-        if (turmaSelecionada) void iniciarChamada()
+        if (turmaSelecionada) semDono('abrir pelo Enter', iniciarChamada)
         return
       }
       if (evento.key !== 'ArrowRight' && evento.key !== 'ArrowLeft') return
@@ -1077,8 +1065,8 @@ export function Fluxo() {
       {rota === 'pasta' && (
         <TelaPasta
           precisaDePermissao={estadoDaPasta === 'sem_permissao'}
-          aoEscolher={() => void ligarPasta(true)}
-          aoLiberar={() => void ligarPasta(false)}
+          aoEscolher={() => semDono('escolher pasta', () => ligarPasta(true))}
+          aoLiberar={() => semDono('liberar pasta', () => ligarPasta(false))}
           aoDispensar={() => {
             dispensarPasta()
             setSemPasta(true)
@@ -1100,7 +1088,7 @@ export function Fluxo() {
           aulas={semHorario.aulas}
           uidHashProfessor={uidDoProfessor}
           aoSalvar={(novas) => {
-            void (async () => {
+            semDono('efeito', async () => {
               // A grade é indexada pelo professor — e o cronograma aparece
               // **antes** de existir qualquer crachá dele (é a primeira turma
               // colada, o repouso ainda nem existe). `uidHashProfessor` chega
@@ -1122,17 +1110,17 @@ export function Fluxo() {
               // voltaria na hora, porque a turma continua sem horário.
               if (novas.length === 0) adiarHorario(semHorario.turma)
               await mudou()
-            })()
+            })
           }}
           aoPular={() => {
             adiarHorario(semHorario.turma)
-            void recontar()
+            semDono('recontar', recontar)
           }}
         />
       )}
       {naColagem && (
         <TelaColarTurma
-          aoMudarBase={mudou}
+          aoMudarBase={(turma?: string) => semDono('base mudou', () => mudou(turma))}
           // Só existe quando há repouso pra onde voltar: com `turmas === 0`
           // esta tela é a única que existe, e cancelar não levaria a lugar
           // nenhum.
@@ -1150,15 +1138,18 @@ export function Fluxo() {
           daTurma={matriculadosTodos.filter((p) => p.turma === sessao.turma)}
           // Só a turma da aula aberta — Fase 4, item C. Um crachá aqui não
           // tem como mudar outra turma.
-          aoMudarBase={() => mudou(sessao.turma)}
+          // `mudou` devolve promessa e a tela da chamada não espera por ela:
+          // sem isto, uma falha de gravação na pasta virava promessa rejeitada
+          // sem dono, invisível como as que este projeto persegue.
+          aoMudarBase={() => semDono('base mudou', () => mudou(sessao.turma))}
           aoRegistrar={gravarLinha}
           aoEncerrar={(presentes, duracaoMs, intervalos) => {
             // Sem esta marca o relógio reabriria a aula que acabou de fechar.
             marcarEncerrada(sessao.turma, new Date().toISOString())
             // A fila acabou: é a hora de gravar o que foi adiado para não
             // pesar nela. Ver `gravarMarcasPendentes`.
-            void gravarMarcasPendentes()
-            void conferir(sessao.turma)
+            semDono('marcas de sal', gravarMarcasPendentes)
+            semDono('conferir', () => conferir(sessao.turma))
             setResumo({ sessao, presentes })
             // Diagnóstico, não a tela de fim de aula: é dado para calibrar
             // `INTERVALO_MINIMO_MS`, não algo que toda aula precisa mostrar.
@@ -1168,7 +1159,7 @@ export function Fluxo() {
               duracaoMs,
               intervalos,
             })
-            void avisarSeOutraTurmaEsperava(sessao)
+            semDono('avisar outra turma', () => avisarSeOutraTurmaEsperava(sessao))
           }}
         />
       )}
@@ -1180,7 +1171,7 @@ export function Fluxo() {
           aoSalvarCopia={() => salvarCopia(resumo.sessao.turma)}
           aoConcluir={() => setResumo(undefined)}
           aoReabrir={() => {
-            void (async () => {
+            semDono('efeito', async () => {
               // A marca de encerrada some junto, senão o relógio da grade
               // entenderia que esta aula já acabou e não reabriria nada.
               esquecerEncerramento(resumo.sessao.turma)
@@ -1190,7 +1181,7 @@ export function Fluxo() {
                 new Date(),
               )
               setResumo(undefined)
-            })()
+            })
           }}
         />
       )}
@@ -1205,8 +1196,8 @@ export function Fluxo() {
           diaSelecionado={diaSelecionado}
           aoMudarTurma={mudarTurma}
           aoEditarDia={editarDia}
-          aoIniciar={() => void iniciarChamada()}
-          aoSalvar={(turma) => void salvarCopia(turma)}
+          aoIniciar={() => semDono('abrir pelo botão', iniciarChamada)}
+          aoSalvar={(turma) => semDono('salvar cópia', () => salvarCopia(turma))}
           aoVerPresencas={() => setFolha('presencas')}
           aoNovaTurma={() => {
             setTurmasAntesDaNova(turmas)
@@ -1222,7 +1213,7 @@ export function Fluxo() {
             {falhaNaPasta}. Nada se perdeu: está tudo aqui no navegador. Conserte e o
             Adsum regrava.
           </p>
-          <button onClick={() => void consertarPasta()}>Gravar de novo</button>
+          <button onClick={() => semDono('consertar pasta', consertarPasta)}>Gravar de novo</button>
         </div>
       )}
 
@@ -1385,7 +1376,7 @@ export function Fluxo() {
             <>
               <TelaRepositorio
                 pasta={pasta}
-                aoTrocarPasta={() => void ligarPasta(true)}
+                aoTrocarPasta={() => semDono('trocar pasta', () => ligarPasta(true))}
                 aoResetar={
                   podeApagar(repositorio)
                     ? async () => {
@@ -1440,7 +1431,7 @@ export function Fluxo() {
                   className="botao--quieto"
                   onClick={() => {
                     setRecadoManual(undefined)
-                    void (async () => {
+                    semDono('efeito', async () => {
                       try {
                         const resposta = await fetch(MANUAL_URL)
                         if (!resposta.ok) {
@@ -1462,7 +1453,7 @@ export function Fluxo() {
                       } catch (erro) {
                         setRecadoManual((erro as Error).message)
                       }
-                    })()
+                    })
                   }}
                 >
                   Manual
@@ -1484,7 +1475,7 @@ export function Fluxo() {
             <ConteudoDePresencas
               nomeDaPasta={pasta?.name}
               aoRegistrar={gravarLinha}
-              aoMudarBase={(turma) => mudou(turma)}
+              aoMudarBase={(turma: string) => semDono('base mudou', () => mudou(turma))}
             />
           )}
           {folha === 'diagnostico' && <TelaDiagnostico />}

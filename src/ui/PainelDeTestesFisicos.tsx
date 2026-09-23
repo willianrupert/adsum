@@ -1,3 +1,4 @@
+import { semDono } from '../ambiente/diario.ts'
 // Painel do Diagnóstico: liga o rig de teste (ESP32-S3, `ferramentas/rig-de-cracha/`)
 // pela porta ponte, dispara a suíte física e mostra o resultado. Só existe no
 // modo de ensaio — como `ehSimulavel`, é ferramenta de quem testa o app, nunca
@@ -84,7 +85,9 @@ export function PainelDeTestesFisicos({
   }, [rig])
 
   useEffect(() => {
-    void situacaoDaTurmaDeTeste(repositorio).then(setSituacaoDaTurma)
+    semDono('situação da turma de teste', async () =>
+      setSituacaoDaTurma(await situacaoDaTurmaDeTeste(repositorio)),
+    )
   }, [repositorio])
 
   const conectar = async () => {

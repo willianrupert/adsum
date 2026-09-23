@@ -43,7 +43,7 @@ import type { Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { ehConfirmavel, ehSimulavel } from '../portas/LeitorDeCracha.ts'
 import { gravarEventoNovo, identificarCracha } from '../portas/Repositorio.ts'
-import { curto, registrar } from '../ambiente/diario.ts'
+import { curto, registrar, semDono } from '../ambiente/diario.ts'
 import { useAdsum } from './adsum.ts'
 import { definirProfessorAtual, modoDev, professorAtual } from '../ambiente/preferencias.ts'
 import { Busca } from './componentes/Busca.tsx'
@@ -408,7 +408,7 @@ export function TelaAula({
   }, [repositorio, sessao, dia])
 
   useEffect(() => {
-    void recarregar()
+    semDono('recarregar a aula', recarregar)
   }, [recarregar])
 
   /**
@@ -474,11 +474,11 @@ export function TelaAula({
       const vinculo = vinculoDe(p)
       if (!vinculo) return
       if (!confirm(`Desvincular o crachá de ${p.nomeCompleto}?`)) return
-      void (async () => {
+      semDono('presença manual', async () => {
         await repositorio.removerVinculo(vinculo.uidHash)
         await recarregar()
         aoMudarBase()
-      })()
+      })
     },
     [vinculoDe, repositorio, recarregar, aoMudarBase],
   )
@@ -699,7 +699,7 @@ export function TelaAula({
    * crachá, e um clique não tem esse problema.
    */
   const aoEncerrarAgora = useCallback(() => {
-    void (async () => {
+    semDono('encerrar pelo botão', async () => {
       const agora = new Date()
       const vinculo = vinculos.find((v) => v.uidHash === sessao.uidHashProfessor)
       const rascunho = eventoDe(
@@ -722,7 +722,7 @@ export function TelaAula({
         estatisticaDeIntervalos(intervalos.current),
       )
       aoMudarBase()
-    })()
+    })
   }, [config.instalacaoId, sessao, repositorio, aoRegistrar, aoEncerrar, aoMudarBase, vinculos])
 
   /**
@@ -1168,7 +1168,8 @@ export function TelaAula({
                           // o texto mais novo está — `vinculo.nome` sozinho
                           // gravaria o nome antigo de volta. `efetivo()` já
                           // decide qual dos dois vale.
-                          if (vinculo) void repositorio.gravarVinculo({ ...vinculo, nome: efetivo(p).nome })
+                          if (vinculo)
+                            semDono('renomear vínculo', () => repositorio.gravarVinculo({ ...vinculo, nome: efetivo(p).nome }))
                         }}
                         aria-label={`nome de ${p.nomeCompleto}`}
                       />
@@ -1221,12 +1222,12 @@ export function TelaAula({
                           {presente ? (
                             <button
                               className="botao--quieto"
-                              onClick={() => void alterarPresenca(p, false)}
+                              onClick={() => semDono('tirar presença', () => alterarPresenca(p, false))}
                             >
                               Não presente
                             </button>
                           ) : (
-                            <button onClick={() => void alterarPresenca(p, true)}>Presente</button>
+                            <button onClick={() => semDono('marcar presença', () => alterarPresenca(p, true))}>Presente</button>
                           )}
                           {/* Corrige um crachá vinculado à pessoa errada sem
                               sair da chamada — ver o comentário de
@@ -1252,7 +1253,7 @@ export function TelaAula({
         <Busca
           pessoas={ordemDaBusca}
           aoDesistir={() => {
-            void (async () => {
+            semDono('efeito', async () => {
               const uidHash = procurando
               setProcurando(undefined)
               const agora = new Date()
@@ -1270,10 +1271,10 @@ export function TelaAula({
               }
               await recarregar()
               aoMudarBase()
-            })()
+            })
           }}
           aoEscolher={(pessoa) => {
-            void (async () => {
+            semDono('efeito', async () => {
               const uidHash = procurando
               const quando = new Date()
               setProcurando(undefined)
@@ -1303,7 +1304,7 @@ export function TelaAula({
               tocar('ok')
               await recarregar()
               aoMudarBase()
-            })()
+            })
           }}
         />
       )}

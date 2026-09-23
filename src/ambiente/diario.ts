@@ -57,6 +57,19 @@ export function registrar(tipo: string, dados: Record<string, Valor> = {}): void
   agendar()
 }
 
+/**
+ * Cadeia "dispare e esqueça" que não vira promessa rejeitada sem dono.
+ *
+ * Efeito de tela e manipulador de evento não têm quem espere por eles: se a
+ * base fecha no meio — a aba indo embora, a base trocada por uma restauração,
+ * a suíte encerrando o teste — a rejeição some no console, e some junto a
+ * informação de que algo não aconteceu. Aqui ela vai para o diário, com o
+ * nome de quem falhou.
+ */
+export function semDono(onde: string, tarefa: () => Promise<unknown>): void {
+  void tarefa().catch((erro: Error) => registrar('erro_em_efeito', { onde, mensagem: erro?.message }))
+}
+
 /** Os 8 primeiros do hash: segue a pessoa sem identificá-la. */
 export const curto = (uidHash: string | undefined) => uidHash?.slice(0, 8)
 
