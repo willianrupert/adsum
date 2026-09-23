@@ -142,6 +142,31 @@ Específicas do app:
   `{ itens, problemas }`, e a tela mostra linha, conteúdo e motivo. É a mesma
   regra da recusa muda: 46 alunos onde deveria haver 48, sem explicação, é bug.
 
+## Como uma mudança chega à sala
+
+Decidido pelo autor em 23/09/2026, depois de três semanas de falhas em sala.
+O que falhou não foi o código: foi o ritmo. A aula de 22/09 quebrou por
+mudanças publicadas na véspera, testadas sobre base limpa. **Estas regras
+valem para qualquer sessão, inclusive as do Claude**, que é a parte mais
+apressada do processo — escrever código ficou barato, validar não.
+
+- **Nada vai ao ar a menos de dois dias de uma aula real.** A exceção é
+  conserto de uma falha **observada** (em sala, no ensaio ou na bancada), e
+  mesmo assim com o ensaio completo depois do deploy. "Seria bom ter" espera.
+  Roteiro do ensaio: `docs/07_ensaio_antes_da_aula.md`.
+- **Pronto é ter rodado na cópia do cofre com o dongle, não os testes
+  passarem.** Depois de todo deploy: os sete passos sobre uma cópia do cofre
+  de um professor real (descompactada de novo quando o caso for "máquina que
+  atualiza"), com o dongle de verdade. Base limpa esconde a classe de defeito
+  que chega à sala — em 23/09, o ensaio achou dois defeitos que 593 testes
+  não achavam (32 alunos com um vínculo em cada sal).
+- **Funcionalidade nova congelada até quatro semanas limpas de uso real.**
+  Só consertos. A régua é o zip da pasta do professor, lido toda sexta:
+  diário sem recusa, divergência ou erro sem dono. A lista de "Ideias
+  levantadas" abaixo continua lista.
+- **Toda falha em sala vira cofre anonimizado, teste que falha, e só então
+  conserto** — ver "Teste de conserto roda sobre base com histórico", acima.
+
 ## O README é vitrine
 
 `README.md` é a primeira impressão do repositório, que é portfólio. Ele conta o
