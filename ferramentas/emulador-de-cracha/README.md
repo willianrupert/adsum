@@ -78,6 +78,28 @@ chip esquece a configuração, então o firmware manda `SAMConfiguration` de
 novo — sem isso o modo alvo não funciona, que foi o que travou esta bancada
 por horas.
 
+## Validado de ponta a ponta em 22/09/2026
+
+Doze alunos emitidos pelo emulador entraram na chamada do app como presença,
+com os nomes aparecendo na tela um a um. O caminho completo, sem dublê em
+nenhum elo:
+
+```
+app (Diagnóstico) → serial → ESP32-C3 → PN532 vira 12 crachás no ar
+  → dongle USB lê e digita → LeitorTeclado → chamada grava → nomes na tela
+```
+
+Dois defeitos do **app** apareceram nessa validação, e nenhum teste os pegaria:
+
+1. Trocar de adaptador no Diagnóstico prendia o app em "o leitor caiu no meio
+   da aula" com o dongle lendo, e o "Tentar de novo" não saía de lá.
+2. O modo de assistir disparava a fila sem cadastrar os crachás dela: a turma
+   aparecia toda cadastrada (com os crachás do rig de HID) e cada leitura
+   perguntava de quem era.
+
+Os dois estão corrigidos e com teste. Vale registrar que foi a bancada de
+hardware que os encontrou — que é o motivo de ela existir.
+
 ## Limites que não são bug
 
 - **O primeiro byte do UID é sempre `0x08`.** O firmware do PN532 mascara,

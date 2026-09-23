@@ -22,14 +22,19 @@
 //                                 intervalos: com pouco tempo no ar, ele
 //                                 simplesmente não passa por lá — medido em
 //                                 22/09/2026, 350 ms não bastava
-//   FILA <quantos> <ar> <gap>  -- uma turma inteira: `quantos` crachás
+//   FILA <quantos> <ar> <gap> [atraso]
+//                              -- uma turma inteira: `quantos` crachás
 //                                 diferentes, cada um `ar` ms no campo, com
 //                                 `gap` ms entre eles. Responde
 //                                 `OK <primeiro> <ultimo>` com os números que
 //                                 o dongle digita. Crachás **diferentes** a
 //                                 cada rodada de propósito: o dongle ignora o
 //                                 mesmo crachá parado no campo, e só lê de
-//                                 novo quando ele sai e outro entra
+//                                 novo quando ele sai e outro entra.
+//                                 `atraso` (ms) espera antes do primeiro
+//                                 aluno: é o tempo de fechar o Diagnóstico e
+//                                 ir ver os nomes aparecendo na chamada, que
+//                                 é onde o professor olha de verdade
 //   RESET <ON|OFF>             -- liga ou desliga o reset por fio entre um
 //                                 aluno e outro. Com a antena na distância
 //                                 certa, trocar de UID pode bastar — e sem o
@@ -336,12 +341,26 @@ void tratar(String linha) {
     const String gapTexto = proximaPalavra(linha);
     const int ar = arTexto.length() ? arTexto.toInt() : 1200;
     const int gap = gapTexto.length() ? gapTexto.toInt() : 300;
+    const String atrasoTexto = proximaPalavra(linha);
+    const int atraso = atrasoTexto.length() ? atrasoTexto.toInt() : 0;
     if (quantos <= 0 || quantos > 1000) {
       Serial.println("ERR uso: FILA <quantos> <ms no ar> <ms entre>");
       return;
     }
     // Faixa própria, longe dos UIDs medidos do dongle real e dos crachás de
     // teste do rig de HID: uma fila nunca deve colidir com crachá de gente.
+    if (atraso > 0) {
+      // Piscar depressa enquanto espera: quem está com o dongle na mão sabe
+      // que a fila vai começar, sem precisar olhar o monitor.
+      const uint32_t fim = millis() + (uint32_t)atraso;
+      while (millis() < fim) {
+        digitalWrite(PINO_LED, HIGH);
+        delay(120);
+        digitalWrite(PINO_LED, LOW);
+        delay(120);
+      }
+    }
+
     uint32_t primeiro = 0, ultimo = 0;
     for (int i = 0; i < quantos; i++) {
       Cracha c;
