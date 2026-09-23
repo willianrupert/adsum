@@ -563,3 +563,22 @@ vai abrir para 7 crachás desconhecidos numa fila:
 O crachá desconhecido também passou a deixar linha no diário
 (`desconhecido`, `desconhecido_durante_busca`); antes só a desistência
 aparecia.
+
+## 23/09/2026, noite — primeira medida de dois crachás juntos no dongle
+
+O autor encostou dois crachás reais juntos no dongle. O dongle **alterna**
+entre os dois, e o intervalo entre leituras de crachás diferentes variou de
+268 a 1.891 ms: 268, 270 e 387 ms foram recusados por `INTERVALO_MINIMO_MS`;
+535, 560, 916 e 1.891 ms foram aceitos. A regra funcionou como escrita, mas
+**não bloqueia** o segundo cartão: numa fraude de verdade (o crachá de um
+colega ausente), ele teria contado presença logo na segunda alternância. O
+que a regra entrega é um alarme — segurando os dois por um ou dois segundos,
+alguma alternância cai abaixo de 400 ms e o aviso aparece na tela.
+
+Subir o número não resolve (a alternância chegou a 1,9 s, na faixa de uma
+fila apressada). O sinal que separa cartões empilhados de uma fila é a
+**alternância**: A, B, A, B em poucos segundos, que gente numa fila não faz.
+Ideia registrada, não decidida; nada muda antes da aula de 24/09.
+
+A busca "de quem é?" também foi validada com os dois crachás reais: com ela
+aberta, o segundo foi recusado duas vezes sem trocar o alvo.

@@ -88,8 +88,10 @@ Específicas do app:
   passa a ser visível — dica `SIGAA: docente` na linha, e um aviso enquanto
   ninguém estiver marcado. Padrão silencioso continua proibido; o que existe
   agora é padrão **anunciado**.
-- **Intervalo mínimo entre crachás diferentes** (`INTERVALO_MINIMO_MS`, 400 ms —
-  **e este número ainda não foi medido**).
+- **Intervalo mínimo entre crachás diferentes** (`INTERVALO_MINIMO_MS`, 400 ms).
+  **Primeira medida, 23/09/2026:** dois crachás juntos no dongle alternam
+  entre 268 e 1.891 ms — a regra recusa parte das leituras e dispara o aviso,
+  mas não impede o segundo cartão de contar. Ver `docs/04_historico.md`.
   Pedido pelo Prof. Paulo contra passar dois cartões de uma vez. O que a regra
   **não** faz precisa estar dito junto: ela não distingue fraude de fila
   apressada, e não pega alguém encostando sozinho o crachá de um colega ausente
