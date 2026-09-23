@@ -522,3 +522,26 @@ A tela seguiu atrasada (até ~2 s para redesenhar), sem perder nada.
 **O que isto não prova:** a máquina do Paulo, a versão publicada e
 instalada, base com histórico, crachá real na mão de gente. Os sete passos
 com o dongle continuam sendo o que decide a aula.
+
+## 23/09/2026 — ensaio na versão publicada: dois defeitos de correção manual
+
+No passo 2 dos sete, com a cópia do cofre do Paulo:
+
+- **"Remover crachá" parecia não fazer nada.** A base do Paulo tem 32 alunos
+  com um vínculo em cada sal: o de 17/09, guardado pelo chaveiro, e o de
+  22/09. O botão apagava o primeiro que achasse, e às vezes era o morto — o
+  crachá continuava valendo e a tela não mudava. Agora apaga todos os
+  vínculos da pessoa, que é o que o botão promete.
+- **"Não presente" e depois o crachá: o contador não voltava.** A regra era
+  "correção manual mais recente decide; sem ela, o crachá" — escrita supondo
+  a correção sempre depois do crachá. **Decidido pelo autor:** crachá
+  gravado depois da remoção devolve a presença. A ordem vem do número do
+  evento (reservado, só anda para frente em cada instalação), não do
+  `quando`: "Ver presenças" grava a correção ao meio-dia do dia corrigido.
+  Entre instalações os números não se comparam, e a remoção continua valendo.
+  Conferido na cópia do cofre: nenhuma falta histórica muda. Crachá usado por
+  outra pessoa se resolve com "Remover crachá", que o faz cair na busca.
+
+Recadastrar o mesmo cartão no mesmo sal dá o mesmo `uid_hash` — por isso as
+leituras seguintes viravam "repetido", e a lista lateral mostrava o nome
+enquanto o contador ficava parado.

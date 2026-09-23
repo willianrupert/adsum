@@ -474,16 +474,22 @@ export function TelaAula({
    */
   const removerCracha = useCallback(
     (p: Matriculado) => {
-      const vinculo = vinculoDe(p)
-      if (!vinculo) return
+      // **Todos** os vínculos da pessoa, não o primeiro. Com o chaveiro de
+      // sais, quem foi cadastrado de novo depois de 17/09 tem um vínculo em
+      // cada sal (32 alunos na base do Paulo): apagar só o primeiro podia
+      // apagar o morto, e a tela não mudava — "nada aconteceu", no ensaio de
+      // 23/09/2026. O botão promete que o crachá deixa de valer.
+      const daPessoa = vinculos.filter((v) => (p.matricula ? v.matricula === p.matricula : v.nome === p.nome))
+      if (daPessoa.length === 0) return
       if (!confirm(`Desvincular o crachá de ${p.nomeCompleto}?`)) return
-      semDono('presença manual', async () => {
-        await repositorio.removerVinculo(vinculo.uidHash)
+      semDono('remover crachá', async () => {
+        for (const vinculo of daPessoa) await repositorio.removerVinculo(vinculo.uidHash)
+        registrar('cracha_removido', { vinculos: daPessoa.length })
         await recarregar()
         aoMudarBase()
       })
     },
-    [vinculoDe, repositorio, recarregar, aoMudarBase],
+    [vinculos, repositorio, recarregar, aoMudarBase],
   )
 
   /**

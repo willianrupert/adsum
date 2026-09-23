@@ -174,6 +174,60 @@ describe('planilhaDeFaltas', () => {
     expect(celula?.faltas).toBe(0)
   })
 
+  // Ensaio de 23/09/2026: tirar a presença e o aluno encostar de novo. A
+  // ordem é a de gravação (o número do evento), não o `quando`: "Ver
+  // presenças" grava a correção ao meio-dia, qualquer que seja a hora.
+  it('crachá gravado depois da remoção devolve a presença', () => {
+    const remocao: Evento = {
+      eventoId: 'web-a1-20260817-0009',
+      quando: '2026-08-17T12:00:00.000Z',
+      turma: TURMA,
+      matricula: ana.matricula,
+      nome: ana.nome,
+      origem: 'manual',
+      resultado: 'removido',
+      uidHash: 'manual-x',
+    }
+    const depois = { ...presenca('2026-08-17', '08:05', ana), eventoId: 'web-a1-20260817-0010' }
+    const eventos = [abrir('2026-08-17', '08:00'), remocao, depois]
+    const { linhas } = planilhaDeFaltas(eventos, [ana], [AULA_DUPLA], TURMA)
+    expect(linhas.find((l) => l.matriculado === ana)?.porDia.get('2026-08-17')?.faltas).toBe(0)
+  })
+
+  it('crachá gravado antes da remoção continua derrubado, mesmo com hora mais tarde', () => {
+    const remocao: Evento = {
+      eventoId: 'web-a1-20260817-0009',
+      quando: '2026-08-17T12:00:00.000Z',
+      turma: TURMA,
+      matricula: ana.matricula,
+      nome: ana.nome,
+      origem: 'manual',
+      resultado: 'removido',
+      uidHash: 'manual-x',
+    }
+    const antes = { ...presenca('2026-08-17', '14:05', ana), eventoId: 'web-a1-20260817-0008' }
+    const eventos = [abrir('2026-08-17', '08:00'), antes, remocao]
+    const { linhas } = planilhaDeFaltas(eventos, [ana], [AULA_DUPLA], TURMA)
+    expect(linhas.find((l) => l.matriculado === ana)?.porDia.get('2026-08-17')?.faltas).toBe(2)
+  })
+
+  it('crachá de outra instalação não desfaz a remoção: os números não se comparam', () => {
+    const remocao: Evento = {
+      eventoId: 'web-a1-20260817-0009',
+      quando: '2026-08-17T12:00:00.000Z',
+      turma: TURMA,
+      matricula: ana.matricula,
+      nome: ana.nome,
+      origem: 'manual',
+      resultado: 'removido',
+      uidHash: 'manual-x',
+    }
+    const deOutra = { ...presenca('2026-08-17', '08:05', ana), eventoId: 'web-b2-20260817-0050' }
+    const eventos = [abrir('2026-08-17', '08:00'), remocao, deOutra]
+    const { linhas } = planilhaDeFaltas(eventos, [ana], [AULA_DUPLA], TURMA)
+    expect(linhas.find((l) => l.matriculado === ana)?.porDia.get('2026-08-17')?.faltas).toBe(2)
+  })
+
   // `presencasDoDia` é a mesma regra de `planilhaDeFaltas`, extraída pra
   // consulta pontual — usada por `TelaAula` pra decidir Presente/Não
   // presente sem montar a planilha do semestre inteiro.

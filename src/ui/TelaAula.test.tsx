@@ -412,6 +412,27 @@ describe('presença manual na lista de alunos', () => {
     await waitFor(() => expect(status).toHaveAttribute('aria-label', '1'))
   })
 
+  // Ensaio de 23/09/2026: "Não presente" e depois o crachá, na frente do
+  // professor. O contador ficava em zero, porque a correção manual vencia
+  // sempre, mesmo gravada antes do crachá.
+  it('crachá encostado depois de "Não presente" devolve a presença', async () => {
+    const usuario = userEvent.setup()
+    await comCrachaDaAna()
+    montar([BRENO])
+    const status = screen.getByRole('status')
+
+    await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await waitFor(() => expect(status).toHaveAttribute('aria-label', '1'))
+
+    const linhaDaAna = screen.getByLabelText(`nome de ${ANA.nomeCompleto}`).closest('tr')!
+    await usuario.click(await within(linhaDaAna).findByRole('button', { name: 'Não presente' }))
+    await waitFor(() => expect(status).toHaveAttribute('aria-label', '0'))
+
+    await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await waitFor(() => expect(status).toHaveAttribute('aria-label', '1'))
+    expect(await within(linhaDaAna).findByRole('button', { name: 'Não presente' })).toBeInTheDocument()
+  })
+
   it('crachá de verdade e presença manual contam juntos, sem duplicar a mesma pessoa', async () => {
     const usuario = userEvent.setup()
     await comCrachaDaAna()
@@ -539,6 +560,27 @@ describe('remover crachá', () => {
     // Quem sabe recontar "quem falta" é a tela por cima (`Fluxo`, de verdade)
     // — esta tela isolada só avisa que algo mudou.
     await waitFor(() => expect(aoMudarBase).toHaveBeenCalled())
+  })
+
+  // Base do Paulo, 23/09/2026: 32 alunos com um vínculo em cada sal (o
+  // chaveiro guarda os dois). Apagar só o primeiro podia apagar o morto, e
+  // o crachá continuava valendo — "nada aconteceu".
+  it('com um vínculo em cada sal, apaga os dois de uma vez', async () => {
+    const usuario = userEvent.setup()
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    await comCrachaDaAna()
+    await bancada.repositorio.gravarVinculo({
+      uidHash: 'de-um-sal-antigo',
+      papel: 'aluno',
+      nome: ANA.nome,
+      matricula: ANA.matricula,
+      criadoEm: new Date().toISOString(),
+    })
+    montar([BRENO])
+
+    await usuario.click(await screen.findByRole('button', { name: 'Remover crachá' }))
+
+    await waitFor(async () => expect(await bancada.repositorio.listarVinculos()).toHaveLength(0))
   })
 
   it('cancelar a confirmação não mexe no vínculo', async () => {

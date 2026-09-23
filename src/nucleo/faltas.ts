@@ -54,17 +54,45 @@ function contaComoPresenca(e: Evento): boolean {
 }
 
 /**
+ * A instalação e o número de um `evento_id` (ver `proximoEventoId`). Dentro
+ * de uma instalação o número é reservado e só anda para frente, então diz a
+ * ordem em que os eventos foram **gravados**. O `quando` não diz: a correção
+ * feita em "Ver presenças" grava ao meio-dia do dia corrigido, e não na hora
+ * do clique.
+ */
+function ordemDeGravacao(e: Evento): { instalacao: string; numero: number } | undefined {
+  const achado = /^(.+)-\d{8}-(\d+)(?:\.\d+)?$/.exec(e.eventoId)
+  return achado ? { instalacao: achado[1], numero: Number(achado[2]) } : undefined
+}
+
+/** Só compara eventos da mesma instalação: entre duas, os números não dizem nada. */
+function gravadoDepois(a: Evento, b: Evento): boolean {
+  const oa = ordemDeGravacao(a)
+  const ob = ordemDeGravacao(b)
+  return !!oa && !!ob && oa.instalacao === ob.instalacao && oa.numero > ob.numero
+}
+
+/**
  * Presente ou não, pra um dia já isolado de eventos de uma única pessoa —
  * mesma regra de `planilhaDeFaltas`: manual mais recente decide
  * (`'removido'` é falta, qualquer outro resultado é presença); sem manual
  * nenhum, o crachá decide. `doDia` precisa vir mais recente primeiro (a
  * ordem que `Repositorio.listarEventos` já entrega).
+ *
+ * Com uma exceção: crachá gravado **depois** da remoção devolve a presença.
+ * A regra supunha que a correção vem sempre depois do crachá, e o caso
+ * contrário ficava preso — o professor tirava a presença, o aluno encostava
+ * de novo na frente dele, e o contador não voltava (achado no ensaio de
+ * 23/09/2026). Crachá usado por outra pessoa se resolve com "Remover
+ * crachá", que o faz cair na busca em vez de contar.
  */
 function resolverPresencaDoDia(doDia: Evento[]): { presente: boolean; repetido: boolean; manual: boolean } {
   const doCracha = doDia.filter((e) => e.origem === 'cracha')
   const ultimoManual = doDia.find((e) => e.origem === 'manual')
+  const voltouPeloCracha =
+    ultimoManual?.resultado === 'removido' && doCracha.some((e) => gravadoDepois(e, ultimoManual))
   return {
-    presente: ultimoManual ? ultimoManual.resultado !== 'removido' : doCracha.length > 0,
+    presente: ultimoManual ? ultimoManual.resultado !== 'removido' || voltouPeloCracha : doCracha.length > 0,
     repetido: doCracha.length > 1,
     manual: !!ultimoManual,
   }
