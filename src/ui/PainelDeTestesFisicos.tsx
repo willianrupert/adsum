@@ -18,6 +18,7 @@
 import { useEffect, useState } from 'react'
 import { RigDeCracha } from '../ambiente/rigDeCracha.ts'
 import {
+  cadastrarFilaDeRadio,
   rodarCenarioAvancado,
   rodarChamadaComHistorico,
   rodarFilaDeRadio,
@@ -149,6 +150,10 @@ export function PainelDeTestesFisicos({
   const rodarFilaParaAssistir = async () => {
     setErro(undefined)
     try {
+      // Os crachás da fila precisam existir antes de ela começar, senão a
+      // tela vira um desfile de "de quem é este crachá?" — foi o que
+      // aconteceu na bancada de 22/09/2026 quando este modo pulava o passo.
+      await cadastrarFilaDeRadio(repositorio, config, 12)
       await rig.fila(12, 900, 400, 6000)
     } catch (e) {
       // Fechar o Diagnóstico derruba a porta antes da resposta chegar: é o

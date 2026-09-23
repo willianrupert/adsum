@@ -304,6 +304,41 @@ export async function rodarChamadaComHistorico(
 }
 
 /**
+ * Dá a cada aluno da turma de teste o crachá que a fila vai emitir.
+ *
+ * Sem isto, o app recebe doze crachás que nunca viu e pergunta de quem é cada
+ * um, enquanto a turma aparece toda cadastrada — porque `prepararTurmaDeTeste`
+ * deu a eles **outros** crachás, os do rig de HID. Dois conjuntos de UIDs, e
+ * a confusão é imediata na tela (achado em 22/09/2026, num modo de
+ * demonstração que pulava este passo).
+ *
+ * Devolve o mapa de hash para índice, que é como o cenário confere depois
+ * quem chegou.
+ */
+export async function cadastrarFilaDeRadio(
+  repositorio: Repositorio,
+  config: Config,
+  quantos: number,
+): Promise<Map<string, number>> {
+  const matriculados = await repositorio.listarMatriculados(TURMA_DE_TESTE)
+  const hashes = new Map<string, number>()
+  for (let i = 0; i < Math.min(quantos, matriculados.length); i++) {
+    const uid = decimalParaBytes(uidDaFilaDeRadio(i))
+    if (!uid) continue
+    const uidHash = await calcularUidHash(config.salHex, uid)
+    hashes.set(uidHash, i)
+    await repositorio.gravarVinculo({
+      uidHash,
+      papel: 'aluno',
+      nome: matriculados[i].nome,
+      matricula: matriculados[i].matricula,
+      criadoEm: new Date().toISOString(),
+    })
+  }
+  return hashes
+}
+
+/**
  * Uma turma inteira passando o crachá no dongle de verdade, pelo rádio.
  *
  * É o último pedaço do caminho que nenhum teste cobria: o crachá existe como
@@ -337,20 +372,7 @@ export async function rodarFilaDeRadio(
     const alunos = Math.min(quantos, matriculados.length)
 
     aoProgredir(`Cadastrando ${alunos} crachás da fila...`)
-    const hashes = new Map<string, number>()
-    for (let i = 0; i < alunos; i++) {
-      const uid = decimalParaBytes(uidDaFilaDeRadio(i))
-      if (!uid) continue
-      const uidHash = await calcularUidHash(config.salHex, uid)
-      hashes.set(uidHash, i)
-      await repositorio.gravarVinculo({
-        uidHash,
-        papel: 'aluno',
-        nome: matriculados[i].nome,
-        matricula: matriculados[i].matricula,
-        criadoEm: new Date().toISOString(),
-      })
-    }
+    const hashes = await cadastrarFilaDeRadio(repositorio, config, alunos)
 
     const antes = new Set((await repositorio.listarEventos({ turma: TURMA_DE_TESTE })).map((e) => e.eventoId))
     aoProgredir(`Disparando ${alunos} crachás pelo rádio — antenas a uns 3 cm...`)
