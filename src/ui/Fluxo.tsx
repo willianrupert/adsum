@@ -420,6 +420,18 @@ export function Fluxo() {
     return () => clearTimeout(relogio)
   }, [novidade])
 
+  /**
+   * Cadeia "dispare e esqueça" que não vira promessa sem dono.
+   *
+   * Efeito de tela não tem quem espere por ele: se a base fecha no meio (a aba
+   * indo embora, o banco trocado por uma restauração), a rejeição some no
+   * console — ou reprova a suíte, que foi como isto apareceu em 23/09/2026.
+   * O erro vai para o diário, que é onde se olha depois.
+   */
+  const semDono = (onde: string, tarefa: () => Promise<unknown>) => {
+    void tarefa().catch((erro: Error) => registrar('erro_em_efeito', { onde, mensagem: erro?.message }))
+  }
+
   const recontar = useCallback(async () => {
     const [listaDeTurmas, matriculados, vinculos, aberta, atual] = await Promise.all([
       repositorio.listarTurmas(),
@@ -516,14 +528,14 @@ export function Fluxo() {
   // espera um clique, porque o navegador exige gesto para concedê-la.
   useEffect(() => {
     if (!pastaDisponivel()) return
-    void (async () => {
+    semDono('reencontrar pasta', async () => {
       const guardada = await repositorio.lerPasta()
       if (!guardada) return setEstadoDaPasta('sem_pasta')
       const estado = await permissao(guardada)
       if (estado !== 'granted') return setEstadoDaPasta('sem_permissao')
       setPasta(guardada)
       setEstadoDaPasta('ligada')
-    })()
+    })
   }, [repositorio])
 
   /** Planilha contra base, com o resultado no diário. Ver `conferirLog`. */
@@ -566,7 +578,7 @@ export function Fluxo() {
   // aqui também (ver `adotarSal`, em `ambiente/sincronia.ts`).
   useEffect(() => {
     if (!pasta) return
-    void (async () => {
+    semDono('ligar pasta', async () => {
       const antes = saisConhecidos(await repositorio.lerConfig()).join()
       const vazia = (await repositorio.listarVinculos()).length === 0
       // Base cheia também recebe o que só a pasta tem: sem isto, a primeira
@@ -586,7 +598,7 @@ export function Fluxo() {
       // `recarregarConfig`, que reroda este efeito — reler sempre seria laço.
       if (saisConhecidos(await repositorio.lerConfig()).join() !== antes) await recarregarConfig()
       await recontar()
-    })()
+    })
   }, [pasta, repositorio, recontar, recarregarConfig, conferir])
 
   // Gravação que falha em silêncio é o pior defeito possível aqui: a aula segue
@@ -854,7 +866,7 @@ export function Fluxo() {
   useEffect(() => {
     if (sessao) return
     return leitor.aoLer((leitura) => {
-      void (async () => {
+      semDono('crachá no repouso', async () => {
         const { uidHash, vinculo } = await identificarCracha(repositorio, leitura.uid)
         registrar('cracha_no_repouso', { hash: curto(uidHash), vinculo: vinculo?.papel ?? 'nenhum' })
         // Abre a turma e a hora que a tela de repouso está mostrando — não
@@ -873,7 +885,7 @@ export function Fluxo() {
             ? `${vinculo.nome} foi lido. O leitor está funcionando. Nenhuma aula aberta agora.`
             : 'Crachá lido, mas ainda sem dono. O leitor está funcionando.',
         )
-      })()
+      })
     })
   }, [leitor, repositorio, config, sessao, abrirComProfessor])
 
