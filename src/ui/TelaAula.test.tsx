@@ -884,6 +884,57 @@ describe('crachás que terminam de identificar fora de ordem', () => {
 // ou sem ninguém chamado — ver o comentário em `decidir()`. Este bloco cobre
 // o caso sem pendente nenhum (turma completa, alguém trouxe um crachá novo);
 // o caso com pendente está em 'quem falta', acima.
+// Bancada de 23/09/2026: com a busca aberta, os crachás seguintes deixavam
+// dígitos no campo, e um segundo crachá desconhecido tomava o lugar do
+// primeiro em silêncio — o nome escolhido para quem estava na frente ia para
+// o crachá de quem veio atrás.
+describe('crachá chegando com a busca aberta', () => {
+  it('um segundo crachá novo não troca o crachá da busca, e avisa', async () => {
+    const usuario = userEvent.setup()
+    montar([ANA, BRENO])
+
+    await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+    await screen.findByText('Crachá novo')
+    // Acima dos 400 ms de INTERVALO_MINIMO_MS: é a pessoa seguinte da fila,
+    // não dois cartões na mesma mão.
+    await new Promise((r) => setTimeout(r, 450))
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+    expect(await screen.findByText(/Outro crachá novo chegou e não foi contado/)).toBeInTheDocument()
+
+    // Escolher a Ana vincula o crachá **da Ana**, o primeiro.
+    await usuario.type(screen.getByLabelText('Buscar na turma'), 'Ana{Enter}')
+    await waitFor(async () => expect(await bancada.repositorio.listarVinculos()).toHaveLength(1))
+    const [vinculo] = await bancada.repositorio.listarVinculos()
+    expect(vinculo.matricula).toBe(ANA.matricula)
+    expect(vinculo.uidHash).toBe(await calcularUidHash(bancada.config.salHex, hexParaUid(CRACHA_DA_ANA)))
+  })
+
+  it('os dígitos que o dongle deixa no campo saem quando o crachá é lido', async () => {
+    const usuario = userEvent.setup()
+    await comCrachaDaAna()
+    montar([BRENO])
+
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+    const campo = await screen.findByLabelText('Buscar na turma')
+    // O que o dongle digita antes de o leitor reconhecer a rajada.
+    await usuario.type(campo, 'Bre083')
+    await act(async () => bancada.leitor.simular(CRACHA_DA_ANA))
+
+    await waitFor(() => expect(campo).toHaveValue('Bre'))
+  })
+
+  it('matrícula digitada à mão, sem crachá no meio, continua no campo', async () => {
+    const usuario = userEvent.setup()
+    montar([ANA, BRENO])
+
+    await act(async () => bancada.leitor.simular(CRACHA_NOVO))
+    const campo = await screen.findByLabelText('Buscar na turma')
+    await usuario.type(campo, BRENO.matricula)
+
+    expect(campo).toHaveValue(BRENO.matricula)
+  })
+})
+
 describe('crachá desconhecido sem ninguém pendente', () => {
   it('abre a busca', async () => {
     await comCrachaDaAna()

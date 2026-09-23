@@ -2328,6 +2328,16 @@ button:focus-visible {
   text-align: center;
 }
 
+.busca__aviso {
+  margin: -12px 0 16px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: var(--t-corpo);
+  color: var(--grave);
+  background: var(--grave-fraca);
+  text-align: center;
+}
+
 .busca__campo {
   width: 100%;
   background: var(--fundo-alt);

@@ -139,6 +139,20 @@ export function TelaAula({
   const [linhas, setLinhas] = useState<Linha[]>([])
   const [recado, setRecado] = useState<string>()
   const [procurando, setProcurando] = useState<string>()
+  /**
+   * O mesmo crachá, na hora. O estado só chega no render seguinte, e o
+   * crachá que encosta com a busca aberta precisa saber disso já — ver o
+   * desconhecido em `aoLer`.
+   */
+  const procurandoRef = useRef<string>(undefined)
+  const [leiturasDuranteABusca, setLeiturasDuranteABusca] = useState(0)
+  const [avisoDaBusca, setAvisoDaBusca] = useState<string>()
+  const fecharBusca = useCallback(() => {
+    procurandoRef.current = undefined
+    setProcurando(undefined)
+    setAvisoDaBusca(undefined)
+    setLeiturasDuranteABusca(0)
+  }, [])
   /** Para "Remover crachá" na tabela — o vínculo de cada linha já ligada. */
   const [vinculos, setVinculos] = useState<Vinculo[]>([])
   /** Quem já foi marcado presente **hoje** (crachá ou correção manual) — a
@@ -541,6 +555,7 @@ export function TelaAula({
   useEffect(() => {
     return leitor.aoLer((leitura) => {
       setUltimaAtividadeEm(leitura.em)
+      if (procurandoRef.current) setLeiturasDuranteABusca((n) => n + 1)
       void (async () => {
         const minha = ++geracao.current
         // Uma linha no diário por crachá, com o tempo de cada etapa: é o que
@@ -606,9 +621,23 @@ export function TelaAula({
         //
         // Desistir continua sendo um clique fora: quem não quiser vincular
         // agora fecha, e o registro fica como crachá não cadastrado.
+        //
+        // **Uma busca por vez.** Com a busca aberta, outro crachá desconhecido
+        // não toma o lugar do primeiro: trocar em silêncio fazia o nome
+        // escolhido para quem está na frente ir para o crachá de quem veio
+        // atrás (bancada de 23/09/2026). O segundo é recusado em voz alta e
+        // encosta de novo depois. Crachá conhecido segue contando normalmente.
         if (decisao.tipo === 'desconhecido') {
-          setProcurando(uidHash)
           tocar('desconhecido')
+          if (procurandoRef.current === uidHash) return
+          if (procurandoRef.current) {
+            registrar('desconhecido_durante_busca', { hash: curto(uidHash) })
+            setAvisoDaBusca('Outro crachá novo chegou e não foi contado. Termine esta busca e peça para encostar de novo.')
+            return
+          }
+          registrar('desconhecido', { hash: curto(uidHash) })
+          procurandoRef.current = uidHash
+          setProcurando(uidHash)
           return
         }
 
@@ -1281,10 +1310,12 @@ export function TelaAula({
       {procurando && (
         <Busca
           pessoas={ordemDaBusca}
+          leiturasDuranteABusca={leiturasDuranteABusca}
+          aviso={avisoDaBusca}
           aoDesistir={() => {
             semDono('efeito', async () => {
               const uidHash = procurando
-              setProcurando(undefined)
+              fecharBusca()
               const agora = new Date()
               const rascunho = eventoDe(
                 { tipo: 'desconhecido' },
@@ -1306,7 +1337,7 @@ export function TelaAula({
             semDono('efeito', async () => {
               const uidHash = procurando
               const quando = new Date()
-              setProcurando(undefined)
+              fecharBusca()
               // É por aqui que o crachá real do professor costuma ser
               // identificado: crachá desconhecido, busca, "é ele" — e
               // `vincularCracha` substitui o sintético que `garantirProfessor`

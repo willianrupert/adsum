@@ -22,10 +22,22 @@ export function Busca({
   pessoas,
   aoEscolher,
   aoDesistir,
+  leiturasDuranteABusca = 0,
+  aviso,
 }: {
   pessoas: Matriculado[]
   aoEscolher: (pessoa: Matriculado) => void
   aoDesistir: () => void
+  /**
+   * Quantos crachás foram lidos com a busca aberta. O dongle é um teclado, e
+   * os primeiros dígitos de cada crachá caem no campo antes de o leitor
+   * reconhecer a rajada (visto na bancada de 23/09/2026: "083085086…"). A
+   * cada leitura, os dígitos saem do campo. Matrícula digitada à mão continua
+   * funcionando: só some quando um crachá chega no meio.
+   */
+  leiturasDuranteABusca?: number
+  /** Recado para quem está buscando, como o crachá novo que chegou no meio. */
+  aviso?: string
 }) {
   const [termo, setTermo] = useState('')
   const [destacado, setDestacado] = useState(0)
@@ -40,6 +52,10 @@ export function Busca({
   // resultado é o que se quer, e Enter resolve sem tirar a mão do teclado.
   useEffect(() => setDestacado(0), [termo])
 
+  useEffect(() => {
+    if (leiturasDuranteABusca > 0) setTermo((antes) => antes.replace(/\d/g, '').trimStart())
+  }, [leiturasDuranteABusca])
+
   const achados = useMemo(() => {
     const busca = comparavel(termo.trim())
     if (!busca) return pessoas
@@ -53,6 +69,11 @@ export function Busca({
       <div className="busca" onClick={(e) => e.stopPropagation()} role="dialog">
         <p className="busca__titulo">Crachá novo</p>
         <p className="busca__nota">De quem é?</p>
+        {aviso && (
+          <p className="busca__aviso" role="status">
+            {aviso}
+          </p>
+        )}
 
         {/* O teclado resolve tudo: digitar filtra, ↑ e ↓ andam, Enter confirma,
             Esc desiste. Quem está com o aluno na frente não tira a mão daqui. */}

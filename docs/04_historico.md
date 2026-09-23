@@ -545,3 +545,21 @@ No passo 2 dos sete, com a cópia do cofre do Paulo:
 Recadastrar o mesmo cartão no mesmo sal dá o mesmo `uid_hash` — por isso as
 leituras seguintes viravam "repetido", e a lista lateral mostrava o nome
 enquanto o contador ficava parado.
+
+**Mais tarde, no passo 6 do ensaio (com o emulador C3 no lugar do S3):** o
+cenário falhou pelo motivo certo — o PN532 não emite os crachás de teste
+dele —, mas mostrou dois defeitos reais da busca "de quem é?", que amanhã
+vai abrir para 7 crachás desconhecidos numa fila:
+
+- **Os primeiros dígitos de cada crachá caíam no campo de busca.** O dongle
+  é teclado, e o leitor só reconhece a rajada depois de alguns caracteres. O
+  campo acumulava "083085086…". Agora, a cada crachá lido com a busca
+  aberta, os dígitos saem do campo; matrícula digitada à mão continua.
+- **Um segundo crachá desconhecido tomava o lugar do primeiro, em silêncio.**
+  O nome escolhido para quem estava na frente ia para o crachá de quem veio
+  atrás. Agora é uma busca por vez: o segundo é recusado com aviso dentro da
+  busca, e crachá conhecido continua contando.
+
+O crachá desconhecido também passou a deixar linha no diário
+(`desconhecido`, `desconhecido_durante_busca`); antes só a desistência
+aparecia.
