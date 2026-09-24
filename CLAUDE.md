@@ -358,8 +358,8 @@ sem conversa antes.
   Desenho em `docs/08_lancar_no_sigaa.md`: favorito na planilha de
   frequência do SIGAA, conciliação por matrícula no Adsum, o Gravar é sempre
   do professor, nunca toca em senha. Espera o HTML real e o congelamento.
-  Aula é aula, 50 ou 60 min; só `periodosDoBloco`, que deduz a contagem
-  dividindo por 50, erraria um bloco cadastrado como 3 h de 60 min.
+  A aula na UFPE é de 50 min (Portaria Normativa 07/2022, citada pelo
+  próprio SIGAA): `periodosDoBloco` está certo; o "60" do manual é antigo.
 
 - **`INTERVALO_MINIMO_MS` (400 ms, contra dois crachás na mesma mão) continua
   chutado.** O diagnóstico já mostra o intervalo entre leituras; dava para

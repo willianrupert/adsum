@@ -297,15 +297,14 @@ trocar de rota.
   para `sigaa/<turma>.csv` na próxima vez que abrir — o que pode esperar,
   espera.
 
-## 50 ou 60 minutos
+## 50 minutos, pela norma
 
-O manual da UFPE diz "bloco de aula (60 minutos)"; a captura herdada da UFRN
-diz 50. **Para o SIGAA tanto faz: aula é aula**, e dez aulas de 50 minutos
-são dez faltas (autor, 24/09/2026). O único lugar onde a duração entra é
-`periodosDoBloco` (`nucleo/faltas.ts`), que *deduz* a quantidade de aulas
-dividindo a duração do bloco por 50 — um bloco cadastrado como 13h–16h (três
-aulas de 60) vira 4. Só importa se alguma grade tiver bloco assim, e a v2 não
-depende disso: lê a quantidade da própria planilha.
+O manual da UFPE diz "bloco de aula (60 minutos)", a captura herdada da UFRN
+diz 50. **Resolvido pelo próprio SIGAA**, na página de frequência do aluno:
+"o tempo de aula que na UFPE é de 50 minutos, conforme Portaria Normativa
+Nº 07/2022". O texto do manual está desatualizado, e `periodosDoBloco`
+(`nucleo/faltas.ts`), que divide por 50, está certo. Para o SIGAA, de todo
+modo, aula é aula; e a v2 lê a quantidade da própria planilha.
 
 ## Navegador
 
@@ -397,6 +396,35 @@ de cima conserta defeito de uma de baixo.
    base limpa.
 9. **Ensaio real.** Roteiro novo no `07`: primeiro só conferência, numa
    turma real, com o professor ao lado.
+
+## O que já se sabe da rotina e do SIGAA real
+
+Respostas do autor e do Prof. Paulo, 24/09/2026:
+
+- **Mesmo Chrome, mesmo perfil** para o SIGAA e o Adsum. A janela aberta pelo
+  favorito vê a base dele.
+- **Computador próprio, sem políticas** que restrinjam favoritos. Outros
+  professores usam Windows/Linux da universidade: o favorito funciona igual
+  no Chrome de lá, desde que o Adsum rode no mesmo navegador.
+- **Ele lança na planilha, dia a dia**, depois de cada aula. O desenho
+  encaixa na rotina que já existe: é a mesma página, com três cliques.
+
+Da página de frequência **do aluno** (CIN0144, salva pelo autor, fora do
+repositório):
+
+- **SIGAA v4.15.0.206**, RichFaces 3.3.3 / a4j, jQuery 1.4. O rodapé traz a
+  versão: o favorito a manda junto com a leitura, e a auditoria registra
+  com qual SIGAA cada conferência rodou. Versão desconhecida não recusa, mas
+  aparece na folha.
+- A visão do aluno lista cada dia como `Presente`, `Falta` ou **`Não
+  Registrada`**. Nesta turma havia dias não registrados no meio de dias
+  lançados — exatamente o que a conferência pega sozinha ("A lançar").
+- O rodapé mostra o servidor (`sigaa11`): a UFPE roda vários nós. Não afeta
+  nada que a ferramenta faz, mas explica por que duas abas podem ver estados
+  diferentes por um instante.
+
+A página do docente, com a planilha, continua faltando: a do aluno não traz
+o JavaScript da planilha, que só carrega para quem pode lançar.
 
 ## Ordem de chegada
 
