@@ -1,8 +1,8 @@
 # 08 — Lançar no SIGAA
 
-Especificação da v2, do micro ao macro. Não implementado. Pedido do Prof.
-Paulo em 24/09/2026, no dia da primeira aula limpa: "agora é fazer a v2 para
-migrar direto para o SIGAA". Funcionalidade nova: espera as quatro semanas
+Especificação da v2, do micro ao macro. Não implementado. Pedida pelo Prof.
+Paulo em 24/09/2026, no dia da primeira aula limpa: levar as presenças do
+Adsum direto para o SIGAA. Funcionalidade nova: espera as quatro semanas
 limpas do `CLAUDE.md`, e cada camada abaixo só começa com a de baixo
 provada.
 
@@ -464,15 +464,29 @@ depois de cada Gravar, e o `sigaa/<turma>.csv` bate com o que se viu.
 
 **E · Outros professores.** Só depois de a STI saber e concordar por escrito.
 
-## 7. O que já se tentou, e as rotas descartadas
+## 7. Trabalhos anteriores, e as rotas descartadas
 
-- **[auto-sigaa][fc]** (Prof. Filipe Calegario, UFPE, 2023): notas, Selenium,
-  professor loga e navega, script preenche, não salva. Casa por
-  `contains(text(), nome)` e segue calado quando não acha.
-- **[notinhas][nt]** (SIGEduc da Bahia): Playwright, frequência em lote.
-  Sofreu com a navegação do JSF; casa por nome fonético; **digita a senha**.
-- **[SIGAAutils][su]** (IFC), **[sigaa-horarios-extension][sh]** (UFBA):
-  extensões; login automático, e leitura do código de horário.
+Este desenho não parte do zero. Outros já resolveram partes do mesmo
+problema, cada um no seu contexto, e o que eles acertaram está aqui dentro.
+
+- **[auto-sigaa][fc]** (Prof. Filipe Calegario, CIn/UFPE, 2023) — indicado
+  pelo Prof. Paulo como ponto de partida. Lança notas a partir de uma
+  planilha, com Selenium. Dele vem a divisão de trabalho que este desenho
+  adota inteira: **o professor faz o login e navega, a ferramenta preenche,
+  e quem salva é o professor**, depois de conferir. O contexto dele é outro
+  — notas, a partir de uma planilha que o próprio professor monta com os
+  nomes do SIGAA —, e por isso ele identifica o aluno pelo nome. Aqui o
+  aluno chega pelo crachá, e a matrícula está disponível dos dois lados; a
+  diferença de caminho vem daí.
+- **[notinhas][nt]** (SIGEduc da Bahia, da mesma família SIG). Playwright,
+  frequência e notas em lote, com interface gráfica. Documenta com cuidado o
+  comportamento do JSF sob automação — navegação direta e "voltar" perdem o
+  estado —, o que ajudou a decidir que a ferramenta aqui não navega. Oferece
+  a opção de gravar com a senha informada pelo usuário; aqui a escolha foi
+  outra, pela leitura do Art. 22 da PoSIC da UFPE (§3).
+- **[SIGAAutils][su]** (IFC) e **[sigaa-horarios-extension][sh]** (UFBA):
+  extensões que melhoram o uso do SIGAA. A segunda mostra que o código de
+  horário (`23T56`) é legível por máquina — ideia registrada para depois.
 
 Descartadas, e por quê: **robô** (Selenium/Playwright) — peças soltas na
 máquina e navegação que o JSF pune; **POST direto** — exige lidar com sessão
