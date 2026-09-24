@@ -1,465 +1,390 @@
 # 08 — Lançar no SIGAA
 
-Não implementado. Desenho registrado em 24/09/2026, no dia da primeira aula
-limpa, a partir do pedido do Prof. Paulo ("agora é fazer a v2 para migrar
-direto para o SIGAA"). Funcionalidade nova: espera as quatro semanas limpas
-do `CLAUDE.md` antes de ir ao ar. Nada aqui foi conferido contra o HTML real
-do SIGAA — o que depende disso está marcado em "O que o HTML precisa
-responder", no fim.
+Especificação da v2, do micro ao macro. Não implementado. Pedido do Prof.
+Paulo em 24/09/2026, no dia da primeira aula limpa: "agora é fazer a v2 para
+migrar direto para o SIGAA". Funcionalidade nova: espera as quatro semanas
+limpas do `CLAUDE.md`, e cada camada abaixo só começa com a de baixo
+provada.
 
-## O que se quer
+Como ler: §1–3 dizem **o quê** e **com que garantias**. §4 diz **como**,
+camada por camada, cada uma com contrato, leis e o que custa se ela falhar.
+§5 é a experiência. §6 são os portões que validam a rota antes de ela
+escrever uma célula de verdade.
 
-O professor passa as presenças do Adsum para o SIGAA **quando quiser** — toda
-aula, a cada três, ou uma vez no fim do semestre — **com o mesmo gesto**, e
-consegue **conferir** que o SIGAA ficou igual ao Adsum. Com a menor
-manutenção possível e sem nenhum atrito com as regras de segurança da UFPE.
+---
 
-## O que o SIGAA oferece
+## 1. Objetivo e critério de sucesso
 
-Fontes: manual da UFPE, [Lançar Frequência][m1] e [Lançar Frequência em
-Planilha][m2]. O SIGAA é o da UFRN, usado em dezenas de instituições; o
-visual não muda há anos, e as capturas do manual (2011–2019) batem entre si.
+O professor passa as presenças do Adsum para o SIGAA **no ritmo que quiser**
+— toda aula, a cada três, ou no fim do semestre — **com o mesmo gesto**, e
+consegue **provar** que o SIGAA ficou igual ao Adsum.
 
-**Não existe importação oficial de frequência.** "Importação de Dados", no
-menu Configurações da Turma Virtual, copia plano de curso e conteúdo de outra
-turma — não presença. Conferido em mais de um manual.
+Sucesso é, medido em uso real:
 
-Duas telas escrevem frequência (Turma Virtual › Alunos):
+- **Nenhuma célula errada gravada.** Nenhuma, não "quase nenhuma".
+- **Três cliques** além de chegar à planilha — favorito, Preencher, Gravar —
+  para um dia ou sessenta.
+- **Toda diferença entre SIGAA e Adsum aparece**, com nome, dia e os dois
+  valores. Nenhuma é resolvida em silêncio.
+- **O professor pode ignorar a ferramenta** a qualquer momento e lançar à
+  mão, como sempre, sem que nada quebre.
 
-- **Lançar Frequência** — um dia por vez. Calendário do semestre à esquerda
-  (azul: dia de aula; verde: já lançado; amarelo: cancelada; vermelho:
-  feriado). Clicado o dia: título `Lista de Frequência - DD/MM/AAAA` e tabela
-  `# | Matrícula | Nome | seletor | presença | ausência`. O seletor é um
-  `<select>` com `Presente`, `1 Falta`, `2 Faltas`… — as opções seguem as
-  aulas do dia. Botões: Gravar Frequências, Remover Frequências deste dia,
-  Cancelar Aula, Cancelar.
-- **Lançar Freq. em Planilha** — o semestre inteiro. Linhas são alunos, com
-  **coluna Matrícula**; colunas são os dias. Cada célula guarda o número de
-  faltas: "digite quantas faltas corresponde àquela aula", ou clique para
-  decrescer até zero. Clicar no cabeçalho do dia marca todos presentes.
-  Marcas próprias do SIGAA: `T` (trancado), célula bloqueada (matriculado
-  depois da data), feriado, cancelada, dia já lançado. Um só **Gravar
-  Frequências** para tudo.
+## 2. O terreno: o que se sabe e o que falta saber
 
-E uma trava que baixa o risco: **a falta só vira definitiva quando o docente
-a ratifica no lançamento de conceitos**, no fim do semestre. Um erro de
-frequência é corrigível até lá.
-
-## O que já se tentou
-
-- **[auto-sigaa][fc]** (Prof. Filipe Calegario, UFPE, 2023). Notas, não
-  frequência. Selenium: o professor faz o login e navega, o script preenche,
-  **não salva**. Acha o aluno por `contains(text(), nome)` e segue em frente
-  quando não acha — só um `print`.
-- **[notinhas][nt]** (SIGEduc da Bahia, família SIG). Playwright, frequência
-  e notas, várias datas por vez. Aprendeu na marra o que o JSF faz com robô:
-  `page.goto` desloga ou tira da turma, "voltar" quebra o estado, tudo espera
-  `networkidle`. Casa aluno por nome com normalização fonética. **Digita a
-  senha do professor** no modal de confirmação do SIGEduc.
-- **[SIGAAutils][su]** (IFC) e **[sigaa-horarios-extension][sh]** (UFBA):
-  extensões. A primeira faz login automático; a segunda traduz o código de
-  horário (`23T56`), o que prova que ele é legível por máquina.
-
-O que se aproveita: o professor loga e navega; a ferramenta preenche; **quem
-grava é o professor**. O que não se repete: casar por nome, seguir calado
-quando não acha, tocar na senha, navegar pelo SIGAA com robô.
-
-## As regras de segurança que o desenho segue
-
-[PoSIC da UFPE][ps] (2016/2017, vigente):
-
-- **Art. 22** — "a conta de acesso e a senha de cada pessoa são únicas,
-  individuais e intransferíveis, sendo reconhecidas como equivalentes à sua
-  assinatura". **A ferramenta nunca vê, digita, guarda nem pede senha.** Não
-  faz login e não mantém sessão; usa a página que o professor já abriu.
-- **Art. 54, II** — o usuário responde "por todo e qualquer acesso (…) bem
-  como pelos efeitos desse acesso". **O Gravar é sempre um clique do
-  professor**, depois de ver o que mudou. A ferramenta nunca clica em botão
-  do SIGAA.
-- **Art. 10** — uso compatível com "ética, confidencialidade, legalidade e
-  finalidade". A ferramenta faz só o que o professor faria à mão, na tela que
-  o SIGAA oferece para isso.
-
-A PoSIC não fala de scripts nem de automação. Por isso a ferramenta se limita
-ao que é indistinguível de digitar: **nenhuma requisição própria ao SIGAA**,
-nenhuma navegação, nenhum envio de formulário. Ela lê a página já carregada e
-preenche campos. Para o servidor, é o professor digitando rápido.
-
-O resto vem do próprio Adsum: nada sai do computador (as duas janelas
-conversam na mesma máquina), nada de código remoto dentro da sessão do SIGAA,
-e o código é aberto para quem quiser auditar.
-
-**Antes de ir ao ar para outros professores:** mostrar o desenho ao NTI
-(CSTIC) e pedir um de acordo por escrito. Custa um e-mail, e é o que
-transforma "segue as regras, na nossa leitura" em "a UFPE sabe e concorda".
-
-## O desenho
-
-### Uma tela só: a planilha
-
-A ferramenta trabalha **só na "Lançar Freq. em Planilha"**. É ela que dá
-liberdade de ritmo — um dia ou o semestre, a mesma página — e ela já traz
-matrícula, todos os dias e as marcas do SIGAA. Suportar uma página só é
-metade da manutenção. A tela de um dia fica como caminho manual do professor,
-que continua existindo.
-
-O risco da planilha é o alcance: um Gravar grava o semestre. O desenho
-contém isso com as regras de "O que a ferramenta nunca faz", abaixo.
-
-### Favorito burro, Adsum inteligente
-
-```
-Planilha do SIGAA (o professor chegou nela sozinho)
-   │ 1. clique no favorito "Adsum"
-   ▼
-Favorito (pequeno, sem lógica de domínio, nunca muda)
-   │ 2. lê a página crua: turma, matrículas, dias, valor e estado de cada célula
-   │ 3. abre a janela do Adsum e manda a leitura (postMessage)
-   ▼
-Adsum (tem a base e os testes)
-   │ 4. acha a turma, casa por matrícula, compara dia a dia
-   │ 5. mostra o resumo e pede o gesto: [Preencher]
-   │ 6. devolve só "célula tal = n"
-   ▼
-Favorito
-   │ 7. escreve, pinta cada célula mexida, mostra o resumo na página
-   ▼
-Professor confere e clica em Gravar Frequências
-   │ 8. a página recarrega; favorito de novo → "O SIGAA confere com o Adsum"
-```
-
-- **O favorito não entende nada.** Lê, aplica e pinta. Se o SIGAA mudar um
-  detalhe, o conserto vai no Adsum, num deploy normal, e ninguém reinstala
-  nada.
-- **Capacidade limitada de propósito.** O favorito só aceita mensagens da
-  origem do Adsum, só escreve inteiros de 0 ao máximo do dia em células que
-  existem, e nunca clica, navega, envia ou executa o que recebe. Nem um Adsum
-  comprometido conseguiria gravar no SIGAA: faltaria o clique do professor.
-- **O Adsum só responde para `https://sigaa.ufpe.br`.**
-- **Sem código remoto.** O favorito é autossuficiente, não carrega script de
-  lugar nenhum dentro da sessão do SIGAA.
-
-### O que é o favorito, concretamente
-
-Um favorito do navegador cujo endereço, em vez de `https://…`, começa com
-`javascript:` e traz o código. Clicado, o navegador roda esse código **na
-página que está aberta** — a planilha do SIGAA. Não é site, não é
-subdomínio, não tem servidor: o código mora no próprio favorito, na máquina
-do professor. Não precisa de loja, permissão nem instalação.
-
-- **Como entra:** nos Ajustes do Adsum, um botão "Adsum → SIGAA" que se
-  **arrasta** para a barra de favoritos (Chrome: Cmd/Ctrl+Shift+B mostra a
-  barra). Clicar nele no Adsum não faz nada além de dizer "arraste para a
-  barra". Arrastar é o único jeito que o Chrome aceita, de propósito: página
-  nenhuma consegue instalar código em favorito sozinha.
-- **Por que janela e não painel dentro do SIGAA:** um `iframe` do Adsum
-  dentro do SIGAA teria o armazenamento particionado pelo Chrome e veria uma
-  base vazia. A janela própria abre o Adsum de verdade, com a base e a pasta.
-- **Versão:** o favorito manda a própria versão na primeira mensagem. Se um
-  dia o Adsum precisar de um favorito novo, a folha diz "arraste o favorito
-  novo" e recusa o antigo — nunca roda com um favorito que não conhece.
-- **Ponte do lado do Adsum:** além do cartão de instalação, só um link
-  "Abrir o SIGAA". Não dá para ir direto à planilha de uma turma: o SIGAA é
-  JSF, com sessão, e essa navegação é do professor.
-
-### A janela do Adsum
-
-Uma janela de verdade do sistema, aberta por `window.open` em modo *popup*:
-sem abas nem barra de favoritos, com a barra de endereço mínima mostrando
-`willianrupert.github.io` — que é, de passagem, o selo de que aquilo é o
-Adsum e não algo desenhado dentro do SIGAA.
-
-- **Arrasta, redimensiona, minimiza e fecha** como qualquer janela; o
-  sistema operacional garante, e a página não consegue impedir. Abre
-  encostada à direita da tela (~420 × 640), onde a planilha, que cresce para
-  a esquerda, menos perde. Tem Fechar próprio, além do X da janela.
-- **Não fica sempre por cima.** Página nenhuma consegue isso. Por isso ela
-  não precisa ficar aberta: **Preencher fecha a janela**, e o resumo passa
-  para a barra do Adsum no pé da planilha. A janela vive o tempo de uma
-  decisão, não da conferência inteira.
-- **Escondida atrás do Chrome:** clicar no favorito de novo reabre a mesma
-  janela (mesmo nome de alvo) e a traz para a frente, com o estado em que
-  estava. A barra na planilha também tem "Mostrar a janela do Adsum"
-  enquanto ela existir.
-- **Fechada sem Preencher:** nada acontece na planilha, e a barra diz
-  "Nada foi preenchido".
-- **A planilha mudou com a janela aberta** (recarregou, navegou): a janela
-  percebe que a página que a abriu não responde e diz "A planilha do SIGAA
-  mudou. Clique no favorito de novo." Nunca aplica leitura velha em página
-  nova — cada leitura tem um identificador, e a instrução só vale para ele.
-
-A barra do Adsum no pé da planilha ocupa uma linha, reserva o próprio espaço
-no fim da página (não cobre a última linha da tabela) e recolhe para uma
-pílula com um toque.
-
-### Qualquer ritmo, o mesmo gesto
-
-Cada uso é uma **conciliação** — "o que o SIGAA tem" contra "o que o Adsum
-diz" —, não um envio. Por isso o ritmo é do professor: toda aula, a cada três
-ou no fim do semestre, o gesto é o mesmo e o resultado também. Rodar duas
-vezes seguidas não muda nada na segunda.
-
-Cliques do professor, além de chegar à planilha: **favorito, Preencher,
-Gravar** — os mesmos para um dia ou sessenta. E, se quiser a prova, mais um
-favorito depois de gravar.
-
-### Checar se está válido
-
-O mesmo favorito, numa planilha já gravada, só compara: **conferência só de
-leitura**, que nunca escreve. Serve depois de cada Gravar, e serve sozinha:
-pega também o que foi lançado à mão, fora do Adsum. Uma frase por
-categoria, e a lista por aluno e dia ao abrir:
-
-- **Confere** — SIGAA e Adsum iguais.
-- **A lançar** — o Adsum tem chamada, a célula do SIGAA está vazia.
-- **Diverge** — as duas têm valor, e diferem.
-- **Só no SIGAA** — dia lançado sem chamada no Adsum (papel, esquecimento).
-- **Sem onde lançar** — chamada no Adsum num dia que o SIGAA não tem como
-  aula, ou tem como cancelada ou feriado.
-- **Sem par** — matrícula de um lado que não existe do outro.
-
-### O que a ferramenta nunca faz
-
-- **Nunca muda um dia que o SIGAA já tem lançado.** Divergência se mostra;
-  quem corrige é o professor, na célula, com a própria mão. É isso que
-  garante a autonomia: **o que o professor decidiu no SIGAA ganha sempre**, e
-  a próxima conferência mostra a diferença sem desfazê-la.
-- **Nunca preenche dia sem chamada no Adsum.** Célula vazia continua vazia.
-- **Nunca adivinha quantas faltas vale o dia.** O máximo vem da página do
-  SIGAA; sem ele, o dia é recusado com o motivo. Ausente é o máximo; presente
-  é `0`, escrito explicitamente, sem contar com o padrão da tela.
-- **Nunca casa por nome.** Matrícula ou nada.
-- **Nunca age em silêncio.** Tudo o que não foi preenchido aparece no
-  resumo com o motivo — mesma regra do "46 onde deveria haver 48".
-
-### Autonomia: o que o professor decide no SIGAA
-
-O Adsum sabe "veio" ou "não veio". O professor sabe mais: quem chegou na
-segunda aula, quem saiu cedo. Ele ajusta direto no SIGAA, antes ou depois de
-gravar, e isso vale pela regra acima.
-
-**Decidido pelo autor, 24/09/2026:** a diferença não fica aparecendo para
-sempre. Na folha, cada diferença tem **Aceitar o SIGAA**; o toque acrescenta
-um registro de ajuste no Adsum (append-only, com dia, matrícula e valor), e a
-partir daí a conferência conta aquela célula como *Confere (ajustada)*. O
-evento de presença original não muda — o ajuste é uma linha nova que diz
-"o professor decidiu diferente", nunca uma reescrita.
-
-### Qual turma
-
-O Adsum identifica a turma pelas matrículas da página, não por
-configuração. Se mais de uma turma do Adsum casa, ou nenhuma casa o
-bastante, recusa e diz por quê.
-
-### A ponte é um adaptador
-
-O que se garante é o núcleo (camadas 1–4 abaixo), não a casca. Por isso a
-ligação é uma porta, `PonteSigaa` — o mesmo raciocínio do "o leitor vai
-mudar": o SIGAA pode mexer num detalhe, e o conserto fica na casca, sem tocar
-no que foi provado. Dois adaptadores sobre o mesmo núcleo:
-
-1. **Lista para lançar à mão** — sempre existe, não depende de nada do
-   SIGAA: "14/10: todos presentes, exceto" e as matrículas e nomes de quem
-   faltou. Com o "marcar todos presentes" da tela de um dia, são poucos
-   cliques por aula. É o chão: se o favorito quebrar num dia de SIGAA
-   diferente, o professor lança igual, sem esperar conserto.
-2. **Favorito + janela** — o desenho desta seção. Zero dependência externa.
-
-**Decidido pelo autor, 24/09/2026: a ponte é o favorito.** Extensão não
-entra — nem agora, nem como plano B. A porta continua existindo pelo que ela
-separa (núcleo de casca, testável sem navegador), não para abrir espaço a
-uma extensão.
-
-### Rotas avaliadas
-
-| Rota | Ganha em | Perde em |
+| Fato | Fonte | Situação |
 |---|---|---|
-| Favorito + janela | nada a instalar além de arrastar; nenhuma loja; código fixo e pequeno do lado do SIGAA | janela pode ficar atrás do Chrome; depende de o SIGAA não cortar a ligação entre janelas (COOP) |
-| Extensão, painel lateral do Chrome | painel acoplado à direita, que não se esconde nem cobre a planilha; atualiza sozinha; com `activeTab` só age quando clicada | loja, revisão, conta de desenvolvedor; máquina institucional pode bloquear extensões; o painel mora em outra origem e não enxerga a base do Adsum sem uma segunda ponte |
-| Colar o texto da planilha no Adsum | nada do lado do SIGAA; é o padrão que o Adsum já usa para a página de participantes | só confere, não preenche; e só funciona se o texto copiado trouxer os valores (célula `<input>` não copia) |
-| Favorito que carrega código do Adsum | favorito nunca precisa mudar | código remoto dentro de uma sessão autenticada do SIGAA: um Adsum comprometido leria tudo o que o professor vê. Descartada |
-| Robô (Selenium/Playwright), POST direto, agente de IA | — | ver "O que já se tentou" e "As regras de segurança". Descartadas |
+| Não existe importação oficial de frequência | manuais UFPE e UFRN | sabido |
+| A "Lançar Freq. em Planilha" traz o semestre inteiro, com coluna Matrícula | [manual UFPE][m2] | sabido |
+| A célula aceita digitar o número de faltas; 0 é presente | [manual UFPE][m2] | sabido |
+| Marcas do SIGAA: trancado (`T`), matriculado depois, feriado, cancelada, lançado | [manuais][m1] | sabido |
+| Um só Gravar Frequências para a planilha inteira | [manual UFPE][m2] | sabido |
+| A falta só vira definitiva quando o docente a ratifica nos conceitos | [manual UFPE][m1] | sabido |
+| Aula na UFPE = 50 min (Portaria Normativa 07/2022) | SIGAA, página do aluno | sabido |
+| SIGAA v4.15.0.206, RichFaces 3.3.3 / a4j, jQuery 1.4; versão no rodapé | SIGAA, página do aluno | sabido |
+| Paulo: mesmo Chrome e perfil para SIGAA e Adsum; computador próprio, sem políticas | autor, 24/09 | sabido |
+| Paulo lança na planilha, dia a dia | autor, 24/09 | sabido |
+| Célula vazia é distinguível de célula `0`? | HTML do docente | **falta** |
+| Célula é `<input>`? Ligada à matrícula por `name` ou pela linha? | HTML do docente | **falta** |
+| Onde está o máximo de faltas de cada dia? | HTML do docente | **falta** |
+| Como a página marca lançado / cancelado / feriado / trancado / matriculado depois | HTML do docente | **falta** |
+| Mudar a célula dispara evento de que o Gravar depende? | HTML do docente | **falta** |
+| O Gravar envia só o que mudou ou tudo? O que faz com vazia? | HTML antes e depois | **falta** |
+| Mensagem de sucesso e de erro do Gravar | HTML depois | **falta** |
+| O SIGAA manda `Cross-Origin-Opener-Policy`? | cabeçalhos da resposta | **falta** |
 
-A extensão foi avaliada e recusada pelo autor em 24/09/2026. Se a janela
-incomodar em uso real, o conserto é na janela e na barra do favorito, não
-trocar de rota.
+Tudo o que está como **falta** vem de uma coisa só: a planilha do docente,
+salva antes e depois de um Gravar, com os cabeçalhos. Ver §6.
 
-### Falhas que ficam baratas por construção
+## 3. Princípios que não se negociam
 
-- **Sessão do SIGAA expira antes do Gravar.** O professor entra de novo,
-  volta à planilha, favorito, Preencher. A conciliação é idempotente:
-  refazer é o mesmo gesto, sem risco de duplicar.
-- **Duas abas do SIGAA abertas.** O JSF se confunde com isso. A folha avisa
-  quando a leitura não bate com a última conferência daquela turma, e o
-  Gravar continua sendo do professor.
-- **Pasta do cofre sem permissão na janela.** A janela não pede permissão
-  de pasta: a linha de auditoria fica no IndexedDB e o Adsum principal leva
-  para `sigaa/<turma>.csv` na próxima vez que abrir — o que pode esperar,
+**Segurança** ([PoSIC da UFPE][ps], 2016/2017, vigente):
+
+- **Art. 22** — senha é "equivalente à assinatura", "intransferível". A
+  ferramenta **nunca vê, digita, guarda nem pede senha**. Não faz login, não
+  mantém sessão: usa a página que o professor já abriu.
+- **Art. 54, II** — o usuário responde pelos efeitos de todo acesso com a sua
+  identificação. **O Gravar é sempre um clique do professor**, depois de ver
+  o que mudou. A ferramenta nunca clica em botão do SIGAA.
+- **Art. 10** — ética, legalidade, finalidade. A ferramenta faz só o que o
+  professor faria à mão, na tela que o SIGAA oferece para isso.
+- A PoSIC não fala de automação; por isso a ferramenta fica no que é
+  indistinguível de digitar: **nenhuma requisição própria ao SIGAA**, nenhuma
+  navegação, nenhum envio de formulário.
+- **Nada sai do computador.** As duas janelas conversam na mesma máquina.
+- **Nenhum código remoto** entra na sessão do SIGAA.
+- **O favorito não lê nomes.** Matrícula basta; os nomes o Adsum já tem.
+
+**Domínio:**
+
+- **Matrícula ou nada.** Nunca casar por nome.
+- **Nunca muda o que o SIGAA já tem.** Célula lançada é do professor.
+- **Nunca inventa dia.** Sem chamada no Adsum, a célula fica como está.
+- **Nunca adivinha o máximo do dia.** Vem da página; sem ele, o dia é
+  recusado com o motivo.
+- **Nunca age em silêncio.** Tudo o que não foi preenchido tem motivo na
+  tela — a regra do "46 onde deveria haver 48".
+- **Nada é reescrito.** Ajuste e auditoria são linhas novas.
+
+**Autonomia:** automatiza-se o mecânico (ler, casar, calcular, preencher,
+registrar). O julgamento fica com o professor: quando usar, quais aulas, o
+que fazer com cada diferença, e gravar ou não.
+
+## 4. Camadas, do micro ao macro
+
+Cada camada tem especificação escrita **antes** do código, com exemplos que
+viram os testes, e só se apoia na de baixo, já provada. Nenhuma camada de
+cima conserta defeito de uma de baixo.
+
+```
+ 9 Ensaio e chegada          §6
+ 8 Jornada completa          fixture + base real + favorito, sobre cofre com histórico
+ 7 Persistência              ajustes e auditoria (Dexie v9, pasta)
+ 6 Folha do Adsum            tela, jsdom contra o RepositorioDexie de verdade
+ 5 Favorito                  lê, aplica, pinta, desfaz — sem domínio
+ 4 Protocolo                 mensagens entre as janelas
+ 3 Plano                     instruções + validador
+ 2 Conciliação               o núcleo: leis
+ 1 Leitura                   página crua → LeituraPlanilha
+ 0 Tipos                     estado impossível não é representável
+```
+
+As camadas 0–3 são funções puras em `nucleo/`, testáveis sem navegador. É
+nelas que mora a garantia; 4–7 só transportam, mostram e guardam.
+
+### 0 · Tipos
+
+```ts
+type Celula =
+  | { tipo: 'vazia' }
+  | { tipo: 'lancada'; faltas: number }
+  | { tipo: 'bloqueada'; motivo: 'trancado' | 'matriculadoDepois' | 'feriado' | 'cancelada' }
+
+interface ColunaDia  { indice: number; dia: string /* AAAA-MM-DD */; maximo?: number; marca?: 'lancado' | 'feriado' | 'cancelada' }
+interface LinhaAluno { indice: number; matricula: string; celulas: Celula[] }
+interface LeituraPlanilha {
+  id: string                    // um por clique no favorito
+  versaoSigaa: string           // rodapé
+  cabecalhoTurma: string        // "CIN0144 - … - Turma: 01 (2026.2)"
+  colunas: ColunaDia[]
+  linhas: LinhaAluno[]
+}
+```
+
+Sem nome em lugar nenhum. Não existe "bloqueada com valor", nem dia sem data.
+
+### 1 · Leitura
+
+`lerPlanilha(bruto) → { leitura?, problemas[] }`. O favorito extrai da página
+só dados crus (textos de cabeçalho, classes, valores, nomes de campo), e é o
+Adsum que interpreta — assim o conserto de uma mudança do SIGAA é um deploy,
+não um favorito novo.
+
+- Nunca lança exceção. Nunca descarta linha em silêncio: linha sem matrícula
+  legível vira problema com o número da linha.
+- A data de cada coluna vem de mês (cabeçalho agrupado) + dia + ano do
+  semestre. Coluna que não resolve para uma data única recusa a leitura
+  inteira: data errada é falta no dia errado.
+- Testada contra as fixtures anonimizadas da planilha real (§6), inclusive
+  com trancado, cancelada e feriado.
+
+### 2 · Conciliação
+
+`conciliar(leitura, turma, eventos, ajustes) → Relatorio`. O núcleo.
+
+Para cada linha (matrícula *m*) e coluna (dia *d*), o **esperado** é:
+
+- se existe **ajuste** (*m*, *d*): o valor do ajuste mais recente;
+- senão, se o Adsum tem chamada da turma em *d*: `0` se *m* esteve presente
+  (`presencasDoDia`, o mesmo cálculo da planilha de faltas da v1, incluindo
+  presença à mão e "Não presente"), o **máximo** da coluna se não esteve;
+- senão: **nenhum**.
+
+A categoria da célula decorre do par (SIGAA, esperado):
+
+| SIGAA \ esperado | nenhum | valor *e* |
+|---|---|---|
+| bloqueada | Fora | Fora |
+| vazia | Fora | **A lançar** *e* |
+| lançada *n* | **Só no SIGAA** | *n* = *e*: **Confere** (ou **Confere, ajustada**) · *n* ≠ *e*: **Diverge** |
+
+E fora da grade de células:
+
+- **Sem par (SIGAA):** matrícula da página que não está na turma do Adsum.
+- **Sem par (Adsum):** matriculado do Adsum sem linha na página.
+- **Sem onde lançar:** chamada no Adsum num dia que não é coluna, ou é
+  coluna de feriado ou cancelada.
+- **Sem máximo:** coluna com esperado mas sem máximo legível — o dia inteiro
+  vai para cá, e nenhuma instrução sai para ele.
+
+**Qual turma:** a do Adsum cujo código casa com o cabeçalho **e** cujas
+matrículas cobrem a página. Duas candidatas, ou nenhuma, recusa com o motivo.
+
+**Leis** — valem para qualquer entrada, testadas em massa com entradas
+geradas, não só por exemplo:
+
+1. **Partição:** toda célula cai em exatamente uma categoria; as contas
+   fecham com linhas × colunas.
+2. **Nunca toca lançado:** nenhuma instrução sai de célula lançada ou
+   bloqueada.
+3. **Nunca inventa dia:** nenhuma instrução para dia sem chamada nem ajuste.
+4. **Faixa:** todo valor em 0…máximo; presente é 0, ausente é o máximo.
+5. **Idempotência:** aplicar as instruções e conciliar de novo dá zero a
+   lançar.
+6. **Concordância com a v1:** o conjunto de presentes de cada dia é o mesmo
+   que a planilha de faltas exporta.
+7. **Monotonia do ajuste:** acrescentar um ajuste só muda a célula dele.
+
+### 3 · Plano
+
+`planejar(relatorio, escolhas) → Instrucao[]`, com
+`Instrucao = { linha, coluna, antes: 'vazia', valor }`. *Escolhas* são as
+aulas que o professor desmarcou. `validarPlano(plano, leitura)` confere cada
+instrução contra as leis 2–4, e é **o mesmo validador** que o favorito roda
+ao receber.
+
+### 4 · Protocolo
+
+Duas mensagens, com versão:
+
+```
+favorito → Adsum   { v, tipo: 'leitura', versaoFavorito, id, bruto }
+Adsum → favorito   { v, tipo: 'plano', id, instrucoes }  |  { v, tipo: 'nada', id }
+```
+
+- Origem conferida nos dois sentidos: o Adsum só aceita de
+  `https://sigaa.ufpe.br` e só da janela que o abriu; o favorito só aceita da
+  origem do Adsum e da janela que ele abriu.
+- O `id` amarra o plano à leitura. Plano de outra leitura é recusado.
+- Favorito de versão desconhecida é recusado com "arraste o favorito novo".
+
+### 5 · Favorito
+
+Pequeno, gerado no build a partir de `src/favorito/`, testado em jsdom
+contra a fixture. Faz quatro coisas e nenhuma outra:
+
+1. **Ler** a página crua.
+2. **Abrir** a janela do Adsum e mandar a leitura.
+3. **Aplicar** o plano com *comparar e trocar*: cada célula só é escrita se
+   ainda estiver como na leitura (`antes`). Se o professor mexeu nela no
+   meio tempo, fica como ele deixou, e a barra diz quantas foram puladas.
+4. **Pintar e desfazer:** azul no que mudou, amarelo nas diferenças
+   (intocadas), uma barra no pé com o resumo e **Desfazer**.
+
+Nunca clica, navega, envia formulário nem executa o que recebe. Lei:
+**desfazer devolve cada célula ao valor lido**, idêntico.
+
+### 6 · Folha do Adsum
+
+Abre em `#/sigaa`, pela regra da casa: `decidirRota` vê que a janela foi
+aberta pelo favorito. Estados — *Tudo confere*, *Há o que lançar*, *Recusa* —
+descritos em §5. Testada em jsdom contra o `RepositorioDexie` de verdade.
+
+### 7 · Persistência
+
+- **Dexie v9** (versão nova, nunca edição da v8): duas tabelas,
+  `ajustesSigaa` e `auditoriaSigaa`. A porta `Repositorio` ganha
+  `gravarAjusteSigaa`, `lerAjustesSigaa`, `acrescentarAuditoriaSigaa` — e,
+  como o resto, **nada de atualizar ou remover**.
+- **Ajuste** (decidido pelo autor, 24/09): `{ turma, dia, matricula, valor,
+  em }`. Nasce do toque em "Aceitar o SIGAA". Não toca o evento de presença:
+  diz "o professor decidiu diferente".
+- **Auditoria** (decidido pelo autor, 24/09): arquivo próprio,
+  `sigaa/<turma>.csv`, fora do diário técnico. Uma linha por célula tocada ou
+  divergente, por conferência, preenchimento e aceite:
+  `quando;acao;versao_sigaa;dia_aula;matricula;lido;proposto;aplicado`.
+  Sem nome. `;` e BOM, como os outros CSV.
+- A janela não pede permissão de pasta: grava no IndexedDB, e o Adsum
+  principal leva para a pasta na próxima abertura. O que pode esperar,
   espera.
 
-## 50 minutos, pela norma
+### 8 · Jornada completa
 
-O manual da UFPE diz "bloco de aula (60 minutos)", a captura herdada da UFRN
-diz 50. **Resolvido pelo próprio SIGAA**, na página de frequência do aluno:
-"o tempo de aula que na UFPE é de 50 minutos, conforme Portaria Normativa
-Nº 07/2022". O texto do manual está desatualizado, e `periodosDoBloco`
-(`nucleo/faltas.ts`), que divide por 50, está certo. Para o SIGAA, de todo
-modo, aula é aula; e a v2 lê a quantidade da própria planilha.
+Fixture da planilha + base real + favorito em jsdom: conferir → preencher →
+"gravar" (a fixture recarregada com os valores novos) → conferir dá *Tudo
+confere*. **Sobre cofre com histórico**, nunca base limpa — é a regra de
+`docs/06`.
 
-## Navegador
+### A porta e o chão
 
-O Adsum abre a janela no navegador em que o favorito foi clicado. No
-Chrome/Edge, janela e app instalado dividem a mesma base. **No Safari, o app
-instalado tem armazenamento próprio**: a janela aberta pelo favorito veria
-uma base vazia. Tem que detectar e dizer, não mostrar "nada a lançar".
+`PonteSigaa` é a porta; dois adaptadores:
 
-## A experiência
+1. **Lista para lançar à mão** — "14/10: todos presentes, exceto" e quem
+   faltou. Não depende de nada do SIGAA. É o chão: se o favorito quebrar num
+   dia de SIGAA diferente, o professor lança igual, sem esperar conserto.
+2. **Favorito + janela** — a rota. **Decidido pelo autor, 24/09/2026**:
+   extensão não entra, nem como plano B.
 
-A regra da casa vale aqui: uma ação óbvia por tela, a navegação decorre do
-estado, nada de configuração à vista.
+## 5. A experiência
 
-**Uma vez só, nos Ajustes do Adsum:** um cartão "Lançar no SIGAA" com o
-favorito para arrastar à barra e três desenhos do caminho. É a única
-instalação.
+A regra da casa: uma ação óbvia por tela, a navegação decorre do estado,
+nada de configuração à vista.
 
-**No Adsum, no dia a dia:** o cartão da turma ganha uma linha de apoio que
-decorre do estado — "3 aulas ainda não conferidas no SIGAA", ou "Conferido
-com o SIGAA até 21/10". Sem botão: o gesto está do outro lado, onde o Gravar
-mora.
+**Instalar, uma vez.** Nos Ajustes do Adsum, cartão "Lançar no SIGAA": um
+botão "Adsum → SIGAA" para **arrastar** à barra de favoritos, e a dica de
+Cmd/Ctrl+Shift+B para mostrar a barra. Arrastar é o único jeito que o Chrome
+aceita, de propósito. O favorito é um `javascript:` dentro do próprio
+favorito: não é site, subdomínio nem servidor.
 
-**Na planilha do SIGAA, favorito → janela do Adsum.** Uma folha (`Sheet`),
-um título que diz o estado, cartões no molde Mushroom:
+**No dia a dia, no Adsum.** O cartão da turma ganha uma linha de apoio:
+"3 aulas ainda não conferidas no SIGAA" ou "Conferido com o SIGAA até 21/10".
+Sem botão: o gesto está onde o Gravar mora.
 
-- *Tudo confere* — um visto e "SIGAA e Adsum iguais em 12 aulas". Um botão:
-  Fechar.
-- *Há o que lançar* — um cartão por aula (dia, presentes, faltas), todos
-  marcados; desmarcar um dia é deixá-lo de fora. Diferenças num cartão
-  amarelo acima, com nome, dia e os dois valores, e a frase que tira a
-  dúvida: "o SIGAA fica como está". Detalhes informativos (sem par, sem onde
-  lançar) recolhidos numa linha. Um botão de ação: **Preencher 3 aulas**; ao
-  lado, Só conferir.
-- *Recusa* — página que não é a planilha, turma que não casa, base vazia
-  neste navegador. Uma frase do que houve e do que fazer; nunca uma tela de
-  "nada a lançar" que mente.
+**Na planilha, favorito → janela.** Uma janela de verdade do sistema, aberta
+em modo popup encostada à direita (~420 × 640), com
+`willianrupert.github.io` na barra — o selo de que aquilo é o Adsum. Arrasta,
+redimensiona, minimiza e fecha. Dentro, uma folha:
 
-**De volta ao SIGAA:** células preenchidas em azul, diferenças em amarelo e
-intocadas, e uma barra discreta do Adsum no pé: "Adsum preencheu 3 aulas.
-Azul é o que mudou. Confira e clique em Gravar Frequências." com
-**Desfazer**, que devolve cada célula ao valor lido antes, idêntico. Passar
-o mouse numa célula azul diz "Adsum: ausente, 2 faltas. Antes: vazia".
+- *Tudo confere* — um visto e "SIGAA e Adsum iguais em 12 aulas". Fechar.
+- *Há o que lançar* — diferenças primeiro, num cartão amarelo: nome, dia, os
+  dois valores, "o SIGAA fica como está", e **Aceitar o SIGAA** em cada uma.
+  Depois um cartão por aula (dia, presentes, faltas), todos marcados;
+  desmarcar deixa o dia de fora. Informativos recolhidos numa linha. Ação:
+  **Preencher 3 aulas**; ao lado, Só conferir.
+- *Recusa* — página que não é a planilha, turma que não casa, favorito
+  antigo, base vazia neste navegador. Uma frase do que houve e do que fazer.
 
-**Depois do Gravar:** favorito de novo, e a folha abre em *Tudo confere*.
-É isso que atualiza a linha de apoio do cartão da turma.
+**Preencher fecha a janela.** Ela vive o tempo de uma decisão. Nenhuma página
+consegue ficar sempre por cima; por isso ela não precisa. Se sumir atrás do
+Chrome antes disso, o favorito de novo a traz de volta, no mesmo estado.
 
-**Auditoria** (decidido pelo autor, 24/09/2026: arquivo próprio,
-`sigaa/<turma>.csv`, fora do diário técnico). Cada conferência, cada
-preenchimento e cada "Aceitar o SIGAA" acrescenta uma linha — quando, turma, dia da aula, matrícula, valor lido, valor
-proposto, se foi preenchido —, append-only como o resto. Sem nome. É o que
-responde "quem pôs essa falta aqui?" semanas depois: o Adsum propôs, ou o
-professor digitou.
+**De volta à planilha.** Azul no que mudou, amarelo nas diferenças, barra de
+uma linha no pé que reserva o próprio espaço e recolhe para uma pílula:
+"Adsum preencheu 3 aulas. Azul é o que mudou. Confira e clique em Gravar
+Frequências." e **Desfazer**. O mouse sobre uma célula azul diz "Adsum:
+ausente, 2 faltas. Antes: vazia".
 
-## Camadas, do micro ao macro
+**Depois do Gravar.** Favorito de novo: *Tudo confere*. É essa conferência
+que atualiza "Conferido até" no cartão da turma — o Adsum nunca supõe que o
+Gravar aconteceu.
 
-Cada camada tem especificação escrita **antes** do código — com exemplos que
-viram os testes — e só se apoia na de baixo, já provada. Nada de uma camada
-de cima conserta defeito de uma de baixo.
+**Falhas que ficam baratas por construção.** Sessão expirada antes do
+Gravar: entrar de novo e repetir; a idempotência garante que refazer não
+duplica. Página que mudou com a janela aberta: "A planilha do SIGAA mudou.
+Clique no favorito de novo." Célula mexida entre ler e aplicar: pulada, pelo
+comparar e trocar.
 
-1. **Tipos e invariantes.** `LeituraPlanilha`, `Celula` (vazia, lançada com
-   n, bloqueada com motivo), `Relatorio`, `Instrucao`. Estado impossível não
-   é representável: não existe célula "bloqueada com valor".
-2. **Leitura da página.** HTML → `{ leitura, problemas }`, função pura,
-   nunca lança exceção, nunca descarta linha em silêncio. Testada contra as
-   fixtures anonimizadas.
-3. **Conciliação.** `(leitura, eventos, vínculos) → Relatorio`, pura. Leis
-   que valem para qualquer entrada, testadas em massa, não só por exemplo:
-   - *partição* — toda célula cai em exatamente uma categoria, e as contas
-     fecham com linhas × dias;
-   - *nunca toca lançado* — nenhuma instrução para célula já lançada;
-   - *nunca inventa dia* — nenhuma instrução para dia sem chamada;
-   - *faixa* — todo valor em 0…máximo do dia; presente é 0, ausente é o
-     máximo;
-   - *idempotência* — aplicar as instruções e conciliar de novo dá zero a
-     lançar.
-4. **Instruções.** Relatório + escolhas do professor → lista de
-   instruções, e um validador da lista. O mesmo validador roda dos dois
-   lados da mensagem.
-5. **Protocolo.** Mensagens com versão, origem conferida nos dois sentidos,
-   um identificador por uso, prazo para responder. Testado com duas janelas
-   em jsdom.
-6. **Favorito.** Aplicar, pintar, desfazer. Lei: desfazer devolve a página
-   ao valor lido, célula por célula. Recusa mensagem malformada.
-7. **Folha do Adsum.** jsdom contra o `RepositorioDexie` de verdade, como
-   toda tela.
-8. **Jornada completa.** Fixture da planilha + base real + favorito:
-   conferir → preencher → "gravar" (a fixture recarregada com os valores
-   novos) → conferir dá *Tudo confere*. Sobre cofre com histórico, nunca
-   base limpa.
-9. **Ensaio real.** Roteiro novo no `07`: primeiro só conferência, numa
-   turma real, com o professor ao lado.
+## 6. Validar a rota: portões
 
-## O que já se sabe da rotina e do SIGAA real
+A rota é validada em portões. Cada um tem critério de passagem e o que muda
+se não passar. Nenhum portão depois do C escreve no SIGAA sem o anterior.
 
-Respostas do autor e do Prof. Paulo, 24/09/2026:
+**A · HTML do docente** (Paulo salva a planilha antes e depois de um Gravar,
+com os cabeçalhos; fora do repositório).
+Passa se: células legíveis por código, vazia ≠ 0, máximo do dia encontrável,
+sem COOP que corte a ligação entre janelas.
+Se não passar: célula ilegível ou vazia = 0 muda a rota para a tela de um dia
+(um `<select>` por aluno, a data no título); COOP presente faz o plano ir
+pela área de transferência, com um clique a mais. Máximo não encontrável é
+o único que para tudo — aí se conversa com a STI.
 
-- **Mesmo Chrome, mesmo perfil** para o SIGAA e o Adsum. A janela aberta pelo
-  favorito vê a base dele.
-- **Computador próprio, sem políticas** que restrinjam favoritos. Outros
-  professores usam Windows/Linux da universidade: o favorito funciona igual
-  no Chrome de lá, desde que o Adsum rode no mesmo navegador.
-- **Ele lança na planilha, dia a dia**, depois de cada aula. O desenho
-  encaixa na rotina que já existe: é a mesma página, com três cliques.
+**B · Núcleo provado.** Camadas 0–4 com as leis passando sobre as fixtures
+anonimizadas (`scripts/anonimizar_sigaa.py`, irmão do `anonimizar_cofre.py`:
+troca nomes e matrículas, remove `jsessionid` e `ViewState`, e recusa gravar
+se sobrar dado original). Passa se: todas as leis, e a jornada completa (8).
 
-Da página de frequência **do aluno** (CIN0144, salva pelo autor, fora do
-repositório):
+**C · Só conferência, em uso real.** Favorito e folha no ar **sem**
+Preencher. O professor continua lançando à mão. Várias semanas de páginas
+reais passando pelo leitor. Passa se: nenhuma leitura recusada sem motivo
+certo, nenhuma diferença falsa. Risco de escrita: zero.
 
-- **SIGAA v4.15.0.206**, RichFaces 3.3.3 / a4j, jQuery 1.4. O rodapé traz a
-  versão: o favorito a manda junto com a leitura, e a auditoria registra
-  com qual SIGAA cada conferência rodou. Versão desconhecida não recusa, mas
-  aparece na folha.
-- A visão do aluno lista cada dia como `Presente`, `Falta` ou **`Não
-  Registrada`**. Nesta turma havia dias não registrados no meio de dias
-  lançados — exatamente o que a conferência pega sozinha ("A lançar").
-- O rodapé mostra o servidor (`sigaa11`): a UFPE roda vários nós. Não afeta
-  nada que a ferramenta faz, mas explica por que duas abas podem ver estados
-  diferentes por um instante.
+**D · Primeiro Preencher.** Em ambiente de homologação, se a STI der; senão,
+numa turma real, com o professor ao lado, uma aula por vez, conferindo cada
+célula azul antes do Gravar, e conferência depois. Passa se: *Tudo confere*
+depois de cada Gravar, e o `sigaa/<turma>.csv` bate com o que se viu.
 
-A página do docente, com a planilha, continua faltando: a do aluno não traz
-o JavaScript da planilha, que só carrega para quem pode lançar.
+**E · Outros professores.** Só depois de a STI saber e concordar por escrito.
 
-## Ordem de chegada
+## 7. O que já se tentou, e as rotas descartadas
 
-1. **Capturar o HTML** da planilha (antes e depois de Gravar, com dia verde,
-   trancado e cancelado se houver) e da tela de um dia. Fora do repositório.
-2. **Anonimizador** (`scripts/anonimizar_sigaa.py`, irmão do
-   `anonimizar_cofre.py`): troca nomes e matrículas por gente inventada e
-   recusa gravar se sobrar dado original. Só o resultado vira fixture.
-3. **Núcleo e testes** contra a fixture: leitura da página, conciliação,
-   instruções. Função pura em `nucleo/`, como `sigaa.ts`.
-4. **Conferência só de leitura no ar primeiro.** Risco zero de escrita, e
-   semanas de páginas reais passando pelo parser antes de ele escrever uma
-   célula. O professor continua lançando à mão.
-5. **Preencher**, depois de o NTI saber, com ensaio numa turma real e o
-   professor ao lado.
+- **[auto-sigaa][fc]** (Prof. Filipe Calegario, UFPE, 2023): notas, Selenium,
+  professor loga e navega, script preenche, não salva. Casa por
+  `contains(text(), nome)` e segue calado quando não acha.
+- **[notinhas][nt]** (SIGEduc da Bahia): Playwright, frequência em lote.
+  Sofreu com a navegação do JSF; casa por nome fonético; **digita a senha**.
+- **[SIGAAutils][su]** (IFC), **[sigaa-horarios-extension][sh]** (UFBA):
+  extensões; login automático, e leitura do código de horário.
 
-## O que o HTML precisa responder
+Descartadas, e por quê: **robô** (Selenium/Playwright) — peças soltas na
+máquina e navegação que o JSF pune; **POST direto** — exige lidar com sessão
+e login; **agente de IA** — não determinístico para registro oficial;
+**favorito que carrega código remoto** — um Adsum comprometido leria a sessão
+do SIGAA; **extensão** — recusada pelo autor; **colar o texto da planilha** —
+só conferiria, e só se a célula copiasse o valor.
 
-1. Célula vazia e célula `0` são distinguíveis? (é o que separa "a lançar"
-   de "presente")
-2. As células são `<input>`? Com `name` ligado à matrícula, ou à linha?
-3. Onde está o máximo de faltas de cada dia? (código de horário, atributo,
-   script da página)
-4. Como a página marca dia já lançado, cancelado, feriado, trancado,
-   matriculado depois?
-5. Mudar uma célula dispara evento (`onchange`, a4j) de que o SIGAA depende
-   para gravar?
-6. O Gravar envia só dias mexidos ou a planilha inteira? O que ele faz com
-   célula vazia?
-7. Qual a mensagem de sucesso, e qual a de erro?
-8. O SIGAA manda cabeçalho `Cross-Origin-Opener-Policy`? Se mandar
-   `same-origin`, a janela aberta pelo favorito perde a ligação com a
-   página e o `postMessage` não tem para onde voltar. Plano B, se for o
-   caso: a folha do Adsum copia as instruções e o favorito as lê num
-   segundo clique.
+## 8. Contato com a STI
+
+Dois pedidos independentes, e o primeiro vale mais que o segundo:
+
+1. **Ciência e de acordo** com o desenho (§3 é o argumento), antes do portão
+   E. É o que transforma "segue as regras, na nossa leitura" em "a UFPE sabe
+   e concorda".
+2. **Ambiente de homologação ou turma de teste**, para o portão D. Sem ele,
+   o portão D acontece numa turma real, com o professor ao lado — mais lento,
+   não mais perigoso, porque o Gravar é dele e a falta só vira definitiva na
+   ratificação.
+
+O perfil que lança frequência é o de docente. O pedido tem de sair do
+professor, ou com ele.
 
 [m1]: https://manuaisdesistemas.ufpe.br/index.php/Lan%C3%A7ar_Frequ%C3%AAncia
 [m2]: https://manuaisdesistemas.ufpe.br/index.php/Lan%C3%A7ar_Frequencia_em_Planilha
