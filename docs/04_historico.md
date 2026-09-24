@@ -582,3 +582,24 @@ Ideia registrada, não decidida; nada muda antes da aula de 24/09.
 
 A busca "de quem é?" também foi validada com os dois crachás reais: com ela
 aberta, o segundo foi recusado duas vezes sem trocar o alvo.
+
+## 24/09/2026 — primeira aula limpa
+
+Aula real de CIN0144 com a versão `39830c2` (carimbo 13:30), lida pelo zip
+da pasta do professor. Nenhuma recusa, nenhum "rápido demais", nenhuma busca
+interrompida, nenhum erro, nenhum `evento_id` repetido; conferência nas
+linhas de base (`repetidos=19` e `repetidos=8`).
+
+- Na primeira abertura, a conferência trouxe para a base as 19 + 13 leituras
+  que a versão antiga tinha descartado — o que a simulação da véspera
+  previu, agora na máquina dele.
+- 46 presentes: 36 por crachá, 9 pela busca, 1 à mão. Os 6 alunos do sal
+  perdido de 17/09 foram recadastrados pela busca, como planejado.
+- Fila de gente: 45 alunos em 5 min 19 s, mediana de 3,3 s entre crachás,
+  menor 2 s. Por crachá, no pior caso: 13 ms para identificar, 7 para
+  gravar, 48 para a tela.
+- A planilha de 22/09, com as 8 presenças recuperadas, dá 44 — o mesmo
+  número do registro à mão do professor, com uma troca de nome em cada
+  sentido para ele decidir.
+
+É a primeira das quatro semanas limpas que liberam funcionalidade nova.
