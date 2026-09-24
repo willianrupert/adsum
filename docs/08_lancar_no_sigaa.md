@@ -217,6 +217,104 @@ Adsum → favorito   { v, tipo: 'plano', id, instrucoes }  |  { v, tipo: 'nada',
 - O `id` amarra o plano à leitura. Plano de outra leitura é recusado.
 - Favorito de versão desconhecida é recusado com "arraste o favorito novo".
 
+### O método: bookmarklet
+
+**Decidido pelo autor, 24/09/2026: a ponte é um bookmarklet** — o
+"favorito" deste documento.
+
+#### O que é
+
+Um favorito comum do navegador, com uma diferença: o endereço dele não é
+`https://…`, é `javascript:` seguido de código. Clicar num favorito normal
+leva o navegador a outra página. Clicar num bookmarklet **roda o código na
+página que já está aberta**, como se ele fizesse parte dela. A técnica é
+tão antiga quanto o JavaScript nos navegadores, e funciona em Chrome, Edge,
+Safari e Firefox sem nada instalado.
+
+Num esboço (o de verdade sai do build, §5):
+
+```js
+javascript:(() => {
+  const leitura = lerPaginaCrua(document)            // só o que está na tela
+  const janela = open(ADSUM + '#/sigaa', 'adsum-sigaa', 'popup,width=420,height=640')
+  addEventListener('message', (e) => {
+    if (e.origin !== ADSUM || e.source !== janela) return   // só o Adsum que ele abriu
+    aplicarComCuidado(e.data)                         // escreve, pinta, oferece Desfazer
+  })
+  janela.postMessage(leitura, ADSUM)                  // quando a janela disser que está pronta
+})()
+```
+
+#### Por que ele resolve o problema
+
+O problema de fundo é que **os dados estão num lugar e a página está em
+outro**. As presenças moram no Adsum (`willianrupert.github.io`); a planilha
+mora no SIGAA (`sigaa.ufpe.br`). O navegador separa sites diferentes de
+propósito: o Adsum não pode tocar na página do SIGAA, e o SIGAA não pode ler
+a base do Adsum. Qualquer ponte precisa atravessar essa parede sem abri-la.
+
+O bookmarklet atravessa do jeito mais estreito possível:
+
+1. **Entra no SIGAA pela mão do professor.** O código só roda porque ele
+   clicou, na página que ele abriu, já autenticado. Não há login, não há
+   senha, não há sessão paralela: é a sessão dele, no momento dele.
+2. **Abre o Adsum de verdade ao lado.** Uma janela própria do Adsum, com a
+   base e a pasta do professor — não uma cópia, não um painel emprestado.
+3. **Os dois conversam por `postMessage`**, o canal que o navegador oferece
+   exatamente para isso: cada lado diz a quem manda e confere de quem
+   recebe. O SIGAA manda a página crua, sem nomes; o Adsum devolve só
+   "célula tal = n".
+4. **Cada lado fica com o que sabe.** A inteligência (casar matrículas,
+   comparar, decidir) fica no Adsum, onde há testes. O bookmarklet só lê,
+   escreve e pinta. Quando o SIGAA mudar um detalhe, o conserto é um deploy
+   do Adsum; o favorito na barra continua o mesmo.
+5. **O último passo é humano.** O bookmarklet preenche a tela; o Gravar é do
+   professor. Para o SIGAA, é o professor digitando rápido.
+
+#### Por que ele, e não o resto (§7)
+
+- **Nada a instalar além de arrastar.** Sem loja, sem permissão, sem conta
+  de desenvolvedor, sem política institucional no caminho. Igual no Mac do
+  Paulo e no Windows/Linux da universidade.
+- **Age só quando clicado, só onde foi clicado.** Não observa a navegação,
+  não roda sozinho, não guarda nada entre um clique e outro. Uma extensão,
+  mesmo bem-comportada, fica instalada e com permissões esperando; o
+  bookmarklet não existe até o clique.
+- **Arrastar é o único jeito de instalar**, e isso é proteção do Chrome:
+  página nenhuma consegue gravar código num favorito sozinha. O professor
+  faz o gesto, ciente.
+- **Não pede nada ao servidor do SIGAA.** Nenhuma requisição própria, nenhum
+  formulário enviado. É o que mantém a ferramenta dentro do que a PoSIC
+  permite sem precisar interpretar (§3).
+
+#### Três escolhas que o método exigiu
+
+- **Código autossuficiente, nunca carregado de fora.** Um bookmarklet que
+  busca o script no site do Adsum nunca precisaria ser reinstalado — mas
+  poria código remoto dentro de uma sessão autenticada do SIGAA, e um Adsum
+  comprometido leria tudo o que o professor vê. O preço é a versão: quando o
+  favorito precisar mudar, a folha pede para arrastar o novo (protocolo,
+  acima). Por isso ele é mínimo e sem domínio: quanto menos sabe, mais
+  raramente muda.
+- **Janela própria, não painel dentro do SIGAA.** Um `iframe` do Adsum
+  dentro da página do SIGAA teria o armazenamento particionado pelo Chrome e
+  veria uma base **vazia**. A janela é o Adsum inteiro.
+- **Gerado, não escrito à mão.** O código vive em `src/favorito/`, é testado
+  em jsdom contra a fixture como qualquer módulo, e o build o reduz ao
+  `javascript:` que o cartão dos Ajustes oferece para arrastar. O favorito
+  que o professor tem é sempre o que passou nos testes.
+
+#### Limites, ditos junto
+
+- Precisa do mesmo navegador e perfil em que o Adsum roda (confirmado para
+  o Paulo). No Safari, o app instalado tem armazenamento próprio e a janela
+  veria base vazia: a folha detecta e diz, em vez de mostrar "nada a lançar".
+- Se o SIGAA mandar `Cross-Origin-Opener-Policy`, a janela perde a ligação
+  com a página; o plano vai pela área de transferência, com um clique a mais
+  (§6, portão A).
+- Não fica sempre por cima, e não precisa: a janela vive o tempo de uma
+  decisão, e o que tem de ficar visível mora na barra, dentro da planilha.
+
 ### 5 · Favorito
 
 Pequeno, gerado no build a partir de `src/favorito/`, testado em jsdom
