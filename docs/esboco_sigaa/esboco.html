@@ -1,0 +1,180 @@
+<!doctype html>
+<!--
+  Esboço da janela do favorito (docs/09). É o desenho, não o app: as imagens
+  ao lado saem daqui por `scripts/gerar_esboco_sigaa.py`, um estado por vez,
+  escolhido pelo `#` do endereço. Tokens copiados de `src/estilo.css`. Gente
+  inventada — nenhum nome, matrícula ou turma real.
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Esboço · janela do favorito</title>
+<style>
+:root{--f:#fff;--fa:#f5f5f7;--t:#1d1d1f;--tf:#6e6e73;--ac:#0071e3;--acf:#e8f2fd;--al:#bf6516;--alf:#fdf1e5;--sep:#d2d2d7}
+@media (prefers-color-scheme:dark){:root{--f:#000;--fa:#1d1d1f;--t:#f5f5f7;--tf:#a1a1a6;--ac:#2997ff;--acf:#12243a;--al:#f5a623;--alf:#2a2113;--sep:#424245}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fa);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;color:var(--t);letter-spacing:-.2px;-webkit-font-smoothing:antialiased}
+button{font:inherit;border:none;background:transparent;color:var(--ac);border-radius:980px;padding:8px 16px;line-height:1}
+.palco{padding:28px;display:flex;justify-content:center}
+.estado{display:none}
+.estado.ativo{display:block}
+.janela{width:420px;background:var(--f);border-radius:12px;overflow:hidden;box-shadow:0 0 0 .5px var(--sep),0 18px 50px rgb(0 0 0/.18)}
+.cromo{display:flex;align-items:center;padding:9px 12px;background:var(--fa);font-size:12px;color:var(--tf)}
+.luzes{display:flex;gap:7px}.luzes i{width:12px;height:12px;border-radius:50%;display:block}
+.endereco{flex:1;text-align:center;margin-right:40px}
+.corpo{padding:22px 22px 20px}
+.topo{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:var(--tf)}
+.topo button{color:var(--tf);padding:0;font-size:14px}
+h1{font-size:28px;font-weight:600;letter-spacing:-.6px;margin:4px 0 2px}
+.apoio{font-size:14px;color:var(--tf);margin:0 0 18px}
+.cartao{display:flex;align-items:center;gap:12px;background:var(--fa);border-radius:18px;padding:13px 15px}
+.icone{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;font-size:16px;font-weight:600}
+.lista{display:flex;flex-direction:column;gap:8px}
+.forte{font-size:16px;font-weight:600}
+.fraco{font-size:13px;color:var(--tf)}
+.marca{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;background:var(--ac);color:#fff;font-size:14px}
+.marca.fora{background:transparent;box-shadow:inset 0 0 0 1.5px var(--sep);color:transparent}
+.seta{color:var(--tf);font-size:14px}
+.acao{width:100%;background:var(--ac);color:#fff;padding:15px;font-size:17px;margin-top:18px}
+.quieto{width:100%;color:var(--tf);margin-top:4px;font-size:15px}
+.garantia{font-size:12px;color:var(--tf);text-align:center;margin-top:6px}
+.difer{background:var(--alf);flex-direction:column;align-items:stretch;gap:10px;margin-bottom:10px}
+.linha-dif{display:flex;align-items:center;gap:10px;background:var(--f);border-radius:12px;padding:10px 12px}
+.pilula{background:var(--fa);font-size:13px;padding:7px 12px;white-space:nowrap}
+.centro{text-align:center}
+.planilha{width:720px;background:var(--f);border-radius:12px;overflow:hidden;box-shadow:0 0 0 .5px var(--sep)}
+.grade{display:grid;grid-template-columns:130px repeat(6,1fr);gap:4px;font-size:13px;text-align:center;padding:0 16px 12px}
+.grade span:nth-child(7n+1){text-align:left}
+.az{background:var(--acf);color:var(--ac);border-radius:6px}
+.la{background:var(--alf);color:var(--al);border-radius:6px}
+.barra{display:flex;align-items:center;gap:12px;background:var(--fa);padding:12px 16px}
+.botoes-sigaa{padding:4px 16px 14px;display:flex;gap:10px}
+.botoes-sigaa span{font-size:12px;border:1px solid #aab;border-radius:3px;padding:3px 8px;color:#333;background:#eee}
+.ajustes{width:520px;background:var(--f);border-radius:18px;padding:22px 26px 26px}
+.favorito{display:inline-flex;align-items:center;gap:8px;background:var(--ac);color:#fff;border-radius:980px;padding:10px 18px;font-size:15px}
+.passos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.passo{background:var(--fa);border-radius:14px;padding:12px;font-size:13px;color:var(--tf);line-height:1.4}
+.passo b{display:block;color:var(--t);font-size:14px;margin-bottom:4px}
+.navegador{background:var(--f);border-radius:12px;overflow:hidden;box-shadow:0 0 0 .5px var(--sep),0 18px 50px rgb(0 0 0/.18)}
+.abas{display:flex;align-items:flex-end;gap:14px;padding:10px 12px 0;background:#dee1e6}.abas .luzes{align-self:center;margin:0 4px 0 2px}
+.aba{background:var(--f);border-radius:9px 9px 0 0;padding:8px 14px;font-size:12px;color:#3c4043;min-width:190px}
+.enderecos{display:flex;align-items:center;gap:10px;padding:7px 12px;background:var(--f);font-size:13px;color:#3c4043}
+.caixa{flex:1;background:#f1f3f4;border-radius:980px;padding:6px 14px}
+.favoritos{display:flex;gap:16px;padding:5px 14px 7px;font-size:12px;color:#3c4043;background:var(--f);border-bottom:.5px solid var(--sep)}
+.favoritos b{font-weight:500;color:var(--ac)}
+@media (prefers-color-scheme:dark){.abas{background:#202124}.aba,.enderecos,.favoritos{color:#e8eaed}.caixa{background:#303134}}
+</style>
+</head>
+<body>
+
+<!-- #lancar — há o que lançar, com uma diferença -->
+<section class="estado" id="lancar"><div class="palco"><div class="janela">
+  <div class="cromo"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="endereco">willianrupert.github.io</span></div>
+  <div class="corpo">
+    <div class="topo"><span>ENG0101 · T01</span><button>Fechar</button></div>
+    <h1>3 aulas para lançar</h1>
+    <p class="apoio">Planilha lida agora. 48 alunos, todos pela matrícula.</p>
+    <div class="cartao difer">
+      <div style="display:flex;gap:12px;align-items:center"><div class="icone" style="background:var(--f);color:var(--al)">!</div><div><div class="forte">1 diferença</div><div style="font-size:14px;color:var(--al)">O SIGAA fica como está.</div></div></div>
+      <div class="linha-dif"><div style="flex:1"><div style="font-size:15px">Clara Menezes · ter 07/10</div><div class="fraco">SIGAA: presente. Adsum: ausente.</div></div><button class="pilula">Aceitar o SIGAA</button></div>
+    </div>
+    <div class="lista">
+      <div class="cartao"><span class="marca">✓</span><div style="flex:1"><div class="forte">Terça, 14 de outubro</div><div class="fraco">44 presentes, 4 faltas</div></div><span class="seta">⌄</span></div>
+      <div class="cartao"><span class="marca">✓</span><div style="flex:1"><div class="forte">Quinta, 16 de outubro</div><div class="fraco">46 presentes, 2 faltas</div></div><span class="seta">⌄</span></div>
+      <div class="cartao"><span class="marca">✓</span><div style="flex:1"><div class="forte">Terça, 21 de outubro</div><div class="fraco">45 presentes, 3 faltas</div></div><span class="seta">⌄</span></div>
+    </div>
+    <div class="fraco" style="margin:12px 4px 0">2 trancados e o feriado de 12/10 ficam de fora.</div>
+    <button class="acao">Preencher 3 aulas</button>
+    <button class="quieto">Agora não</button>
+    <div class="garantia">Nada é gravado aqui. Você confere e grava no SIGAA.</div>
+  </div>
+</div></div></section>
+
+<!-- #escolher — o professor aceitou a diferença, deixou uma aula de fora e abriu outra -->
+<section class="estado" id="escolher"><div class="palco"><div class="janela">
+  <div class="cromo"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="endereco">willianrupert.github.io</span></div>
+  <div class="corpo">
+    <div class="topo"><span>ENG0101 · T01</span><button>Fechar</button></div>
+    <h1>2 aulas para lançar</h1>
+    <p class="apoio">Planilha lida agora. 48 alunos, todos pela matrícula.</p>
+    <div class="cartao" style="margin-bottom:10px"><div class="icone" style="background:var(--f);color:var(--tf)">✓</div><div><div style="font-size:15px">Diferença aceita</div><div class="fraco">Clara Menezes, 07/10, fica como no SIGAA.</div></div></div>
+    <div class="lista">
+      <div class="cartao" style="flex-direction:column;align-items:stretch;gap:0">
+        <div style="display:flex;align-items:center;gap:12px"><span class="marca">✓</span><div style="flex:1"><div class="forte">Terça, 14 de outubro</div><div class="fraco">44 presentes, 4 faltas</div></div><span class="seta">⌃</span></div>
+        <div style="margin:10px 0 0 38px;font-size:14px;color:var(--tf);line-height:1.6">Faltaram: Rafael Tavares, Lívia Andrade, Otávio Lins e Bruna Castelo.</div>
+      </div>
+      <div class="cartao" style="opacity:.55"><span class="marca fora">✓</span><div style="flex:1"><div class="forte">Quinta, 16 de outubro</div><div class="fraco">46 presentes, 2 faltas</div></div><span class="seta">⌄</span></div>
+      <div class="cartao"><span class="marca">✓</span><div style="flex:1"><div class="forte">Terça, 21 de outubro</div><div class="fraco">45 presentes, 3 faltas</div></div><span class="seta">⌄</span></div>
+    </div>
+    <div class="fraco" style="margin:12px 4px 0">2 trancados e o feriado de 12/10 ficam de fora.</div>
+    <button class="acao">Preencher 2 aulas</button>
+    <button class="quieto">Agora não</button>
+    <div class="garantia">Nada é gravado aqui. Você confere e grava no SIGAA.</div>
+  </div>
+</div></div></section>
+
+<!-- #confere — depois de gravar, o favorito de novo -->
+<section class="estado" id="confere"><div class="palco"><div class="janela">
+  <div class="cromo"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="endereco">willianrupert.github.io</span></div>
+  <div class="corpo centro" style="padding-bottom:26px">
+    <div style="text-align:right"><button style="color:var(--tf);padding:0;font-size:14px">Fechar</button></div>
+    <div class="icone" style="width:64px;height:64px;font-size:30px;background:var(--acf);color:var(--ac);margin:18px auto 14px">✓</div>
+    <h1>Tudo confere</h1>
+    <p class="apoio" style="font-size:15px;margin:6px 0 22px">SIGAA e Adsum iguais em 12 aulas, até ter 21/10.</p>
+    <div class="cartao" style="text-align:left"><div class="icone" style="background:var(--f);color:var(--tf)">≈</div><div><div style="font-size:15px">1 célula ajustada por você</div><div class="fraco">Clara Menezes, 07/10, como no SIGAA.</div></div></div>
+    <button class="acao" style="margin-top:22px">Fechar</button>
+    <div class="garantia" style="margin-top:8px">Conferência registrada na pasta do Adsum.</div>
+  </div>
+</div></div></section>
+
+<!-- #recusa — o favorito clicado fora da planilha -->
+<section class="estado" id="recusa"><div class="palco"><div class="janela">
+  <div class="cromo"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="endereco">willianrupert.github.io</span></div>
+  <div class="corpo" style="padding-bottom:26px">
+    <div style="text-align:right"><button style="color:var(--tf);padding:0;font-size:14px">Fechar</button></div>
+    <div class="icone" style="width:56px;height:56px;font-size:26px;background:var(--alf);color:var(--al);margin:10px 0 14px">!</div>
+    <h1 style="font-size:24px">Esta página não é a planilha de frequência</h1>
+    <p class="apoio" style="font-size:15px;line-height:1.47;margin:10px 0 18px">Na Turma Virtual, abra Alunos e depois Lançar Freq. em Planilha. Então clique no favorito de novo.</p>
+    <div class="cartao"><div class="icone" style="background:var(--f);color:var(--tf)">≡</div><div style="flex:1"><div style="font-size:15px">Prefere lançar à mão?</div><div class="fraco">Veja quem faltou em cada aula.</div></div><span class="seta">›</span></div>
+  </div>
+</div></div></section>
+
+<!-- #barra — a janela fechou; a planilha do SIGAA com o que mudou -->
+<section class="estado" id="barra"><div class="palco"><div class="navegador" style="width:760px"><div class="abas"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="aba">SIGAA · Turma Virtual</span></div><div class="enderecos"><span>‹ ›</span><span class="caixa">sigaa.ufpe.br/sigaa/ava/index.jsf</span></div><div class="favoritos"><span>Favoritos</span><b>Adsum → SIGAA</b></div><div class="planilha" style="width:100%;border-radius:0;box-shadow:none">
+  <div style="padding:14px 16px;font-size:13px;color:var(--tf)">Planilha de Frequência da Turma (SIGAA)</div>
+  <div class="grade">
+    <span style="color:var(--tf)">Matrícula</span><span style="color:var(--tf)">07/10</span><span style="color:var(--tf)">09/10</span><span style="color:var(--tf)">14/10</span><span style="color:var(--tf)">16/10</span><span style="color:var(--tf)">21/10</span><span style="color:var(--tf)">23/10</span>
+    <span>2026000041</span><span>0</span><span>0</span><span class="az">0</span><span>&nbsp;</span><span class="az">0</span><span>&nbsp;</span>
+    <span>2026000118</span><span class="la">0</span><span>2</span><span class="az">2</span><span>&nbsp;</span><span class="az">0</span><span>&nbsp;</span>
+    <span>2026000207</span><span>0</span><span>0</span><span class="az">0</span><span>&nbsp;</span><span class="az">2</span><span>&nbsp;</span>
+    <span>2026000330</span><span style="color:var(--tf)">T</span><span style="color:var(--tf)">T</span><span style="color:var(--tf)">T</span><span style="color:var(--tf)">T</span><span style="color:var(--tf)">T</span><span style="color:var(--tf)">T</span>
+  </div>
+  <div class="botoes-sigaa"><span>Gravar Frequências</span><span>Cancelar</span></div>
+  <div class="barra">
+    <div class="icone" style="background:var(--acf);color:var(--ac)">✓</div>
+    <div style="flex:1"><div style="font-size:15px;font-weight:600">Adsum preencheu 2 aulas</div><div class="fraco">Azul é o que mudou. Confira e clique em Gravar Frequências.</div></div>
+    <button class="pilula" style="background:var(--f)">Desfazer</button>
+    <button style="color:var(--tf);padding:6px">⌄</button>
+  </div>
+</div></div></div></section>
+
+<!-- #instalar — o cartão nos Ajustes do Adsum -->
+<section class="estado" id="instalar"><div class="palco"><div class="navegador" style="width:600px"><div class="abas"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="aba">Adsum</span></div><div class="enderecos"><span>‹ ›</span><span class="caixa">willianrupert.github.io/adsum/</span></div><div class="favoritos"><span>Favoritos</span><span style="color:var(--tf)">arraste para cá</span></div><div class="ajustes" style="width:100%;border-radius:0">
+  <div class="fraco" style="font-size:14px">Ajustes</div>
+  <h1 style="font-size:24px">Lançar no SIGAA</h1>
+  <p class="apoio" style="font-size:15px;line-height:1.47">Arraste o botão abaixo para a barra de favoritos do Chrome. Depois, na planilha de frequência do SIGAA, é só clicar nele.</p>
+  <span class="favorito">Adsum → SIGAA</span>
+  <div class="passos">
+    <div class="passo"><b>1. Mostre a barra</b>Cmd+Shift+B no Mac, Ctrl+Shift+B no Windows.</div>
+    <div class="passo"><b>2. Arraste</b>O botão azul até a barra. Clicar nele aqui não faz nada.</div>
+    <div class="passo"><b>3. Use no SIGAA</b>Turma Virtual, Alunos, Lançar Freq. em Planilha.</div>
+  </div>
+  <div class="fraco" style="margin-top:14px">O favorito nunca vê sua senha e nunca grava. Quem grava é você.</div>
+</div></div></div></section>
+
+<script>
+  const alvo = (location.hash || '#lancar').slice(1)
+  document.getElementById(alvo)?.classList.add('ativo')
+</script>
+</body>
+</html>

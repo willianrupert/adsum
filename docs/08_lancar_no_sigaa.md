@@ -276,6 +276,9 @@ confere*. **Sobre cofre com histórico**, nunca base limpa — é a regra de
 
 ## 5. A experiência
 
+As telas desenhadas, com as perguntas que ainda são do autor, estão em
+`docs/09_esboco_da_janela.md`.
+
 A regra da casa: uma ação óbvia por tela, a navegação decorre do estado,
 nada de configuração à vista.
 
