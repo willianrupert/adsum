@@ -264,8 +264,11 @@ uma porta, `PonteSigaa`, com adaptadores trocáveis sobre o mesmo núcleo:
    cliques por aula. É o chão: se o favorito quebrar num dia de SIGAA
    diferente, o professor lança igual, sem esperar conserto.
 2. **Favorito + janela** — o desenho desta seção. Zero dependência externa.
-3. **Extensão com painel lateral** — avaliada e **não** escolhida agora,
-   ver "Rotas avaliadas".
+
+**Decidido pelo autor, 24/09/2026: a ponte é o favorito.** Extensão não
+entra — nem agora, nem como plano B. A porta continua existindo pelo que ela
+separa (núcleo de casca, testável sem navegador), não para abrir espaço a
+uma extensão.
 
 ### Rotas avaliadas
 
@@ -277,8 +280,9 @@ uma porta, `PonteSigaa`, com adaptadores trocáveis sobre o mesmo núcleo:
 | Favorito que carrega código do Adsum | favorito nunca precisa mudar | código remoto dentro de uma sessão autenticada do SIGAA: um Adsum comprometido leria tudo o que o professor vê. Descartada |
 | Robô (Selenium/Playwright), POST direto, agente de IA | — | ver "O que já se tentou" e "As regras de segurança". Descartadas |
 
-A extensão é a candidata se o uso real mostrar que a janela incomoda. A
-migração custa um adaptador, não um redesenho.
+A extensão foi avaliada e recusada pelo autor em 24/09/2026. Se a janela
+incomodar em uso real, o conserto é na janela e na barra do favorito, não
+trocar de rota.
 
 ### Falhas que ficam baratas por construção
 
