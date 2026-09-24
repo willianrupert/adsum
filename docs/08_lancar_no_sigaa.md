@@ -253,10 +253,10 @@ bastante, recusa e diz por quê.
 
 ### A ponte é um adaptador
 
-O que se garante é o núcleo (camadas 1–4 abaixo), não a casca. Favorito e
-janela são **uma** forma de ligar o Adsum à planilha, e podem não ser a
-última — o mesmo raciocínio do "o leitor vai mudar". Por isso a ligação é
-uma porta, `PonteSigaa`, com adaptadores trocáveis sobre o mesmo núcleo:
+O que se garante é o núcleo (camadas 1–4 abaixo), não a casca. Por isso a
+ligação é uma porta, `PonteSigaa` — o mesmo raciocínio do "o leitor vai
+mudar": o SIGAA pode mexer num detalhe, e o conserto fica na casca, sem tocar
+no que foi provado. Dois adaptadores sobre o mesmo núcleo:
 
 1. **Lista para lançar à mão** — sempre existe, não depende de nada do
    SIGAA: "14/10: todos presentes, exceto" e as matrículas e nomes de quem
