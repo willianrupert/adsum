@@ -298,8 +298,17 @@ redimensiona, minimiza e fecha. Dentro, uma folha:
 - *Há o que lançar* — diferenças primeiro, num cartão amarelo: nome, dia, os
   dois valores, "o SIGAA fica como está", e **Aceitar o SIGAA** em cada uma.
   Depois um cartão por aula (dia, presentes, faltas), todos marcados;
-  desmarcar deixa o dia de fora. Informativos recolhidos numa linha. Ação:
-  **Preencher 3 aulas**; ao lado, Só conferir.
+  desmarcar deixa o dia de fora; tocar no cartão mostra quem faltou, pelo
+  nome, para conferir antes de preencher. Informativos numa linha só ("2
+  trancados e o feriado de 12/10 ficam de fora"). Uma ação, pílula azul de
+  largura cheia que conta o que vai fazer: **Preencher 3 aulas** — o número
+  acompanha o que está marcado. Abaixo, quieto, **Agora não**. E a frase que
+  sustenta a confiança, sempre visível sob o botão: "Nada é gravado aqui.
+  Você confere e grava no SIGAA."
+- O título é o estado em uma frase ("3 aulas para lançar", "Tudo confere"),
+  com a turma e "planilha lida agora, 48 alunos, todos pela matrícula" como
+  apoio. Tokens, pílulas, cartões e tipografia são os do `estilo.css`: a
+  janela é o Adsum, não uma tela nova.
 - *Recusa* — página que não é a planilha, turma que não casa, favorito
   antigo, base vazia neste navegador. Uma frase do que houve e do que fazer.
 
