@@ -74,6 +74,7 @@ import { salvarBinario, salvarTexto } from '../ambiente/arquivos.ts'
 import { MANUAL_URL, REPOSITORIO_URL } from '../nucleo/cofre.ts'
 import type { EstadoDaPasta } from '../nucleo/rota.ts'
 import { TelaAula } from './TelaAula.tsx'
+import { Antessala } from './antessala.ts'
 import { TelaPasta } from './TelaPasta.tsx'
 import { TelaNavegador } from './TelaNavegador.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
@@ -713,22 +714,34 @@ export function Fluxo() {
     [repositorio],
   )
 
+  /** Leituras que chegam enquanto a chamada abre. Ver `antessala.ts`. */
+  const antessala = useRef(new Antessala())
+
   const abrirChamada = useCallback(
     async (turma: string, uidHash: string, em: Date) => {
-      const vinculo = await repositorio.vinculoPorHash(uidHash)
-      const rascunho = eventoDe(
-        { tipo: 'abrir', turma, vinculo },
-        { eventoId: '', quando: em, turma, uidHash },
-      )
-      if (rascunho) {
-        const evento = await gravarEventoNovo(repositorio, config.instalacaoId, em, (eventoId) => ({
-          ...rascunho,
-          eventoId,
-        }))
-        await gravarLinha(evento)
-        registrar('abrir', { evento: evento.eventoId, dia: diaLocal(em.toISOString()) })
+      antessala.current.abrir()
+      try {
+        const vinculo = await repositorio.vinculoPorHash(uidHash)
+        const rascunho = eventoDe(
+          { tipo: 'abrir', turma, vinculo },
+          { eventoId: '', quando: em, turma, uidHash },
+        )
+        if (rascunho) {
+          const evento = await gravarEventoNovo(repositorio, config.instalacaoId, em, (eventoId) => ({
+            ...rascunho,
+            eventoId,
+          }))
+          await gravarLinha(evento)
+          registrar('abrir', { evento: evento.eventoId, dia: diaLocal(em.toISOString()) })
+        }
+        await repositorio.abrirSessao({ turma, abertaEm: em.toISOString(), uidHashProfessor: uidHash })
+      } catch (erro) {
+        // Não abriu: o que esperava não tem chamada para onde ir. Fica dito
+        // no diário em vez de sumir.
+        const perdidas = antessala.current.entregar()
+        if (perdidas.length > 0) registrar('leituras_sem_chamada', { quantas: perdidas.length })
+        throw erro
       }
-      await repositorio.abrirSessao({ turma, abertaEm: em.toISOString(), uidHashProfessor: uidHash })
       tocar('abertura')
       await mudou(turma)
     },
@@ -861,6 +874,8 @@ export function Fluxo() {
   useEffect(() => {
     if (sessao) return
     return leitor.aoLer((leitura) => {
+      // Chamada abrindo: a leitura é dela, não do repouso.
+      if (antessala.current.reter(leitura)) return
       semDono('crachá no repouso', async () => {
         const { uidHash, vinculo } = await identificarCracha(repositorio, leitura.uid)
         registrar('cracha_no_repouso', { hash: curto(uidHash), vinculo: vinculo?.papel ?? 'nenhum' })
@@ -1150,6 +1165,7 @@ export function Fluxo() {
           // sem dono, invisível como as que este projeto persegue.
           aoMudarBase={() => semDono('base mudou', () => mudou(sessao.turma))}
           aoRegistrar={gravarLinha}
+          retidas={() => antessala.current.entregar()}
           aoEncerrar={(presentes, duracaoMs, intervalos) => {
             // Sem esta marca o relógio reabriria a aula que acabou de fechar.
             marcarEncerrada(sessao.turma, new Date().toISOString())

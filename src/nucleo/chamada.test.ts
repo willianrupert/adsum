@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { depoisDeGravar, ehDaPessoa, estadoDaChamada, MemoriaDaFila, recadoAntesDeGravar } from './chamada.ts'
+import {
+  depoisDeGravar,
+  ehDaPessoa,
+  estadoDaChamada,
+  indiceDeVinculos,
+  MemoriaDaFila,
+  recadoAntesDeGravar,
+} from './chamada.ts'
 import { INTERVALO_MINIMO_MS, type Sessao } from './sessao.ts'
 import type { Evento, Matriculado, Vinculo } from './tipos.ts'
 
@@ -206,6 +213,28 @@ describe('MemoriaDaFila e a releitura do log', () => {
     fila.concluir('a')
     fila.recomecar(new Set(), fila.marca())
     expect(fila.decidir('a', { sessao: SESSAO, vinculo: vinculo('a'), em: em(900) }).tipo).toBe('presenca')
+  })
+})
+
+describe('indiceDeVinculos', () => {
+  it('acha o mesmo que um find com ehDaPessoa, inclusive o primeiro de dois', () => {
+    const vinculos = [
+      vinculo('a'),
+      vinculo('a2', { matricula: '2025a', nome: 'Pessoa a (segundo sal)' }),
+      vinculo('b'),
+      PROFESSOR,
+      vinculo('sem', { matricula: undefined, nome: 'Pessoa b' }),
+    ]
+    const achar = indiceDeVinculos(vinculos)
+    const pessoas = [
+      { matricula: '2025a', nome: 'Pessoa a' },
+      { matricula: '2025b', nome: 'x' },
+      { matricula: '', nome: 'Ana Paula' },
+      { matricula: '', nome: 'Pessoa b' },
+      { matricula: '2025z', nome: 'Pessoa z' },
+      { matricula: '', nome: 'Ninguém' },
+    ]
+    for (const p of pessoas) expect(achar(p)).toBe(vinculos.find((v) => ehDaPessoa(v, p)))
   })
 })
 

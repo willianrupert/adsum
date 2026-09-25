@@ -28,6 +28,27 @@ export function ehDaPessoa(
   return pessoa.matricula ? vinculo.matricula === pessoa.matricula : vinculo.nome === pessoa.nome
 }
 
+/**
+ * O vínculo de cada pessoa, achado em tempo constante.
+ *
+ * A tela procura o vínculo de cada linha da turma a cada render. Com `find`,
+ * isso é linear por linha, e a checagem de nome repetido, que olha a turma
+ * inteira para cada linha, virava cúbica: numa turma de 300, 27 milhões de
+ * comparações por crachá. Mesma regra de `ehDaPessoa`, e o mesmo resultado de
+ * um `find`: o primeiro vínculo da lista que casa.
+ */
+export function indiceDeVinculos(
+  vinculos: readonly Vinculo[],
+): (pessoa: Pick<Matriculado, 'matricula' | 'nome'>) => Vinculo | undefined {
+  const porMatricula = new Map<string, Vinculo>()
+  const porNome = new Map<string, Vinculo>()
+  for (const v of vinculos) {
+    if (v.matricula && !porMatricula.has(v.matricula)) porMatricula.set(v.matricula, v)
+    if (!porNome.has(v.nome)) porNome.set(v.nome, v)
+  }
+  return (pessoa) => (pessoa.matricula ? porMatricula.get(pessoa.matricula) : porNome.get(pessoa.nome))
+}
+
 /** Uma linha da lista de leituras recentes, ao lado do contador. */
 export interface LinhaDaChamada {
   chave: string

@@ -35,13 +35,14 @@ import {
   depoisDeGravar,
   ehDaPessoa,
   estadoDaChamada,
+  indiceDeVinculos,
   MemoriaDaFila,
   recadoAntesDeGravar,
   type LinhaDaChamada,
 } from '../nucleo/chamada.ts'
 import type { Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
-import { ehConfirmavel, ehSimulavel } from '../portas/LeitorDeCracha.ts'
+import { ehConfirmavel, ehSimulavel, type Leitura } from '../portas/LeitorDeCracha.ts'
 import { gravarEventoNovo, identificarCracha } from '../portas/Repositorio.ts'
 import { curto, registrar, semDono } from '../ambiente/diario.ts'
 import { useAdsum } from './adsum.ts'
@@ -62,6 +63,7 @@ export function TelaAula({
   aoMudarBase,
   aoRegistrar,
   aoEncerrar,
+  retidas,
 }: {
   sessao: Sessao
   /** Quem está na turma e ainda não tem crachá. Vira a fila de chamada. */
@@ -80,6 +82,8 @@ export function TelaAula({
   aoRegistrar?: (evento: Evento) => Promise<void>
   /** Chamado quando o crachá do professor encerra, com o que houve na aula. */
   aoEncerrar?: (presentes: number, duracaoMs: number, intervalos?: EstatisticaDeIntervalos) => void
+  /** Leituras que chegaram enquanto a chamada abria. Ver `antessala.ts`. */
+  retidas?: () => Leitura[]
 }) {
   const { leitor, repositorio, config } = useAdsum()
 
@@ -213,11 +217,7 @@ export function TelaAula({
    * crachá" acha o `uid_hash` a apagar, e por aqui que `efetivo` acha o
    * apelido editado em Ajustes.
    */
-  const vinculoDe = useCallback(
-    (p: Matriculado): Vinculo | undefined =>
-      vinculos.find((v) => ehDaPessoa(v, p)),
-    [vinculos],
-  )
+  const vinculoDe = useMemo(() => indiceDeVinculos(vinculos), [vinculos])
 
   const efetivo = useCallback(
     (p: Matriculado): Matriculado => {
@@ -239,6 +239,18 @@ export function TelaAula({
    */
   const pendentesAlunos = useMemo(() => pendentes.filter((p) => p.papel === 'aluno'), [pendentes])
   const alunosDaTurma = useMemo(() => daTurma.filter((p) => p.papel === 'aluno'), [daTurma])
+  // Calculados uma vez por render, não uma vez por linha: a lista da turma
+  // olhava a turma inteira para cada linha, e com 300 alunos cada crachá
+  // custava mais de meio segundo só de desenho.
+  const chavesPendentes = useMemo(() => new Set(pendentesAlunos.map((p) => p.chave)), [pendentesAlunos])
+  const vezesDoNome = useMemo(() => {
+    const vezes = new Map<string, number>()
+    for (const p of alunosDaTurma) {
+      const nome = efetivo(p).nome
+      vezes.set(nome, (vezes.get(nome) ?? 0) + 1)
+    }
+    return vezes
+  }, [alunosDaTurma, efetivo])
   const professoresDaTurma = useMemo(() => daTurma.filter((p) => p.papel === 'professor'), [daTurma])
   /** Só para a legenda do painel fechado — sem isto, "Professores" sozinho
       não diz se falta alguém, e o professor teria que abrir pra saber. */
@@ -465,7 +477,7 @@ export function TelaAula({
   )
 
   useEffect(() => {
-    return leitor.aoLer((leitura) => {
+    const aoLer = (leitura: Leitura) => {
       setUltimaAtividadeEm(leitura.em)
       if (procurandoRef.current) setLeiturasDuranteABusca((n) => n + 1)
       void (async () => {
@@ -620,8 +632,13 @@ export function TelaAula({
         setRecado('A leitura falhou e não foi gravada. Encoste o crachá de novo.')
         tocar('desconhecido')
       })
-    })
+    }
+    const cancelar = leitor.aoLer(aoLer)
+    // Na ordem em que chegaram, antes de qualquer leitura nova.
+    for (const leitura of retidas?.() ?? []) aoLer(leitura)
+    return cancelar
   }, [
+    retidas,
     leitor,
     repositorio,
     config,
@@ -1000,9 +1017,9 @@ export function TelaAula({
             </thead>
             <tbody>
               {alunosDaTurma.map((p) => {
-                const vinculado = !pendentesAlunos.some((x) => x.chave === p.chave)
+                const vinculado = !chavesPendentes.has(p.chave)
                 const e = efetivo(p)
-                const repetido = alunosDaTurma.filter((x) => efetivo(x).nome === e.nome).length > 1
+                const repetido = (vezesDoNome.get(e.nome) ?? 0) > 1
                 // Presente hoje, com ou sem crachá — a mesma regra de
                 // `planilhaDeFaltas`, ver `presencasHoje` acima.
                 const presente = presencasHoje.get(chaveDeIdentidade(p))?.presente ?? false
