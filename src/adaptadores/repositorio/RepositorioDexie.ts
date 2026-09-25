@@ -1,10 +1,6 @@
-// Adaptador: a base local, em IndexedDB.
-//
-// "Dados 100% locais" não é slogan — é o que dispensa backend, conta e termo de
-// uso. O preço é que o navegador pode apagar tudo sob pressão de espaço, e por
-// isso `abrir()` pede armazenamento persistente e o diagnóstico mostra se foi
-// concedido. Sem essa checagem, "local" e "perdido" são indistinguíveis até o
-// dia em que somem.
+// Adaptador: a base no navegador, em IndexedDB. O navegador pode apagá-la sob
+// pressão de espaço: `abrir()` pede armazenamento persistente, e o Diagnóstico
+// mostra se foi concedido.
 
 import { saisConhecidos, sortearSal } from '../../nucleo/hash.ts'
 import type { Aula, Config, Evento, Matriculado, UidHash, Vinculo } from '../../nucleo/tipos.ts'
@@ -41,10 +37,8 @@ export class RepositorioDexie implements Repositorio {
   }
 
   /**
-   * Em cache, relida só depois de uma escrita. `identificarCracha` lê o
-   * chaveiro de sais daqui a cada crachá — e não de uma cópia em memória na
-   * tela, que foi o que divergiu da base em 17/09/2026 —, então esta leitura
-   * está no caminho de cada leitura e não pode ir ao IndexedDB toda vez.
+   * Em cache, relida só depois de uma escrita: `identificarCracha` lê o
+   * chaveiro de sais daqui a cada crachá.
    */
   #config?: Config
 
@@ -185,9 +179,7 @@ export class RepositorioDexie implements Repositorio {
       return true
     } catch (erro) {
       if (erro instanceof Error && erro.name === 'ConstraintError') {
-        // Não é falha ao reler um arquivo: é a idempotência funcionando. Mas
-        // quem cunhou um evento novo precisa saber que ele não entrou — ver
-        // `gravarEventoNovo`, e o 22/09/2026 que o engolir calado causou.
+        // Idempotência ao reler um arquivo; `gravarEventoNovo` trata o `false`.
         return false
       }
       throw erro
@@ -197,11 +189,7 @@ export class RepositorioDexie implements Repositorio {
   async listarEventos(opcoes?: { turma?: string; limite?: number }): Promise<Evento[]> {
     const { turma, limite } = opcoes ?? {}
 
-    // Com turma, o índice já existe (`eventos: '..., turma, ...'`) — ler só
-    // as linhas dela em vez da tabela inteira. `where().equals()` não sai
-    // ordenado por `quando`, então o ordenamento (mais recente primeiro, a
-    // mesma garantia do caminho sem turma) é feito depois, no array já
-    // filtrado — bem menor que a tabela inteira.
+    // Pelo índice de turma. `where().equals()` não sai ordenado: ordena depois.
     if (turma !== undefined) {
       const lista = await this.#banco.eventos.where('turma').equals(turma).sortBy('quando')
       lista.reverse()

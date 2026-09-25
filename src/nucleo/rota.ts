@@ -1,14 +1,8 @@
-// A rota é o estado.
+// A rota é o estado: a tela decorre do que existe na base, e o professor
+// nunca escolhe onde está. Função pura, para a regra ser testável.
 //
-// Não há menu. A tela decorre do que existe na base e de quem está lendo
-// crachá — o professor nunca escolhe onde está, ele abre e já está no lugar
-// certo. Isto é função pura de propósito: qual tela mostrar é regra de
-// domínio, testável, e não uma decisão espalhada por JSX.
-//
-// A ordem das perguntas é a regra. Problema vem antes de tudo, porque tela
-// bonita sobre leitor desligado é mentira. Turma vem antes de cerimônia,
-// porque não há quem chamar. Cerimônia vem antes de repouso, porque crachá
-// faltando é trabalho pendente, e repouso é a ausência dele.
+// A ordem das perguntas é a regra: problema, pasta, navegador, turma, grade,
+// leitor, chamada, e só então o repouso.
 
 export type Rota =
   /** Falta peça essencial do navegador, ou não há leitor lendo. */
@@ -21,11 +15,11 @@ export type Rota =
   | 'turma'
   /** Turma sem horário: a tela é a semana, para apontar onde ela cai. */
   | 'cronograma'
-  /** Há gente sem crachá: a tela é a cerimônia. */
+  /** Nenhum professor com crachá: abre a chamada sozinho, com o vínculo sintético. */
   | 'cerimonia'
-  /** Chamada aberta: a tela é a coleta — presença e cadastro na mesma coisa. */
+  /** Chamada aberta: presença e cadastro na mesma tela. */
   | 'chamada'
-  /** Tudo vinculado: a tela é a espera do próximo crachá. */
+  /** O repouso: a turma e o dia da próxima chamada. */
   | 'pronto'
 
 /** Ver `ambiente/pasta.ts`. `indisponivel` = navegador sem seletor de pasta. */
@@ -47,25 +41,17 @@ export interface EstadoDoApp {
   turmaSemHorario?: string
   /** O professor disse "sigo sem pasta". Ver o comentário em `decidirRota`. */
   pastaDispensada: boolean
-  /** Nenhum professor tem crachá ainda. Por si só, pede a cerimônia. */
+  /** Nenhum professor tem vínculo ainda. */
   professorSemCracha: boolean
-  /**
-   * "Cadastro fica pra depois." Ver o comentário em `decidirRota`: mesmo sem
-   * crachá de professor, a tela de cadastro não pode ser a única porta.
-   */
+  /** "Cadastro fica pra depois." Nenhuma tela grava mais esta marca. */
   cadastroDispensado: boolean
 }
 
 export function decidirRota(estado: EstadoDoApp): Rota {
   if (estado.ambienteQuebrado) return 'problema'
 
-  // Escolher a pasta vem antes de tudo o que grava. Onde o navegador não
-  // oferece seletor, seguir é a única opção — e aí a tela da base é que precisa
-  // dizer que os dados não estão seguros, em vez de fingir que estão.
-  // `pastaDispensada` existe porque esta tela não tinha saída: cancelar o
-  // seletor, ou o navegador negar a permissão, prendia o professor nela. Uma
-  // tela sem saída é pior do que a garantia que ela protege — a garantia
-  // depende de o programa ser usado.
+  // A pasta antes de tudo o que grava. Com saída (`pastaDispensada`): uma
+  // tela sem saída é pior que a garantia que ela protege.
   if (
     !estado.pastaDispensada &&
     (estado.pasta === 'sem_pasta' || estado.pasta === 'sem_permissao')
@@ -73,28 +59,20 @@ export function decidirRota(estado: EstadoDoApp): Rota {
     return 'pasta'
   }
 
-  // Mesmo lugar da pasta, e pelo mesmo motivo: é a pergunta "onde isto vive",
-  // e ela vem antes de existir base. Depois seria tarde — o app instalado tem
-  // armazenamento próprio e não enxerga a turma que ficou na aba, e trocar de
-  // navegador com a turma cadastrada faz recomeçar do zero.
+  // "Onde isto vive" vem antes de existir base: o app instalado não enxerga a
+  // turma cadastrada na aba.
   if (estado.conselharNavegador) return 'navegador'
 
   if (estado.turmas === 0) return 'turma'
 
-  // Depois da turma e não antes: a grade precisa saber de qual turma fala. E
-  // antes do leitor, porque preencher horário não depende de dongle nenhum —
-  // parar aqui por falta de hardware seria travar o cadastro por nada.
+  // Depois da turma (a grade fala de uma) e antes do leitor (não depende dele).
   if (estado.turmaSemHorario) return 'cronograma'
 
   if (!estado.lendo) return 'problema'
   if (estado.chamadaAberta) return 'chamada'
 
-  // A cerimônia existe para dar o primeiro crachá ao professor — sem ele a
-  // aula não abre, e é dentro da aula que todo o resto se cadastra. Mas essa
-  // urgência é dele, não do app: uma tela que só sai do caminho depois de um
-  // crachá específico é a mesma armadilha da pasta sem saída, com outro nome.
-  // `cadastroDispensado` é o "sigo sem, por agora" — o repouso é quem cobra
-  // depois, sem fingir que está tudo pronto.
+  // Sem nenhum professor, a casca abre a chamada sozinha: o cadastro de todos
+  // acontece dentro dela, e o botão cria um vínculo sintético de professor.
   if (estado.professorSemCracha && !estado.cadastroDispensado) return 'cerimonia'
   return 'pronto'
 }
