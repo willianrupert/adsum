@@ -92,7 +92,15 @@ export function useBase({ repositorio, pasta }: { repositorio: Repositorio; past
     semDono('recontar', recontar)
   }, [recontar])
 
+  /**
+   * A sessão acabou de ser fechada na base. Esquecê-la na hora, sem esperar a
+   * recontagem, evita um instante com a tela da chamada ainda montada por
+   * baixo do resumo.
+   */
+  const esquecerSessao = useCallback(() => setSessao(undefined), [])
+
   return {
+    esquecerSessao,
     sessao,
     listaDeTurmas,
     turmas: listaDeTurmas.length,

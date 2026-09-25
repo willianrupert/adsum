@@ -107,6 +107,7 @@ export function Fluxo() {
     uidDoProfessor,
     nomeDoProfessorAtual,
     recontar,
+    esquecerSessao,
   } = useBase({ repositorio, pasta })
   const { comecarEm, turmaSelecionada, mudarTurma, diaSelecionado, editarDia, voltarParaHoje, momentoDaChamada } =
     useEscolhaDaChamada({ grade, listaDeTurmas })
@@ -126,6 +127,17 @@ export function Fluxo() {
   /** Quantas turmas havia ao abrir a colagem: a colagem fecha quando cresce. */
   const [turmasAntesDaNova, setTurmasAntesDaNova] = useState(0)
   const [resumo, setResumo] = useState<{ sessao: Sessao; presentes: number }>()
+
+  // Arrays estáveis entre renders: arrays novos a cada render invalidavam
+  // toda a memoização da tela da chamada, a cada crachá.
+  const pendentesDaAula = useMemo(
+    () => pendentesDaTurma.filter((p) => p.turma === sessao?.turma),
+    [pendentesDaTurma, sessao?.turma],
+  )
+  const turmaDaAula = useMemo(
+    () => matriculadosTodos.filter((p) => p.turma === sessao?.turma),
+    [matriculadosTodos, sessao?.turma],
+  )
 
   const ambienteQuebrado = levantarCapacidades().some((c) => c.peso === 'essencial' && !c.presente)
   // Lido uma vez: trocar o modo de ensaio recarrega a página.
@@ -296,25 +308,15 @@ export function Fluxo() {
     return () => window.removeEventListener('keydown', aoTeclar)
   }, [resumo, rota, colandoNova, turmaSelecionada, iniciarChamada, mudarTurma])
 
-  // Sai da colagem assim que a turma colada é salva — ver o comentário de
-  // `turmasAntesDaNova`. Sem isto, voltar do cronograma da turma recém
-  // criada reabria a colagem em branco, como se a lista nunca tivesse sido
-  // colada.
+  // A colagem fecha quando a turma colada é salva, e não reabre em branco
+  // ao voltar do cronograma.
   useEffect(() => {
     if (colandoNova && turmas > turmasAntesDaNova) setColandoNova(false)
   }, [colandoNova, turmas, turmasAntesDaNova])
 
   const naColagem = rota === 'turma' || (rota === 'pronto' && colandoNova)
 
-  /**
-   * O que está na tela, para depuração — só em modo de ensaio.
-   *
-   * `rota` sozinha não basta: `resumo`, `colandoNova` e `folha` são
-   * sobreposições que vivem fora de `decidirRota`, em estado local daqui.
-   * É possível estar em `rota === 'pronto'` com `TelaResumo` na tela, e uma
-   * etiqueta que mostrasse só a rota mentiria nesse caso. A ordem aqui segue
-   * a ordem em que o JSX abaixo de fato decide o que aparece.
-   */
+  /** O que está na tela, para depuração no modo de ensaio: a rota e as camadas por cima dela. */
   const camadas = [
     rota,
     colandoNova && 'colando turma nova',
@@ -327,15 +329,7 @@ export function Fluxo() {
 
   return (
     <>
-      {/* Uma folha (Ajustes, Presenças, Diagnóstico) cobre a tela, mas o que
-          está por baixo continuava montado — inclusive para quem navega por
-          leitor de tela ou teclado, que podia cair num botão coberto pelo
-          vidro. Ficou visível quando "Ver presenças" passou a existir nas
-          duas camadas ao mesmo tempo: duas opções com o mesmo nome, uma
-          delas inalcançável. `aria-hidden` tira o fundo da árvore de
-          acessibilidade enquanto a folha estiver aberta — o clique já não
-          chegava lá, por causa do `folha__fundo`; agora a busca por nome
-          também não. */}
+      {/* Com uma folha aberta, o fundo sai da árvore de acessibilidade. */}
       <div aria-hidden={folha ? true : undefined}>
       {rota === 'problema' && (
         <TelaProblema
@@ -367,26 +361,17 @@ export function Fluxo() {
           aulas={semHorario.aulas}
           uidHashProfessor={uidDoProfessor}
           aoSalvar={(novas) => {
-            semDono('efeito', async () => {
-              // A grade é indexada pelo professor — e o cronograma aparece
-              // **antes** de existir qualquer crachá dele (é a primeira turma
-              // colada, o repouso ainda nem existe). `uidHashProfessor` chega
-              // vazio nesse instante, e as aulas eram salvas com ele. O vazio
-              // nunca se reconciliava sozinho com o vínculo criado depois —
-              // sintético, ao clicar "Começar a chamada", ou de um crachá de
-              // verdade — porque são hashes diferentes: `aulasAgora` compara
-              // por igualdade e nunca achava a aula certa, mesmo no horário
-              // certo. `garantirProfessor` já resolve exatamente isso para o
-              // botão de iniciar; usar o mesmo aqui fecha o mesmo buraco na
-              // origem, não só quando o professor aparece depois.
+            semDono('salvar cronograma', async () => {
+              // O cronograma pode vir antes de qualquer crachá de professor:
+              // as aulas são gravadas no dele, criado agora se preciso, e não
+              // num hash vazio que nunca bateria com a grade.
               const professor = await garantirProfessor()
               const comProfessorCerto = novas.map((a) => ({
                 ...a,
                 uidHashProfessor: professor.uidHash,
               }))
               await repositorio.definirHorarioDaTurma(semHorario.turma, comProfessorCerto)
-              // Salvar sem marcar nada é o mesmo que adiar: sem isto a tela
-              // voltaria na hora, porque a turma continua sem horário.
+              // Salvar sem marcar nada é adiar: senão a tela voltaria na hora.
               if (novas.length === 0) adiarHorario(semHorario.turma)
               await mudou()
             })
@@ -400,9 +385,7 @@ export function Fluxo() {
       {naColagem && (
         <TelaColarTurma
           aoMudarBase={(turma?: string) => semDono('base mudou', () => mudou(turma))}
-          // Só existe quando há repouso pra onde voltar: com `turmas === 0`
-          // esta tela é a única que existe, e cancelar não levaria a lugar
-          // nenhum.
+          // Sem turma nenhuma não há para onde voltar.
           aoSair={
             rota === 'turma'
               ? undefined
@@ -413,26 +396,21 @@ export function Fluxo() {
       {rota === 'chamada' && sessao && (
         <TelaAula
           sessao={sessao}
-          pendentes={pendentesDaTurma.filter((p) => p.turma === sessao.turma)}
-          daTurma={matriculadosTodos.filter((p) => p.turma === sessao.turma)}
-          // Só a turma da aula aberta — Fase 4, item C. Um crachá aqui não
-          // tem como mudar outra turma.
-          // `mudou` devolve promessa e a tela da chamada não espera por ela:
-          // sem isto, uma falha de gravação na pasta virava promessa rejeitada
-          // sem dono, invisível como as que este projeto persegue.
+          pendentes={pendentesDaAula}
+          daTurma={turmaDaAula}
+          // Só a turma da aula: um crachá aqui não muda outra turma.
           aoMudarBase={() => semDono('base mudou', () => mudou(sessao.turma))}
           aoRegistrar={gravarLinha}
           retidas={entregarRetidas}
           aoEncerrar={(presentes, duracaoMs, intervalos) => {
             // Sem esta marca o relógio reabriria a aula que acabou de fechar.
             marcarEncerrada(sessao.turma, new Date().toISOString())
-            // A fila acabou: é a hora de gravar o que foi adiado para não
-            // pesar nela. Ver `gravarMarcasPendentes`.
+            // A fila acabou: grava o que foi adiado para não pesar nela.
             semDono('marcas de sal', gravarMarcasPendentes)
             semDono('conferir', () => conferir(sessao.turma))
+            esquecerSessao()
             setResumo({ sessao, presentes })
-            // Diagnóstico, não a tela de fim de aula: é dado para calibrar
-            // `INTERVALO_MINIMO_MS`, não algo que toda aula precisa mostrar.
+            // Para o Diagnóstico: é o dado que calibra `INTERVALO_MINIMO_MS`.
             registrarChamadaEncerrada({
               turma: sessao.turma,
               encerradaEm: new Date().toISOString(),
@@ -451,9 +429,8 @@ export function Fluxo() {
           aoSalvarCopia={() => salvarCopia(resumo.sessao.turma)}
           aoConcluir={() => setResumo(undefined)}
           aoReabrir={() => {
-            semDono('efeito', async () => {
-              // A marca de encerrada some junto, senão o relógio da grade
-              // entenderia que esta aula já acabou e não reabriria nada.
+            semDono('reabrir', async () => {
+              // Sem esquecer a marca, a grade trataria a aula como encerrada.
               esquecerEncerramento(resumo.sessao.turma)
               await abrirChamada(
                 resumo.sessao.turma,
@@ -536,12 +513,7 @@ export function Fluxo() {
           riscoDeApagar={riscoDeApagar()}
         />
 
-        {/* As teclas de ensaio, e **o que cada uma faz aqui**.
-            O `N` produz um crachá desconhecido em qualquer tela: cadastra
-            direto se houver alguém chamado (modo de chamar nomes), ou abre a
-            busca se não houver (modo comum, o padrão) — ver `decidir()`, em
-            `nucleo/sessao.ts`. `TelaAula` não expõe isso a `Fluxo`, então a
-            dica aqui descreve os dois em vez de escolher qual vale agora. */}
+        {/* Modo de ensaio: as teclas que simulam crachá, e a rota atual. */}
         {ensaio && ehSimulavel(leitor) && (
           <span className="selo-status" title="Modo de ensaio, com leitor simulado">
             <kbd>espaço</kbd> crachá
@@ -556,12 +528,6 @@ export function Fluxo() {
           </span>
         )}
 
-        {/* A rota nunca aparecia em lugar nenhum — nem aqui, nem no
-            diagnóstico. Sem isso, "por que a tela está assim" só se responde
-            lendo código. Fica atrás do ensaio pelo mesmo motivo das teclas:
-            é ferramenta de quem testa, e o professor de verdade nunca deve
-            ver estado interno na tela — é a regra de "nenhuma configuração à
-            vista" deste projeto. */}
         {ensaio && (
           <span className="selo-status" title="Estado da rota, para depuração">
             {camadas}
@@ -581,16 +547,7 @@ export function Fluxo() {
       </div>
       </div>
 
-      {/* Uma folha só, não três — ver o comentário em `folha`, no topo do
-          arquivo. Ajustes → Presenças (o card "Ver presenças") e Ajustes →
-          Diagnóstico trocavam de `<Sheet>` inteiro: a folha antiga desmontava
-          e a nova montava do zero, e a animação de fundo (`.folha__fundo`,
-          que escurece e borra) recomeçava do transparente — por um instante
-          a tela de baixo reaparecia, sem escurecimento nenhum, antes do novo
-          fundo terminar de entrar. Uma única `<Sheet>` persistente, com só o
-          conteúdo trocando por dentro, tira esse instante: o fundo nunca
-          desmonta entre as três, só a primeira abertura (vindo de nenhuma
-          folha) toca a entrada. */}
+      {/* Uma folha só: trocar o conteúdo, e não a folha, não refaz a animação do fundo. */}
       {folha && (
         <Sheet
           titulo={folha === 'ajustes' ? 'Ajustes' : folha === 'presencas' ? 'Presenças' : 'Diagnóstico'}
