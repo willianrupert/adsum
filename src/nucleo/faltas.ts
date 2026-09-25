@@ -261,12 +261,19 @@ function comoDataBr(dia: string): string {
   return `${diaDoMes}/${mes}/${ano}`
 }
 
+/**
+ * Nome completo, matrícula, e um dia por coluna. A matrícula é o que
+ * identifica a pessoa (nome muda com correção de cadastro) e o que a planilha
+ * do SIGAA usa; o nome vem primeiro porque é por ele que se lê a lista.
+ */
 export function paraCsvDeFaltas(planilha: PlanilhaDeFaltas): string {
-  const cabecalho = ['nome', ...planilha.dias.map(comoDataBr)].join(SEP)
+  const cabecalho = ['nome', 'matricula', ...planilha.dias.map(comoDataBr)].join(SEP)
   const linhas = planilha.linhas.map((l) =>
-    [limpar(l.matriculado.nomeCompleto), ...planilha.dias.map((d) => String(l.porDia.get(d)?.faltas ?? 0))].join(
-      SEP,
-    ),
+    [
+      limpar(l.matriculado.nomeCompleto),
+      limpar(l.matriculado.matricula),
+      ...planilha.dias.map((d) => String(l.porDia.get(d)?.faltas ?? 0)),
+    ].join(SEP),
   )
   return BOM + [cabecalho, ...linhas].join('\n') + '\n'
 }

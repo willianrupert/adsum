@@ -83,6 +83,6 @@ describe('correção manual de presença chega na pasta, não só no IndexedDB',
       return texto
     })
     const linhaDoAluno = faltas.split('\n').find((l) => l.startsWith('JOAO PEDRO'))
-    expect(linhaDoAluno).toBe('JOAO PEDRO SEM CRACHA;0')
+    expect(linhaDoAluno).toBe('JOAO PEDRO SEM CRACHA;20250099099;0')
   })
 })

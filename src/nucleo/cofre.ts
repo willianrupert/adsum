@@ -155,8 +155,8 @@ O QUE TEM AQUI
       Estes arquivos só crescem — nada aqui é reescrito ou apagado.
 
   faltas/
-      A planilha para entregar: aluno por linha, nome completo, um dia
-      de aula por coluna, faltas contadas. Recalculada do zero a cada
+      A planilha para entregar: aluno por linha, nome completo e
+      matrícula, um dia de aula por coluna, faltas contadas. Recalculada do zero a cada
       mudança — é relatório, não registro; quem manda é registros/.
 
   diagnostico/
