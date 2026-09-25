@@ -1,5 +1,5 @@
-// Grade horária: pequena o bastante para não merecer arquivo próprio, e
-// específica o bastante para não caber em `tipos.ts`.
+// A grade horária: que aula está acontecendo agora, e qual vem depois. O
+// repouso usa isso para sugerir a turma; a chamada nunca abre sozinha.
 
 export const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
 
@@ -20,30 +20,14 @@ export function emMinutos(hhmm: string): number {
   return h * 60 + m
 }
 
-/**
- * Tolerância em volta da aula.
- *
- * O professor chega antes e sai depois; abrir a chamada às 7h52 para uma aula
- * de 8h é o caso normal, não a exceção. Sem folga, o crachá dele não acharia
- * aula nenhuma justamente na hora em que ele mais quer que ache.
- */
+/** Tolerância em volta da aula: chegar às 7h52 para a aula das 8h é o normal. */
 export const FOLGA_MIN = 20
 
 /**
- * **Consequência dos blocos da noite, e ela é real.**
- *
- * No CIn o bloco das 17:00 termina 18:50 e o seguinte começa 18:50 — encostados,
- * sem intervalo. Com a folga de 20 minutos dos dois lados, das 18:30 às 19:10 os
- * dois estão "acontecendo agora".
- *
- * Para quem dá **uma** aula à noite não muda nada. Para quem dá as duas, com
- * turmas diferentes e coladas, `escolherTurma` devolve `perguntar` nessa faixa e
- * `turmaDeAgora` não aponta nenhuma — de propósito: entre duas turmas plausíveis, o
- * app não adivinha qual. O botão continua ali, e a pergunta aparece com as duas
- * opções.
- *
- * Diminuir a folga resolveria este caso e criaria outro pior: o professor que
- * chega às 12h50 para a aula de 13h não acharia aula nenhuma.
+ * Os blocos da noite são encostados (17:00–18:50 e 18:50–20:30): com a folga,
+ * das 18:30 às 19:10 os dois estão "agora". Quem dá as duas, com turmas
+ * diferentes, não recebe sugestão nessa faixa: entre duas plausíveis, o app
+ * não adivinha. Diminuir a folga criaria o caso pior de não achar aula nenhuma.
  */
 
 export interface Aula {
@@ -59,15 +43,7 @@ export function aulasAgora(aulas: Aula[], uidHashProfessor: string, agora: Date)
   return aulasAgoraDeQualquer(aulas, [uidHashProfessor], agora)
 }
 
-/**
- * A mesma conta de `aulasAgora`, olhando a grade de vários professores ao
- * mesmo tempo.
- *
- * Existe porque mais de um vínculo `papel: 'professor'` pode legitimamente
- * estar na base — mais de um docente cadastrado, ou um sintético convivendo
- * com o real por um instante — e a checagem de horário não pode enxergar só
- * o primeiro que um `.find` alcança. Ver `recontar()`, em `Fluxo.tsx`.
- */
+/** `aulasAgora` sobre vários professores: a base pode ter mais de um vínculo de professor. */
 export function aulasAgoraDeQualquer(
   aulas: Aula[],
   uidHashesProfessores: string[],
@@ -82,37 +58,6 @@ export function aulasAgoraDeQualquer(
       minuto >= emMinutos(a.inicio) - FOLGA_MIN &&
       minuto <= emMinutos(a.fim) + FOLGA_MIN,
   )
-}
-
-export type Escolha =
-  | { tipo: 'abrir'; turma: string }
-  | { tipo: 'perguntar'; opcoes: string[]; motivo: 'nenhuma' | 'varias' }
-  | { tipo: 'sem_turma' }
-
-/**
- * Que turma abrir quando o professor encosta o crachá.
- *
- * A regra é a de sempre: **nunca perguntar o que dá para saber**. Havendo
- * exatamente uma aula agora, abre — e o professor não toca na tela. Havendo
- * duas, perguntar é respeito, não incômodo. Havendo nenhuma na grade (feriado,
- * reposição, grade não cadastrada), a pergunta cai sobre todas as turmas, que é
- * a degradação natural — e se só existe uma turma, nem isso é preciso.
- */
-export function escolherTurma(
-  aulas: Aula[],
-  turmas: string[],
-  uidHashProfessor: string,
-  agora: Date,
-): Escolha {
-  const agora_ = aulasAgora(aulas, uidHashProfessor, agora)
-  const daGrade = [...new Set(agora_.map((a) => a.turma))]
-
-  if (daGrade.length === 1) return { tipo: 'abrir', turma: daGrade[0] }
-  if (daGrade.length > 1) return { tipo: 'perguntar', opcoes: daGrade, motivo: 'varias' }
-
-  if (turmas.length === 1) return { tipo: 'abrir', turma: turmas[0] }
-  if (turmas.length === 0) return { tipo: 'sem_turma' }
-  return { tipo: 'perguntar', opcoes: turmas, motivo: 'nenhuma' }
 }
 
 /** Início da janela de hoje, já com a folga. É o marco de "esta aula". */
@@ -141,15 +86,7 @@ export function turmaDeAgora(
   agora: Date,
   encerradas: Record<string, string> = {},
 ): string | undefined {
-  const agora_ = aulasAgora(aulas, uidHashProfessor, agora)
-  if (agora_.length !== 1) return undefined
-
-  const aula = agora_[0]
-  const encerrada = encerradas[aula.turma]
-  if (encerrada && Date.parse(encerrada) >= inicioDaJanela(aula, agora).getTime()) {
-    return undefined
-  }
-  return aula.turma
+  return turmaDeAgoraEntreProfessores(aulas, [uidHashProfessor], agora, encerradas)
 }
 
 /**
@@ -200,11 +137,7 @@ export function proximaAula(
 
       const quando = new Date(dia)
       quando.setHours(0, emMinutos(aula.inicio), 0, 0)
-      // O corte é o **fim**, não o início: uma aula que já começou e ainda
-      // não acabou continua sendo "a de hoje", não "a de semana que vem".
-      // Comparar pelo início empurrava uma aula em andamento pra próxima
-      // semana — e aí outra turma, mais distante mas ainda não começada,
-      // parecia "mais próxima" do que a que está rolando agora mesmo.
+      // Pelo fim, não pelo início: uma aula em andamento ainda é a de hoje.
       const fim = new Date(dia)
       fim.setHours(0, emMinutos(aula.fim), 0, 0)
       if (fim.getTime() <= agora.getTime()) continue
@@ -217,13 +150,7 @@ export function proximaAula(
   return melhor
 }
 
-/**
- * A próxima aula de qualquer um dos vínculos de professor — mesma ideia de
- * `proximaAula`, sem escolher um só antes de olhar a grade. A mais cedo entre
- * todos vence, sem se importar de quem é: é a mesma pergunta que o repouso
- * faz ("estou no lugar certo?"), e a resposta não muda por causa de qual
- * vínculo venceu o `.find` alfabético.
- */
+/** `proximaAula` sobre vários professores: a mais cedo entre todos. */
 export function proximaAulaDeQualquer(
   aulas: Aula[],
   uidHashesProfessores: string[],

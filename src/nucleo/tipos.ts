@@ -6,10 +6,7 @@ export type Uid = Uint8Array
 /** Primeiros 8 bytes de SHA-256(sal ‖ uid), em hexadecimal minúsculo. */
 export type UidHash = string
 
-/**
- * Papel exige escolha explícita: sem ele, uma hora o professor é vinculado
- * como aluno e ninguém percebe até a sessão não abrir na frente da turma.
- */
+/** Todo mundo entra como aluno; professor é um toque explícito. */
 export type Papel = 'aluno' | 'professor'
 
 export interface Vinculo {
@@ -17,46 +14,28 @@ export interface Vinculo {
   papel: Papel
   /** Nome exibido, já encurtado. Não é o nome de registro. */
   nome: string
-  /**
-   * Matrícula. É o identificador da pessoa na instituição, e é por ele que a
-   * planilha fecha a chamada. Fica vazio para quem não tem matrícula na página
-   * (docente) ou quando a lista não veio do SIGAA.
-   */
+  /** O identificador da pessoa. Vazio para docente, que não tem na página do SIGAA. */
   matricula?: string
   /** Quando o crachá foi encostado. É o timestamp do vínculo. */
   criadoEm: string
   /**
-   * Não veio de crachá nenhum — `uidHash` é sorteado, não lido. Existe para o
-   * botão "Começar a chamada" poder abrir sem exigir o crachá físico do
-   * professor primeiro (`garantirProfessor`, em `Fluxo.tsx`): a sessão
-   * precisa de um `uidHash` pra saber quem pode encerrá-la, e o botão é
-   * gesto explícito o bastante pra dispensar o toque.
-   *
-   * A marca é o que evita a leitura errada "encostei um crachá e ele tá
-   * aqui, vinculado, mesmo sem eu ter feito nada": sem ela, um vínculo
-   * sintético é indistinguível de um real em qualquer lugar que mostre
-   * `uidHash` — mesmo formato, mesmo tamanho, nascido do mesmo sorteio de
-   * bytes que o hash de verdade usa. Continua um vínculo de verdade pra
-   * tudo o mais: conta presença, encerra a sessão, aparece em "Quem falta".
+   * Vínculo de professor sem crachá: `uidHash` sorteado, para o botão abrir a
+   * chamada sem o crachá dele (`garantirProfessor`). A marca o distingue de um
+   * crachá lido; para todo o resto, é um vínculo como os outros.
    */
   sintetico?: boolean
   /**
-   * Impressão do sal em que este crachá foi cadastrado (`idDoSal`, em
-   * `nucleo/hash.ts`) — não o sal, que não sai da config. Serve para o
-   * Diagnóstico saber, sem crachá nenhum na mão, quantos vínculos dependem de
-   * um sal que este navegador não tem. Vínculos de antes de 22/09/2026 não
-   * têm, e ganham na primeira vez que o crachá é lido.
+   * Impressão do sal em que o crachá foi cadastrado (`idDoSal`), não o sal.
+   * Diz ao Diagnóstico quantos vínculos dependem de um sal ausente. Vínculos
+   * anteriores a 22/09/2026 ganham na primeira leitura.
    */
   salId?: string
 }
 
 /**
- * Uma pessoa na lista de uma turma, como o SIGAA entregou.
- *
- * Existe separado de `Vinculo` porque são coisas diferentes: matrícula diz
- * **quem está na turma**, vínculo diz **qual crachá é de quem**. Uma pessoa
- * pode estar em duas turmas com um crachá só, e pode ter dois crachás numa
- * turma só. Misturar os dois obrigaria a escolher qual dessas verdades perder.
+ * Uma pessoa na lista de uma turma, como o SIGAA entregou. Separado de
+ * `Vinculo`: um diz quem está na turma, o outro qual crachá é de quem. Uma
+ * pessoa pode estar em duas turmas com um crachá, ou ter dois crachás.
  */
 export interface Matriculado {
   /** Como o professor chama a turma. `IF685 · T01`. */
@@ -85,20 +64,14 @@ export interface Aula {
 
 export type Origem = 'cracha' | 'professor' | 'manual'
 /**
- * `rapido_demais` entrou em 20/08/2026 com a regra do intervalo mínimo.
- * `removido` entrou em 11/09/2026: o professor tirando à mão uma presença
- * marcada por engano (ver `nucleo/faltas.ts`). Arquivo antigo nunca contém
- * nenhum dos dois, então ler o passado continua funcionando.
+ * `rapido_demais` (20/08/2026): dois crachás quase juntos. `removido`
+ * (11/09/2026): "Não presente" à mão. Arquivos antigos não têm os dois.
  */
 export type Resultado = 'ok' | 'duplicado' | 'desconhecido' | 'rapido_demais' | 'removido'
 
 /** Uma linha de `registros/<turma>.csv`. Nunca é reescrita — só acrescentada. */
 export interface Evento {
-  /**
-   * `<instalação>-<AAAAMMDD>-<sequência>`. Chave de idempotência: reimportar o
-   * mesmo arquivo não duplica linha, e é ela que permite juntar dois arquivos
-   * que a sincronização da pasta duplicou.
-   */
+  /** `<instalação>-<AAAAMMDD>-<sequência>`. Chave de idempotência. */
   eventoId: string
   /** ISO 8601 com fuso. Data em formato local é como se perde uma turma. */
   quando: string
@@ -116,35 +89,19 @@ export interface Config {
   /** 16 bytes em hexadecimal. Sem sal, o hash é o UID com outra roupa. */
   salHex: string
   /**
-   * Todo sal que esta instalação já usou ou recebeu, fora o atual. Nunca
-   * aparece na tela e nunca é apagado.
-   *
-   * Existe por causa de 17/09/2026: trocar o sal jogava o anterior fora, e com
-   * ele todo crachá cadastrado naquele sal — 40 alunos e o professor, sem uma
-   * linha de erro. Com o chaveiro, trocar de sal não desfaz cadastro nenhum:
-   * o crachá é procurado em todos (`identificarCracha`, em
-   * `portas/Repositorio.ts`). Vai junto no `config.json` do cofre.
+   * O chaveiro: todo sal que esta instalação já usou ou recebeu, fora o
+   * atual. Nunca aparece na tela e nunca é apagado; `identificarCracha`
+   * procura o crachá em todos. Ver `docs/01_cofre.md`.
    */
   saisAnteriores?: string[]
   /** Distingue esta instalação de outra. Entra no `eventoId`. */
   instalacaoId: string
   /**
-   * O próximo número de `evento_id` desta instalação. **Só anda para frente,
-   * e nunca é reutilizado.**
-   *
-   * Antes o número vinha de contar os eventos da base, e contagem coincide:
-   * duas telas contando coisas diferentes cunharam o mesmo id em 22/09/2026,
-   * e a base recusou metade da chamada. Um contador guardado não tem como
-   * repetir, mesmo com eventos vindos de outra instalação, dias diferentes
-   * ou uma restauração no meio. Reservado em transação, então duas abas
-   * também nunca pegam o mesmo (`reservarSequencia`).
+   * O próximo número de `evento_id` desta instalação. Só anda para frente,
+   * reservado em transação (`reservarSequencia`): nem duas abas pegam o mesmo.
    */
   proximaSequencia?: number
   criadoEm: string
-  /**
-   * Turma → `quando` do último evento já exportado. Só faz sentido onde não há
-   * pasta: com pasta, cada evento é gravado no ato e nada fica pendente.
-   * Ver `nucleo/pendencias.ts`.
-   */
+  /** Turma → `quando` do último evento exportado. Só sem pasta. Ver `nucleo/pendencias.ts`. */
   exportado?: Record<string, string>
 }

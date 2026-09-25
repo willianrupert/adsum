@@ -1,22 +1,11 @@
-// A aula acontecendo.
-//
-// Tudo aqui é função pura: dado o estado da sessão e um crachá, o que fazer.
-// A tela só desenha o que estas funções decidem — assim a regra que importa
-// (quem conta presença, quem não conta, quando a aula pode fechar) fica onde
-// dá para testar, e não dentro de um manipulador de clique.
+// A chamada aberta, em funções puras: dado o estado e um crachá, o que fazer.
+// A tela só desenha o que estas funções decidem. Ver `docs/10_codigo.md`.
 
 import type { Evento, Matriculado, Papel, Vinculo } from './tipos.ts'
 
 /**
- * Quem, de uma lista de matriculados, ainda não tem crachá.
- *
- * A pessoa é reconhecida pela matrícula — e, para quem não tem matrícula na
- * página do SIGAA (docente), pelo nome. Sem esta segunda via o professor
- * contaria como pendente para sempre: `!m.matricula` seria verdade toda vez.
- * Sem filtrar por papel: uma turma pode ter mais de um docente, e só o
- * primeiro ganha vínculo sintético (`garantirProfessor`, em `Fluxo.tsx`) — o
- * segundo continua pendente de verdade, e precisa aparecer como qualquer
- * outra pessoa sem crachá, não sumir por ser professor.
+ * Quem ainda não tem crachá. Pela matrícula, ou pelo nome para quem não tem
+ * (docente). Sem filtrar papel: um segundo docente sem crachá é pendente.
  */
 export function quemFalta(matriculados: Matriculado[], vinculos: Vinculo[]): Matriculado[] {
   const porMatricula = new Set(vinculos.map((v) => v.matricula).filter(Boolean))
@@ -25,54 +14,19 @@ export function quemFalta(matriculados: Matriculado[], vinculos: Vinculo[]): Mat
 }
 
 /**
- * Janela mínima antes de aceitar o fechamento.
- *
- * O professor encosta duas vezes sem querer com facilidade — e sem esta janela
- * a segunda leitura encerra a aula que a primeira acabou de abrir, na frente da
- * turma.
- *
- * Dez segundos: o suficiente para separar dois toques do mesmo gesto, e pouco
- * o bastante para não atrapalhar quem precisa reabrir a aula por engano de
- * verdade. Sessenta era proteção contra um problema que dura dois.
+ * Depois de abrir, o crachá do professor só encerra passado este tempo: dois
+ * toques do mesmo gesto não fecham a aula que acabou de abrir.
  */
 export const JANELA_MINIMA_MS = 10_000
 
 /**
- * Intervalo mínimo entre **crachás diferentes**.
+ * Intervalo mínimo entre crachás **diferentes**, contra dois cartões na mesma
+ * mão. Abaixo dele, a leitura vira `rapido_demais` e a tela avisa.
  *
- * Pedido pelo Prof. Paulo: impedir que alguém encoste dois crachás de uma vez —
- * o seu e o de um colega ausente — passando os dois como se fossem duas
- * pessoas.
- *
- * **Este número ainda não foi medido, e é preciso dizer isso.** Começou em um
- * segundo, por estimativa minha de que "duas pessoas numa fila levam segundos".
- * O autor, que já viu a fila, corrigiu: no fim da aula todo mundo quer sair, as
- * pessoas se encavalam no leitor, e um segundo trava justamente o momento de
- * maior pressa. Estimativa contra observação, a observação ganha.
- *
- * 400 ms é o novo palpite, e a escolha é assimétrica de propósito:
- *
- * - **Errar bloqueando** custa um toque a mais. O cartão ainda está na mão, a
- *   tela diz o motivo, a pessoa encosta de novo. Segundos de vida.
- * - **Errar deixando passar** grava presença de quem não estava.
- *
- * Como o custo de bloquear é pequeno, vale bloquear cedo — mas não tão cedo que
- * a fila sinta. Dois cartões na mesma mão dependem do ciclo de varredura do
- * leitor, tipicamente 200 a 500 ms; uma pessoa trocando de lugar com outra
- * precisa mover o braço.
- *
- * **O jeito certo de acertar isto é medir**, e a tela de diagnóstico passou a
- * mostrar o intervalo entre leituras justamente para isso: com o dongle na mão e
- * uma fila de verdade, dá para ler os números e trocar o palpite por dado.
- *
- * **O que a regra não faz, e precisa estar dito:** ela não distingue fraude de
- * fila apressada, e não pega o caso mais comum — alguém encostar o crachá de um
- * colega ausente sozinho, com calma. Nenhuma regra de tempo pega isso. O que ela
- * faz é recusar o padrão fisicamente implausível e **dizer em voz alta**, para o
- * professor, que está na sala, olhar. Julgar é dele.
- *
- * Recusar em silêncio seria pior que não ter regra: a presença sumiria sem
- * ninguém saber por quê.
+ * É um alarme, não uma trava: dois cartões mantidos juntos fazem o leitor
+ * alternar, e parte das alternâncias passa do limite (medido em 23/09/2026).
+ * Não distingue fraude de fila apressada, nem pega quem encosta com calma o
+ * crachá de um colega. Quem julga é o professor. Ver `docs/10_codigo.md`.
  */
 export const INTERVALO_MINIMO_MS = 400
 
@@ -84,13 +38,8 @@ export interface EstatisticaDeIntervalos {
 }
 
 /**
- * Mínimo, máximo e média dos intervalos entre crachás diferentes numa
- * chamada — o dado que troca `INTERVALO_MINIMO_MS` de palpite por medição,
- * de uma aula de verdade, sem precisar da tela de diagnóstico aberta ao
- * mesmo tempo que a fila anda. Cada item de `intervalos` já é a diferença em
- * ms entre um crachá aceito e o anterior (`TelaAula` só empilha aqui a mesma
- * régua que `decidir` usa para `rapido_demais` — leituras aceitas, de gente
- * diferente, nunca o mesmo crachá relido nem o crachá do professor).
+ * Mínimo, máximo e média dos intervalos entre crachás aceitos de pessoas
+ * diferentes numa chamada: o dado que calibra `INTERVALO_MINIMO_MS`.
  */
 export function estatisticaDeIntervalos(intervalos: number[]): EstatisticaDeIntervalos | undefined {
   if (intervalos.length === 0) return undefined
@@ -110,8 +59,7 @@ export interface Sessao {
 }
 
 export type Decisao =
-  /** `vinculo` é de quem abriu — sem ele, o evento de abertura no log fica
-      sem nome, mesmo tendo o `uid_hash` de sobra pra achar de quem era. */
+  /** `vinculo` é de quem abriu: dá nome à linha de abertura no log. */
   | { tipo: 'abrir'; turma: string; vinculo?: Vinculo }
   /** Crachá novo com um nome chamado: cadastra **e** conta presença. */
   | { tipo: 'cadastro'; pessoa: Matriculado }
@@ -128,12 +76,9 @@ export interface Contexto {
   sessao?: Sessao
   vinculo?: Vinculo
   /**
-   * Quem está chamado, se houver — ver o comentário em `decidir()`, abaixo.
-   *
-   * Só existe quando o professor **escolheu explicitamente** chamar essa
-   * pessoa (botão "Chamar", ou as setas): nunca é preenchido sozinho pela
-   * tela ao abrir a chamada. É essa explicitude que torna seguro confiar
-   * nele aqui — ver `TelaAula`.
+   * Quem está chamado. Só existe por gesto explícito do professor ("Chamar",
+   * as setas), nunca preenchido pela tela sozinha: é isso que torna seguro
+   * cadastrar sem perguntar.
    */
   chamado?: Matriculado
   /** `uid_hash` de quem já foi registrado nesta sessão. */
@@ -147,9 +92,8 @@ export interface Contexto {
 /**
  * O que fazer com um crachá encostado.
  *
- * Crachá de professor abre e encerra, e **nunca conta presença** — sem isso ele
- * marcaria presença para si mesmo e a aula nunca abriria. Crachá desconhecido
- * não interrompe nada: vira linha vermelha e a fila continua.
+ * O do professor abre e encerra, e nunca conta presença. Desconhecido não
+ * interrompe a fila.
  */
 export function decidir(uidHash: string, ctx: Contexto): Decisao {
   const { sessao, vinculo, jaPresentes, agora } = ctx
@@ -166,58 +110,27 @@ export function decidir(uidHash: string, ctx: Contexto): Decisao {
     return { tipo: 'encerrar', vinculo }
   }
 
-  // Dois crachás diferentes quase juntos não são duas pessoas — é uma mão com
-  // dois cartões. Vem depois do professor de propósito: bloquear quem abre e
-  // encerra a aula seria atrapalhar sem proteger nada, porque o crachá dele não
-  // é o vetor da fraude.
-  //
-  // Encostar **o mesmo** crachá duas vezes segue sendo `repetido`, que é outro
-  // assunto e já tem resposta.
+  // Dois crachás diferentes quase juntos: uma mão com dois cartões. Depois do
+  // professor, cujo crachá não é o vetor da fraude. O mesmo crachá duas vezes
+  // é `repetido`, logo abaixo.
   if (ctx.ultima && ctx.ultima.uidHash !== uidHash) {
     const desde = agora.getTime() - ctx.ultima.em.getTime()
-    // Negativo é um crachá chegando para decisão depois de outro que encostou
-    // depois dele: ordem de processamento, não mão com dois cartões. Recusar
-    // aí foi o que derrubou alunos a 0,7 s um do outro na fila de 23/09/2026.
+    // Negativo é ordem de processamento, não dois cartões: nunca é recusa.
     if (desde >= 0 && desde < INTERVALO_MINIMO_MS) {
       return { tipo: 'rapido_demais', faltamMs: INTERVALO_MINIMO_MS - desde }
     }
   }
 
-  // Crachá desconhecido com nome chamado é cadastro. Chegou a virar sempre
-  // busca, por um dia (11/09/2026): a ideia era que "um só nome chamado por
-  // vez" não bastava, porque a fila física podia não bater com a ordem da
-  // tela. Isso é verdade quando o chamado é automático — a tela escolhendo
-  // sozinha o primeiro pendente assim que a chamada abre, sem o professor ter
-  // pedido nada. Nesse caso o nome na tela não significa "alguém está sendo
-  // chamado agora", só "existe gente sem crachá" — e aí confiar nele é
-  // adivinhação, não confirmação.
-  //
-  // A correção não foi tirar a confiança do chamado — foi parar de setá-lo
-  // sozinho. `TelaAula` só chama alguém por ação explícita do professor
-  // (botão "Chamar", as setas): o modo comum, padrão, não
-  // chama ninguém, e crachá desconhecido nesse modo cai em `desconhecido`
-  // de qualquer jeito — a busca ainda existe, só que para o caso real que
-  // ela resolve (quem chegou sem aviso), não como substituto de uma garantia
-  // que já existia. Quando o professor entra no modo de chamar nomes de
-  // propósito, ele está olhando aquela pessoa encostar — é aí que confiar no
-  // chamado volta a ser seguro, e cadastrar direto sem perguntar de novo é o
-  // gesto certo, não um atalho perigoso.
+  // Desconhecido com alguém chamado é cadastro: o professor está olhando a
+  // pessoa encostar. Sem ninguém chamado, é a busca.
   if (!vinculo) return ctx.chamado ? { tipo: 'cadastro', pessoa: ctx.chamado } : { tipo: 'desconhecido' }
   if (jaPresentes.has(uidHash)) return { tipo: 'repetido', vinculo }
   return { tipo: 'presenca', vinculo }
 }
 
 /**
- * Se a decisão soma à contagem de presença.
- *
- * Professor já vinculado nunca chega a `presenca`/`cadastro` — o branch do
- * topo de `decidir()` intercepta antes. Mas o **primeiro** cadastro dele
- * (chamado explícito, via "Cadastrar" em `TelaAula`) passa por aqui como
- * `cadastro` igual ao de qualquer aluno, porque `decidir()` não sabe — nem
- * devia saber — que `ctx.chamado` é professor: quem cadastra o vínculo é o
- * mesmo caminho para os dois papéis. O que muda é só a contagem: o professor
- * está gravando o próprio crachá, não chegando como aluno, e contar
- * presença dele infla o número sem ninguém ter faltado a menos.
+ * Se a decisão soma à contagem. O cadastro do próprio crachá do professor
+ * passa por `cadastro`, como o de um aluno, e não conta.
  */
 export function contaPresenca(decisao: Decisao): boolean {
   if (decisao.tipo === 'presenca') return true
@@ -226,22 +139,12 @@ export function contaPresenca(decisao: Decisao): boolean {
 }
 
 /**
- * Quanto tempo de silêncio do leitor soa suspeito, em `TelaAula`.
- *
- * `LeitorTeclado` não é WebHID — é um ouvinte de teclado, e puxar o cabo do
- * dongle não dispara evento nenhum. O app não tem como saber que ele caiu; o
- * máximo que dá para fazer é notar que está quieto demais para o contexto e
- * perguntar, não afirmar.
+ * Silêncio do leitor que já soa suspeito. O dongle é teclado: puxar o cabo
+ * não dispara evento, então o app só pode notar o silêncio e perguntar.
  */
 export const SILENCIO_SUSPEITO_MS = 3 * 60_000
 
-/**
- * Se o silêncio do leitor já é suspeito.
- *
- * Só incomoda quando ainda falta gente: com todo mundo vinculado, silêncio é
- * o esperado, não um sintoma. Função pura para não depender de relógio de
- * verdade correndo dentro de um teste — ver `SILENCIO_SUSPEITO_MS`.
- */
+/** Só com gente ainda sem crachá: com todos vinculados, silêncio é o normal. */
 export function leitorSuspeito(agora: Date, ultimaAtividadeEm: Date, pendentes: number): boolean {
   return pendentes > 0 && agora.getTime() - ultimaAtividadeEm.getTime() > SILENCIO_SUSPEITO_MS
 }
@@ -264,10 +167,7 @@ export function eventoDe(
   }
 
   switch (decisao.tipo) {
-    // Nome do professor, quando se sabe quem é — o mesmo dado que a linha
-    // de presença de um aluno já carrega, aqui para quem abriu e fechou.
-    // Sem vínculo achado (não devia acontecer, mas `eventoDe` não assume),
-    // cai no vazio de sempre, nunca quebra o evento.
+    // Com o nome de quem abriu ou fechou, quando se sabe.
     case 'abrir':
     case 'encerrar':
       return {
@@ -277,10 +177,7 @@ export function eventoDe(
         origem: 'professor',
         resultado: 'ok',
       }
-    // Fica no log: o professor pode ter olhado para a turma na hora em que a
-    // tela avisou, e no fim da aula ele merece poder conferir que houve
-    // tentativa — com o hash do crachá recusado, que é o que permite descobrir
-    // de quem era.
+    // A recusa fica no log, com o hash: dá para conferir depois de quem era.
     case 'rapido_demais':
       return { ...base, nome: '', origem: 'cracha', resultado: 'rapido_demais' }
     case 'presenca':

@@ -64,23 +64,13 @@ export interface Repositorio {
   listarAulas(): Promise<Aula[]>
   gravarAula(aula: Aula): Promise<void>
   /**
-   * Troca o horário de **uma** turma pelo que veio.
-   *
-   * A grade é configuração, não log: corrigir um horário errado é o caso normal,
-   * e não havia como. `zerarAulas` apagava a grade inteira, o que transformava
-   * "mudei a quarta de lugar" em "recadastre tudo".
-   *
-   * Isto **não** contradiz a porta não ter `removerEvento`: lá o passado é
-   * imutável porque é registro do que aconteceu; aqui é a intenção de quando as
-   * aulas acontecem, e intenção muda.
+   * Troca o horário de uma turma. A grade é intenção, não registro: pode ser
+   * reescrita, ao contrário dos eventos.
    */
   definirHorarioDaTurma(turma: string, aulas: Aula[]): Promise<void>
   zerarAulas(): Promise<void>
 
-  /**
-   * A aula acontecendo, se houver. Fica fora do log de propósito: "está aberta
-   * agora" é estado mutável, e o log só guarda o que aconteceu.
-   */
+  /** A chamada aberta, se houver. Estado mutável, por isso fora do log. */
   sessaoAberta(): Promise<Sessao | undefined>
   abrirSessao(sessao: Sessao): Promise<void>
   encerrarSessao(): Promise<void>
@@ -90,11 +80,7 @@ export interface Repositorio {
    * devolvem o mesmo número, nem em duas abas: ver `Config.proximaSequencia`.
    */
   reservarSequencia(): Promise<number>
-  /**
-   * Garante que o contador está acima de um número já usado. Log trazido de
-   * fora pode conter ids desta instalação maiores que o contador daqui — uma
-   * restauração depois de limpar o navegador, por exemplo.
-   */
+  /** Empurra o contador para cima de um número já usado (log trazido de fora). */
   garantirSequenciaAcimaDe(numero: number): Promise<void>
 
   /**
@@ -105,15 +91,8 @@ export interface Repositorio {
    */
   acrescentarEvento(evento: Evento): Promise<boolean>
   /**
-   * Mais recentes primeiro. Sem opções, devolve tudo, de qualquer turma.
-   *
-   * `turma` usa o índice que o esquema já tem (`banco.ts`) em vez de ler a
-   * tabela inteira pra filtrar em memória — importa a partir de algumas
-   * dezenas de aulas acumuladas. Ver `docs/05_plano_execucao.md`, Fase 4,
-   * item B: só passe `turma` quando a chamada é sobre uma turma só (a tela
-   * de uma aula, a planilha de uma turma) — telas que legitimamente olham a
-   * base inteira (Diagnóstico, pendências de exportação entre turmas)
-   * continuam sem filtro.
+   * Mais recentes primeiro. Com `turma`, usa o índice: no caminho de cada
+   * crachá, nunca ler a base inteira.
    */
   listarEventos(opcoes?: { turma?: string; limite?: number }): Promise<Evento[]>
   contarEventos(): Promise<number>
@@ -136,23 +115,13 @@ export interface Repositorio {
 const TENTATIVAS_DE_ID = 100
 
 /**
- * Grava um evento que acabou de acontecer, com um `evento_id` que ainda não
- * existe na base.
+ * O único caminho para gravar um evento novo.
  *
- * Existe por causa de 22/09/2026. Cada tela guardava o próprio contador, e
- * cada uma o começava de um lugar: `TelaAula` pela contagem **da turma**
- * (desde a Fase 4, item B), `Fluxo` pela da base inteira. Numa base com duas
- * turmas os dois cunhavam o mesmo id no mesmo dia; o `add` recusava o
- * repetido, a recusa passava por idempotência, e o evento sumia calado — o
- * bipe tocava, o nome não mudava, o contador não subia. Como o contador era
- * relido da base depois de cada evento, e o evento perdido não estava lá, o
- * id seguinte era o mesmo de novo: travava para sempre. Foi também o "apita e
- * nada acontece" de 17/09 à tarde, que se atribuiu ao foco da janela.
- *
- * A saída não é acertar o contador, é não depender dele: começa da contagem
- * da base e sobe até o `add` aceitar. O `add` do IndexedDB é atômico, então
- * duas leituras quase juntas nunca ficam com o mesmo id — a segunda só tenta
- * o próximo. Não achar id livre lança: gravação que falha tem que aparecer.
+ * O número vem de `reservarSequencia`, que nunca devolve o mesmo duas vezes.
+ * Se o `add` ainda assim recusar (um log de fora com id desta instalação),
+ * tenta o próximo; sem id livre, lança: gravação que falha tem que aparecer.
+ * Contar eventos para numerar fez a base recusar calada metade de uma chamada
+ * em 22/09/2026 (`docs/06_falhas_em_sala.md`).
  */
 export async function gravarEventoNovo(
   repositorio: Repositorio,
@@ -163,10 +132,6 @@ export async function gravarEventoNovo(
   aoColidir?: (eventoId: string) => void,
 ): Promise<Evento> {
   for (let tentativa = 0; tentativa < TENTATIVAS_DE_ID; tentativa++) {
-    // Número reservado, não contado: `reservarSequencia` nunca devolve duas
-    // vezes o mesmo. A repetição abaixo é rede de segurança para o que este
-    // código não controla — um log trazido de fora com um id desta
-    // instalação, por exemplo —, e não o mecanismo.
     const evento = montar(proximoEventoId(instalacaoId, cunhadoEm, await repositorio.reservarSequencia()))
     if (await repositorio.acrescentarEvento(evento)) return evento
     aoColidir?.(evento.eventoId)
@@ -175,24 +140,16 @@ export async function gravarEventoNovo(
 }
 
 /**
- * De quem é este crachá — procurando em **todos** os sais do chaveiro, não só
- * no atual.
+ * De quem é este crachá, procurando em **todos** os sais do chaveiro.
  *
- * O `uidHash` devolvido é o do sal em que o vínculo foi achado, e o do sal
- * atual quando ninguém é achado (é nele que um cadastro novo nasce). Assim o
- * mesmo crachá dá sempre o mesmo hash, e a fila de "já passou" não se
- * confunde.
- *
- * Vínculo antigo, sem `salId`, ganha a marca a partir daqui — é a única hora
- * em que se sabe, com certeza, em que sal ele foi cadastrado.
+ * Devolve o hash do sal em que o vínculo foi achado, ou o do sal atual (onde
+ * nasce um cadastro novo). `sal` é 0 para o atual e maior para um do chaveiro.
  */
 export async function identificarCracha(
   repositorio: Repositorio,
   uid: Uid,
 ): Promise<{ uidHash: UidHash; vinculo?: Vinculo; sal?: number }> {
-  // Os sais vêm da base, a cada crachá, e nunca de uma cópia que a tela
-  // guardou: foi uma cópia desatualizada que perdeu a turma em 17/09/2026.
-  // `lerConfig` é cache no adaptador, então isto não custa uma ida ao disco.
+  // Da base a cada crachá, nunca de cópia da tela (17/09/2026). É cache no adaptador.
   const sais = saisConhecidos(await repositorio.lerConfig())
   const doAtual = await calcularUidHash(sais[0], uid)
   for (const [i, sal] of sais.entries()) {
@@ -200,20 +157,15 @@ export async function identificarCracha(
     const vinculo = await repositorio.vinculoPorHash(uidHash)
     if (!vinculo) continue
     if (!vinculo.salId) marcarDepois(repositorio, uidHash, sal)
-    // `sal`: 0 é o atual; maior que zero é um do chaveiro, e diz no diário
-    // que o crachá só foi achado porque o sal antigo não foi jogado fora.
     return { uidHash, vinculo, sal: i }
   }
   return { uidHash: doAtual }
 }
 
 /**
- * A marca do sal nunca é gravada no meio da fila. Gravada a cada crachá, era
- * uma escrita a mais por leitura; adiada crachá a crachá, as escritas caíam
- * no meio das rajadas seguintes — o teste de 100 alunos passou a perder
- * leitura nos dois casos. Ela serve ao Diagnóstico, não à chamada: fica em
- * memória e vai num lote só, com o navegador ocioso ou quando a chamada
- * termina (`gravarMarcasPendentes`).
+ * A marca de sal (`salId`) de vínculos antigos nunca é gravada no meio da
+ * fila: serve ao Diagnóstico, não à chamada. Fica em memória e vai num lote,
+ * com o navegador ocioso ou ao fim da chamada.
  */
 const marcasPendentes = new Map<UidHash, { repositorio: Repositorio; sal: string }>()
 let ociosoAgendado = false
@@ -232,8 +184,7 @@ export async function gravarMarcasPendentes(): Promise<void> {
   const lote = [...marcasPendentes]
   marcasPendentes.clear()
   for (const [uidHash, { repositorio, sal }] of lote) {
-    // Relido na hora de gravar: entre a leitura e agora o vínculo pode ter
-    // sido renomeado ou removido, e a marca não pode desfazer isso.
+    // Relido agora: a marca não pode desfazer uma renomeação ou remoção.
     try {
       const atual = await repositorio.vinculoPorHash(uidHash)
       if (atual && !atual.salId) await repositorio.gravarVinculo({ ...atual, salId: await idDoSal(sal) })
@@ -244,11 +195,8 @@ export async function gravarMarcasPendentes(): Promise<void> {
 }
 
 /**
- * Crachás que dependem de um sal que este navegador não tem.
- *
- * É o sinal que faltou em 17/09/2026: a turma inteira ficou irreconhecível e
- * nada na tela disse. Só conta quem tem `salId` — vínculo antigo ainda não
- * lido não tem como ser conferido, e contar ele seria alarme falso.
+ * Crachás que dependem de um sal que este navegador não tem. Só conta quem tem
+ * `salId`: vínculo antigo ainda não lido não tem como ser conferido.
  */
 export async function vinculosSemSal(
   repositorio: Repositorio,

@@ -1,14 +1,9 @@
-// A planilha de faltas — o que o Prof. Paulo pediu para a v1: nome completo
-// por linha, um dia de aula por coluna, e na célula quantas faltas aquele dia
-// vale. Não é o registro (`csv.ts`) — é derivada dele, sob pedido, para
-// entregar à instituição. O registro nunca perde uma linha; esta planilha
-// nasce e morre a cada exportação, recalculada do zero.
+// A planilha de faltas: aluno por linha, um dia de aula por coluna, e na
+// célula quantas faltas o dia vale. É derivada do log (`csv.ts`), recalculada
+// do zero; o log é quem manda.
 //
-// "Quantas faltas": o SIGAA conta por aula de 50 minutos. Um bloco de duas
-// aulas seguidas vale duas faltas se o aluno faltou o bloco inteiro — mas só
-// quando a grade diz que o bloco é duplo. Sem isso, uma falta por aula é o
-// padrão: marcar duas sem a grade confirmar seria inventar meia falta que
-// ninguém pediu.
+// O SIGAA conta por aula de 50 minutos: um bloco duplo na grade vale duas
+// faltas. Sem grade, uma, e nunca mais do que a grade confirma.
 
 import { emMinutos, type Aula } from './grade.ts'
 import { nomeSeguroDeTurma } from './csv.ts'
@@ -30,22 +25,12 @@ export function diaLocal(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-/**
- * Mesma pessoa do vínculo, num evento: por matrícula, e por nome pra quem não
- * tem. `undefined` quando o evento não identifica ninguém (nem matrícula nem
- * nome) — não deve acontecer na prática, mas não é chave de aluno nenhum.
- *
- * Existe como chave (não como predicado `ehDoAluno(evento, aluno)`) porque
- * `planilhaDeFaltas` monta um índice por identidade antes de percorrer os
- * alunos — ver o comentário lá. Exportada porque `TelaAula` precisa da mesma
- * chave pra consultar `presencasDoDia` por matriculado.
- */
+/** A pessoa de um evento ou vínculo: `m:<matrícula>`, ou `n:<nome>` para quem não tem. */
 export function chaveDeIdentidade(dono: { matricula?: string; nome: string }): string {
   return dono.matricula ? `m:${dono.matricula}` : `n:${dono.nome}`
 }
 
-/** Se um evento (crachá ou manual) conta como presença — ver o comentário
-    de `planilhaDeFaltas` pra regra completa de quem manda na célula. */
+/** Eventos que entram na conta de presença de uma pessoa num dia. */
 function contaComoPresenca(e: Evento): boolean {
   return (
     (e.origem === 'cracha' || e.origem === 'manual') &&
@@ -54,11 +39,9 @@ function contaComoPresenca(e: Evento): boolean {
 }
 
 /**
- * A instalação e o número de um `evento_id` (ver `proximoEventoId`). Dentro
- * de uma instalação o número é reservado e só anda para frente, então diz a
- * ordem em que os eventos foram **gravados**. O `quando` não diz: a correção
- * feita em "Ver presenças" grava ao meio-dia do dia corrigido, e não na hora
- * do clique.
+ * A ordem em que os eventos de uma instalação foram gravados, pelo número do
+ * `evento_id` (reservado, só anda para frente). O `quando` não serve: a
+ * correção em "Ver presenças" grava ao meio-dia do dia corrigido.
  */
 function ordemDeGravacao(e: Evento): { instalacao: string; numero: number } | undefined {
   const achado = /^(.+)-\d{8}-(\d+)(?:\.\d+)?$/.exec(e.eventoId)
@@ -73,18 +56,10 @@ function gravadoDepois(a: Evento, b: Evento): boolean {
 }
 
 /**
- * Presente ou não, pra um dia já isolado de eventos de uma única pessoa —
- * mesma regra de `planilhaDeFaltas`: manual mais recente decide
- * (`'removido'` é falta, qualquer outro resultado é presença); sem manual
- * nenhum, o crachá decide. `doDia` precisa vir mais recente primeiro (a
- * ordem que `Repositorio.listarEventos` já entrega).
- *
- * Com uma exceção: crachá gravado **depois** da remoção devolve a presença.
- * A regra supunha que a correção vem sempre depois do crachá, e o caso
- * contrário ficava preso — o professor tirava a presença, o aluno encostava
- * de novo na frente dele, e o contador não voltava (achado no ensaio de
- * 23/09/2026). Crachá usado por outra pessoa se resolve com "Remover
- * crachá", que o faz cair na busca em vez de contar.
+ * Presente ou não, com os eventos de uma pessoa num dia, mais recente primeiro.
+ * A correção à mão mais recente decide ("Não presente" é falta); sem
+ * correção, o crachá decide. Crachá gravado **depois** de um "Não presente"
+ * devolve a presença (decidido em 23/09/2026).
  */
 function resolverPresencaDoDia(doDia: Evento[]): { presente: boolean; repetido: boolean; manual: boolean } {
   const doCracha = doDia.filter((e) => e.origem === 'cracha')
@@ -98,17 +73,7 @@ function resolverPresencaDoDia(doDia: Evento[]): { presente: boolean; repetido: 
   }
 }
 
-/**
- * Quem está presente **num dia específico** da turma, pronto pra consulta —
- * a mesma regra de `planilhaDeFaltas`, mas sem montar a planilha inteira
- * (todos os dias, faltas contadas). Usada onde só interessa "esta pessoa já
- * foi marcada presente hoje?", não o semestre inteiro — a lista de alunos em
- * `TelaAula`, por exemplo, pra decidir se mostra "Presente" ou "Não
- * presente".
- *
- * Consulta por `chaveDeIdentidade` — a mesma chave que identifica quem é
- * dono de um evento manual (matrícula, ou nome pra quem não tem).
- */
+/** A regra de `planilhaDeFaltas` para um dia só, por `chaveDeIdentidade`. */
 export function presencasDoDia(
   eventos: Evento[],
   turma: string,
@@ -131,11 +96,7 @@ function limpar(campo: string): string {
   return campo.replace(/[;\r\n]+/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
-/**
- * Uma célula da planilha: quantas faltas, e o que explica o número — a
- * mesma conta serve à exportação (só o número) e à tela ao vivo (que também
- * quer dizer a hora e se foi corrigido à mão, para auditoria).
- */
+/** Uma célula: quantas faltas, e o que explica o número (para a tela). */
 export interface CelulaDeFalta {
   /** `0` é presença. */
   faltas: number
@@ -157,28 +118,13 @@ export interface PlanilhaDeFaltas {
 }
 
 /**
- * Um dia de aula é um dia com evento `origem === 'professor'` — a aula
- * abriu —, não todo dia do calendário.
+ * A planilha de uma turma.
  *
- * O valor da falta vem da grade, pelo dia da semana daquele dia: se houver
- * bloco cadastrado para `turma` naquele dia da semana, a falta vale a soma
- * dos períodos de todos os blocos dela (duas aulas seguidas contam duas).
- * Sem bloco na grade — reposição, feriado com aula extra — o padrão é um
- * período: a grade é quem tem autoridade para dizer que vale mais que isso.
- *
- * Presença conta por `origem === 'cracha'` **ou** `'manual'`: um professor
- * confirmando à mão que alguém estava na sala tem o mesmo peso de um crachá
- * — ver o comentário de `origem` em `tipos.ts`. O log continua só-acréscimo:
- * a correção é um evento novo, nunca a reescrita de um antigo.
- *
- * **Quem manda é o professor, não o crachá.** Desde 11/09/2026, um evento
- * manual com `resultado: 'removido'` tira uma presença marcada por engano —
- * crachá lido para a pessoa errada, ou confirmação à mão precipitada. `eventos`
- * chega mais recente primeiro (`Repositorio.listarEventos`), então o evento
- * manual mais novo para aquele dia decide a célula: `'removido'` é falta,
- * qualquer outro resultado é presença. Sem manual nenhum, quem decide
- * continua sendo o crachá, como sempre. O log não perde a leitura do crachá —
- * ela continua lá, para quem quiser auditar —, só deixa de contar por si só.
+ * Dia de aula é dia com evento de origem `professor` (a chamada abriu). A
+ * falta vale a soma dos períodos da grade daquele dia da semana, ou 1 sem
+ * grade. Presença vem do crachá ou da correção à mão, pela regra de
+ * `resolverPresencaDoDia`. Linear em eventos: indexa uma vez, em vez de
+ * filtrar por célula (era 1,3 s por crachá num fim de semestre).
  */
 export function planilhaDeFaltas(
   eventos: Evento[],
@@ -191,10 +137,7 @@ export function planilhaDeFaltas(
     .filter((m) => m.turma === turma && m.papel === 'aluno')
     .sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt-BR'))
 
-  // `diaLocal` custa um `new Date()` — calculado uma vez por evento aqui, não
-  // uma vez por célula (aluno × dia) mais abaixo. Com turma grande e muitas
-  // aulas já dadas, célula a célula chegava a refazer isso milhões de vezes
-  // por planilha — ver `docs/05_plano_execucao.md`, Fase 4, item D.
+  // `diaLocal` custa um `new Date()`: uma vez por evento, não por célula.
   const diaPorEvento = new Map<Evento, string>()
   for (const e of daTurma) diaPorEvento.set(e, diaLocal(e.quando))
 
@@ -212,11 +155,8 @@ export function planilhaDeFaltas(
     )
   }
 
-  // Uma indexação só, em vez de refazer `daTurma.filter(...)` inteiro pra
-  // cada (aluno, dia) — O(eventos + alunos × dias) no lugar de O(alunos ×
-  // dias × eventos). Mesma saída: a ordem dentro de cada balde preserva a
-  // ordem de `daTurma` (mais recente primeiro, herdada de `eventos`), que é
-  // a mesma garantia que o `.filter()` original preservava.
+  // Pessoa → dia → eventos, numa passada. Cada balde mantém a ordem de
+  // `eventos` (mais recente primeiro), da qual a regra depende.
   const indice = new Map<string, Map<string, Evento[]>>()
   for (const e of daTurma) {
     if (!contaComoPresenca(e)) continue

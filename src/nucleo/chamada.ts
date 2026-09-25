@@ -1,15 +1,6 @@
-// A chamada aberta, sem tela.
-//
-// `TelaAula` guardava três coisas que não são de tela: como a chamada se
-// reconstrói do log, a memória da fila de crachás (quem já passou, o último
-// crachá aceito, os intervalos) e o que cada decisão toca e diz. Misturadas a
-// estado de React, só se testavam montando a tela inteira — e a regra que
-// decide se um aluno conta presença não devia depender de um render para ser
-// provada. Aqui são funções puras e uma classe sem React; a tela chama, e
-// desenha o que elas devolvem.
-//
-// Extraído em 25/09/2026, sem mudar comportamento: os testes de tela que já
-// cobriam estes caminhos continuam passando sem alteração.
+// A chamada aberta, sem tela: como ela se reconstrói do log, a memória da
+// fila de crachás e o que cada decisão diz e toca. `TelaAula` chama e desenha.
+// Ver `docs/10_codigo.md`.
 
 import { diaLocal, presencasDoDia } from './faltas.ts'
 import { contaPresenca, decidir, estatisticaDeIntervalos, type Decisao, type Sessao } from './sessao.ts'

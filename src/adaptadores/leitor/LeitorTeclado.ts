@@ -1,14 +1,10 @@
-// Adaptador: o dongle USB que se apresenta como teclado.
+// Adaptador: o dongle USB, que o sistema vê como teclado. Sem permissão nem
+// driver, igual em todo navegador. Um crachá é uma rajada de teclas rápida
+// demais para ser humana (`nucleo/digitacao.ts`).
 //
-// É o caminho mais simples que existe — sem permissão, sem driver, sem API
-// experimental — e o único que funciona igual em Chrome, Safari e Firefox. Para
-// o sistema operacional o leitor é um teclado; para o app, uma rajada de teclas
-// rápidas demais para serem humanas (ver `nucleo/digitacao.ts`).
-//
-// Ele escuta a janela inteira de propósito: o professor não deve precisar
-// clicar num campo antes de a fila começar. O preço é que as teclas passam por
-// onde o foco estiver, e por isso a rajada é interrompida assim que se reconhece
-// como crachá.
+// Escuta a janela inteira, para ninguém precisar clicar num campo antes da
+// fila. O preço: as primeiras teclas de uma rajada podem cair no campo com
+// foco, até ela se reconhecer como crachá.
 
 import {
   foiDigitadoPorMaquina,
@@ -53,34 +49,17 @@ export class LeitorTeclado implements LeitorQueRecusa {
   #estados = criarEmissor<EstadoLeitor>()
   #recusasEmitidas = criarEmissor<Recusa>()
 
-  // Instrumentação de diagnóstico, sem efeito nenhum na decisão de aceitar ou
-  // recusar — só existe para reconstruir, depois do fato, o que aconteceu
-  // numa aula em que a leitura falhou sem erro na tela. Ver o relato do Prof.
-  // Paulo em 17/09/2026 (mesmo sintoma de 15/09 — "apitou e não fez nada" —
-  // agora recorrente numa turma diferente da que já tinha sido validada):
-  // sem isto, "recusada" e "nunca chegou" eram indistinguíveis, e as duas
-  // apontam para consertos diferentes.
-  /** Rajada rápida o bastante pra ser máquina, mas em formato não reconhecido
-      (comprimento errado, caractere fora do esperado) — causa diferente de
-      "parecia digitação humana". */
+  // Só para o Diagnóstico, sem efeito em aceitar ou recusar: separa "recusada"
+  // de "nunca chegou", que pedem consertos diferentes.
+  /** Rápida o bastante para ser máquina, mas em formato não reconhecido. */
   #recusasPorFormato = 0
-  /** Rajada recusada por `foiDigitadoPorMaquina` — o sintoma original de
-      15/09/2026 (`INTERVALO_MAXIMO_MS` julgando digitação atrasada como
-      humana). */
+  /** Ritmo de gente digitando (`foiDigitadoPorMaquina`). */
   #recusasPorRitmo = 0
-  /** Últimas recusas, mais recente primeiro — o "última rajada" sozinho não
-      bastava: uma recusa nova apaga a anterior antes de alguém abrir o
-      Diagnóstico pra ver. */
+  /** Últimas recusas, mais recente primeiro. */
   #recusas: { quando: Date; motivo: 'ritmo' | 'formato'; cru: string }[] = []
-  /** Toda tecla não-modificadora que chega ao manipulador, aceita ou não —
-      inclusive Enter e teclas de navegação. Se isto parar de andar durante
-      uma aula com gente pendente, nada está chegando à janela: não é recusa,
-      é ausência — sintoma físico (foco, cabo, dongle), não de software. */
+  /** Qualquer tecla que chegou. Parada com gente na fila: nada chega à janela (foco, cabo). */
   #ultimaTeclaEm?: Date
-  /** Quantas vezes a janela perdeu o foco desde que `iniciar()` rodou — o
-      dongle é HID de teclado, então as teclas vão para onde o SO mandar; sem
-      foco na aba do Adsum, o app não recebe nada, e o buzzer do dongle (que é
-      hardware, soa de qualquer jeito) engana quem está na sala. */
+  /** O dongle digita onde o foco estiver: sem foco, nada chega, e o bipe dele engana. */
   #perdasDeFoco = 0
   #ultimaPerdaDeFocoEm?: Date
   #ultimoFocoRecuperadoEm?: Date
@@ -130,22 +109,16 @@ export class LeitorTeclado implements LeitorQueRecusa {
       detalhes: {
         'leituras aceitas': String(this.#lidos),
         'rajadas recusadas': String(this.#recusados),
-        // O que o dongle real imprime só se descobre com ele na mão. Estes
-        // campos respondem isso no primeiro toque, sem precisar de mais código.
+        // O que um dongle novo imprime se descobre no primeiro toque.
         'última rajada': this.#ultimaCrua ?? '—',
         formato: this.#ultimoFormato ?? '—',
         'UID lido': this.#ultimoUid ?? '—',
-        // Alguns leitores imprimem em little-endian. Sem outra fonte não dá
-        // para saber qual é o certo, então aparecem os dois: comparar com o
-        // celular resolve a olho.
+        // Alguns leitores imprimem em little-endian: os dois, para comparar.
         'se estiver invertido': this.#ultimoInvertido ?? '—',
-        // Daqui pra baixo: só diagnóstico do sintoma "apitou, nada na tela"
-        // (17/09/2026) — ver o comentário nos campos privados, acima.
         'recusadas por parecer digitação': String(this.#recusasPorRitmo),
         'recusadas por formato desconhecido': String(this.#recusasPorFormato),
         'última tecla recebida': this.#ultimaTeclaEm?.toISOString() ?? '—',
-        // Junta com " — " (não quebra de linha): `<code>` não preserva `\n`,
-        // e isto precisa continuar legível também numa tela estreita.
+        // " — " e não quebra de linha: `<code>` não preserva `\n`.
         'últimas recusas (hora · motivo · cru)':
           this.#recusas.length === 0
             ? '—'
@@ -169,31 +142,22 @@ export class LeitorTeclado implements LeitorQueRecusa {
   #aoTeclar = (evento: KeyboardEvent) => {
     if (evento.ctrlKey || evento.metaKey || evento.altKey) return
 
-    // Qualquer tecla não-modificadora conta como "chegou algo" — mesmo as que
-    // o resto da função ignora (Escape, setas). É o oposto de `#recusados`:
-    // aqui não importa se virou rajada, só que a janela recebeu alguma coisa.
+    // Qualquer tecla conta como "chegou algo", mesmo as ignoradas abaixo.
     this.#ultimaTeclaEm = new Date()
 
-    // `evento.timeStamp`, não `performance.now()`: o navegador carimba o
-    // primeiro perto da chegada de verdade da tecla, o segundo mede quando
-    // ESTE manipulador rodou. Com a aba ocupada — turma grande, tela
-    // reatualizando — um `keydown` fica na fila e roda atrasado; medir com
-    // `performance.now()` fazia o atraso de processamento parecer atraso de
-    // digitação, e `INTERVALO_MAXIMO_MS` (60 ms) recusava a rajada inteira
-    // em silêncio. Reproduzido em aula real, 15/09/2026: "parou de associar
-    // os crachás com os alunos", sem erro nenhum na tela.
+    // `evento.timeStamp`, carimbado na chegada da tecla, e não
+    // `performance.now()`, que mede quando o manipulador rodou: com a aba
+    // ocupada, o atraso de processamento parecia digitação humana e a rajada
+    // era recusada (15/09/2026).
     const agora = evento.timeStamp
     if (this.#teclas.length > 0 && agora - this.#teclas[this.#teclas.length - 1].em > ESQUECER_APOS_MS) {
       this.#teclas = []
     }
 
     if (evento.key === 'Enter') {
-      // O Enter que fecha uma rajada é do dongle, não de uma pessoa — mesmo
-      // quando a rajada for recusada. Marcado aqui, na captura, antes de
-      // qualquer outro ouvinte: sem isto, o Enter de um crachá encostado no
-      // repouso disparava "Começar a chamada" (22/09/2026, "começou do
-      // nada"), e na busca escolhia o nome destacado. Quem tem atalho de
-      // Enter confere `defaultPrevented`.
+      // O Enter que fecha uma rajada é do dongle, recusada ou não: marcado
+      // na captura, antes de qualquer atalho. Quem tem atalho de Enter
+      // confere `defaultPrevented` (22/09/2026).
       if (this.#teclas.length > 3) evento.preventDefault()
       this.#fechar(evento)
       return
@@ -202,9 +166,7 @@ export class LeitorTeclado implements LeitorQueRecusa {
 
     this.#teclas.push({ caractere: evento.key, em: agora })
 
-    // A rajada já é reconhecível: daqui em diante as teclas não chegam ao campo
-    // que estiver com o foco. As primeiras podem ter chegado — é o preço de não
-    // exigir que ninguém clique em lugar nenhum antes da fila começar.
+    // Rajada reconhecível: as próximas teclas não chegam ao campo com foco.
     if (this.#teclas.length > 3) evento.preventDefault()
 
     clearTimeout(this.#relogio)
@@ -223,11 +185,7 @@ export class LeitorTeclado implements LeitorQueRecusa {
 
     if (!lido) {
       this.#recusados++
-      // Duas causas bem diferentes viram a mesma coisa (`undefined`) em
-      // `interpretarDigitacao`: o ritmo pareceu humano (nem chegou a tentar
-      // decodificar), ou o ritmo era de máquina mas o formato não bateu com
-      // nenhum dos reconhecidos. Reclassificar aqui, com a mesma função pura
-      // que `interpretarDigitacao` já chamava por baixo.
+      // Separa as duas causas de recusa: ritmo humano ou formato desconhecido.
       const motivo: 'formato' | 'ritmo' = foiDigitadoPorMaquina(teclas) ? 'formato' : 'ritmo'
       if (motivo === 'formato') this.#recusasPorFormato++
       else this.#recusasPorRitmo++
@@ -239,12 +197,9 @@ export class LeitorTeclado implements LeitorQueRecusa {
       this.#ultimoInvertido = undefined
       this.#ultimoUid = undefined
 
-      // Avisar só o que **quase foi crachá**. Qualquer digitação passa por
-      // aqui, e um professor editando a data não pode ver "leitura recusada"
-      // a cada campo. Duas situações são de crachá de verdade: uma rajada
-      // rápida em formato desconhecido, e um UID bem formado que chegou
-      // devagar demais e foi fechado pelo Enter do dongle, que é exatamente
-      // o "apitou e nada aconteceu" de 15/09/2026.
+      // Avisa só o que quase foi crachá (rajada rápida em formato
+      // desconhecido, ou UID bem formado fechado por Enter): digitar num
+      // campo comum não pode disparar "leitura recusada".
       const cru = this.#ultimaCrua
       const quaseCracha =
         cru.length >= MINIMO_DE_CARACTERES &&

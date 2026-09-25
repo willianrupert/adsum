@@ -1,9 +1,8 @@
-// A ponte entre o cofre em disco e o cache em IndexedDB.
+// A ponte entre a pasta (a dona dos dados) e a base no navegador (o cache).
 //
-// A regra que define a inversão: **a pasta é a dona.** O teste de que ela
-// aconteceu de fato é `restaurar` — o app tem que conseguir jogar fora o
-// IndexedDB inteiro e reconstruí-lo lendo a pasta. Se isso não for verdade, a
-// pasta virou só mais um backup, e o professor continua podendo perder tudo.
+// A prova de que a pasta é a dona é `restaurar`: jogar fora a base inteira e
+// reconstruí-la lendo a pasta. Os caminhos de ida e volta estão em
+// `docs/01_cofre.md`.
 
 import {
   NOMES,
@@ -38,24 +37,11 @@ export function caminhoDasFaltas(turma: string): string {
 }
 
 /**
- * A planilha organizada — nome completo, um dia por coluna — sempre pronta na
- * pasta, sem botão de exportar. Existia só sob pedido ("Exportar faltas", em
- * Ajustes), e pedido é exatamente o que este projeto tenta não ter: a mesma
- * regra que já vale para `registros/` ("se a pasta é a dona, o arquivo já
- * está pronto no disco") ficava sem valer para esta planilha, a que o
- * professor de fato quer entregar. `planilhaDeFaltas` é derivada — nunca é
- * lida de volta na reconstrução, só recalculada e reescrita por inteiro a
- * cada chamada de `gravarFaltas`, como qualquer relatório.
+ * Reescreve a planilha de faltas: sempre pronta na pasta, sem botão de
+ * exportar. É relatório, recalculado do log; nunca é lido de volta.
  *
- * Turma sem aula registrada ainda não ganha arquivo: uma planilha vazia não
- * é informação, é ruído no meio das pastas de quem já tem chamada de verdade.
- *
- * `turma`, quando informado, recalcula e regrava **só essa turma** — o caso
- * normal, um crachá aceito numa aula. Sem `turma`, recalcula todas (o
- * primeiro sync, a restauração, ou qualquer chamador que não sabe qual turma
- * mudou). Ver `docs/05_plano_execucao.md`, Fase 4, item C: sem isso, um
- * crachá na Turma A regravava a planilha da Turma B também, sem que nada
- * nela tivesse mudado.
+ * Com `turma`, só a dela (o caso de um crachá). Sem, todas. Turma sem aula
+ * registrada não ganha arquivo.
  */
 export async function gravarFaltas(
   repositorio: Repositorio,
@@ -64,10 +50,6 @@ export async function gravarFaltas(
 ): Promise<Resumo> {
   const turmas = turma ? [turma] : await repositorio.listarTurmas()
   const [eventos, matriculados, aulas] = await Promise.all([
-    // Escopado quando dá — mesmo índice de turma que `TelaAula.recarregar`
-    // já usa (item B). Sem `turma`, `listarEventos()`/`listarMatriculados()`
-    // continuam lendo tudo, porque `planilhaDeFaltas` roda pra cada turma da
-    // lista de qualquer forma.
     turma ? repositorio.listarEventos({ turma }) : repositorio.listarEventos(),
     turma ? repositorio.listarMatriculados(turma) : repositorio.listarMatriculados(),
     repositorio.listarAulas(),
@@ -85,11 +67,8 @@ export async function gravarFaltas(
 }
 
 /**
- * Uma linha nova no log da turma. **Nunca reescreve o arquivo.**
- *
- * Chamada por evento, e não por sincronização inteira: com cinquenta alunos
- * numa fila, regravar o arquivo a cada crachá seria trabalho crescente por
- * leitura — e, com a pasta sincronizada, apagaria o que outra máquina escreveu.
+ * Uma linha nova no log da turma. **Nunca reescreve o arquivo:** com a pasta
+ * sincronizada, reescrever apagaria o que outra máquina gravou.
  */
 export async function acrescentarNoLog(
   pasta: FileSystemDirectoryHandle,
@@ -118,15 +97,11 @@ function mesmoEvento(a: Evento, b: Evento): boolean {
 export const idDeOrigem = (eventoId: string) => eventoId.replace(/\.\d+$/, '')
 
 /**
- * Traz linhas de um log para a base. **Nenhuma linha fica de fora em silêncio.**
+ * Traz linhas de um log para a base. **Nenhuma fica de fora em silêncio.**
  *
- * `evento_id` repetido com o mesmo conteúdo é a idempotência de sempre: reler
- * o arquivo não duplica nada. Mas repetido com **outro** conteúdo é outro
- * acontecimento — foi o que o defeito de 22/09/2026 deixou nos arquivos: onze
- * presenças com o mesmo id. Antes, a primeira entrava e as outras eram
- * descartadas calado, contra a regra de que leitura de CSV nunca descarta
- * linha. Agora entram com um id derivado (`<id>.2`, `<id>.3`…), só na base: o
- * arquivo continua exatamente como foi gravado.
+ * `evento_id` repetido com o mesmo conteúdo é releitura (idempotência).
+ * Repetido com outro conteúdo é outro acontecimento (o defeito de 22/09/2026
+ * deixou isso nos arquivos): entra com id derivado, `<id>.2`, só na base.
  */
 export async function importarEventos(
   repositorio: Repositorio,
@@ -192,19 +167,10 @@ export interface Conferencia {
 }
 
 /**
- * Confere o log da pasta contra a base, turma a turma, **nos dois sentidos**,
- * e deixa os dois iguais sem reescrever nada.
- *
- * Existe por causa de 22/09/2026: a planilha tinha linhas que a base não
- * tinha, e nada comparava as duas. O arquivo é a planilha que o professor
- * entrega; a base é o que a tela mostra. Divergirem calado é o pior defeito
- * possível aqui.
- *
- * - Linha só no arquivo: entra na base (`importarEventos`), inclusive a de
- *   id repetido.
- * - Evento só na base (a gravação na pasta falhou): vai para o fim do arquivo,
- *   o mesmo append de sempre. Evento de id derivado não volta para o arquivo:
- *   a linha dele já está lá, com o id original.
+ * Confere o log da pasta contra a base, turma a turma, nos dois sentidos, e
+ * os deixa iguais sem reescrever nada: linha só no arquivo entra na base;
+ * evento só na base vai para o fim do arquivo. Evento de id derivado não
+ * volta ao arquivo, onde já está com o id original.
  */
 export async function conferirLog(
   repositorio: Repositorio,
@@ -248,18 +214,9 @@ export async function conferirLog(
 
 /**
  * Traz da pasta o que a base não tem, sem tocar no que ela tem. É o que ligar
- * uma pasta faz quando a base já não está vazia.
- *
- * Antes, com base cheia, só os sais vinham. Na primeira gravação,
- * `sincronizar` reescrevia `vinculos.json` e as turmas a partir da base — e
- * todo vínculo que só existia na pasta sumia dela. Ligar a pasta de outro
- * computador apagava os crachás cadastrados lá. Aluno cadastrado não pode
- * ser perdido por ligar uma pasta.
- *
- * Mescla, nunca substitui: vínculo e turma que a base já tem ficam como estão
- * (a base é o que o professor está vendo e corrigindo agora); grade só entra
- * para turma que ainda não tem nenhuma, porque aulas não têm chave natural e
- * trazer de novo duplicaria.
+ * uma pasta faz quando a base já tem dados: sem isto, a primeira gravação
+ * reescrevia a pasta a partir da base e apagava dela os vínculos que só ela
+ * tinha. Grade só entra para turma sem nenhuma: aulas não têm chave natural.
  */
 export async function mesclarDaPasta(
   repositorio: Repositorio,
@@ -310,15 +267,9 @@ export async function mesclarDaPasta(
 }
 
 /**
- * Reescreve os arquivos de log a partir do cache. **Só para conserto.**
- *
- * O caminho normal é append, uma linha por vez. Este existe para quando uma
- * gravação falhou — permissão revogada, pasta desmontada, disco cheio — e a
- * pasta ficou para trás do IndexedDB. Como o cache tem tudo o que a pasta tem e
- * mais, regravar aqui não perde nada.
- *
- * Não use no caminho normal: com a pasta sincronizada, regravar apaga o que
- * outra máquina escreveu.
+ * Reescreve os logs a partir da base. **Só para conserto**, depois de uma
+ * gravação que falhou: a base tem tudo o que a pasta tem. No caminho normal,
+ * apagaria o que outra máquina escreveu.
  */
 export async function repararLog(
   repositorio: Repositorio,
@@ -335,18 +286,9 @@ export async function repararLog(
 }
 
 /**
- * Grava o cadastro na pasta: config, vínculos, grade e turmas.
- *
- * Só o que é reescrito por inteiro passa por aqui. O log não — ele cresce por
- * `acrescentarNoLog`.
- *
- * `leiaMe`/`config`/`vinculos`/`grade` são sempre regravados, com ou sem
- * `turma`: `vinculos.json` pode mudar em qualquer crachá aceito (um
- * cadastro), e os outros três são baratos (não crescem com o histórico). Só
- * o laço por turma (`turmas/<turma>.json`, o cadastro da lista) é que
- * `turma` escopa — ele não muda dentro de uma chamada, então regravar as
- * turmas que não são a de agora era trabalho e I/O de disco à toa. Ver
- * `docs/05_plano_execucao.md`, Fase 4, item C.
+ * Reescreve o cadastro na pasta: LEIA-ME, config, vínculos, grade e turmas.
+ * O log não passa por aqui. Com `turma`, só o arquivo dela entre as turmas;
+ * os outros são pequenos e sempre regravados.
  */
 export async function sincronizar(
   repositorio: Repositorio,
@@ -366,7 +308,6 @@ export async function sincronizar(
     arquivos.push(caminho)
   }
 
-  // Primeiro, porque é o que orienta quem abrir a pasta sem o app na frente.
   await gravar(NOMES.leiaMe, paraLeiaMe())
   await gravar(NOMES.config, paraJsonConfig(config))
   await gravar(NOMES.vinculos, paraJsonVinculos(vinculos))
@@ -384,23 +325,13 @@ export async function sincronizar(
 }
 
 /**
- * Traz o sal do cofre. **É o primeiro passo de qualquer restauração.**
+ * Traz o sal do cofre: o primeiro passo de qualquer restauração, porque sem
+ * ele os nomes voltam e as pessoas não (o mesmo crachá dá outro hash).
  *
- * O sal é o que liga UID a `uid_hash`. Sem ele, restaurar devolve os nomes e
- * perde as pessoas: cada navegador sorteia o seu ao abrir, e com sal diferente
- * o mesmo crachá dá outro hash — a turma inteira vira gente desconhecida, sem
- * uma linha de erro.
- *
- * **Nenhum sal é descartado, dos dois lados.** Base vazia adota o sal do cofre
- * como atual, e o que ela tinha sorteado vai para o chaveiro. Base com
- * crachás mantém o atual e acrescenta os do cofre. Antes, com crachás dos
- * dois lados, isto recusava e deixava os do cofre mortos; e com a base vazia
- * o sal local era sobrescrito — que é como 40 vínculos de 17/09/2026 se
- * perderam. Com o chaveiro, `identificarCracha` acha qualquer um.
- *
- * **Só o sal, e não o resto da config.** O `instalacaoId` prefixa o `evento_id`
- * e precisa continuar **diferente** em cada navegador: é ele que garante que
- * duas instalações nunca cunhem o mesmo id.
+ * **Nenhum sal é descartado.** Base vazia adota o do cofre como atual e
+ * guarda o seu no chaveiro; base com crachás mantém o atual e acrescenta os
+ * do cofre. Só o sal: o `instalacaoId` continua diferente em cada navegador,
+ * senão duas instalações cunhariam o mesmo `evento_id`.
  */
 async function adotarSal(
   repositorio: Repositorio,
@@ -424,13 +355,7 @@ async function adotarSal(
   await repositorio.lembrarSais(doCofre)
 }
 
-/**
- * Junta os sais do cofre ao chaveiro, sem restaurar mais nada.
- *
- * Para quando a base já tem crachás e por isso não se restaura: os sais
- * precisam vir mesmo assim, ou os vínculos do cofre feitos em outro sal
- * seguem irreconhecíveis aqui. Não mexe no sal atual.
- */
+/** Junta os sais do cofre ao chaveiro, sem mexer no atual nem trazer mais nada. */
 export async function lembrarSaisDaPasta(
   repositorio: Repositorio,
   pasta: FileSystemDirectoryHandle,
@@ -442,13 +367,8 @@ export async function lembrarSaisDaPasta(
 }
 
 /**
- * Reconstrói o cache a partir de **arquivos soltos**, escolhidos à mão.
- *
- * Safari e Firefox não têm seletor de diretório, então lá a pasta do cofre não
- * pode ser aberta nem acompanhada. O que eles têm é `<input type="file">`, e
- * isso basta para **ler** o que está no disco: o professor escolhe os arquivos
- * do cofre e a base volta. Escrever de volta continua não sendo possível —
- * nesses navegadores o Adsum guarda no navegador e exporta à mão.
+ * Reconstrói a base a partir de arquivos escolhidos à mão: o caminho do
+ * Safari e do Firefox, que leem arquivos mas não têm seletor de pasta.
  */
 export async function restaurarDeArquivos(
   repositorio: Repositorio,
@@ -484,9 +404,7 @@ export async function restaurarDeArquivos(
   }
 
   for (const [nome, texto] of conteudo) {
-    // O LEIA-ME é documentação gerada: ignorar em silêncio é o certo, mas ele
-    // não conta como "arquivo do Adsum lido" — quem escolher só ele deve ouvir
-    // que não veio nada.
+    // O LEIA-ME não conta como arquivo lido: quem escolher só ele ouve que não veio nada.
     if (nome === NOMES.leiaMe) continue
     if (nome === 'vinculos.json' || nome === 'grade.json' || nome === 'config.json') continue
 
@@ -556,8 +474,6 @@ export async function restaurar(
     const cru = await ler(pasta, `registros/${nome}`)
     if (!cru) continue
     const { itens, problemas: falhas } = deCsv(cru)
-    // `evento_id` é a chave: reler o mesmo arquivo não duplica nada. E id
-    // repetido com outro conteúdo entra com id derivado — ver `importarEventos`.
     await importarEventos(repositorio, itens)
     problemas.push(...falhas.map((f) => `${nome}, linha ${f.linha}: ${f.motivo}`))
     arquivos.push(`registros/${nome}`)

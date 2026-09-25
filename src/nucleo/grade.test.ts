@@ -7,7 +7,6 @@ import {
   FOLGA_MIN,
   aulasAgora,
   emMinutos,
-  escolherTurma,
   horaValida,
 } from './grade.ts'
 
@@ -58,46 +57,6 @@ describe('aulas acontecendo agora', () => {
 
   it('na virada, as duas aulas contam — é o caso ambíguo de verdade', () => {
     expect(aulasAgora(GRADE, PROF, quarta('10:05'))).toHaveLength(2)
-  })
-})
-
-describe('que turma abrir', () => {
-  const TURMAS = ['IF685 · T01', 'IF669 · T02']
-
-  // Nunca perguntar o que dá para saber.
-  it('abre direto quando a grade diz uma só', () => {
-    expect(escolherTurma(GRADE, TURMAS, PROF, quarta('09:00'))).toEqual({
-      tipo: 'abrir',
-      turma: 'IF685 · T01',
-    })
-  })
-
-  it('pergunta quando duas se sobrepõem', () => {
-    const escolha = escolherTurma(GRADE, TURMAS, PROF, quarta('10:05'))
-    expect(escolha).toMatchObject({ tipo: 'perguntar', motivo: 'varias' })
-  })
-
-  // Feriado, reposição, grade não cadastrada: a pergunta cai sobre todas.
-  it('sem aula na grade, pergunta entre as turmas', () => {
-    const escolha = escolherTurma(GRADE, TURMAS, PROF, quarta('15:00'))
-    expect(escolha).toEqual({ tipo: 'perguntar', opcoes: TURMAS, motivo: 'nenhuma' })
-  })
-
-  it('com uma turma só, não pergunta nada nem fora de horário', () => {
-    expect(escolherTurma([], ['IF685 · T01'], PROF, quarta('15:00'))).toEqual({
-      tipo: 'abrir',
-      turma: 'IF685 · T01',
-    })
-  })
-
-  it('sem turma nenhuma, não há o que abrir', () => {
-    expect(escolherTurma([], [], PROF, quarta('09:00'))).toEqual({ tipo: 'sem_turma' })
-  })
-
-  // Era a falha silenciosa: com duas turmas e sem grade, o crachá não fazia
-  // nada e a tela não dizia por quê.
-  it('duas turmas sem grade não deixa o crachá sem resposta', () => {
-    expect(escolherTurma([], TURMAS, PROF, quarta('09:00')).tipo).toBe('perguntar')
   })
 })
 
@@ -198,9 +157,8 @@ describe('as duas aulas coladas da noite', () => {
   const TARDE = { uidHashProfessor: 'prof', dia: 3, inicio: '18:50', fim: '20:30', turma: 'B' }
   const em = (hhmm: string) => new Date(`2026-08-19T${hhmm}:00`)
 
-  it('na virada, com duas turmas, pergunta em vez de escolher', () => {
-    const escolha = escolherTurma([CEDO, TARDE], ['A', 'B'], 'prof', em('18:45'))
-    expect(escolha).toEqual({ tipo: 'perguntar', opcoes: ['A', 'B'], motivo: 'varias' })
+  it('na virada, as duas estão acontecendo', () => {
+    expect(aulasAgora([CEDO, TARDE], 'prof', em('18:45')).map((a) => a.turma)).toEqual(['A', 'B'])
   })
 
   it('e a grade não aponta nenhuma, porque entre duas plausíveis não se adivinha', () => {
@@ -208,7 +166,7 @@ describe('as duas aulas coladas da noite', () => {
   })
 
   // Longe da virada não há ambiguidade nenhuma.
-  it('fora da faixa de sobreposição, abre normalmente', () => {
+  it('fora da faixa de sobreposição, aponta a turma certa', () => {
     expect(turmaDeAgora([CEDO, TARDE], 'prof', em('17:30'))).toBe('A')
     expect(turmaDeAgora([CEDO, TARDE], 'prof', em('19:40'))).toBe('B')
   })
