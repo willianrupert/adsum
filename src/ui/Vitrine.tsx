@@ -6,7 +6,7 @@
 // a lado, com dados inventados.
 
 import { useState } from 'react'
-import { Repouso } from './Fluxo.tsx'
+import { Repouso } from './Repouso.tsx'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
 import { TelaNavegador } from './TelaNavegador.tsx'
