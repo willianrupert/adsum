@@ -38,7 +38,7 @@ export const FOLGA_MIN = 20
  *
  * Para quem dá **uma** aula à noite não muda nada. Para quem dá as duas, com
  * turmas diferentes e coladas, `escolherTurma` devolve `perguntar` nessa faixa e
- * `abrirSozinho` recusa abrir — de propósito: entre duas turmas plausíveis, o
+ * `turmaDeAgora` não aponta nenhuma — de propósito: entre duas turmas plausíveis, o
  * app não adivinha qual. O botão continua ali, e a pergunta aparece com as duas
  * opções.
  *
@@ -123,28 +123,19 @@ export function inicioDaJanela(aula: Aula, agora: Date): Date {
 }
 
 /**
- * A aula que deve abrir sem ninguém pedir.
+ * A turma que a grade diz que tem aula agora, se não houver dúvida.
  *
- * A melhor tela é a que não pergunta nada, e a grade já sabe a hora. Com o
- * horário cadastrado, o professor entra na sala e a chamada está aberta — nem
- * clique, nem crachá.
+ * Desde 17/09/2026 a grade não abre a chamada: sugere a turma no repouso e
+ * acende o ponto azul. As três recusas continuam:
  *
- * Três recusas, e cada uma existe por um motivo:
- *
- * 1. **Só com aula na grade.** `escolherTurma` tem a degradação de "só existe
- *    uma turma, abre essa" — boa para um gesto deliberado, péssima aqui: sem
- *    grade, ela abriria a chamada a qualquer hora que o app estivesse na tela,
- *    e presença passaria a valer no domingo à noite.
- * 2. **Só quando não há dúvida.** Duas aulas ao mesmo tempo viram pergunta no
- *    caminho do clique. Sozinho, o app não adivinha.
- * 3. **Não reabre o que foi encerrado.** Encerrar às 9h30 uma aula que vai até
- *    as 10h não pode ser desfeito pelo relógio no segundo seguinte.
- *
- * `encerradas` é turma → quando do último encerramento. Fica fora do log porque
- * o log não distingue abrir de encerrar (as duas linhas são iguais, ver
- * `eventoDe`), e mudar o formato do CSV por causa disto seria caro demais.
+ * 1. **Só com aula na grade.** Sem o atalho "só existe uma turma", que vale
+ *    para um clique, não para o relógio.
+ * 2. **Só sem dúvida.** Duas aulas ao mesmo tempo: nenhuma.
+ * 3. **Não a que acabou de ser encerrada.** `encerradas` é turma → quando do
+ *    último encerramento; fica fora do log, que não distingue abrir de
+ *    encerrar.
  */
-export function abrirSozinho(
+export function turmaDeAgora(
   aulas: Aula[],
   uidHashProfessor: string,
   agora: Date,
@@ -162,18 +153,11 @@ export function abrirSozinho(
 }
 
 /**
- * A mesma decisão de `abrirSozinho`, olhando a grade de todos os vínculos de
- * professor da base — não só de um.
- *
- * Mais de uma turma "agora" entre professores diferentes é a mesma
- * ambiguidade que `escolherTurma` resolve perguntando — só que aqui, sozinho,
- * o relógio não tem a quem perguntar: a resposta certa é não adivinhar, a
- * mesma resposta que já valia para duas aulas coladas de **um** professor só.
- * Dedup por turma, não por linha de `Aula`: duas linhas da mesma turma
- * acontecendo agora (um bloco duplo, por exemplo) não são ambiguidade
- * nenhuma.
+ * `turmaDeAgora` sobre a grade de todos os professores da base. Duas turmas
+ * agora, de professores diferentes, é dúvida: nenhuma. Duas linhas da mesma
+ * turma (um bloco duplo) não são dúvida.
  */
-export function abrirSozinhoEntreProfessores(
+export function turmaDeAgoraEntreProfessores(
   aulas: Aula[],
   uidHashesProfessores: string[],
   agora: Date,
@@ -192,12 +176,8 @@ export function abrirSozinhoEntreProfessores(
 }
 
 /**
- * A próxima aula daquele professor, a partir de agora.
- *
- * Com a grade abrindo sozinha, o repouso deixou de ser "clique aqui" e virou
- * espera — e espera sem prazo é ansiedade. Dizer qual turma vem e quando é a
- * única informação que a tela tem para dar, e é a que responde "estou no lugar
- * certo?" antes de a pessoa perguntar.
+ * A próxima aula daquele professor, a partir de agora. É o que o repouso
+ * sugere quando nenhuma turma tem aula neste momento.
  *
  * Procura nos sete dias seguintes e devolve a primeira: a semana fecha o ciclo,
  * então não existe grade cadastrada cuja próxima aula esteja além disso.

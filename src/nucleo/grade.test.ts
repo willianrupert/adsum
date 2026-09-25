@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  abrirSozinho,
-  abrirSozinhoEntreProfessores,
+  turmaDeAgora,
+  turmaDeAgoraEntreProfessores,
   proximaAula,
   proximaAulaDeQualquer,
   FOLGA_MIN,
@@ -101,7 +101,7 @@ describe('que turma abrir', () => {
   })
 })
 
-describe('a aula que abre sozinha', () => {
+describe('a turma que a grade aponta agora', () => {
   const AULA = {
     uidHashProfessor: 'prof',
     dia: 3,
@@ -113,35 +113,35 @@ describe('a aula que abre sozinha', () => {
   const em = (hhmm: string) => new Date(`2026-08-19T${hhmm}:00`)
 
   it('abre na hora da aula, sem ninguém pedir', () => {
-    expect(abrirSozinho([AULA], 'prof', em('08:05'))).toBe('IF685 · T01')
+    expect(turmaDeAgora([AULA], 'prof', em('08:05'))).toBe('IF685 · T01')
   })
 
   it('a folga vale aqui também — o professor chega antes', () => {
-    expect(abrirSozinho([AULA], 'prof', em('07:45'))).toBe('IF685 · T01')
-    expect(abrirSozinho([AULA], 'prof', em('07:30'))).toBeUndefined()
+    expect(turmaDeAgora([AULA], 'prof', em('07:45'))).toBe('IF685 · T01')
+    expect(turmaDeAgora([AULA], 'prof', em('07:30'))).toBeUndefined()
   })
 
   // A degradação "só existe uma turma, abre essa" é boa para um gesto
   // deliberado e péssima aqui: sem grade, a chamada valeria no domingo à noite.
   it('sem aula na grade não abre nada, mesmo com uma turma só', () => {
-    expect(abrirSozinho([], 'prof', em('08:05'))).toBeUndefined()
+    expect(turmaDeAgora([], 'prof', em('08:05'))).toBeUndefined()
   })
 
   it('duas ao mesmo tempo não são adivinhadas', () => {
     const outra = { ...AULA, turma: 'IF969 · T02' }
-    expect(abrirSozinho([AULA, outra], 'prof', em('08:05'))).toBeUndefined()
+    expect(turmaDeAgora([AULA, outra], 'prof', em('08:05'))).toBeUndefined()
   })
 
   // Encerrar às 9h30 uma aula que vai até as 10h não pode ser desfeito pelo
   // relógio no segundo seguinte.
   it('não reabre o que o professor encerrou dentro da janela', () => {
     const encerradas = { 'IF685 · T01': '2026-08-19T09:30:00' }
-    expect(abrirSozinho([AULA], 'prof', em('09:31'), encerradas)).toBeUndefined()
+    expect(turmaDeAgora([AULA], 'prof', em('09:31'), encerradas)).toBeUndefined()
   })
 
   it('mas o encerramento da semana passada não impede a aula de hoje', () => {
     const encerradas = { 'IF685 · T01': '2026-08-12T09:30:00' }
-    expect(abrirSozinho([AULA], 'prof', em('08:05'), encerradas)).toBe('IF685 · T01')
+    expect(turmaDeAgora([AULA], 'prof', em('08:05'), encerradas)).toBe('IF685 · T01')
   })
 })
 
@@ -203,14 +203,14 @@ describe('as duas aulas coladas da noite', () => {
     expect(escolha).toEqual({ tipo: 'perguntar', opcoes: ['A', 'B'], motivo: 'varias' })
   })
 
-  it('e não abre sozinho, porque entre duas plausíveis não se adivinha', () => {
-    expect(abrirSozinho([CEDO, TARDE], 'prof', em('18:45'))).toBeUndefined()
+  it('e a grade não aponta nenhuma, porque entre duas plausíveis não se adivinha', () => {
+    expect(turmaDeAgora([CEDO, TARDE], 'prof', em('18:45'))).toBeUndefined()
   })
 
   // Longe da virada não há ambiguidade nenhuma.
   it('fora da faixa de sobreposição, abre normalmente', () => {
-    expect(abrirSozinho([CEDO, TARDE], 'prof', em('17:30'))).toBe('A')
-    expect(abrirSozinho([CEDO, TARDE], 'prof', em('19:40'))).toBe('B')
+    expect(turmaDeAgora([CEDO, TARDE], 'prof', em('17:30'))).toBe('A')
+    expect(turmaDeAgora([CEDO, TARDE], 'prof', em('19:40'))).toBe('B')
   })
 })
 
@@ -228,8 +228,8 @@ describe('a grade de vários professores', () => {
   it('acha a aula de um professor mesmo quando outro (sem aula agora) é olhado primeiro', () => {
     // Bea não tem aula nenhuma agora; Zeca tem. Um `.find` que parasse em
     // Bea nunca chegaria à aula de Zeca.
-    expect(abrirSozinhoEntreProfessores([AULA_DA_ZECA], [BEA, ZECA], em('08:05'))).toBe('IF685 · T01')
-    expect(abrirSozinhoEntreProfessores([AULA_DA_ZECA], [ZECA, BEA], em('08:05'))).toBe('IF685 · T01')
+    expect(turmaDeAgoraEntreProfessores([AULA_DA_ZECA], [BEA, ZECA], em('08:05'))).toBe('IF685 · T01')
+    expect(turmaDeAgoraEntreProfessores([AULA_DA_ZECA], [ZECA, BEA], em('08:05'))).toBe('IF685 · T01')
   })
 
   // Duas turmas de professores diferentes batendo "agora" é a mesma
@@ -238,18 +238,18 @@ describe('a grade de vários professores', () => {
   it('duas turmas de professores diferentes ao mesmo tempo não são adivinhadas', () => {
     const aulaDaBea = { uidHashProfessor: BEA, dia: 3, inicio: '08:00', fim: '10:00', turma: 'IF969 · T02' }
     expect(
-      abrirSozinhoEntreProfessores([AULA_DA_ZECA, aulaDaBea], [BEA, ZECA], em('08:05')),
+      turmaDeAgoraEntreProfessores([AULA_DA_ZECA, aulaDaBea], [BEA, ZECA], em('08:05')),
     ).toBeUndefined()
   })
 
   it('sem nenhum professor com aula agora, não abre nada', () => {
-    expect(abrirSozinhoEntreProfessores([AULA_DA_ZECA], [BEA], em('08:05'))).toBeUndefined()
+    expect(turmaDeAgoraEntreProfessores([AULA_DA_ZECA], [BEA], em('08:05'))).toBeUndefined()
   })
 
   it('continua respeitando o que já foi encerrado', () => {
     const encerradas = { 'IF685 · T01': '2026-08-19T09:30:00' }
     expect(
-      abrirSozinhoEntreProfessores([AULA_DA_ZECA], [BEA, ZECA], em('09:31'), encerradas),
+      turmaDeAgoraEntreProfessores([AULA_DA_ZECA], [BEA, ZECA], em('09:31'), encerradas),
     ).toBeUndefined()
   })
 

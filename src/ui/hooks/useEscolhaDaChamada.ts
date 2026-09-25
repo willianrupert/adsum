@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { encerradas } from '../../ambiente/preferencias.ts'
 import { diaLocal } from '../../nucleo/faltas.ts'
-import { abrirSozinhoEntreProfessores, proximaAulaDeQualquer } from '../../nucleo/grade.ts'
+import { turmaDeAgoraEntreProfessores, proximaAulaDeQualquer } from '../../nucleo/grade.ts'
 import type { GradeLida } from './useBase.ts'
 
 export function useEscolhaDaChamada({ grade, listaDeTurmas }: { grade: GradeLida; listaDeTurmas: string[] }) {
@@ -30,7 +30,7 @@ export function useEscolhaDaChamada({ grade, listaDeTurmas }: { grade: GradeLida
    * turma" (isso é para o clique), e sem a turma que acabou de ser encerrada.
    */
   const comecarEm = useMemo(
-    () => (grade.hashes.length > 0 ? abrirSozinhoEntreProfessores(grade.aulas, grade.hashes, agora, encerradas()) : undefined),
+    () => (grade.hashes.length > 0 ? turmaDeAgoraEntreProfessores(grade.aulas, grade.hashes, agora, encerradas()) : undefined),
     [grade, agora],
   )
 

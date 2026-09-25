@@ -1,16 +1,11 @@
-// Quando esta turma tem aula.
+// Quando esta turma tem aula: a semana desenhada, e o professor aponta onde
+// a turma cai, como o horário aparece em qualquer mural.
 //
-// A grade existia só como três campos nos Ajustes — dia, início, fim — e
-// ninguém preenche três campos cinco vezes. O professor não pensa "quarta, 13h,
-// 14h50"; ele olha a semana e aponta onde a turma cai, que é como o horário
-// chega até ele em qualquer mural da universidade.
+// Vem depois de colar a lista (a grade precisa saber de qual turma fala) e é
+// pulável: sem grade, a chamada funciona igual, só que o repouso não sabe
+// sugerir a turma da hora.
 //
-// Vem **depois** de colar a lista, e não antes, porque a grade precisa saber de
-// qual turma está falando. E é pulável: a chamada funciona sem ela, só deixa de
-// abrir sozinha.
-//
-// A grade em si mora em `componentes/GradeDaSemana`, porque os Ajustes mostram
-// a mesma — duas implementações divergiriam.
+// A grade mora em `componentes/GradeDaSemana`, a mesma dos Ajustes.
 
 import { useMemo, useState } from 'react'
 import { BLOCOS, BLOCOS_COMPLETOS, horasPorSemana, marcadosDe } from '../nucleo/horarios.ts'
