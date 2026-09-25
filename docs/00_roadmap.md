@@ -19,6 +19,11 @@ está em "Daqui para frente", no fim.
   funcionalidade nova (ver "Como uma mudança chega à sala", no `CLAUDE.md`).
 - **Funcionalidade nova congelada.** Só consertos até a quarta semana limpa.
   A v2 (lançar no SIGAA) está desenhada e espera.
+- **Na branch `v2/lancar-no-sigaa`, esperando ensaio (25/09):** o trabalho de
+  carga e pontos de falha (`docs/10_codigo.md`), a separação de `Fluxo` e
+  `TelaAula` em peças, o diário consertado, os comentários curtos e a coluna
+  de matrícula na planilha de faltas. Nada disso foi publicado. Ver "Antes de
+  publicar a branch", abaixo.
 
 ## 1 · Esqueleto, leitor simulado e diagnóstico: **feito**
 
@@ -215,19 +220,35 @@ em sala vira cofre anonimizado, teste que falha, e só então conserto.
 Nenhum destes aconteceu com aluno na frente. Entram como conserto, com teste,
 e só depois de uma semana limpa ser lida:
 
-- **A tela não acompanha uma turma de 300.** Na fila pelo rádio de 23/09, o
-  redesenho de cada crachá esperava os anteriores e a tela chegou a ~2 s de
-  atraso, sem perder nada. O caminho é tirar o processamento do crachá de
-  dentro da `TelaAula` (uma fila única de decisão, fora do React). Nenhuma
-  turma real tem 300.
+- **~~A tela não acompanha uma turma de 300.~~ Resolvido na branch (25/09),
+  falta ensaio.** A causa era a lista da turma, cúbica por render, e o
+  recálculo refeito por crachá. O teste de carga (`ui/Carga.test.tsx`) passou
+  de não terminar em 180 s para 300 crachás em ~18 s. Ver `docs/10_codigo.md`.
 - **"Preparar turma de teste"** (Diagnóstico) reabre o app, e o app fecha a
   chamada que acabou de abrir.
 - **Casos em aberto do ensaio:** segunda janela do Adsum com a chamada aberta,
   e aluno de outra turma encostando o crachá. O comportamento de hoje ainda
   não foi anotado.
-- **Os comentários do código falam do A1** em vários lugares, e alguns
-  descrevem a grade abrindo a chamada sozinha, o que deixou de ser verdade em
-  17/09. A limpeza dos textos de tela foi feita; a dos comentários não.
+- **~~Comentários que contavam história ou já não eram verdade.~~ Feito na
+  branch (25/09)** no domínio, na sincronia e nas duas telas grandes. Onde
+  "aparelho" e "firmware" sobram, falam do leitor ESP32, que existe. A
+  convenção está em `docs/10_codigo.md`.
+- **`TelaDiagnostico` e `TelaRepositorio` (~800 linhas cada)** são as próximas
+  a separar em peças. Fora do caminho do crachá.
+
+### Antes de publicar a branch
+
+A branch mexe no caminho de cada crachá. Pelas regras de "Como uma mudança
+chega à sala", ela só sai com o ensaio completo sobre a cópia do cofre, com o
+dongle, e nunca a menos de dois dias de uma aula. Em especial:
+
+- **A fila rápida com o emulador C3 e o dongle**, olhando o diário: numa
+  rajada, menos linhas `pasta` que crachás (o recálculo coalesce), nenhum
+  `erro_`, e os tempos por crachá.
+- **A planilha de faltas com a coluna `matricula`.** Muda o arquivo que o
+  Prof. Paulo entrega: combinar com ele antes.
+- **O manual** (`docs/Adsum-manual-e-LGPD.docx`) chega ao professor pela
+  `main`; a correção feita na branch só vale depois do merge.
 
 ### Depois do congelamento
 

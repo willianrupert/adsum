@@ -6,7 +6,7 @@
 //
 // O limite de tempo é o teste de desempenho: antes de indexar a lista da
 // turma (`indiceDeVinculos`), cada crachá custava ~630 ms de desenho no jsdom
-// e o teste não terminava em 180 s; depois, ~35 ms. Ver `docs/10_carga.md`.
+// e o teste não terminava em 180 s; depois, ~35 ms. Ver `docs/10_codigo.md`.
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act, render, screen, waitFor } from '@testing-library/react'

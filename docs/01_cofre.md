@@ -64,6 +64,15 @@ arquivo só, e uma turma corrompida não leva as outras junto.
 | `auditoria/uids.csv` | append, uma linha na primeira leitura de cada crachá | as leituras seguintes não custam nada |
 | `LEIA-ME.txt` | reescrito a cada sincronização | é documentação gerada, e tem de bater com os arquivos ao lado |
 
+**Duas gravações no mesmo arquivo nunca correm juntas** (desde 25/09/2026,
+`ambiente/pasta.ts`). O `createWritable` escreve numa cópia e o `close` troca o
+arquivo inteiro: dois acréscimos simultâneos faziam o segundo apagar o
+primeiro, e de 50 acréscimos num teste sobrava um. Na fila, cada gravação
+começa depois de a anterior fechar, na ordem em que foi pedida. E a
+reescrita do cadastro e da planilha, que antes rodava uma vez por crachá e em
+paralelo, passa por um agendador que coalesce uma rajada em uma ou duas
+execuções (`docs/10_codigo.md`).
+
 O append não é preferência de estilo. Com cinquenta alunos numa fila, regravar
 o arquivo a cada leitura cresce com o tamanho da aula. E com a pasta
 sincronizada, reescrever apagaria a aula que a outra máquina acabou de gravar —
@@ -479,7 +488,7 @@ Não estender a outros lugares.
 ## A planilha de faltas
 
 `faltas/<turma>.csv` é o que o professor entrega: aluno por linha, nome
-completo, um dia de aula por coluna, faltas contadas (`nucleo/faltas.ts`,
+completo e matrícula, um dia de aula por coluna, faltas contadas (`nucleo/faltas.ts`,
 `planilhaDeFaltas`). É relatório, não registro: recalculada a cada mudança,
 só da turma que mudou, e quem manda é `registros/`.
 

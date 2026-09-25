@@ -100,6 +100,22 @@ atrás da fila. Nada se perdeu (300 de 300), mas o redesenho de cada crachá
 esperava os anteriores. Nenhuma turma real tem 300; está em
 `docs/00_roadmap.md`.
 
+## 25/09: o que o teste de carga achou
+
+Nenhum destes aconteceu em sala; o teste de carga (`ui/Carga.test.tsx`) e os
+testes escritos junto com ele os acharam. Estão na branch da v2, esperando
+ensaio. Detalhe em `docs/10_codigo.md`.
+
+| # | Risco | Onde estava | Conserto | Teste |
+|---|---|---|---|---|
+| N | Dois acréscimos simultâneos no mesmo arquivo: o segundo apagava o primeiro (de 50, sobrava 1) | `ambiente/pasta.ts` | Gravações no mesmo arquivo em fila | `pasta.test.ts` |
+| O | Lista da turma cúbica por render: ~630 ms por crachá com 300 alunos | `TelaAula` | `indiceDeVinculos`, contagens uma vez por render | `Carga.test.tsx` |
+| P | Recálculo e reescrita da pasta por crachá, em paralelo; a foto mais velha podia vencer | `Fluxo.mudou` | `ambiente/agendador.ts` | `agendador.test.ts` |
+| Q | Crachá encostado logo depois de "Começar a chamada" caía no repouso e não contava | `Fluxo` | `ui/antessala.ts` | `antessala.test.ts`, `Carga.test.tsx` |
+| R | Releitura do log esquecia um crachá ainda em gravação; a segunda leitura virava presença nova | `TelaAula.recarregar` | `MemoriaDaFila` guarda quem está em gravação | `chamada.test.ts` |
+| S | Por um instante, o resumo aparecia sobre a chamada ainda montada | `Fluxo` | `esquecerSessao` ao encerrar | `Fluxo.test.tsx` |
+| T | Diário: linha partida por erro com quebra de linha; dia duplicado; leitura antes da gravação; erro síncrono sem dono | `ambiente/diario.ts` | Valores numa linha, lote parcial, descargas em fila, `semDono` com `then` | `diario.test.ts` |
+
 ## 24/09: a primeira aula limpa
 
 CIN0144, versão `39830c2`, lida pelo zip da pasta do professor. 46 presentes

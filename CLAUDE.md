@@ -13,14 +13,16 @@ Plano de execução em aberto, com causa raiz já investigada por item:
 > exceto pelas regras de crachá e privacidade, que continuam valendo por si e
 > estão listadas abaixo.
 >
-> **Os comentários do código ainda falam do A1 em vários lugares.** A limpeza
-> dos textos de tela foi feita; a dos comentários ficou pendente por orçamento.
+> Onde o código ainda diz "aparelho" ou "firmware", fala do leitor ESP32
+> (`LeitorSerial`), que existe. O verde do `estilo.css` conta a história do A1
+> de propósito.
 
 ## O que é
 
-PWA que roda no navegador do professor e guarda tudo localmente. Companheiro do
-Adsum A1 e sucessor de `Adsum/computador/vincular.html`. Sem servidor, sem
-conta, sem login.
+PWA de chamada por crachá que roda no navegador do professor e guarda tudo
+numa pasta do computador dele. O leitor é um dongle USB. Sucessor do
+`Adsum/computador/vincular.html`, do tempo do Adsum A1. Sem servidor, sem
+conta, sem login. Índice dos documentos: `docs/README.md`.
 
 Pilha: React + Vite + TypeScript + Dexie, publicado no GitHub Pages.
 
@@ -125,6 +127,17 @@ Específicas do app:
   Nada no caminho de cada crachá grava em disco além do evento: o que puder
   esperar (marca de sal, diário) espera. A conferência planilha × base
   (`conferirLog`) roda ao ligar a pasta e ao encerrar, e só acrescenta.
+- **Duas gravações no mesmo arquivo nunca correm juntas.** `escrever` e
+  `acrescentar` (`ambiente/pasta.ts`) andam em fila por arquivo: o `close` do
+  `createWritable` troca o arquivo inteiro, e em paralelo o segundo apagava o
+  primeiro (25/09/2026). Gravação na pasta que não passa por essas duas é bug.
+- **Recalcular é coalescido, nunca por crachá em paralelo.** Recontar a base,
+  reescrever a pasta e reler a chamada passam por `criarAgendador`
+  (`ambiente/agendador.ts`): uma execução por vez, nenhum pedido esquecido.
+- **O teste de carga é a régua de desempenho** (`ui/Carga.test.tsx`: 300
+  crachás em rajada, pasta ligada, conferido no disco). Mudança no caminho do
+  crachá que o faça passar do limite é regressão. Nada que roda por render ou
+  por crachá pode olhar a turma inteira dentro de um laço sobre a turma.
 - **O sal para calcular hash vem da base, nunca de cópia na tela.**
   `identificarCracha` lê o chaveiro de `repositorio.lerConfig()` (em cache no
   adaptador) a cada crachá. A cópia em memória foi o que perdeu a turma em
@@ -234,8 +247,11 @@ cards* (Home Assistant), iPadOS.
   divergência deliberada do `../Adsum/CLAUDE.md`, que pede identificadores em
   inglês: aqui as duas portas se chamam `LeitorDeCracha` e `Repositorio`, e
   metade em cada idioma seria pior que qualquer das duas escolhas inteiras.
-- Comentário explica **por que**, não o quê. Preferência por registrar a
-  decisão e o que ela custou.
+- Comentário explica **por que**, não o quê, em uma ou duas frases. **O código
+  não é diário:** quem relatou, o que se tentou antes e em que aula vão para
+  `docs/04_historico.md`, e o porquê longo para `docs/10_codigo.md`. Uma data
+  no código só quando ancora a decisão. Comentário que deixou de ser verdade
+  é defeito, corrigido no mesmo commit.
 - Um documento por assunto em `docs/`, numerado.
 
 ## Arquitetura
@@ -243,13 +259,18 @@ cards* (Home Assistant), iPadOS.
 Portas e adaptadores, porque **o leitor vai mudar**:
 
 ```
-nucleo/       domínio puro — UID, hash, tipos, CSV. Sem React, sem Dexie.
+nucleo/       domínio puro — UID, hash, tipos, CSV, a chamada. Sem React, sem Dexie.
 portas/       LeitorDeCracha, Repositorio
-adaptadores/  LeitorTeclado (dongle USB), LeitorSimulado, LeitorWebNfc,
-              RepositorioDexie
-ambiente/     capacidades do navegador, entrada e saída de arquivo
-ui/           telas
+adaptadores/  LeitorTeclado (dongle USB), LeitorSerial, LeitorSimulado,
+              LeitorWebNfc, RepositorioDexie
+ambiente/     o navegador: pasta, diário, sincronia, agendador, preferências
+ui/           telas; ui/hooks e ui/aula são as peças de Fluxo e TelaAula
 ```
+
+O mapa módulo por módulo, o caminho de um crachá e as garantias sob carga
+estão em `docs/10_codigo.md`. **Tela não guarda regra:** o que pode ser função
+pura vai para `nucleo/` (a chamada está em `nucleo/chamada.ts`), e o que grava
+na base sem precisar de React vai para fora do componente (`ui/aula/acoes.ts`).
 
 **O dongle é HID de teclado.** Ele "digita" o UID, e por isso o adaptador não
 precisa de permissão, driver nem API experimental — funciona igual em Chrome,
@@ -327,10 +348,9 @@ a entender que os dados estão seguros** neles.
 
 ## Pendências abertas
 
-- **`alunos.csv` continua com três colunas** (`uid_hash;papel;nome`), que é o
-  que o firmware lê. A matrícula fica na base local e é preenchida **na saída**
-  do `registros/<turma>.csv`, a partir do vínculo — assim corrigir uma matrícula
-  corrige as exportações seguintes sem reescrever uma linha do log.
+- **A matrícula sai do vínculo, na hora de gravar.** Ela vai na coluna
+  `matricula` de `registros/<turma>.csv` e, desde 25/09/2026 (na branch da
+  v2), de `faltas/<turma>.csv`. O `alunos.csv` do firmware não existe mais.
 - **Armazenamento persistente costuma ser recusado** enquanto o app não é
   instalado. Sem ele o navegador pode apagar a base sob pressão de espaço — por
   isso o diagnóstico mostra o estado e oferece o botão de pedir.

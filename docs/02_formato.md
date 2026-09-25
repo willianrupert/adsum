@@ -111,12 +111,15 @@ que aula é a linha, e um campo a menos é um campo que não pode divergir.
 Pedida pelo Prof. Paulo para a v1: o que ele entrega.
 
 ```
-nome;15/09/2026;17/09/2026;22/09/2026
-Ana Beatriz Souza Lima;0;2;0
+nome;matricula;15/09/2026;17/09/2026;22/09/2026
+Ana Beatriz Souza Lima;20250000001;0;2;0
 ```
 
 - Uma linha por aluno (docentes ficam de fora), em ordem alfabética do **nome
-  completo**. Não há coluna de matrícula: é a forma que ele pediu.
+  completo**, que vem primeiro porque é por ele que se lê a lista.
+- **`matricula`**, desde 25/09/2026 (na branch da v2, ainda não publicada). É
+  o identificador da pessoa e o que a planilha do SIGAA usa; antes, um nome
+  corrigido no cadastro deixava de bater com a lista do professor.
 - Uma coluna por dia em que houve chamada (evento de origem `professor`
   naquele dia), em `dd/mm/aaaa`.
 - Na célula, quantas faltas o dia vale: `0` se esteve, e senão o número de

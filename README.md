@@ -5,208 +5,231 @@
 # Adsum
 
 **Chamada por crachá, sem servidor, sem conta, sem login.**
-Os dados ficam numa pasta do computador do professor — e é dela que tudo volta.
+
+O aluno encosta o crachá, a presença é registrada, e no fim da aula existe uma
+planilha. Os dados ficam numa pasta do computador do professor, e é dela que
+tudo volta.
 
 [**Abrir o app**](https://willianrupert.github.io/adsum/) ·
 [**Ver todas as telas**](https://willianrupert.github.io/adsum/#/vitrine) ·
-[**Manual e LGPD**](docs/Adsum-manual-e-LGPD.docx)
+[**Manual e LGPD**](docs/Adsum-manual-e-LGPD.docx) ·
+[**Documentação**](docs/README.md)
 
 [![publicar](https://github.com/willianrupert/adsum/actions/workflows/publicar.yml/badge.svg)](https://github.com/willianrupert/adsum/actions/workflows/publicar.yml)
-![vitest + jsdom](https://img.shields.io/badge/testes-vitest%20%C2%B7%20jsdom-0071e3)
-![sem dependências de runtime](https://img.shields.io/badge/rede-nenhuma-1d1d1f)
+![PWA](https://img.shields.io/badge/PWA-offline-0071e3)
+![React · TypeScript](https://img.shields.io/badge/React%20%C2%B7%20TypeScript-1d1d1f)
+![testes: vitest · jsdom](https://img.shields.io/badge/testes-vitest%20%C2%B7%20jsdom-0071e3)
+![rede: nenhuma](https://img.shields.io/badge/rede-nenhuma-1d1d1f)
 
 </div>
 
 ---
 
-O aluno encosta o crachá, a presença é registrada, e no fim da aula existe uma
-planilha. Feito para o Centro de Informática da UFPE, em parceria com o
-**Prof. Paulo Freitas de Araújo Filho**.
+Feito para o Centro de Informática da UFPE, em parceria com o
+**Prof. Paulo Freitas de Araújo Filho**, e em uso em sala de aula.
 
-O que torna o problema interessante não é ler um crachá. São duas tensões, e
-boa parte das decisões abaixo nasce delas: **a promessa de "dados 100% locais"
-é a mesma coisa que a promessa de perder tudo**, e **a tela que pergunta o que
-já podia saber sozinha não parece pronta**. A primeira decidiu onde o dado
-mora. A segunda decidiu quem decide — e é o que faz o Adsum parecer que
-"funciona sozinho" sem nenhuma configuração para ajustar isso.
+O problema interessante não é ler um crachá. São duas tensões, e boa parte das
+decisões abaixo nasce delas:
 
-## O que a tela decide sem perguntar
+- **"Dados 100% locais" é a mesma promessa que "perder tudo".** Sem servidor,
+  o cadastro de uma turma inteira vive num navegador que pode ser limpo,
+  trocado ou apagado. A resposta decidiu onde o dado mora.
+- **Uma tela que pergunta o que já podia saber não parece pronta.** Numa fila
+  de cinquenta alunos, cada pergunta é uma pessoa esperando. A resposta decidiu
+  quem decide.
 
-Não há menu, e a maior parte do que o professor faria por conta própria em
-outro app aqui **já aconteceu antes de ele pensar em fazer**. Nada disso é
-aprendizado de máquina — é o mesmo tipo de regra que um bom atendente segue:
-olhar o que já se sabe antes de perguntar de novo.
+## O que o Adsum faz
 
-**A rota é função pura do estado**, uma cascata de perguntas na ordem em que
-importam ([`nucleo/rota.ts`](src/nucleo/rota.ts)). `'problema'` é checada
-**duas vezes** — navegador quebrado no topo, leitor parado só depois de turma
-e cronograma, porque digitar um horário não pede hardware nenhum. Nenhuma
-tela decide sozinha se deve aparecer; todas são o mesmo cálculo, olhado de
-ângulos diferentes.
+| | |
+|---|---|
+| **Chamada numa tela só** | Presença e cadastro acontecem no mesmo gesto. Quem ainda não tem crachá é cadastrado ali mesmo, com a pessoa na frente. |
+| **Lista direto do SIGAA** | Cola-se a página de participantes; o Adsum lê nome e matrícula e confere o total contra o que a página declara. |
+| **Planilha sempre pronta** | Com a pasta escolhida, cada presença vai para o disco no ato, e a planilha de faltas se refaz sozinha. Não existe botão de exportar. |
+| **Correção sem apagar nada** | "Não presente", "Remover crachá" e presença à mão viram linhas novas; o registro nunca é reescrito. |
+| **Funciona offline** | Depois de aberto uma vez, o app roda sem rede, do começo ao fim. |
+| **Diagnóstico de verdade** | Um diário por dia, sem nome nem número de crachá, diz o que o app fez com cada leitura e quanto tempo levou. |
 
-<div align="center"><img src="docs/mapa-estados.png" alt="A cascata de decidirRota: problema → pasta → navegador → turma → cronograma → problema outra vez → cerimônia/chamada/pronto, com a grade e o leitor fechando os dois laços sozinhos" width="880"></div>
+## Como funciona
 
-**A grade abre e fecha a chamada sozinha**, e o cuidado está todo em *quando
-ela tem permissão para adivinhar e quando não tem*. Com uma aula batendo com
-o relógio agora, ela abre — nem clique, nem crachá. Com duas turmas coladas no
-mesmo horário (o CIn tem blocos que terminam e começam no mesmo minuto), ela
-recusa escolher e pergunta, porque **entre duas plausíveis o app não
-adivinha**. E ela nunca reabre, sozinha, uma aula que acabou de ser encerrada
-— fechar às 9h30 uma aula que vai até as 10h não pode ser desfeito pelo
-relógio no segundo seguinte. Achado de uso real, do próprio autor: às 13h58,
-no meio do bloco de uma turma, a tela dizia "sua próxima aula" apontando
-*outra* — o cálculo comparava só o **início** de cada aula, e uma que já
-começara perdia para uma que ainda não. O reparo foi comparar pelo fim, e o
-repouso passou a dizer exatamente a turma que o botão abaixo dele vai abrir,
-nunca uma diferente ([`nucleo/grade.ts`](src/nucleo/grade.ts)).
+**A tela decorre do estado.** Não há menu. Sem pasta, a tela é escolher onde
+guardar; sem turma, é colar a lista; na hora da aula, é a chamada. A rota é
+uma função pura, uma cascata de perguntas na ordem em que importam
+([`nucleo/rota.ts`](src/nucleo/rota.ts)), e nenhuma tela decide sozinha se deve
+aparecer.
 
-**Um crachá desconhecido sempre abre a busca — sobre a turma inteira, não só
-sobre quem falta.** Parece pouco até se perceber o caso que ela existe para
-cobrir: quem perdeu o crachá e trouxe outro **já tem** vínculo, então não está
-na fila de pendentes — e sem isto não havia como achar essa pessoa no dia em
-que ela aparecia com o cartão novo. A tela nunca vincula um crachá novo a
-alguém sem confirmação — **exceto** quando o próprio professor está, naquele
-instante, olhando aquela pessoa encostar (o interruptor "Chamar nomes", em
-`TelaAula`): aí a confirmação já aconteceu, e perguntar de novo seria
-desconfiar do que ele acabou de fazer com os próprios olhos
-([`nucleo/sessao.ts`](src/nucleo/sessao.ts), função `decidir`).
+<div align="center"><img src="docs/mapa-estados.png" alt="A cascata de decidirRota: problema, pasta, navegador, turma, cronograma, leitor, chamada e repouso" width="880"></div>
 
-**Um professor sem crachá ainda pode dar aula.** "Começar a chamada" sintetiza
-um vínculo na hora — o clique e o crachá são gestos equivalentes, não um
-atalho que depende do outro ter acontecido primeiro. E uma grade salva antes
-de existir qualquer crachá de professor se **autocorrige** assim que um
-aparece: o horário que nunca batia com ninguém passa a bater, sem o professor
-precisar recadastrar nada nem entender por que não batia antes
-([`Fluxo.tsx`](src/ui/Fluxo.tsx), `garantirProfessor` e a reconciliação em
-`recontar`).
+**A grade sugere; o professor abre.** Na hora da aula, a tela inicial já
+mostra a turma certa, marcada com um ponto azul, e um gesto abre a chamada: o
+botão, o Enter ou o crachá do professor. A grade não abre sozinha de
+propósito: a hora em que uma aula começa de verdade quase nunca é a da grade.
+Com duas turmas coladas no mesmo horário (o CIn tem blocos que terminam e
+começam no mesmo minuto), nenhuma ganha o ponto azul: entre duas plausíveis, o
+app não adivinha ([`nucleo/grade.ts`](src/nucleo/grade.ts)).
 
-**Leitura de CSV nunca descarta linha em silêncio.** Toda função de
-importação devolve o que leu **e** o que não conseguiu ler, com linha,
-conteúdo e motivo — 46 alunos onde a turma tem 48, sem explicação nenhuma, é
-bug, não é "deu para importar a maioria".
+**Um crachá desconhecido abre a busca sobre a turma inteira**, não só sobre
+quem falta. Quem perdeu o crachá e trouxe outro já tem vínculo, então não está
+na fila de pendentes, e sem isso não seria achado no dia do cartão novo. O app
+nunca vincula um crachá sem confirmação, com uma exceção: quando o professor
+liga "Chamar nomes" e está olhando aquela pessoa encostar. Aí a confirmação já
+aconteceu ([`nucleo/sessao.ts`](src/nucleo/sessao.ts)).
 
-## A base não pode se perder
+**O dongle é um teclado.** O leitor USB "digita" o número do crachá, e o Adsum
+o separa de uma pessoa digitando pelo ritmo: dezenas de milissegundos entre
+teclas, contra centenas de um humano. Sem driver, sem permissão, igual em todo
+navegador ([`nucleo/digitacao.ts`](src/nucleo/digitacao.ts)).
 
-Se tudo vive no IndexedDB de um navegador, trocar de computador ou limpar os
-dados do site apaga o cadastro da turma inteira — recadastrar 49 alunos é
-inaceitável. A saída foi inverter a posse: o professor escolhe uma **pasta de
-verdade** ([File System Access][fsa]), e é ela que manda. O IndexedDB vira
-cache. Limpar dados do site apaga o handle, **não a pasta** — o professor a
-reescolhe e a base inteira é reconstruída. Se a pasta estiver no iCloud ou no
-Drive que ele já usa, a cópia fora da máquina vem de graça, sem servidor
-nenhum.
+## Confiável por construção
 
-Há um teste que **apaga o cache e prova a reconstrução**. É o que separa "cofre"
-de "mais um backup".
+Cada garantia abaixo existe porque, sem ela, algo se perdeu ou quase se perdeu
+em sala. A história de cada uma está em
+[`docs/06_falhas_em_sala.md`](docs/06_falhas_em_sala.md).
 
-## O crachá não pode virar identificador
+**A pasta é a dona dos dados.** O professor escolhe uma pasta de verdade
+([File System Access][fsa]), e a base no navegador vira cache. Limpar os dados
+do site apaga o cache, não a pasta: reescolhida a pasta, a base inteira volta.
+Se ela estiver no iCloud ou no Drive, a cópia fora da máquina vem de graça. Há
+teste que apaga o cache e prova a reconstrução ([`docs/01_cofre.md`](docs/01_cofre.md)).
 
-Só o número de série público é lido — nunca autenticando setores, nunca
-tocando em Crypto1. E ele não é guardado:
+**O registro só cresce.** O log é somente-acréscimo, com `evento_id` como chave
+de idempotência. A porta `Repositorio` não tem `atualizarEvento` nem
+`removerEvento`: se a assinatura não existe, o bug não se escreve. O número de
+cada evento é reservado numa transação e só anda para frente, e todo evento
+novo passa por um caminho só.
 
-<div align="center"><img src="docs/cracha-para-hash.png" alt="crachá → sal → SHA-256 → uid_hash" width="700"></div>
+**Nenhuma falha é silenciosa.** Leitura de CSV devolve o que leu e o que não
+conseguiu, com linha e motivo. Gravação que falha vira aviso na tela, e o dado
+espera na base até o conserto. Uma leitura que não virou crachá toca e avisa.
+Ao ligar a pasta e ao encerrar a chamada, o log do disco e a base são
+conferidos nos dois sentidos.
+
+**Aguenta a fila mais rápida que a sala.** Um teste monta o app inteiro com a
+pasta ligada e uma turma de 300, dispara 300 crachás em rajada e confere no
+disco que nenhum se perdeu. Foi esse teste que achou gravações simultâneas no
+mesmo arquivo apagando uma à outra, e uma lista que custava mais a cada aluno
+a mais. Hoje as gravações de um arquivo andam em fila, o recálculo se agrupa
+por rajada, e o custo por crachá não cresce com a turma
+([`docs/10_codigo.md`](docs/10_codigo.md)).
+
+**Nada chega à sala sem ensaio.** Depois de todo deploy, um roteiro de sete
+passos roda sobre a cópia do cofre de um professor real, com o dongle de
+verdade, porque base limpa esconde justamente a classe de defeito que chega à
+sala ([`docs/07_ensaio_antes_da_aula.md`](docs/07_ensaio_antes_da_aula.md)).
+
+## Privacidade
+
+Só o número de série público do crachá é lido: nunca autenticando setores,
+nunca tocando em chave. E ele não é guardado.
+
+<div align="center"><img src="docs/cracha-para-hash.png" alt="crachá, sal, SHA-256, uid_hash" width="700"></div>
 
 O sal existe por uma razão precisa: sem ele, o espaço de números de série é
-pequeno o bastante para se testar inteiro em segundos, e o resumo seria o crachá
-com outra roupa — quem obtivesse a planilha poderia **clonar crachá**. Com ele,
-não.
+pequeno o bastante para se testar inteiro em segundos, e quem obtivesse a
+planilha poderia clonar um crachá. Com ele, não. Nenhum sal é descartado: um
+crachá é procurado em todos os que a instalação já teve.
 
-## O registro não pode ser reescrito, mas o crachá pode errar
+- Nenhum dado sai do computador sem gesto explícito do professor. Sem
+  telemetria, analytics, fonte remota nem CDN.
+- O login do SIGAA não é lido: é credencial de acesso. A matrícula identifica
+  sem destravar nada.
+- Dado real de turma nunca entra neste repositório. Os testes usam gente
+  inventada na forma exata da página real, e as imagens são desenhadas por
+  script.
+- O tratamento de dados, campo por campo, está no
+  [manual](docs/Adsum-manual-e-LGPD.docx), escrito para o professor e para a
+  instituição.
 
-O log é somente-acréscimo, com `evento_id` como chave de idempotência:
-reimportar o mesmo arquivo não duplica linha. A porta `Repositorio` **não
-tem** `atualizarEvento` nem `removerEvento` — se a assinatura não existe, o
-bug não se escreve.
+## Começar
 
-Isso não pode significar "sem conserto". Confirmar um crachá desconhecido
-para a pessoa errada, ou passar duas vezes na pressa — nenhum dos dois se
-apaga, os dois ganham um evento nascido pra desfazer o efeito do outro sem
-tocar no que já foi escrito: `'Remover crachá'` na chamada, `resultado:
-'removido'` na planilha, e `rapido_demais` para o par que chega a menos de
-400 ms um do outro. Só-acréscimo não significa sem correção — significa que a
-correção também vira linha.
+**Para dar aula:** abra [o app](https://willianrupert.github.io/adsum/) no
+Chrome ou no Edge, escolha uma pasta, cole a página de participantes do SIGAA,
+e ligue o dongle. O [manual](docs/Adsum-manual-e-LGPD.docx) cobre o resto, e
+[`#/vitrine`](https://willianrupert.github.io/adsum/#/vitrine) mostra todas as
+telas com gente inventada.
 
-## Arquitetura
-
-<div align="center"><img src="docs/arquitetura.png" alt="ui → portas → nucleo, com adaptadores trocáveis" width="820"></div>
-
-Portas e adaptadores não é cerimônia aqui: **o leitor já mudou duas vezes.**
-Começou num aparelho ESP32 que morreu, hoje é um dongle USB que se apresenta
-como teclado, e o Web NFC no Android já está adiantado. Trocar o mundo inteiro
-embaixo do domínio não custou uma regra.
-
-```
-src/
-  nucleo/       domínio puro — UID, hash, sessão, grade, rota, CSV. Sem React, sem Dexie.
-  portas/       LeitorDeCracha, Repositorio
-  adaptadores/  LeitorTeclado (dongle USB), LeitorWebNfc, LeitorSimulado, RepositorioDexie
-  ambiente/     capacidades do navegador, pasta, sincronia, som, preferências
-  ui/           telas
-```
-
-[`src/ui/adsum.ts`](src/ui/adsum.ts) é o **único** lugar que escolhe adaptadores.
-Tela que importa `RepositorioDexie` direto é bug de camada.
-
-## Rodar
+**Para desenvolver:**
 
 ```bash
-npm install && npm run dev
+npm install
+npm run dev
 ```
 
 Sem hardware, ligue o **modo de ensaio** nos Ajustes: aparecem o leitor
-simulado e as teclas <kbd>espaço</kbd> (próximo crachá) e <kbd>P</kbd> (crachá do
-professor), que percorrem o fluxo inteiro. Ele vem desligado, e a fronteira é
-essa: *se existe para provar que o programa funciona, é ensaio; se existe para
-descobrir por que não funcionou, é diagnóstico — e diagnóstico é de produção.*
+simulado e as teclas <kbd>espaço</kbd> (próximo crachá), <kbd>N</kbd> (crachá
+novo) e <kbd>P</kbd> (crachá do professor). A fronteira é esta: o que existe
+para provar que o programa funciona é ensaio; o que existe para descobrir por
+que não funcionou é diagnóstico, e fica no app publicado.
 
 ```bash
-npm test     # o núcleo e as telas
-npm run build
+npm test          # domínio, adaptadores, telas e o teste de carga
+npm run lint
+npm run build     # tsc -b e vite build
 ```
 
 **As telas se testam em jsdom contra o `RepositorioDexie` de verdade**, sem
 dublê. Dublê que concorda com tudo é como se descobre tarde que a tela e o
-adaptador discordavam — botão morto, `<td>` com `display:flex`, corrida de
-presença: todos os defeitos achados até aqui eram desse tipo.
+adaptador discordavam. As falhas de sala viram cofres anonimizados
+(`src/testes/cofres/`), e o conserto é provado sobre a base como ela estava.
+
+## Arquitetura
+
+<div align="center"><img src="docs/arquitetura.png" alt="ui, portas e núcleo, com adaptadores trocáveis" width="820"></div>
+
+Portas e adaptadores não é cerimônia aqui: **o leitor já mudou duas vezes.**
+Começou num aparelho ESP32 que foi aposentado, hoje é um dongle USB que se
+apresenta como teclado, e há adaptadores prontos para um leitor serial e para
+o NFC do Android. Trocar o mundo embaixo do domínio não custou uma regra.
+
+```
+src/
+  nucleo/       domínio puro: sessão, chamada, grade, rota, faltas, CSV. Sem React, sem Dexie.
+  portas/       LeitorDeCracha, Repositorio
+  adaptadores/  LeitorTeclado, LeitorSerial, LeitorWebNfc, LeitorSimulado, RepositorioDexie
+  ambiente/     o navegador: pasta, sincronia, diário, agendador, preferências, som
+  ui/           a casca, as telas, e as peças delas (ui/hooks, ui/aula)
+```
+
+[`src/ui/adsum.ts`](src/ui/adsum.ts) é o único lugar que escolhe adaptadores.
+O mapa módulo por módulo e o caminho de um crachá estão em
+[`docs/10_codigo.md`](docs/10_codigo.md).
+
+Pilha: React, TypeScript, Vite e Dexie (IndexedDB), publicado como PWA no
+GitHub Pages. Ferramentas de bancada (um emulador de crachá e um rig de teclado
+em ESP32) ficam em [`ferramentas/`](ferramentas/).
 
 ## Documentação
 
 | | |
 |---|---|
-| [**Manual e LGPD**](docs/Adsum-manual-e-LGPD.docx) | Para o professor e para a instituição. Uso, e a descrição do tratamento de dados campo por campo |
-| [`CLAUDE.md`](CLAUDE.md) | O contrato do projeto: regras que não se quebram, decisões e o que elas custaram |
-| [`docs/00_roadmap.md`](docs/00_roadmap.md) | Os passos do projeto, cada um terminando em algo que já roda no navegador |
-| [`docs/01_cofre.md`](docs/01_cofre.md) | O cofre em pasta, o prazo do Safari, e o bug do sal que perdia as pessoas |
-| [`docs/02_formato.md`](docs/02_formato.md) | O formato dos arquivos, decidido do zero |
-| [`docs/03_visual.md`](docs/03_visual.md) | Os valores medidos da linguagem visual da Apple |
-| [`docs/04_historico.md`](docs/04_historico.md) | Histórico de decisões datado — o porquê de cada mudança, na ordem em que aconteceu |
+| [`docs/README.md`](docs/README.md) | O índice: o que é cada documento e por onde começar |
+| [**Manual e LGPD**](docs/Adsum-manual-e-LGPD.docx) | Para o professor e para a instituição: uso, e o tratamento de dados campo por campo |
+| [`CLAUDE.md`](CLAUDE.md) | O contrato do projeto: as regras que não se quebram e o que cada decisão custou |
+| [`docs/00_roadmap.md`](docs/00_roadmap.md) | Onde o projeto está e o que vem depois |
+| [`docs/01_cofre.md`](docs/01_cofre.md) | A pasta como dona dos dados, o prazo do Safari, o chaveiro de sais |
+| [`docs/04_historico.md`](docs/04_historico.md) | As decisões, datadas, na ordem em que aconteceram |
+| [`docs/08_lancar_no_sigaa.md`](docs/08_lancar_no_sigaa.md) | A próxima versão: levar as presenças ao SIGAA, com o Gravar sempre do professor |
+| [`docs/10_codigo.md`](docs/10_codigo.md) | O código: camadas, o caminho de um crachá, as garantias sob carga |
 
-Comentário aqui explica **por quê**, não o quê — e registra o que a decisão
-custou. Boa parte do raciocínio mora no código, não em documento à parte.
+## Estado e próximos passos
 
-## Privacidade, em uma linha cada
+Em uso real, com o dongle conferido em hardware de verdade (decimal de 10
+dígitos, big-endian) e teste automatizado do teclado até o UID. Mudanças
+passam por um período de uso limpo antes de funcionalidade nova entrar, e a
+próxima é o lançamento das presenças no SIGAA, desenhada e à espera
+([`docs/00_roadmap.md`](docs/00_roadmap.md)).
 
-- Nenhum dado sai do computador sem gesto explícito do professor
-- Sem telemetria, sem analytics, sem fonte remota, sem CDN — o `runtimeCaching`
-  do service worker é vazio de propósito
-- O login do SIGAA **não é lido**: é credencial de acesso, e credencial não entra
-  em arquivo de frequência. A matrícula identifica sem destravar nada
-- Dado real de turma nunca entra no repositório. Os testes usam gente inventada
-  na forma exata da página real, e as ilustrações são **desenhadas** por script —
-  versiona-se o desenho, nunca a captura
+## Créditos
 
-## Estado
-
-Funciona de ponta a ponta e está publicado. O dongle já foi conferido com
-hardware de verdade — decimal de 10 dígitos, big-endian, com o ritmo real
-medido entre caracteres — e há teste automatizado provando isso do teclado até
-o UID.
+Criado por **Willian Rupert**, com o **Prof. Paulo Freitas de Araújo Filho**
+(CIn/UFPE), que levou o Adsum para a sala de aula e pediu boa parte do que ele
+faz. O desenho do lançamento no SIGAA parte do trabalho do Prof. Filipe
+Calegario ([auto-sigaa](https://github.com/filipecalegario/auto-sigaa)).
 
 <div align="center">
 
 **·**
 
-<sub><i>Adsum</i> — o que se responde na chamada.</sub>
+<sub><i>Adsum</i>: o que se responde na chamada.</sub>
 
 </div>
 

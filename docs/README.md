@@ -20,6 +20,7 @@ envelheceu também é informação.
 | O que tem em cada arquivo da pasta | [`02_formato.md`](02_formato.md) |
 | Por que a tela é como é | [`03_visual.md`](03_visual.md) |
 | Por que tal coisa é assim (na ordem em que aconteceu) | [`04_historico.md`](04_historico.md) |
+| Como o código está organizado, e o que ele garante sob carga | [`10_codigo.md`](10_codigo.md) |
 | Isso já foi resolvido? | [`06_falhas_em_sala.md`](06_falhas_em_sala.md) |
 | Vai publicar uma versão | [`07_ensaio_antes_da_aula.md`](07_ensaio_antes_da_aula.md) |
 | A v2, lançar no SIGAA | [`08_lancar_no_sigaa.md`](08_lancar_no_sigaa.md) e [`09_esboco_da_janela.md`](09_esboco_da_janela.md) |
@@ -38,6 +39,7 @@ envelheceu também é informação.
 | [`07_ensaio_antes_da_aula.md`](07_ensaio_antes_da_aula.md) | vivo | O roteiro que roda depois de todo deploy |
 | [`08_lancar_no_sigaa.md`](08_lancar_no_sigaa.md) | especificação | A v2, do micro ao macro. Não implementada |
 | [`09_esboco_da_janela.md`](09_esboco_da_janela.md) | especificação | As telas da v2, desenhadas, e as perguntas que ainda são do autor |
+| [`10_codigo.md`](10_codigo.md) | vivo | As camadas, o caminho de um crachá, as garantias sob carga, o porquê de cada módulo e a convenção de comentários |
 | [`Adsum-manual-e-LGPD.docx`](Adsum-manual-e-LGPD.docx) | vivo | Manual do professor e descrição do tratamento de dados. Gerado por `scripts/gerar_manual.cjs`; o app baixa este arquivo da `main` |
 
 As imagens (`arquitetura.png`, `cracha-para-hash.png`, `mapa-estados.png`,
@@ -46,12 +48,15 @@ nunca a captura.
 
 ## Regras para quem escreve aqui
 
-- **Um assunto, um número.** O próximo é o `10_`. Um assunto novo que cabe num
+- **Um assunto, um número.** O próximo é o `11_`. Um assunto novo que cabe num
   documento existente vai para ele.
 - **Data absoluta, sempre.** "Ontem" e "semana passada" perdem o sentido no
   dia seguinte.
 - **O histórico só cresce.** Correção a uma entrada antiga é uma entrada nova
   que aponta para ela.
+- **O código não é diário.** Comentário diz o que garante e por quê, curto;
+  a história vai para o `04_historico.md`, e o porquê longo para o
+  `10_codigo.md`.
 - **Documento vivo muda no mesmo commit que o código.** Se um conserto torna
   uma frase daqui falsa, a frase muda junto — é a mesma regra do `LEIA-ME.txt`
   da pasta, que tem teste amarrando o texto aos nomes reais dos arquivos.

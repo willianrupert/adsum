@@ -236,7 +236,7 @@ const corpo = [
       [[mono('grade.json')], 'Os horários de aula.'],
       [[mono('turmas/')], 'A lista de cada turma, como veio do SIGAA.'],
       [[mono('registros/')], 'A chamada, uma linha por presença, em CSV. Estes arquivos só crescem: nada é reescrito nem apagado.'],
-      [[mono('faltas/')], 'A planilha para entregar: aluno por linha, nome completo, um dia de aula por coluna, faltas contadas. Recalculada a cada mudança a partir de registros/.'],
+      [[mono('faltas/')], 'A planilha para entregar: aluno por linha, nome completo e matrícula, um dia de aula por coluna, faltas contadas. Recalculada a cada mudança a partir de registros/.'],
       [[mono('diagnostico/')], 'O diário técnico, um arquivo por dia. Sem nome e sem número de crachá (seção 4.5).'],
       [[mono('auditoria/uids.csv')], 'O número de cada crachá já lido, enquanto a auditoria estiver ligada. É o arquivo mais sensível da pasta (seção 4.5).'],
     ],

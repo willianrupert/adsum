@@ -663,3 +663,62 @@ o roteiro descrevia o protocolo serial do A1. O que mudou:
   só chega ao professor quando esta branch for mesclada.
 
 Nenhuma decisão nova nesta passada: só o que o código e os commits já diziam.
+
+## 25/09/2026, tarde — carga, pontos de falha, e o código em peças
+
+Pedido do autor: o Adsum precisa aguentar carga de processamento para ser
+confiável, sem quebrar nada; os dois arquivos gigantes (`Fluxo`, `TelaAula`)
+em peças; e comentários que deixem de ser diário. Tudo na branch da v2, sem
+publicar. O detalhe de cada garantia está em `docs/10_codigo.md`.
+
+**Um teste de carga que não existia.** `ui/Carga.test.tsx`: o app inteiro com
+a pasta ligada, turma de 300 já cadastrada, 300 crachás a cada 20 ms reais,
+conferido no disco. Na primeira execução não terminou em 180 s, e com 60
+crachás perdeu um. O que ele e os testes escritos junto acharam:
+
+- **Linha perdida no log.** `acrescentar` lia o tamanho, abria uma cópia e
+  trocava o arquivo no `close`: dois acréscimos juntos, o segundo apagava o
+  primeiro. De 50, sobrava 1. Hoje só a conferência do encerramento as
+  repunha. Gravações no mesmo arquivo agora andam em fila.
+- **A lista da turma era cúbica.** Cada linha checava nome repetido olhando a
+  turma inteira, e cada olhada procurava o vínculo com `find`: ~630 ms de
+  desenho por crachá com 300. Com índice e contagem uma vez por render: ~35 ms.
+  Era a causa do atraso de ~2 s visto na fila de 300 pelo rádio (23/09).
+- **Recálculo por crachá, em paralelo.** Cada crachá recontava a base e
+  reescrevia a pasta, solto; a foto mais velha podia fechar por último. Um
+  agendador coalesce e serializa.
+- **O crachá da abertura caía no repouso.** Entre gravar a sessão e a tela
+  da chamada montar, quem ouvia o leitor era o repouso. A antessala segura
+  essas leituras.
+- **Uma releitura do log podia esquecer um crachá em gravação**, e a segunda
+  leitura dele virava presença nova. A memória da fila guarda quem está em
+  gravação.
+- **O resumo aparecia sobre a chamada ainda montada**, por um instante, ao
+  encerrar. Um teste que era instável passou a falhar sempre com o agendador;
+  a casca agora esquece a sessão na hora.
+- **O diário** partia a linha quando a mensagem de erro tinha quebra de linha
+  ou `|`, gravava duas vezes o dia já gravado quando a pasta falhava no meio de
+  um lote, deixava o Diagnóstico ler antes da gravação terminar, e deixava
+  escapar erro síncrono de `semDono`.
+
+**O código em peças.** `Fluxo` de ~1.650 para ~600 linhas (hooks `useBase`,
+`usePasta`, `useEscolhaDaChamada`, `useAbertura` e outros; `Repouso`,
+`FolhaDeAjustes`, `SeloDoCanto`), `TelaAula` de ~1.400 para ~600 (regras em
+`nucleo/chamada.ts`, gravações em `ui/aula/acoes.ts`, painéis em `ui/aula/`).
+Os testes de tela passaram sem alteração em cada passo.
+
+**Comentários.** Os do domínio, da sincronia e das duas telas passaram a dizer
+o que o código garante, em uma ou duas frases; a narrativa foi para
+`docs/10_codigo.md`. No caminho, apareceram comentários que já não eram
+verdade (a grade abrindo a chamada, o sábado em blocos longos, a chamada que
+não abriria sem o crachá do professor), e `abrirSozinho` virou `turmaDeAgora`.
+`escolherTurma`, da tela "Qual turma?" removida em 17/09, era código morto.
+
+**A planilha de faltas ganhou a coluna `matricula`.** Muda o arquivo que o
+professor entrega; combinar com ele antes de publicar.
+
+**O que não foi feito, de propósito.** Tirar o processamento do crachá de
+dentro do React inteiro: com a lista indexada e o recálculo coalescido, o
+teste de carga já não mostra o custo que isso resolveria, e é a mudança mais
+arriscada possível no caminho mais sensível. `TelaDiagnostico` e
+`TelaRepositorio` continuam grandes: estão fora do caminho do crachá.
