@@ -563,3 +563,43 @@ vai abrir para 7 crachás desconhecidos numa fila:
 O crachá desconhecido também passou a deixar linha no diário
 (`desconhecido`, `desconhecido_durante_busca`); antes só a desistência
 aparecia.
+
+## 23/09/2026, noite — primeira medida de dois crachás juntos no dongle
+
+O autor encostou dois crachás reais juntos no dongle. O dongle **alterna**
+entre os dois, e o intervalo entre leituras de crachás diferentes variou de
+268 a 1.891 ms: 268, 270 e 387 ms foram recusados por `INTERVALO_MINIMO_MS`;
+535, 560, 916 e 1.891 ms foram aceitos. A regra funcionou como escrita, mas
+**não bloqueia** o segundo cartão: numa fraude de verdade (o crachá de um
+colega ausente), ele teria contado presença logo na segunda alternância. O
+que a regra entrega é um alarme — segurando os dois por um ou dois segundos,
+alguma alternância cai abaixo de 400 ms e o aviso aparece na tela.
+
+Subir o número não resolve (a alternância chegou a 1,9 s, na faixa de uma
+fila apressada). O sinal que separa cartões empilhados de uma fila é a
+**alternância**: A, B, A, B em poucos segundos, que gente numa fila não faz.
+Ideia registrada, não decidida; nada muda antes da aula de 24/09.
+
+A busca "de quem é?" também foi validada com os dois crachás reais: com ela
+aberta, o segundo foi recusado duas vezes sem trocar o alvo.
+
+## 24/09/2026 — primeira aula limpa
+
+Aula real de CIN0144 com a versão `39830c2` (carimbo 13:30), lida pelo zip
+da pasta do professor. Nenhuma recusa, nenhum "rápido demais", nenhuma busca
+interrompida, nenhum erro, nenhum `evento_id` repetido; conferência nas
+linhas de base (`repetidos=19` e `repetidos=8`).
+
+- Na primeira abertura, a conferência trouxe para a base as 19 + 13 leituras
+  que a versão antiga tinha descartado — o que a simulação da véspera
+  previu, agora na máquina dele.
+- 46 presentes: 36 por crachá, 9 pela busca, 1 à mão. Os 6 alunos do sal
+  perdido de 17/09 foram recadastrados pela busca, como planejado.
+- Fila de gente: 45 alunos em 5 min 19 s, mediana de 3,3 s entre crachás,
+  menor 2 s. Por crachá, no pior caso: 13 ms para identificar, 7 para
+  gravar, 48 para a tela.
+- A planilha de 22/09, com as 8 presenças recuperadas, dá 44 — o mesmo
+  número do registro à mão do professor, com uma troca de nome em cada
+  sentido para ele decidir.
+
+É a primeira das quatro semanas limpas que liberam funcionalidade nova.
