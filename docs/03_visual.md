@@ -1,6 +1,12 @@
 # 03 — Desenho visual
 
-Não implementado. Requisitos e raciocínio, para a passada dedicada.
+Documento vivo. Requisitos e raciocínio da linguagem visual. Quase tudo aqui
+está no ar desde a passada de 18-21/08/2026; a passada dedicada (tipografia,
+espaço, claro/escuro, Mushroom cards nas telas de chamada e base) continua por
+fazer, e está em "O que falta", no fim. Revisto em 25/09/2026.
+
+As regras de voz da interface (travessão, título que não repete o botão) e a
+direção geral ("estilo Apple: só funciona") estão no `CLAUDE.md`.
 
 ## A restrição que manda em tudo: alto fluxo
 
@@ -60,7 +66,10 @@ Não são aproximações de memória — foram lidos dos elementos da página.
 
 Três regras que vêm junto e mudam mais que a paleta:
 
-1. **Seção se separa por tom, não por sombra.** Nenhum `box-shadow` no app.
+1. **Seção se separa por tom, não por sombra.** Nenhum `box-shadow` separa
+   conteúdo. Os três que existem desenham objeto, não seção: o botão do
+   interruptor, o halo da bolinha verde do leitor, e o contorno das telas em
+   miniatura da vitrine.
 2. **Conteúdo se separa por espaço, não por borda de 1px.**
 3. **Campo de texto não usa monoespaçada.** Só hash e caminho de arquivo, onde o
    alinhamento por caractere é a razão de ela existir.
@@ -181,17 +190,30 @@ sente.
 - **Mushroom cards** onde houver estado a mostrar de relance — ícone à esquerda,
   uma linha principal, uma de apoio. O lugar natural é a folha da base.
 
-## Cobrança de cadastro: só no primeiro dia
+## Cobrança de cadastro
 
-A faixa "faltam 3 crachás" só aparece quando **ninguém da turma tem crachá
-ainda** — o primeiro dia, em que a cerimônia é a própria chamada. Depois disso
-ela some: manter um aviso permanente é cobrança sobre gente que pode ter
-trancado, e o caso se resolve sozinho.
+**Primeira versão (18/08):** a faixa "faltam 3 crachás" só aparecia quando
+ninguém da turma tinha crachá ainda. Depois disso sumia: manter um aviso
+permanente é cobrança sobre gente que pode ter trancado.
 
-Quando alguém que faltou no primeiro dia finalmente aparece e encosta o crachá,
-o app **pergunta de quem é** — uma folha com busca que filtra a turma a cada
-tecla, sem botão de buscar e sem confirmação. Digitar é a ação; Enter resolve
-quando sobra um só. Nada é gravado enquanto ninguém responder.
+**Como está (desde 21/08 e 17/09):** a lista da turma fica sempre na tela da
+chamada, com Presente/Não presente por pessoa, e a legenda diz quantos estão
+"sem crachá". Não é faixa nem cobrança: é a lista, que o professor já usa para
+marcar à mão quem veio sem crachá. O número mostrado é de quem já tem crachá,
+e não de quantos faltam, porque "faltam 48" no começo da aula é só o tamanho
+da turma dito de um jeito alarmante.
+
+Quando um crachá desconhecido chega, o app **pergunta de quem é**: uma folha
+com busca que filtra a **turma inteira** a cada tecla (pendentes primeiro),
+sem botão de buscar e sem confirmação. Digitar é a ação; Enter resolve quando
+sobra um só. Nada é gravado enquanto ninguém responder, e desistir é um clique
+fora. Duas regras vieram do ensaio de 23/09:
+
+- **Uma busca por vez.** Um segundo crachá desconhecido com a busca aberta é
+  recusado com aviso dentro dela, em vez de tomar o lugar do primeiro. Crachá
+  conhecido continua contando.
+- **Os dígitos do dongle saem do campo.** O leitor só reconhece a rajada
+  depois de alguns caracteres, e eles caíam no campo de busca.
 
 ## Safari
 
@@ -202,8 +224,21 @@ está guardado.
 
 ## Manual
 
-Mais adiante: um PDF que ensine o uso e trate LGPD e confiabilidade dos dados.
-**A meta é que ele não seja necessário** — se o manual precisar explicar como
-usar a tela, a tela está errada. O que sobra para ele é o que a tela não pode
-responder sozinha: onde os dados moram, o que sai do computador (nada), e por
-que o crachá pode ser lido sem ferir a política do CIn.
+Existe: `docs/Adsum-manual-e-LGPD.docx`, gerado por `scripts/gerar_manual.cjs`
+e baixado pelo botão "Manual" dos Ajustes. Um documento para dois leitores: o
+professor e a instituição.
+
+**A meta continua sendo que ele não seja necessário**: se o manual precisar
+explicar como usar a tela, a tela está errada. O que sobra para ele é o que a
+tela não pode responder sozinha: onde os dados moram, o que sai do computador
+(nada), e por que o crachá pode ser lido sem ferir a política do CIn.
+
+## O que falta
+
+- **A passada dedicada** nas telas de chamada e base: tipografia, espaço,
+  claro/escuro, Mushroom cards. As regras acima valem; a aplicação uniforme
+  não foi feita.
+- **A mesma dieta de texto no Diagnóstico**, e a régua "isto ajuda quem quer
+  fazer a chamada?" passada tela por tela.
+- **A janela da v2** já nasce nesta linguagem (`docs/09_esboco_da_janela.md`):
+  mesmos tokens do `estilo.css`, mesma pílula, mesmo cartão.

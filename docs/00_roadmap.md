@@ -1,161 +1,172 @@
 # 00 — Roteiro
 
-Seis passos. Cada um termina em algo que abre no navegador e faz alguma coisa —
-nada de passo que só existe como preparação para o próximo.
+Documento vivo. Revisto em 25/09/2026.
 
-## 1 · Esqueleto, leitor simulado e diagnóstico — **feito**
+Seis passos, escritos em 18/08/2026, quando o projeto ainda era o companheiro
+do Adsum A1. Cada um terminava em algo que abre no navegador e faz alguma coisa:
+nenhum passo existia só como preparação para o próximo. **O A1 deixou de
+existir**, e o leitor passou a ser um dongle USB. Os passos continuam aqui,
+cada um com o que ficou e o que morreu junto com o aparelho. O que vem depois
+está em "Daqui para frente", no fim.
 
-Vite + React + TypeScript + Dexie, PWA publicável no GitHub Pages. As duas
-portas (`LeitorDeCracha`, `Repositorio`) e os dois primeiros adaptadores
+## Onde o projeto está (25/09/2026)
+
+- **Em uso real** pelo Prof. Paulo, em duas turmas (CIN0144 e CIN0114), com o
+  dongle USB no computador dele.
+- **Versão no ar: `39830c2`**, carimbo `2026-09-23 13:30`.
+- **24/09 foi a primeira aula limpa**: nenhuma recusa, nenhum erro, nenhum
+  `evento_id` repetido. É a primeira das quatro semanas limpas que liberam
+  funcionalidade nova (ver "Como uma mudança chega à sala", no `CLAUDE.md`).
+- **Funcionalidade nova congelada.** Só consertos até a quarta semana limpa.
+  A v2 (lançar no SIGAA) está desenhada e espera.
+
+## 1 · Esqueleto, leitor simulado e diagnóstico: **feito**
+
+Vite + React + TypeScript + Dexie, PWA publicado no GitHub Pages. As duas
+portas (`LeitorDeCracha`, `Repositorio`) e os primeiros adaptadores
 (`LeitorSimulado`, `RepositorioDexie`). Uma tela: diagnóstico.
 
-Por que o diagnóstico vem primeiro, e não a tela bonita: o app depende de APIs
-que variam por navegador e por contexto — WebSerial não existe no Firefox,
-WebNFC só no Chrome Android, quase nada funciona fora de contexto seguro, e o
-IndexedDB some em navegação privada. Descobrir isso na frente da turma é tarde.
+Por que o diagnóstico veio primeiro, e não a tela bonita: o app depende de APIs
+que variam por navegador e por contexto. WebSerial não existe no Firefox,
+WebNFC só existe no Chrome Android, quase nada funciona fora de contexto
+seguro, e o IndexedDB some em navegação privada. Descobrir isso na frente da
+turma é tarde.
 
 Vale o mesmo princípio do firmware: **toda regra precisa de voz na tela**. Lá, a
 janela de 60 s recusava em silêncio e era indistinguível de aparelho quebrado.
+O princípio sobreviveu ao aparelho e foi o que mais custou manter: as falhas
+de setembro foram quase todas recusas caladas (`docs/06_falhas_em_sala.md`).
 
-## 2 · Repositório de verdade — **feito**
+## 2 · Repositório de verdade: **feito, com outro formato**
 
-Vínculos e grade com CRUD, importação e exportação em CSV pelo File System
-Access, **nos mesmos formatos do cartão** (`uid_hash;papel;nome` e
-`hash_prof;dia;hh:mm;hh:mm;turma`). Compatibilidade de formato é o que permite
-arrastar o arquivo do volume `ADSUM` para cá e de volta.
+Vínculos e grade com edição, importação e exportação. O plano era usar **os
+mesmos formatos do cartão** (`uid_hash;papel;nome` e
+`hash_prof;dia;hh:mm;hh:mm;turma`), para arrastar arquivos entre o volume
+`ADSUM` e o app. Sem aparelho, essa compatibilidade deixou de ter para quem
+servir: vínculos, grade e turmas viraram JSON no cofre, e o único CSV que
+sobrou é a saída para a planilha. Ver `docs/02_formato.md`.
 
-Aqui entra também o sal de frota: importar o sal do aparelho é o que faz as duas
-bases falarem do mesmo crachá.
+O **sal de frota** (importar o sal do aparelho) morreu junto. O que ficou do
+sal foi a regra de nunca descartar nenhum: `Config.saisAnteriores` é um
+chaveiro, e um crachá é procurado em todos (`docs/01_cofre.md`).
 
-Feito: `nucleo/csv.ts` com os três arquivos, leitura que **relata cada linha
-descartada e por quê**, tela de vínculos e grade com edição, e o campo do sal
-com aviso de que trocar invalida vínculo e grade. Toda leitura de CSV tem teste
-contra as linhas literais dos documentos do firmware — se o app deixar de
-conversar com o aparelho, quebra no `npm test`, não na aula.
+Continua valendo, e custou caro aprender: **toda leitura de arquivo relata cada
+linha descartada e o motivo**.
 
-## 3 · Cerimônia de vínculo — **feito**
+## 3 · Cerimônia de vínculo: **feito, e dissolvido na chamada**
 
-O `vincular.html` reescrito: lista colada do SIGAA, encurtamento de nome com
-medida em pixel, **um nome chamado por vez**. A garantia contra trocar aluno não
-vem do meio de transporte; vem de não haver segundo candidato.
+O `vincular.html` reescrito: lista colada do SIGAA, **um nome chamado por
+vez**. A garantia contra trocar aluno não vem do meio de transporte. Vem de não
+haver segundo candidato.
 
-Cuidados que já custaram bug e não podem se perder: aluno vem seguido de
-`(Perfil)` e docente de `Departamento:`; a dica de docente vem primeiro na
-ordem, para que cerimônia interrompida no meio já tenha o essencial feito.
+Desde 21/08/2026 a cerimônia não é uma tela. Ela acontece dentro da chamada:
+crachá desconhecido com alguém chamado é cadastro e presença no mesmo gesto, e
+sem ninguém chamado abre a busca "de quem é?" sobre a turma inteira.
 
-Feito: `nucleo/nomes.ts` traz do `vincular.html` **as tabelas de avanço das
-fontes do firmware**, com teste para cada regra — partícula, colisão
-desempatada, e os dois limites (210 px na coluna, 31 bytes no buffer). A tela
-arma um nome por vez, recusa crachá já vinculado dizendo de quem é, e permite
-chamar de novo um nome já feito, porque segunda via existe.
+Regras que vieram daqui e continuam no `CLAUDE.md`: o nome exibido é
+primeiro + segundo nome; todo mundo entra como aluno e professor é um toque; a
+página `Turma › Participantes` é lida por `nucleo/sigaa.ts`, traz nome
+completo e matrícula e **confere o total contra o cabeçalho** (`Docentes (2)`,
+`Discentes (47)`). O login do SIGAA não é lido.
 
-Duas regras mudaram em relação ao `vincular.html`, e as duas por decisão de
-produto:
+Os limites de 210 px e 31 bytes mediam o display do A1 e foram removidos.
 
-- **O nome exibido é primeiro + segundo nome** — "Willian Neves", não "Willian
-  Jones". É como a pessoa é chamada, e é o que o mockup de `Adsum/docs/03` já
-  mostrava. De quebra, a regra de sufixo de linhagem deixa de ser necessária:
-  pegando pela frente, "Breno Filho" não é mais alcançável.
-- **Todo mundo entra como aluno**, e professor é um toque. A dica do SIGAA vira
-  marca na linha em vez de decisão automática, e um aviso fica na tela enquanto
-  ninguém estiver marcado — a trava passa de recusa para visibilidade.
+## 4 · Sessão e coleta: **feito**
 
-A leitura da página `Turma › Participantes` mora em `nucleo/sigaa.ts` e traz
-**nome completo e matrícula**. Duas coisas que ela faz e um extrator ingênuo
-não faria:
+A máquina de estados de `Adsum/docs/02` virou a rota (`nucleo/rota.ts`) e uma
+tela de chamada (`ui/TelaAula.tsx`). Registros append-only, `evento_id`
+reservado por `reservarSequencia` e gravado só por `gravarEventoNovo`.
 
-- **confere o total contra o cabeçalho.** A página declara `Docentes (2)` e
-  `Discentes (47)`; se o que foi lido não bater, ela diz. Colar metade da página
-  produz uma lista perfeitamente plausível, e o aluno que ficou de fora só
-  descobriria na hora da chamada.
-- **marca login que é só dígitos.** Quando a pessoa não escolheu login, o SIGAA
-  cai na matrícula — e às vezes no CPF. Vira `só número` na tela, para decisão
-  humana.
+O que mudou em relação ao desenho original, e por quê:
 
-A lista é guardada **por turma**, e reabrir uma turma repõe quem já tem crachá.
+- **Uma chamada por turma por dia**, como no SIGAA (22/09). Encerrar e reabrir
+  continua de onde parou; fechar o app fecha a chamada; recarregar a mesma
+  janela não fecha.
+- **A grade sugere, não abre** (17/09, pedido do Prof. Paulo). A chamada quase
+  nunca abria exatamente onde a grade esperava. O repouso mostra a turma e a
+  hora sugeridas, e o professor abre com um gesto: Enter, o botão ou o crachá
+  dele.
+- **Dois crachás quase juntos** (menos de `INTERVALO_MINIMO_MS`, 400 ms) viram
+  `rapido_demais` e um aviso na tela. A primeira medida com crachás reais
+  (23/09) mostrou que isso é **alarme, não trava**: dois cartões encostados
+  juntos fazem o dongle alternar entre eles, e parte das alternâncias passa
+  dos 400 ms.
 
-Medida que ficou registrada no teste: **"Amanda Nascimento" ocupa 209 dos 210
-pixels da coluna.** Nome comum já raspa o limite — é o número que explica por
-que 47 dos 48 nomes reais não cabiam, e por que contar letras nunca resolveria.
+## 5 · Leitor de verdade: **feito, com outro leitor**
 
-## 4 · Sessão e coleta — **feito**
+O plano era o `LeitorWebSerial`, falando o protocolo CDC do A1 (`PING`,
+`HORA`, `ARMAR`…). **Morreu com o aparelho.** Os leitores que existem hoje,
+todos na lista `LEITORES` de `ui/adsum.ts`:
 
-A máquina de estados de `Adsum/docs/02` no navegador: `SEM_HORA` → `OCIOSO` →
-`IDENTIFICANDO_TURMA` → `CONFIRMANDO` → `COLETANDO` → `ENCERRANDO`, com a janela
-de 60 s e a tela única de coleta. Registros append-only, `evento_id` idempotente.
+| Adaptador | Leitor | Situação |
+|---|---|---|
+| `LeitorTeclado` | Dongle USB, HID de teclado | **O de produção.** Conferido com o dongle de verdade em 10/09/2026: decimal de 10 dígitos, big-endian |
+| `LeitorWebNfc` | Celular Android com NFC | Experimental. Leu o crachá do CIn em 18/08/2026 |
+| `LeitorSerial` | ESP32-C3 + PN532 pelo Web Serial | Software pronto, bancada pausada desde 21/09/2026 por decisão do autor |
+| `LeitorSimulado` | Nenhum | Só no modo de ensaio |
 
-Uma tela só durante a coleta, como no aparelho — pelo mesmo motivo: com fila,
-uma confirmação de 2,5 s ou trunca ou atrasa.
+Separar o dongle de uma pessoa digitando é trabalho do **ritmo**
+(`nucleo/digitacao.ts`), medido com `evento.timeStamp` desde 15/09. Rajada
+recusada que quase era crachá toca e avisa na tela desde 21/09; digitação comum
+num campo de texto não dispara nada.
 
-## 5 · Leitor de verdade — **metade adiantada**
+Três ferramentas de bancada em `ferramentas/`, nenhuma no caminho do professor:
 
-Adaptador `LeitorWebSerial`, falando o protocolo CDC linha a linha
-(`PING`, `HORA`, `ARMAR`, `SIMULAR`, `LISTAR`…) com o Adsum A1. **Falta.**
+- `rig-de-cracha/`: ESP32-S3 que digita como o dongle. Comandado pela suíte
+  física do Diagnóstico. **O autor não tem mais a placa.**
+- `emulador-de-cracha/`: ESP32-C3 + PN532 que vira crachá no campo de rádio,
+  para o dongle ler de verdade. Mediu a fila de 300 em 23/09.
+- `leitor-serial/`: firmware e diagnósticos do `LeitorSerial`.
 
-O `LeitorWebNfc` foi escrito antes da hora, porque a pergunta que ele responde é
-grande: *um professor com Android registra presença sem aparelho nenhum?*
+## 6 · Saída para a planilha e publicação: **feito, sem o Apps Script**
 
-**Medido em 18/08/2026 e a resposta é sim.** Chrome no Android, permissão
-concedida, quatro leituras com UID a partir do crachá do CIn. O Web NFC cobre
-tags NFC Forum tipo 1–5 e o Mifare Classic não é nenhum desses, mas o Chromium
-entrega o `serialNumber` mesmo assim. Isso põe a demo sem hardware (etapa 3 do
-roteiro com o professor) ao alcance de hoje.
+Com pasta escolhida (Chrome e Edge), cada presença é gravada no ato em
+`registros/<turma>.csv`, e `faltas/<turma>.csv` é recalculada a cada mudança:
+um aluno por linha, um dia por coluna, pronta para entregar. Sem pasta, a
+exportação é manual e o app cobra enquanto houver aula por salvar.
 
-**O que ainda não está provado:** que esse UID é o mesmo byte a byte que o PN532
-vai entregar. Ordem e comprimento podem divergir entre pilhas NFC, e se
-divergirem, vínculo feito pelo celular não é reconhecido pelo aparelho nem com
-sal compartilhado. O teste é direto e só depende da peça chegar — ver a
-pendência em `CLAUDE.md`.
+O envio ao Web App do Apps Script não foi feito, e não vai ser: seria dado
+saindo do computador sem gesto do professor. PWA instalável e publicado em
+`willianrupert.github.io/adsum/`; `#/vitrine` mostra todas as telas com gente
+inventada.
 
-Escrever esses dois adaptadores não tocou em tela nenhuma além da escolha do
-leitor — que é a prova de que a porta do passo 1 estava no lugar certo.
-
-## 6 · Saída para a planilha e publicação
-
-Exportação para a aba `registros` — arquivo para arrastar, e envio ao Web App do
-Apps Script para quem quiser. `sync.log` com a mesma disciplina de append-only.
-PWA instalável, publicado, com instruções de instalação.
-
-O nome continua não trafegando: sai `uid_hash`, a planilha resolve.
+O nome continua não trafegando para fora do computador. O que o professor
+entrega é a planilha, e entregar é um gesto dele.
 
 ## O que este roteiro não faz
 
-- **Não substitui o aparelho.** O A1 funciona sem laptop, sem rede e sem
-  navegador aberto. O app é a ponte e o cadastro, não o registrador.
-- **Não cria backend.** Se um dia precisar, é Apps Script preso à planilha.
+- **Não cria backend.** Nem Apps Script. Nada sai do computador sem gesto
+  explícito do professor.
+- **Não substitui o SIGAA.** Produz uma planilha. Levá-la ao SIGAA é a v2, e
+  mesmo lá o Gravar continua sendo do professor.
 
-## Desenho — ideação de 18/08/2026
+## Desenho: ideação de 18/08/2026
 
-Não implementado. Registro para a próxima sessão não recomeçar do zero.
+Registro de uma sessão de ideação, com o que aconteceu a cada ideia.
 
-**Princípio: a rota é o estado.** Não há abas. *(Implementado em
-`nucleo/rota.ts` e `ui/Fluxo.tsx`; a coleta ainda falta.)*
+**Princípio: a rota é o estado.** Não há abas. **Feito**: `nucleo/rota.ts`
+decide a tela a partir do estado do app, e `ui/Fluxo.tsx` monta o que ela
+devolve. Os seis estados imaginados viraram estes:
 
-Não há abas. A tela decorre do que existe na
-pasta e da hora. Seis estados, um de cada vez:
+1. sem pasta → *escolha onde guardar*. **Feito** (e, no Safari e no Firefox,
+   o conselho de navegador no mesmo lugar)
+2. sem turma → *cole sua turma*. **Feito**
+3. turma sem crachás → cerimônia. **Dissolvida na chamada** (21/08)
+4. fora de horário → repouso, com a próxima aula. **Feito**
+5. dentro do horário → chamada. **Feito**, aberta por um gesto desde 17/09
+6. algo quebrado → o problema e a ação que resolve. **Feito** (`TelaProblema`)
 
-1. sem pasta → *escolha onde guardar* (única ação da tela) — **feito**
-2. sem turma → *cole sua turma*
-3. turma sem crachás → cerimônia de vínculo
-4. tudo pronto, fora de horário → repouso, com a próxima aula
-5. dentro do horário → coleta
-6. algo quebrado → o problema e a ação que resolve, nada mais
+**Uma coisa grande por vez.** Um número ou um nome em corpo enorme; o resto
+pequeno e cinza. Acento só para o que acabou de acontecer. **Feito.**
 
-**Uma coisa grande por vez.** Um número ou um nome em corpo enorme; todo o
-resto pequeno e cinza. Acento só para o que acabou de acontecer.
+**O som é o feedback primário.** Em fila ninguém olha a tela. **Feito**: Web
+Audio, tocado depois de gravar (`docs/03_visual.md`).
 
-**O som é o feedback primário.** Em fila ninguém olha a tela — isso valia para
-o display e vale igual no navegador. Web Audio, bipe curto depois de gravar.
+**O diagnóstico vira selo discreto** num canto, que só fica alto quando algo
+falha. **Feito**: engrenagem, e o aviso do rodapé só quando há o que avisar.
 
-**O diagnóstico vira selo discreto** (leitor ✓ pasta ✓) num canto, que só fica
-alto quando algo falha. Deixa de ser aba.
-
-**Nunca perguntar o que dá para saber.** A grade e o relógio escolhem a turma;
-só o caso ambíguo vira pergunta. É a lógica de `CONFIRMANDO`/`ESCOLHENDO` do
-desenho antigo, que já era isso.
-
-**A tela de coleta do mockup antigo continua valendo** — contador sem
-denominador, nomes abreviados, uma tela só. Foi pensada, não improvisada.
+**Nunca perguntar o que dá para saber.** Continua sendo a regra. A exceção
+deliberada é abrir a chamada (ver o passo 4).
 
 **Evitar:** vidro sobre fundo variável (contraste é requisito), texto que
 explica decisão de projeto, e qualquer pergunta que o app poderia responder.
@@ -164,61 +175,88 @@ explica decisão de projeto, e qualquer pergunta que o app poderia responder.
 
 O projeto mede flash e pixel em vez de preferir. Vale medir interação também.
 
-| Situação | Toques na tela |
-|---|---|
-| Aula normal, do começo ao fim | **0** |
-| Cerimônia de vínculo | 1 por aluno — e é o crachá dele, não a tela |
-| Primeira configuração | 2: escolher a pasta, colar a turma |
+| Situação | Planejado em 18/08 | Hoje |
+|---|---|---|
+| Aula normal, do começo ao fim | **0** | **1**: abrir a chamada (Enter, botão ou crachá do professor). Encerrar é outro, se o professor não usar o crachá |
+| Cadastro de um aluno | 1, o crachá dele | O mesmo: o crachá dele, com o nome chamado; ou o crachá e um nome escolhido na busca |
+| Primeira configuração | 2: escolher a pasta, colar a turma | O mesmo, mais a grade (opcional) |
 
-Zero na aula normal é o número que importa: crachá abre, crachás registram,
-crachá fecha. **Se uma aula normal exigir um clique, algo do desenho falhou** —
-e isso é verificável, não opinião.
+O zero virou um porque o professor pediu (17/09): a grade quase nunca batia
+com a hora em que ele de fato começava. O custo é um toque; o ganho é a
+chamada nunca abrir na turma errada sozinha. O Prof. Paulo abre e encerra
+pelo botão e não usa o próprio crachá.
 
-Decorrências que esse número impõe:
+As decorrências que o zero impunha continuam valendo:
 
-- **Não existe "exportar".** Se a pasta é a dona, `registros.csv` já está
-  pronto no disco o tempo todo. Botão de exportar é o app pedindo que o humano
-  faça o trabalho dele.
-- **Erro não interrompe a fila.** Crachá desconhecido é linha vermelha e bipe
-  grave, nunca diálogo. Nada bloqueia quem está atrás.
-- **Confirmação vira desfazer.** "Tem certeza?" é o app terceirizando
-  responsabilidade. Age, e oferece voltar atrás.
-- **Só falar quando há decisão a tomar.** "Turma salva!" não é informação, é
-  ruído.
-- **Fechar o notebook no meio não perde o lugar.** Reabriu, a sessão continua
-  onde estava — sem "bem-vindo de volta".
+- **Não existe "exportar" com pasta.** `registros/` já está no disco o tempo
+  todo. Sem pasta, exportar existe e é cobrado.
+- **Erro não interrompe a fila.** Crachá desconhecido abre a busca sem travar
+  quem vem atrás: crachá conhecido continua contando com ela aberta.
+- **Confirmação vira desfazer.** "Não presente", "Remover crachá".
+- **Só falar quando há decisão a tomar.**
+- **Fechar o notebook no meio não perde o lugar.** Reabrir a mesma turma no
+  mesmo dia continua de onde parou.
 
+## Daqui para frente
 
-## A decidir na próxima sessão: cerimônia e chamada são a mesma coisa
+### Agora: congelamento
 
-Dito pelo autor em 18/08/2026. **A cerimônia de vínculo é também a primeira
-chamada** — quem encosta o crachá para se cadastrar já está presente naquela
-aula, e fazer as duas coisas em telas separadas obriga a turma a passar duas
-vezes.
+Até quatro semanas limpas de uso real, contadas a partir de 24/09/2026.
+A régua é o zip da pasta do professor, lido toda sexta: `diagnostico/*.log`
+sem recusa, sem `erro_`, sem `desconhecido_durante_busca` inesperado, e a
+conferência nas linhas de base (`repetidos=19` em CIN0144, `repetidos=8` em
+CIN0114: são os repetidos históricos de 22/09; outro número é problema novo).
 
-Consequências a desenhar:
+Todo deploy passa pelo ensaio de `docs/07_ensaio_antes_da_aula.md`. Toda falha
+em sala vira cofre anonimizado, teste que falha, e só então conserto.
 
-- a primeira aula abre em modo cadastro, e cada crachá novo faz **duas** coisas:
-  cria o vínculo e registra presença;
-- as setas ← e → andam pela turma (já feito), e a lista da turma vira a fila da
-  chamada;
-- a partir da segunda aula, quem já tem crachá só registra presença, e quem
-  ainda não tem cai no cadastro sem que ninguém troque de tela.
+### Consertos conhecidos, fora da sala até agora
 
-Isso reduz a rota: `cerimonia` e `coleta` deixam de ser dois estados e viram um
-só, com o cadastro sendo o que acontece quando o crachá é desconhecido **e** a
-pessoa está na lista da turma.
+Nenhum destes aconteceu com aluno na frente. Entram como conserto, com teste,
+e só depois de uma semana limpa ser lida:
 
+- **A tela não acompanha uma turma de 300.** Na fila pelo rádio de 23/09, o
+  redesenho de cada crachá esperava os anteriores e a tela chegou a ~2 s de
+  atraso, sem perder nada. O caminho é tirar o processamento do crachá de
+  dentro da `TelaAula` (uma fila única de decisão, fora do React). Nenhuma
+  turma real tem 300.
+- **"Preparar turma de teste"** (Diagnóstico) reabre o app, e o app fecha a
+  chamada que acabou de abrir.
+- **Casos em aberto do ensaio:** segunda janela do Adsum com a chamada aberta,
+  e aluno de outra turma encostando o crachá. O comportamento de hoje ainda
+  não foi anotado.
+- **Os comentários do código falam do A1** em vários lugares, e alguns
+  descrevem a grade abrindo a chamada sozinha, o que deixou de ser verdade em
+  17/09. A limpeza dos textos de tela foi feita; a dos comentários não.
 
-## A grade escolhe a turma — feito
+### Depois do congelamento
 
-O relógio e a grade respondem "qual turma?" sozinhos, com folga de 20 minutos
-antes e depois: o professor chega às 7h52 para a aula das 8h, e isso é o caso
-normal, não a exceção.
+- **v2: lançar no SIGAA.** Especificação em `docs/08_lancar_no_sigaa.md`,
+  telas em `docs/09_esboco_da_janela.md`. O primeiro passo não é código: é o
+  portão A, o HTML da planilha de frequência salvo pelo Prof. Paulo antes e
+  depois de um Gravar. Três perguntas de desenho esperam o autor (`docs/09`).
+- **Dois crachás juntos por alternância.** A medida de 23/09 mostrou que o
+  sinal que separa cartões empilhados de uma fila é a alternância (A, B, A, B
+  em poucos segundos), e não o intervalo. Ideia registrada, não decidida.
+- **Ideias levantadas no `CLAUDE.md`** ("Ideias levantadas, ainda não
+  decididas"). Continuam lista.
 
-Só o ambíguo vira pergunta — duas aulas no mesmo horário, ou nenhuma na grade
-(feriado, reposição, grade não cadastrada). Com uma turma só, nem isso.
+### Quando a fase de testes acabar
 
-Antes disto, **com duas turmas cadastradas o crachá do professor não fazia nada
-e a tela não dizia por quê** — recusa muda, que é o defeito que este projeto
-mais persegue.
+- **`auditoria/uids.csv`** volta a ser decisão: o padrão deve voltar a ser não
+  guardar o UID (`CLAUDE.md`, e a seção 4.5 do manual).
+- **`INTERVALO_MINIMO_MS`** ganha um valor medido do uso real, ou dá lugar à
+  regra da alternância.
+
+### Em aberto, sem data
+
+- **Safari e Firefox não têm pasta.** O app diz isso em vez de fingir que está
+  guardado (`docs/01_cofre.md`). Não há solução equivalente à do Chrome à
+  vista.
+- **A passada visual** (tipografia, espaço, claro/escuro, Mushroom cards) nas
+  telas de chamada e base (`docs/03_visual.md`).
+- **O que sobrou da Fase 4** (`docs/05_plano_execucao.md`): F (gravar em
+  disco por lote), H e I (contas e referências refeitas a cada crachá). Não
+  fizeram falta com turmas reais; só voltam se o diário mostrar custo.
+- **Bancada do `LeitorSerial`.** Pausada. Retomar só se o dongle falhar de um
+  jeito que o Web Serial resolva (sem foco, sem heurística de ritmo).

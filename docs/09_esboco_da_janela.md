@@ -1,7 +1,8 @@
 # 09 — Esboço da janela do favorito
 
 As telas da v2 (`docs/08_lancar_no_sigaa.md`) antes de uma linha de código.
-Esboço de 24/09/2026. É desenho, não captura: o desenho é
+Esboço de 24/09/2026. Especificação, não implementada; as três perguntas do
+fim continuam em aberto em 25/09/2026. É desenho, não captura: o desenho é
 [`esboco_sigaa/esboco.html`](esboco_sigaa/esboco.html), com os tokens do
 `estilo.css` e gente inventada, e as imagens saem dele por
 `scripts/gerar_esboco_sigaa.py`. Mudar uma tela é mudar o HTML e rodar o

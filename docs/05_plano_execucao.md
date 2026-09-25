@@ -1,5 +1,19 @@
 # Plano de execução — triagem de 15/09/2026
 
+**Registro, encerrado em 25/09/2026.** As quatro fases foram feitas e estão no
+ar desde a versão de 17/09 em diante. O que sobrou sem fazer (itens A em
+parte, F, G, H e I da Fase 4) foi para "Daqui para frente", em
+`docs/00_roadmap.md`, e só volta como conserto de falha observada ou depois do
+congelamento. Os números de linha abaixo são de 15-17/09 e não batem mais com
+o código.
+
+| Fase | Estado final |
+|---|---|
+| 1 · Bugs de dados | Feita, 15-16/09 |
+| 2 · Reorganização de UI | Feita, 15-16/09 (itens 4-6 de um jeito um pouco diferente do escrito, ver abaixo) |
+| 3 · Grade simplificada e completa | Feita, 15/09; o bloco de meio-dia saiu da simplificada em 16/09 |
+| 4 · Desempenho e escala | B, C, D, E feitos (17/09). A em parte. F, H, I não feitos, de propósito. G continua valendo |
+
 Registro do que foi levantado numa sessão de triagem depois da primeira aula
 real com o Adsum, para a próxima sessão não recomeçar a investigação do zero.
 Cada item tem a causa raiz (arquivo + linha, lida no código, não suposta) e a
@@ -128,7 +142,9 @@ qualquer `Aula` que ainda aponte pro hash velho.
 ## Fase 2 — reorganização de UI, tudo já decidido
 
 Itens 1-3 **feitos** (16/09/2026), commitados local: `3cff356`, `258f95c`.
-411 testes verdes. Itens 4-6 seguem para a próxima leva.
+411 testes verdes. Itens 4-6 **feitos** na leva seguinte (`0a445ac`,
+`da2f350`, `1c36954`, `2c793b6`, `f25b58a`), com as diferenças anotadas em
+cada um.
 
 - ~~**Botão "Ver presenças" sumindo:**~~ **feito.** Link secundário sempre
   visível na tela de repouso, independente do estado.
@@ -141,20 +157,29 @@ Itens 1-3 **feitos** (16/09/2026), commitados local: `3cff356`, `258f95c`.
   resumo agregado por sessão encerrada, usado para calibrar
   `INTERVALO_MINIMO_MS`) — mas "Últimas leituras" é ferramenta de depuração,
   não uso do dia a dia. Fix: recolhida por padrão, "Chamadas recentes" em
-  primeiro plano. Sem perda de dado.
+  primeiro plano. Sem perda de dado. **Feito** (`0a445ac`): "Chamadas
+  recentes" sempre visível e antes; "Últimas leituras" recolhida.
 - **Rodapé de Ajustes:** `Diagnóstico · Manual · GitHub` (o botão GitHub abre
   `github.com/willianrupert/adsum`), e "Willian Rupert" em cinza claro
-  embaixo, estilo copyright © 2026.
+  embaixo, estilo copyright © 2026. **Feito**, com "Manual" no lugar de
+  "Manual e LGPD" (`da2f350`); o crédito ficou "© 2026 Adsum", e a autoria
+  foi para a capa do manual (`f25b58a`).
 - **Popup de novidades:** lista estática versionada embutida no build
   (`nucleo/novidades.ts`, `{ versao, resumo }[]`), comparada com "última
   versão vista" guardada em preferências locais (mesmo padrão de
   `encerradas()`). Toast de uma linha no rodapé, aparece uma vez por versão
   nova, dispensa sozinho. Sem servidor, sem CDN — mantém a regra de "nada
-  sai do computador".
+  sai do computador". **Feito** (`1c36954`), e depois virou popup com até
+  quatro tópicos e botão de fechar (`2c793b6`).
 
 ## Fase 3 — escopo maior, desenho antes de código
 
-### Grade simplificada e grade completa
+### Grade simplificada e grade completa — **feita** (15/09/2026)
+
+Implementada como desenhada abaixo (`6d115f1` a `bc80bfc`). Em 16/09 o bloco
+de meio-dia (12:00–12:50) saiu da grade simplificada (`2f074eb`) e ficou só
+na completa. O par da noite (18:50–19:40 / 19:40–20:30) continua inferido, sem
+confirmação registrada contra a grade oficial.
 
 Hoje `BLOCOS` (`src/nucleo/horarios.ts:33`) é uma lista fixa de 9 blocos que
 é ao mesmo tempo a unidade de marcação **e** a unidade de exibição
@@ -231,9 +256,9 @@ inclusive com benchmark real rodado contra o código de produção (script
 descartado depois, não commitado — os números abaixo são de execução real,
 não estimativa).
 
-**B, C, D, E implementados e testados em 17/09/2026** (não commitado —
-fica pra revisão do autor antes de subir; nada disso vai ao ar no mesmo dia
-de uma validação real). Suíte inteira verde (448 testes + os novos deste
+**B, C, D, E implementados e testados em 17/09/2026**, commitados em
+`8625360` e publicados nas versões seguintes, depois da validação real
+daquele dia. Suíte inteira verde (448 testes + os novos deste
 lote), `tsc --noEmit` limpo. A e F continuam só registrados, sem
 implementação — A por pedido explícito do autor ("guardar por ora"), F por
 mudar uma garantia que precisa de conversa antes.
@@ -250,6 +275,15 @@ produz o mesmo sintoma invisível. **Status: registrado, sem decisão do
 autor ainda** — ele pediu para guardar e ver como sai a validação de
 17/09/2026 antes de decidir se vale dar voz a essa recusa (ex.: toast
 "leitura ignorada, parecia digitação").
+
+**Estado final: em parte.** Em 17/09 (`357e99b`) o `LeitorTeclado` passou a
+distinguir recusa por ritmo de recusa por formato, a guardar as últimas cinco
+recusas e a contar perdas de foco, tudo no Diagnóstico. Em 21/09 (`a730487`)
+a recusa ganhou voz: `aoRecusar` toca e avisa na tela quando a rajada **quase
+foi crachá** (rápida em formato desconhecido, ou UID bem formado fechado por
+Enter). Rajada lenta, com cara de gente digitando, continua sem aviso, de
+propósito: é o que acontece quando alguém digita a data num campo. Desde
+22/09 toda recusa também vai para o diário (`diagnostico/<dia>.log`).
 
 ### B — Leituras e consultas não escopadas por turma — **implementado** (17/09/2026)
 
@@ -458,7 +492,7 @@ alcance desse mecanismo específico, no porte de turma descrito (50+80,
 60h). H e I não entram nessa conta porque o próprio benchmark já mostrou
 que são pequenos demais pra mover o número nesta escala.
 
-### Status (17/09/2026)
+### Status (17/09/2026), e o que aconteceu depois
 
 B, C, D, E: implementados, testados (suíte inteira + testes novos de
 escopo/desempenho), `tsc --noEmit` limpo. **Não commitado** — fica para
@@ -470,6 +504,11 @@ guardado, sem decisão. F segue fora, precisa de conversa antes.
 professor — mesma regra que já valeu para não tocar em nada em
 16-17/09/2026. Revisar o diff, rodar a suíte mais uma vez do zero, e só
 então decidir o deploy.
+
+**Depois:** B-E subiram. F, H e I nunca foram feitos, e não fizeram falta: na
+aula de 24/09, o pior crachá levou 13 ms para identificar e 7 ms para gravar.
+O que pesou de verdade, na fila de 300 pelo rádio (23/09), foi o redesenho da
+tela, e isso está em `docs/00_roadmap.md`.
 
 ---
 

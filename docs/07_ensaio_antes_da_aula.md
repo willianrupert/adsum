@@ -3,7 +3,11 @@
 O que roda depois de todo deploy, antes de a versão encontrar uma turma. A
 regra está no `CLAUDE.md` ("Como uma mudança chega à sala"); este é o
 roteiro. Nasceu em 23/09/2026, depois de uma aula perdida por mudanças
-testadas só sobre base limpa.
+testadas só sobre base limpa. Documento vivo, revisto em 25/09/2026.
+
+Rodado inteiro pela primeira vez em 23/09, sobre `39830c2`. Achou dois
+defeitos que a suíte não achava (`docs/06_falhas_em_sala.md`, J e K), e a
+aula seguinte foi a primeira limpa.
 
 ## Antes de começar
 
@@ -15,6 +19,8 @@ testadas só sobre base limpa.
   atualiza" (seção 3). Uma cópia já usada em ensaio tem o sal de quem ensaiou
   no chaveiro, e não é mais a base dele.
 - **O dongle de verdade**, e o foco na janela do Adsum.
+- **O emulador C3** (`ferramentas/emulador-de-cracha`), para os crachás que
+  ninguém tem na mão: desconhecidos, fila. O rig S3 não existe mais.
 - **A versão certa.** Diagnóstico → carimbo da build. Tem que ser o do
   deploy que se está validando.
 
@@ -33,10 +39,19 @@ Se algo sair diferente, pare ali. Não precisa terminar a lista.
    fechada. Reabrir a turma continua de onde parou.
 5. **Marcar alguém presente à mão.** A linha aparece em
    `registros/<turma>.csv`, com matrícula.
-6. **Diagnóstico → rig S3 → "Rodar chamada com histórico (22/09)".** Passa.
-   Encerrar a chamada de teste no fim.
+6. **A busca com três crachás desconhecidos**, pelo emulador C3. O primeiro
+   abre a busca; o segundo e o terceiro são recusados com aviso dentro dela;
+   o campo fica sem dígitos; o nome escolhido fica com o primeiro crachá.
+
+   O cenário "Rodar chamada com histórico (22/09)" do Diagnóstico precisa do
+   rig S3, que o autor não tem mais, e não roda com o C3: o PN532 mascara o
+   primeiro byte do UID emulado. Enquanto não houver outro rig, o que cobre
+   esse caminho é a suíte (`ChamadaComHistorico.test.tsx`,
+   `AulaReal2209.test.tsx`), sobre o cofre anonimizado.
 7. **`diagnostico/<dia>.log`.** Cada `cracha` com `decisao=`, `evento=` e os
-   tempos; um `encerrar` por encerramento; nenhum `erro_`.
+   tempos; um `encerrar` por encerramento; nenhum `erro_`; a conferência nas
+   linhas de base (`repetidos=19` em CIN0144, `repetidos=8` em CIN0114, na
+   cópia do cofre do Prof. Paulo).
 
 ## 2. Casos de borda
 
@@ -75,3 +90,25 @@ aberta pela versão nova. Com a pasta descompactada de novo:
   recupera; uma aula perdida em silêncio, não.
 - **Manda o zip toda sexta**, nas quatro primeiras semanas depois de cada
   mudança.
+
+## 5. O zip de sexta
+
+Nas quatro semanas depois de cada mudança, o professor manda o zip da pasta
+toda sexta. É a régua do congelamento: uma semana só conta como limpa depois
+de lida.
+
+No `diagnostico/*.log` da semana:
+
+- nenhuma `recusa` de crachá de verdade (digitação num campo não aparece);
+- nenhum `desconhecido_durante_busca` fora do esperado, e nenhuma busca
+  interrompida;
+- nenhum `id_ocupado` e nenhum `erro_`;
+- `conferencia_divergiu` só com os números da linha de base. Outro número é
+  problema novo;
+- os tempos por crachá na mesma ordem de 24/09 (13 ms identificar, 7 gravar,
+  48 tela, no pior caso).
+
+Em `registros/`, a contagem de presentes de cada dia contra o registro à mão
+do professor, quando ele tiver. O zip fica fora do repositório: tem nome,
+matrícula e UID de verdade. Se uma aula tiver falha, vira cofre anonimizado
+(`scripts/anonimizar_cofre.py`) antes de qualquer conserto.

@@ -6,6 +6,12 @@ Adsum direto para o SIGAA. Funcionalidade nova: espera as quatro semanas
 limpas do `CLAUDE.md`, e cada camada abaixo só começa com a de baixo
 provada.
 
+**Estado em 25/09/2026:** especificação e esboço das telas prontos
+(`docs/09_esboco_da_janela.md`). Nenhum portão começou. O próximo passo não é
+código: é o portão A, o HTML da planilha salvo pelo Prof. Paulo. Três
+perguntas de desenho esperam o autor (fim do `09`). O congelamento vai até a
+quarta semana limpa; a primeira foi a de 24/09.
+
 Como ler: §1–3 dizem **o quê** e **com que garantias**. §4 diz **como**,
 camada por camada, cada uma com contrato, leis e o que custa se ela falhar.
 §5 é a experiência. §6 são os portões que validam a rota antes de ela
@@ -325,7 +331,7 @@ contra a fixture. Faz quatro coisas e nenhuma outra:
 3. **Aplicar** o plano com *comparar e trocar*: cada célula só é escrita se
    ainda estiver como na leitura (`antes`). Se o professor mexeu nela no
    meio tempo, fica como ele deixou, e a barra diz quantas foram puladas.
-4. **Pintar e desfazer:** azul no que mudou, amarelo nas diferenças
+4. **Pintar e desfazer:** azul no que mudou, laranja nas diferenças
    (intocadas), uma barra no pé com o resumo e **Desfazer**.
 
 Nunca clica, navega, envia formulário nem executa o que recebe. Lei:
@@ -396,7 +402,7 @@ em modo popup encostada à direita (~420 × 640), com
 redimensiona, minimiza e fecha. Dentro, uma folha:
 
 - *Tudo confere* — um visto e "SIGAA e Adsum iguais em 12 aulas". Fechar.
-- *Há o que lançar* — diferenças primeiro, num cartão amarelo: nome, dia, os
+- *Há o que lançar* — diferenças primeiro, num cartão laranja: nome, dia, os
   dois valores, "o SIGAA fica como está", e **Aceitar o SIGAA** em cada uma.
   Depois um cartão por aula (dia, presentes, faltas), todos marcados;
   desmarcar deixa o dia de fora; tocar no cartão mostra quem faltou, pelo
@@ -417,7 +423,7 @@ redimensiona, minimiza e fecha. Dentro, uma folha:
 consegue ficar sempre por cima; por isso ela não precisa. Se sumir atrás do
 Chrome antes disso, o favorito de novo a traz de volta, no mesmo estado.
 
-**De volta à planilha.** Azul no que mudou, amarelo nas diferenças, barra de
+**De volta à planilha.** Azul no que mudou, laranja nas diferenças, barra de
 uma linha no pé que reserva o próprio espaço e recolhe para uma pílula:
 "Adsum preencheu 3 aulas. Azul é o que mudou. Confira e clique em Gravar
 Frequências." e **Desfazer**. O mouse sobre uma célula azul diz "Adsum:

@@ -1,6 +1,11 @@
 # 01 — O cofre
 
-Não implementado. Desenho registrado em 18/08/2026 para a próxima sessão.
+Documento vivo. Desenho de 18/08/2026, implementado de 19/08 a 22/09/2026.
+Revisto em 25/09/2026.
+
+As seções seguem a ordem em que as perguntas apareceram. As que descrevem uma
+decisão depois mudada dizem isso no próprio lugar, e apontam para a seção
+nova. Para o formato de cada arquivo, coluna por coluna: `docs/02_formato.md`.
 
 ## A inversão
 
@@ -20,12 +25,26 @@ aconteceu de fato.
 
 ```
 Adsum/
-  config.json        sal, preferências, versão do formato
-  vinculos.json      uid_hash → { matricula, nome, papel, criadoEm }
+  LEIA-ME.txt              o que é cada arquivo e como recuperar tudo
+  config.json              sal atual, chaveiro de sais anteriores, instalação
+  vinculos.json            uid_hash → { matricula, nome, papel, criadoEm, salId }
+  grade.json               os horários de aula
   turmas/
-    IF685-T01.json   lista da turma: matrícula, nome completo, nome curto, papel
-  registros.csv      append-only, é o que a planilha consome
+    IF685-T01.json         lista da turma: matrícula, nome completo, nome curto, papel
+  registros/
+    IF685-T01.csv          append-only, uma linha por evento: o log
+  faltas/
+    IF685-T01.csv          aluno × dia, recalculada: é o que se entrega
+  diagnostico/
+    2026-09-24.log         o diário técnico do dia, sem nome e sem UID
+  auditoria/
+    uids.csv               UID real de cada crachá (fase de testes, desligável)
 ```
+
+O desenho de 18/08 tinha um `registros.csv` só. Virou um por turma: cada turma
+vira uma planilha, e turma nova não mexe em arquivo de turma antiga.
+`faltas/`, `diagnostico/` e `auditoria/` vieram depois, e cada um tem seção
+própria abaixo.
 
 **JSON para o que é reescrito, CSV para o que só cresce.** Vínculo e turma são
 corrigidos — nome errado, papel trocado, aluno que trancou — então reescrever o
@@ -40,6 +59,10 @@ arquivo só, e uma turma corrompida não leva as outras junto.
 |---|---|---|
 | `config.json`, `vinculos.json`, `grade.json`, `turmas/*.json` | reescrita inteira | são corrigidos: nome errado, papel trocado, aluno que trancou |
 | `registros/<turma>.csv` | **append, uma linha por vez** | é log; e regravar a cada crachá seria trabalho crescente por leitura |
+| `faltas/<turma>.csv` | reescrita inteira, só da turma que mudou | é relatório derivado do log, não registro |
+| `diagnostico/<dia>.log` | append, em lote a cada 5 s | nada no caminho de um crachá espera por ele |
+| `auditoria/uids.csv` | append, uma linha na primeira leitura de cada crachá | as leituras seguintes não custam nada |
+| `LEIA-ME.txt` | reescrito a cada sincronização | é documentação gerada, e tem de bater com os arquivos ao lado |
 
 O append não é preferência de estilo. Com cinquenta alunos numa fila, regravar
 o arquivo a cada leitura cresce com o tamanho da aula. E com a pasta
@@ -49,12 +72,14 @@ perdida**, e `evento_id` deduplica na junção.
 
 ## Regras
 
-- **`registros.csv` é append puro.** Sem `seek`, sem reescrita, sem rename.
+- **`registros/<turma>.csv` é append puro.** Sem `seek`, sem reescrita, sem rename.
   Linha só vale se terminar em `\n`; truncada na ponta é descartada.
 - **Escrever antes de dar o retorno.** O bipe significa "está no disco", não
   "eu ouvi". `close()` do `FileSystemWritableFileStream` antes do som.
-- **`version` no `config.json`.** Sem ele, a primeira mudança de formato
-  encontra pastas antigas sem saber que são antigas.
+- **`versao` no topo de todo JSON** (`nucleo/cofre.ts`, hoje `1`). Sem ela, a
+  primeira mudança de formato encontra pastas antigas sem saber que são
+  antigas. Arquivo gravado por uma versão mais nova é recusado com o motivo,
+  em vez de lido pela metade e regravado sem o que não foi entendido.
 
 ## Pasta sincronizada
 
@@ -63,12 +88,14 @@ computador saem de graça, sem servidor nosso. Em troca vêm dois problemas que
 não existiam:
 
 - **Duas máquinas escrevendo.** Para os JSON, a última escrita vence e alguma
-  coisa se perde. Para `registros.csv`, append-only faz o serviço sozinho: o
+  coisa se perde. Para `registros/`, append-only faz o serviço sozinho: o
   serviço de sincronização pode gerar arquivo em conflito, mas **nenhuma linha
   se perde**, e `evento_id` deduplica na junção. É mais uma razão para o log
   nunca virar JSON.
-- **O sal viaja junto.** Ele mora no `config.json` e é o único segredo do
-  sistema — pasta sincronizada significa sal na nuvem. É decisão consciente, e
+- **O sal viaja junto.** Ele mora no `config.json`, com o chaveiro dos
+  anteriores, e é o segredo do sistema — pasta sincronizada significa sal na
+  nuvem. Durante a fase de testes, `auditoria/uids.csv` também: é o arquivo
+  mais sensível da pasta (ver "Os códigos dos crachás", abaixo). É decisão consciente, e
   o alternativo (sal fora da pasta) quebra a troca de máquina, que era o ponto.
 
 ## Quando a gravação falha
@@ -185,6 +212,11 @@ navegadores são.
 - **não troca por cima de vínculos locais.** Trocar o sal com base própria no
   lugar torna irreconhecíveis os crachás daqui. A recusa é dita, e o caminho
   humano já existe: "Passar os crachás a outro professor" pergunta antes.
+
+**Mudado em 22/09/2026.** O segundo ponto não protegia o bastante: com
+crachás dos dois lados, a recusa deixava mortos os vínculos do cofre; com a
+base vazia, o sal local era sobrescrito, e foi assim que 40 vínculos de 17/09
+se perderam. Hoje nenhum sal é descartado. Ver "O chaveiro de sais", abaixo.
 
 ### O que continua sendo diferente entre navegadores, e é esperado
 
@@ -340,3 +372,124 @@ segunda tem cache velho, a pasta tem o novo, e não havia gesto que trouxesse.
 O botão nos Ajustes chama `restaurar`, e ele **não apaga nada**: vínculos entram
 por chave e eventos por `evento_id`, então reler duas vezes dá no mesmo. É a
 mesma propriedade que já sustentava a idempotência do log.
+
+## O chaveiro de sais (22/09/2026)
+
+Em 17/09 o app foi reinstalado apagando os dados do site. A instalação nova
+sorteou um sal; religar a pasta trouxe o do cofre **para a base**, mas a tela
+continuou calculando hash com a cópia que tinha lido ao abrir. A turma inteira
+foi recadastrada num sal que só existia na memória da aba, e na aula seguinte
+nenhum daqueles 40 vínculos batia. Nenhuma linha de erro.
+
+Duas regras saíram daí, e as duas estão no `CLAUDE.md`:
+
+- **Nenhum sal é descartado.** `Config.saisAnteriores` é um chaveiro: trocar
+  o sal arquiva o anterior, restaurar junta os do cofre aos daqui, importar
+  crachás de outro professor junta em vez de trocar. `adotarSal` só adota o
+  sal do cofre como atual quando a base não tem vínculo nenhum; nos outros
+  casos, acrescenta. `identificarCracha` procura o crachá em todos.
+- **O sal vem da base, a cada crachá.** `identificarCracha` lê o chaveiro de
+  `repositorio.lerConfig()` (em cache no adaptador). Nenhuma tela guarda cópia.
+
+Cada vínculo novo guarda `salId`, a impressão do sal em que foi feito (não o
+sal). Com isso o Diagnóstico ("Segredo dos crachás") conta, sem crachá na mão,
+quantos vínculos dependem de um sal que este navegador não tem.
+
+O que ficou perdido: os 40 vínculos de 17/09. O sal existiu só naquela aba.
+Cada pessoa encosta de novo uma vez e é recadastrada pela busca.
+
+## Ligar uma pasta mescla (22/09/2026)
+
+Até 22/09, ligar a pasta a uma base que já tinha dados só trazia os sais, e a
+primeira gravação reescrevia `vinculos.json` a partir da base: todo vínculo que
+só a pasta tinha sumia. Achado ao preparar uma cópia do cofre do professor para
+ensaio, antes de acontecer com ele.
+
+`mesclarDaPasta` traz da pasta os vínculos, turmas e grade que a base não tem,
+sem tocar nos que ela tem. Os caminhos, completos:
+
+| Caminho | Direção | Quando |
+|---|---|---|
+| `sincronizar` | base → pasta | a cada mudança |
+| `restaurar` | pasta → base | base vazia, ou "Reler a pasta" nos Ajustes |
+| `mesclarDaPasta` | pasta → base, só o que falta | ao ligar a pasta a uma base com dados |
+| `lembrarSaisDaPasta` | sais da pasta → chaveiro | quando a base já tem crachás |
+| `conferirLog` | nos dois sentidos, só acrescenta | ao ligar a pasta e ao encerrar a chamada |
+| `repararLog` | base → log, reescrevendo | só pelo botão de conserto, depois de uma gravação que falhou |
+
+`Desconectar`, nos Ajustes, solta a pasta sem apagar arquivo nem base. Esvaziar
+a pasta pela mão não apaga nada na base, de propósito: pasta no iCloud ainda
+não sincronizada aparece vazia, e apagar a turma por isso seria perdê-la por
+um problema de rede.
+
+## A conferência planilha × base (22/09/2026)
+
+Em 22/09 a base recusou, calada, metade de uma chamada (`evento_id` repetido),
+enquanto as linhas já tinham ido para o CSV da pasta. Arquivo e base
+discordavam, e ninguém olhava.
+
+`conferirLog` compara os dois ao ligar a pasta e ao encerrar a chamada:
+
+- evento que a base tem e o arquivo não: acrescentado ao arquivo;
+- linha que o arquivo tem e a base não: trazida para a base por
+  `importarEventos`. Linha com `evento_id` repetido e conteúdo diferente entra
+  com id derivado (`<id>.2`), só na base; o arquivo fica como foi gravado;
+- o que não se resolve sozinho vai para o diário como divergência.
+
+Nenhuma linha é apagada, nos dois lados. Na primeira abertura depois do
+conserto, na máquina do professor (24/09), a conferência trouxe de volta as
+19 + 13 leituras que a versão antiga tinha descartado. Desde então, todo
+encerramento registra `repetidos=19` (CIN0144) e `repetidos=8` (CIN0114): são
+os repetidos históricos de 22/09, e são a linha de base para ler o zip de
+sexta. Outro número é problema novo.
+
+## O diário (22/09/2026)
+
+`diagnostico/<dia>.log` (`ambiente/diario.ts`): abertura do app, cada leitura
+(hash curto, sal em que foi achado, decisão, `evento_id`, tempos de
+identificar, gravar e redesenhar), recusas do leitor, gravações na pasta com
+tempo, foco da janela, `evento_id` ocupado, crachá desconhecido, erro sem dono.
+**Sem nome e sem UID.** O crachá aparece pelos oito primeiros caracteres do
+hash: o bastante para seguir a mesma pessoa dentro do dia.
+
+Gravado em lote a cada 5 s. Nada no caminho de um crachá espera o diário: com
+a marca de sal gravada a cada leitura, o teste de 100 alunos chegou a perder
+uma rajada.
+
+Se o diário existisse em 17/09, a manhã daquele dia teria causa. Não tem
+(`docs/06_falhas_em_sala.md`, falha 2).
+
+## Os códigos dos crachás (22/09/2026)
+
+**Exceção temporária à regra do sal, decidida pelo autor.** Durante a fase de
+testes, `auditoria/uids.csv` guarda o UID real de cada crachá, ao lado do
+`uid_hash` do vínculo em que ele foi achado, uma linha na primeira leitura.
+Ligado por padrão; desliga-se em Diagnóstico → "Códigos dos crachás", que
+avisa enquanto estiver ligado.
+
+O motivo é prático: se um sal se perder de novo, o vínculo se refaz a partir
+deste arquivo, sem pedir à turma que recadastre. O custo, dito no `LEIA-ME.txt`
+e na seção 4.5 do manual: **quem tiver este arquivo consegue copiar um
+crachá.** Por isso ele é separado do log de presença, não tem nome, e apagá-lo
+não afeta a chamada.
+
+Revisitar ao fim da fase de testes, com o padrão voltando a ser não guardar.
+Não estender a outros lugares.
+
+## A planilha de faltas
+
+`faltas/<turma>.csv` é o que o professor entrega: aluno por linha, nome
+completo, um dia de aula por coluna, faltas contadas (`nucleo/faltas.ts`,
+`planilhaDeFaltas`). É relatório, não registro: recalculada a cada mudança,
+só da turma que mudou, e quem manda é `registros/`.
+
+Ela conta presença à mão e "Não presente". A ordem entre uma correção à mão e
+um crachá vem do número do evento, que só anda para frente em cada instalação,
+e não do `quando`: "Ver presenças" grava a correção ao meio-dia do dia
+corrigido. Crachá gravado depois de um "Não presente" devolve a presença
+(decidido pelo autor em 23/09).
+
+Em 17/09 `planilhaDeFaltas` custava 1,3 s por crachá num fim de semestre
+simulado, porque crescia com o quadrado do histórico. Reescrita com índice
+prévio por aluno e dia: 2,3 ms, mesma saída célula a célula
+(`docs/05_plano_execucao.md`, Fase 4).

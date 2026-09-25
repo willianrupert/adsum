@@ -1,5 +1,8 @@
 # Falhas em sala: o mapa
 
+Documento vivo. Revisto em 25/09/2026. Toda falha nova com aluno na frente
+entra aqui, com causa provada nos dados, conserto e o teste que segura.
+
 Tudo o que deu errado com alunos na frente, de 15 a 22/09/2026: o que se viu,
 por que aconteceu, o que mudou e qual teste impede a volta. Reconstruído a
 partir do cofre do professor, e não de memória: os logs de `registros/`
@@ -49,7 +52,7 @@ como fechado: causa provada nos dados, conserto, e um teste que falha sem ele.
 | 10, C | `importarEventos` traz toda linha; `conferirLog` iguala arquivo e base nos dois sentidos | `sincronia.test.ts`, `AulaReal2209.test.tsx` |
 | B | `mesclarDaPasta` | `sincronia.test.ts` |
 | D, E | `chamadaViva` no `sessionStorage`: recarregar mantém a chamada, e a versão nova espera ela terminar | `Incidente2209.test.tsx` |
-| G | A grade é reavaliada pelo relógio | **Sem teste próprio ainda** de "acende quando a hora chega"; os testes do repouso só cobrem o ponto com a hora já certa |
+| G | A grade é reavaliada pelo relógio | **Sem teste próprio ainda** de "acende quando a hora chega"; os testes do repouso só cobrem o ponto com a hora já certa (conferido em 25/09) |
 
 ## Por que a suíte não pegou antes
 
@@ -75,3 +78,38 @@ Duas mudanças fecham isso:
 Todo cofre novo que vier de uma aula com problema deve virar um arquivo em
 `testes/cofres/` antes do conserto: é o jeito de garantir que o conserto foi
 testado no estado em que o problema aconteceu.
+
+## Depois de 22/09: o que o ensaio achou antes da sala
+
+Nenhum destes chegou a uma aula. Foram achados em 23/09, pelo ensaio da
+versão publicada sobre a cópia do cofre do professor e pela fila de 300
+crachás no rádio (emulador C3 + dongle). Estão aqui porque, sem o ensaio,
+teriam chegado.
+
+| # | Onde apareceu | O que se viu | Causa | Conserto | Teste |
+|---|---|---|---|---|---|
+| H | Fila de 300, 0,72 s por crachá | 4 alunos em ~110 recusados como "dois crachás quase juntos" a 0,7 s do anterior | Com a aba ocupada, a identificação de um crachá terminava depois da do seguinte; o intervalo negativo passava por menor que 400 ms | Identificar e decidir andam em fila, na ordem de chegada; intervalo negativo nunca é recusa | `sessao.test.ts`, `TelaAula.test.tsx` |
+| I | Fila de 300 | Cinco encerramentos em 2,5 s | A tela demorava a responder e cada clique em Encerrar gravava um | Um clique só | `TelaAula.test.tsx` |
+| J | Ensaio, passo 2 | "Remover crachá" parecia não fazer nada | 32 alunos com um vínculo em cada sal; o botão apagava o primeiro que achasse, às vezes o morto | Apaga todos os vínculos da pessoa | `TelaAula.test.tsx` |
+| K | Ensaio, passo 2 | "Não presente" e depois o crachá: o contador não voltava | A regra supunha a correção sempre depois do crachá | Crachá gravado depois da remoção devolve a presença; a ordem vem do número do evento | `faltas.test.ts` |
+| L | Ensaio, passo 6 | Os primeiros dígitos de cada crachá caíam no campo de busca | O leitor só reconhece a rajada depois de alguns caracteres | A cada crachá lido com a busca aberta, os dígitos saem do campo | `TelaAula.test.tsx` |
+| M | Ensaio, passo 6 | Um segundo crachá desconhecido tomava o lugar do primeiro, em silêncio | A busca aceitava trocar de alvo | Uma busca por vez: o segundo é recusado com aviso | `TelaAula.test.tsx` |
+
+**Não consertado, e registrado:** na mesma fila de 300, a tela ficou até ~2 s
+atrás da fila. Nada se perdeu (300 de 300), mas o redesenho de cada crachá
+esperava os anteriores. Nenhuma turma real tem 300; está em
+`docs/00_roadmap.md`.
+
+## 24/09: a primeira aula limpa
+
+CIN0144, versão `39830c2`, lida pelo zip da pasta do professor. 46 presentes
+(36 por crachá, 9 pela busca, 1 à mão). Nenhuma recusa, nenhum "rápido
+demais", nenhuma busca interrompida, nenhum erro, nenhum `evento_id`
+repetido. A conferência trouxe de volta, na primeira abertura, as 19 + 13
+leituras que a versão antiga tinha descartado.
+
+Por crachá, no pior caso: 13 ms para identificar, 7 para gravar, 48 para a
+tela. Fila de gente: 45 alunos em 5 min 19 s.
+
+É a primeira das quatro semanas limpas (`CLAUDE.md`, "Como uma mudança chega à
+sala").

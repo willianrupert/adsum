@@ -603,3 +603,63 @@ linhas de base (`repetidos=19` e `repetidos=8`).
   sentido para ele decidir.
 
 É a primeira das quatro semanas limpas que liberam funcionalidade nova.
+
+## 24/09/2026, tarde — a v2 desenhada, sem uma linha de código
+
+No dia da primeira aula limpa, o Prof. Paulo pediu a "v2": levar as
+presenças do Adsum direto para o SIGAA. Não existe importação oficial de
+frequência, e a planilha "Lançar Freq. em Planilha" traz o semestre inteiro,
+com matrícula. Desenho completo em `docs/08_lancar_no_sigaa.md`; telas em
+`docs/09_esboco_da_janela.md`. Decisões do autor, nesse dia:
+
+- **A ponte é um bookmarklet** (o "favorito"). Extensão recusada, nem como
+  plano B. O favorito lê a página crua, abre o Adsum numa janela própria e
+  conversa com ela por `postMessage`; a inteligência fica no Adsum, onde há
+  testes, e o conserto de uma mudança do SIGAA é um deploy, não um favorito
+  novo. Código autossuficiente, nunca carregado de fora: um Adsum
+  comprometido leria a sessão do SIGAA.
+- **O Gravar é sempre do professor**, e a ferramenta nunca vê senha: é a
+  leitura dos Arts. 22 e 54 da PoSIC da UFPE. Nenhuma requisição própria ao
+  SIGAA, nenhuma navegação, nenhum formulário enviado.
+- **Matrícula ou nada.** Nunca casar por nome; nunca mudar célula já lançada;
+  nunca inventar dia.
+- **Ajuste e auditoria como linhas novas**: "Aceitar o SIGAA" grava um ajuste
+  sem tocar no evento de presença, e cada célula tocada vai para
+  `sigaa/<turma>.csv`.
+- **Validação em portões** (A a E), começando pelo HTML real da planilha do
+  docente, antes e depois de um Gravar. Nenhum portão depois do C escreve no
+  SIGAA sem o anterior.
+
+Registrado também: a aula na UFPE é de 50 min (Portaria Normativa 07/2022,
+citada pelo próprio SIGAA), então `periodosDoBloco` está certo e o "60" do
+manual de sistemas é antigo. Trabalhos anteriores creditados na §7 do `08`,
+a começar pelo auto-sigaa do Prof. Filipe Calegario, indicado pelo Paulo.
+
+Espera o congelamento e o HTML real. Três perguntas de desenho continuam com
+o autor (`docs/09`).
+
+## 25/09/2026 — os docs alcançam o código
+
+Revisão de `docs/` inteira contra o código, na branch da v2. Vários
+documentos ainda diziam "não implementado" sobre coisas no ar desde agosto, e
+o roteiro descrevia o protocolo serial do A1. O que mudou:
+
+- `docs/README.md` novo: índice, o tipo de cada documento (vivo, registro,
+  especificação) e as regras para escrever aqui.
+- `00_roadmap.md` relido sem o A1: o que ficou de cada passo, o orçamento de
+  toques como está (a chamada abre com um gesto desde 17/09), e "Daqui para
+  frente".
+- `01_cofre.md` e `02_formato.md` com a pasta como ela é hoje: `registros/`
+  por turma, `faltas/`, `diagnostico/`, `auditoria/`, o chaveiro de sais, a
+  mescla ao ligar a pasta, a conferência e o número de evento reservado.
+- `05_plano_execucao.md` fechado como registro, com o estado final de cada
+  item; `06` e `07` alcançam o ensaio de 23/09 e o fato de o rig S3 não
+  existir mais.
+- O manual (`scripts/gerar_manual.cjs`, regenerado) deixou de dizer que a
+  chamada abre sozinha pela grade, que um crachá de outra pessoa é recusado e
+  que o número do crachá nunca é guardado. Ganhou `faltas/`, `diagnostico/` e
+  `auditoria/` na tabela da pasta, e a regra dos 400 ms como alarme, também
+  nos limites conhecidos. O botão "Manual" do app baixa da `main`: a correção
+  só chega ao professor quando esta branch for mesclada.
+
+Nenhuma decisão nova nesta passada: só o que o código e os commits já diziam.
