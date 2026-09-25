@@ -20,6 +20,7 @@ tudo volta.
 ![React · TypeScript](https://img.shields.io/badge/React%20%C2%B7%20TypeScript-1d1d1f)
 ![testes: vitest · jsdom](https://img.shields.io/badge/testes-vitest%20%C2%B7%20jsdom-0071e3)
 ![rede: nenhuma](https://img.shields.io/badge/rede-nenhuma-1d1d1f)
+[![licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-0071e3)](LICENSE)
 
 </div>
 
@@ -224,6 +225,12 @@ Criado por **Willian Rupert**, com o **Prof. Paulo Freitas de Araújo Filho**
 (CIn/UFPE), que levou o Adsum para a sala de aula e pediu boa parte do que ele
 faz. O desenho do lançamento no SIGAA parte do trabalho do Prof. Filipe
 Calegario ([auto-sigaa](https://github.com/filipecalegario/auto-sigaa)).
+
+## Licença
+
+[MIT](LICENSE), para o código e para os documentos, incluindo o manual e as
+imagens geradas. Pode ser usado, adaptado e redistribuído, mantendo o aviso de
+copyright.
 
 <div align="center">
 
