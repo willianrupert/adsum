@@ -7,7 +7,8 @@
 // dela, e cinco painéis de "não é uso do dia a dia" não deveriam pesar na
 // primeira vista dos Ajustes de verdade.
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { criarAgendador } from '../ambiente/agendador.ts'
 import { decidirRota } from '../nucleo/rota.ts'
 import { calcularUidHash, saisConhecidos, uidHashSintetico } from '../nucleo/hash.ts'
 import { uidInedito, hexParaUid } from '../nucleo/uid.ts'
@@ -676,12 +677,18 @@ export function Fluxo() {
     }
   }, [pasta, repositorio])
 
-  const mudou = useCallback(
-    async (turma?: string) => {
-      await recontar()
-      await gravarNaPasta(turma)
-    },
-    [recontar, gravarNaPasta],
+  // Uma execução por vez, coalescida: numa fila rápida, cada crachá pedia a
+  // sua, e elas rodavam em paralelo reescrevendo os mesmos arquivos. Ver
+  // `ambiente/agendador.ts`.
+  const aoMudar = useRef({ recontar, gravarNaPasta })
+  aoMudar.current = { recontar, gravarNaPasta }
+  const mudou = useMemo(
+    () =>
+      criarAgendador(async (turma) => {
+        await aoMudar.current.recontar()
+        await aoMudar.current.gravarNaPasta(turma)
+      }),
+    [],
   )
 
   /**

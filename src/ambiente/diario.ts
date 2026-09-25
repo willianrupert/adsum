@@ -28,6 +28,8 @@ let pasta: FileSystemDirectoryHandle | undefined
 let recentes: string[] = []
 let pendentes: { dia: string; linha: string }[] = []
 let relogio: ReturnType<typeof setTimeout> | undefined
+/** A gravação em andamento. Toda descarga entra atrás dela: ver `descarregar`. */
+let gravando: Promise<void> = Promise.resolve()
 
 const doisDigitos = (n: number) => String(n).padStart(2, '0')
 
@@ -43,11 +45,21 @@ export function caminhoDoDiario(dia: string): string {
   return `diagnostico/${dia}.log`
 }
 
+/**
+ * Um valor numa linha só. O diário é lido linha a linha, e `|` separa campo:
+ * mensagem de erro com quebra de linha (as de `DOMException` costumam ter)
+ * partia o registro em dois, e a segunda metade chegava ao zip sem hora nem
+ * tipo.
+ */
+function numaLinha(valor: string): string {
+  return valor.replace(/\s*[\r\n]+\s*/g, ' ⏎ ').replaceAll('|', '/')
+}
+
 export function registrar(tipo: string, dados: Record<string, Valor> = {}): void {
   const agora = new Date()
   const campos = Object.entries(dados)
     .filter(([, v]) => v !== undefined && v !== '')
-    .map(([k, v]) => `${k}=${v}`)
+    .map(([k, v]) => `${k}=${numaLinha(String(v))}`)
   const linha = [horaDe(agora), tipo, ...campos].join(' | ')
   recentes.push(linha)
   if (recentes.length > GUARDADAS_EM_MEMORIA) recentes = recentes.slice(-GUARDADAS_EM_MEMORIA)
@@ -67,7 +79,11 @@ export function registrar(tipo: string, dados: Record<string, Valor> = {}): void
  * nome de quem falhou.
  */
 export function semDono(onde: string, tarefa: () => Promise<unknown>): void {
-  void tarefa().catch((erro: Error) => registrar('erro_em_efeito', { onde, mensagem: erro?.message }))
+  // `then` e não `tarefa()` direto: uma tarefa que lança antes do primeiro
+  // `await` falharia fora do `catch`, justo o erro sem dono que isto evita.
+  void Promise.resolve()
+    .then(tarefa)
+    .catch((erro: Error) => registrar('erro_em_efeito', { onde, mensagem: erro?.message ?? String(erro) }))
 }
 
 /** Os 8 primeiros do hash: segue a pessoa sem identificá-la. */
@@ -107,6 +123,7 @@ export function esquecerDiario(): void {
   pasta = undefined
   recentes = []
   pendentes = []
+  gravando = Promise.resolve()
 }
 
 function agendar(): void {
@@ -114,8 +131,23 @@ function agendar(): void {
   relogio = setTimeout(() => void descarregar(), INTERVALO_MS)
 }
 
-/** Grava o lote agora. A tela de diagnóstico chama antes de mostrar o arquivo. */
-export async function descarregar(): Promise<void> {
+/**
+ * Grava o lote agora. A tela de diagnóstico chama antes de mostrar o arquivo.
+ *
+ * As descargas andam em fila. O relógio, a aba escondendo e o Diagnóstico
+ * podem pedir ao mesmo tempo, e sem a fila quem chegasse em segundo achava o
+ * lote já tomado pelo primeiro, voltava na hora e lia o arquivo antes de ele
+ * ser gravado. Na fila, voltar quer dizer que o que foi registrado até ali
+ * está no disco (ou de volta aos pendentes, se a pasta falhou).
+ */
+export function descarregar(): Promise<void> {
+  // `gravarLote` não rejeita (a falha da pasta volta para os pendentes); o
+  // `catch` é para a fila nunca travar se um dia rejeitar.
+  gravando = gravando.then(gravarLote).catch(() => undefined)
+  return gravando
+}
+
+async function gravarLote(): Promise<void> {
   clearTimeout(relogio)
   relogio = undefined
   const destino = pasta
@@ -124,15 +156,20 @@ export async function descarregar(): Promise<void> {
   pendentes = []
   const porDia = new Map<string, string[]>()
   for (const { dia, linha } of lote) porDia.set(dia, [...(porDia.get(dia) ?? []), linha])
+  const gravados = new Set<string>()
   try {
     for (const [dia, linhas] of porDia) {
       await acrescentar(destino, caminhoDoDiario(dia), linhas.join('\n') + '\n')
+      gravados.add(dia)
     }
   } catch {
-    // Pasta sem permissão ou desmontada: o lote volta para a fila e tenta de
-    // novo. A falha em si já aparece na tela pelo caminho de sempre
-    // (`falhaNaPasta`), não precisa de um segundo aviso daqui.
-    pendentes = [...lote, ...pendentes].slice(-GUARDADAS_EM_MEMORIA)
+    // Pasta sem permissão ou desmontada: o que não foi gravado volta para a
+    // fila e tenta de novo. Só o que não foi: o dia que já foi para o disco
+    // voltaria duplicado (aula que atravessa a meia-noite com a pasta caindo
+    // entre um arquivo e outro). A falha em si já aparece na tela pelo
+    // caminho de sempre (`falhaNaPasta`), não precisa de um segundo aviso.
+    const falta = lote.filter(({ dia }) => !gravados.has(dia))
+    pendentes = [...falta, ...pendentes].slice(-GUARDADAS_EM_MEMORIA)
   }
   agendar()
 }

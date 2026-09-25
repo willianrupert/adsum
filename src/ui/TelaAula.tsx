@@ -27,18 +27,18 @@
 // declarar.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { criarAgendador } from '../ambiente/agendador.ts'
 import { idDoSal, uidHashSintetico } from '../nucleo/hash.ts'
+import { eventoDe, leitorSuspeito, type EstatisticaDeIntervalos, type Sessao } from '../nucleo/sessao.ts'
+import { chaveDeIdentidade, diaLocal } from '../nucleo/faltas.ts'
 import {
-  contaPresenca,
-  decidir,
-  estatisticaDeIntervalos,
-  eventoDe,
-  leitorSuspeito,
-  type Decisao,
-  type EstatisticaDeIntervalos,
-  type Sessao,
-} from '../nucleo/sessao.ts'
-import { chaveDeIdentidade, diaLocal, presencasDoDia } from '../nucleo/faltas.ts'
+  depoisDeGravar,
+  ehDaPessoa,
+  estadoDaChamada,
+  MemoriaDaFila,
+  recadoAntesDeGravar,
+  type LinhaDaChamada,
+} from '../nucleo/chamada.ts'
 import type { Evento, Matriculado, Papel, Vinculo } from '../nucleo/tipos.ts'
 import { tocar } from '../ambiente/som.ts'
 import { ehConfirmavel, ehSimulavel } from '../portas/LeitorDeCracha.ts'
@@ -50,13 +50,6 @@ import { Busca } from './componentes/Busca.tsx'
 import { Ondas } from './componentes/Simbolos.tsx'
 import { Contador } from './componentes/Contador.tsx'
 import { Painel, Selo } from './componentes/Painel.tsx'
-
-interface Linha {
-  chave: string
-  nome: string
-  hora: string
-  tom: 'ok' | 'repetido' | 'desconhecido' | 'removido'
-}
 
 function hhmm(d: Date) {
   return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -94,25 +87,16 @@ export function TelaAula({
 
   const [presentes, setPresentes] = useState<Set<string>>(new Set())
   /**
-   * A mesma informação, atualizada na hora.
-   *
-   * O estado do React só chega no render seguinte, e entre um crachá e o
-   * próximo pode não haver render nenhum: numa fila rápida, duas leituras do
-   * mesmo crachá liam `presentes` desatualizado e a segunda virava presença
-   * nova em vez de duplicata. O contador não mudava — é um conjunto —, mas o
-   * log ganhava duas linhas `ok` para a mesma pessoa.
+   * Quem já passou, a última leitura aceita e os intervalos — atualizados na
+   * hora da decisão, fora do estado do React. Ver `MemoriaDaFila`, em
+   * `nucleo/chamada.ts`.
    */
-  /** A última leitura aceita de crachá de aluno. Ver `INTERVALO_MINIMO_MS`. */
-  const ultima = useRef<{ uidHash: string; em: Date }>(undefined)
-
-  /** Intervalo, em ms, de cada crachá aceito até o anterior — matéria-prima
-      de `estatisticaDeIntervalos`, ao encerrar. Ver o comentário lá. */
-  const intervalos = useRef<number[]>([])
+  const fila = useRef(new MemoriaDaFila())
 
   /**
    * Conta as leituras para o recado de uma não apagar o de outra.
    *
-   * `mostrar` roda antes dos `await` e `confirmar` depois deles, então com dois
+   * O recado de antes de gravar sai antes dos `await`, e o de depois só depois deles; com dois
    * crachás quase juntos a gravação do primeiro terminava **depois** de o
    * segundo já ter escrito o aviso na tela — e o limpava. Justamente o caso que
    * a regra do intervalo existe para tornar visível.
@@ -124,10 +108,9 @@ export function TelaAula({
   const encerrando = useRef(false)
   /** A fila de identificar e decidir. Ver o comentário em `aoLer`, abaixo. */
   const ordemDasLeituras = useRef<Promise<unknown>>(Promise.resolve())
-  const jaPresentes = useRef<Set<string>>(new Set())
   /**
    * Espelha `presentes` (estado), pra `aoEncerrar` poder ler a contagem sem
-   * cair no mesmo closure desatualizado que `jaPresentes` já existe para
+   * cair no mesmo closure desatualizado que `fila` já existe para
    * evitar (ver o comentário dela, acima) — os dois `aoEncerrar?.(...)`
    * abaixo rodam dentro de handlers assíncronos que não recebem `presentes`
    * como dependência fresca. Achado em 22/09/2026: sem isto, "Fim da aula"
@@ -136,7 +119,7 @@ export function TelaAula({
    * lia o conjunto errado (só crachá).
    */
   const presentesRef = useRef<Set<string>>(new Set())
-  const [linhas, setLinhas] = useState<Linha[]>([])
+  const [linhas, setLinhas] = useState<LinhaDaChamada[]>([])
   const [recado, setRecado] = useState<string>()
   const [procurando, setProcurando] = useState<string>()
   /**
@@ -232,7 +215,7 @@ export function TelaAula({
    */
   const vinculoDe = useCallback(
     (p: Matriculado): Vinculo | undefined =>
-      vinculos.find((v) => (p.matricula ? v.matricula === p.matricula : v.nome === p.nome)),
+      vinculos.find((v) => ehDaPessoa(v, p)),
     [vinculos],
   )
 
@@ -326,13 +309,10 @@ export function TelaAula({
 
   // Reabrir o app no meio da aula tem que reencontrar quem já passou. A fonte
   // é o log, não a memória da tela — fechar o notebook não pode zerar a chamada.
-  //
-  // **Uma chamada por turma por dia**, como no SIGAA. Até 22/09/2026 a conta
-  // começava em `abertaEm`: encerrar e reabrir voltava a zero, e o professor
-  // via a turma inteira sumir no meio da aula. Agora vale o dia de `abertaEm`
-  // inteiro — reabrir é continuar, e quem já passou é "repetido", não
-  // presença nova.
+  // A regra (uma chamada por turma por dia, quem conta, o que aparece na
+  // lista) mora em `estadoDaChamada`, em `nucleo/chamada.ts`.
   const recarregar = useCallback(async () => {
+    const marca = fila.current.marca()
     const [eventos, vinculosAtuais] = await Promise.all([
       // Só a turma desta aula: o índice já existe, e ler a base inteira do
       // professor a cada crachá não tinha por que acontecer aqui. Ver
@@ -341,92 +321,24 @@ export function TelaAula({
       repositorio.listarVinculos(),
     ])
     setVinculos(vinculosAtuais)
-    const daAula = eventos.filter((e) => e.turma === sessao.turma && diaLocal(e.quando) === dia)
-    // Crachá de professor nunca conta presença — nem o próprio cadastro dele
-    // (ver `contaPresenca`, em `nucleo/sessao.ts`). O evento no log não
-    // carrega `papel` — não é dado da chamada, é dado da pessoa —, então quem
-    // desempata aqui é o vínculo atual: hash de professor sai da contagem,
-    // mesmo reconstruindo do zero depois de um recarregamento.
-    const hashesDeProfessor = new Set(
-      vinculosAtuais.filter((v) => v.papel === 'professor').map((v) => v.uidHash),
-    )
-    // `jaPresentes.current`: só crachá real, por `uidHash` — é o que
-    // `decidir()` usa pra distinguir presença nova de "repetido" na fila de
-    // leitura em tempo real (`nucleo/sessao.ts`). Presença manual não entra
-    // aqui: ela não carrega um `uidHash` de verdade (usa
-    // `uidHashSintetico()`, sorteado a cada clique), e misturar quebraria
-    // esse dedup — não é o mesmo problema do contador abaixo.
-    const porCrachaReal = new Set(
-      daAula
-        .filter((e) => e.origem === 'cracha' && e.resultado === 'ok' && !hashesDeProfessor.has(e.uidHash))
-        .map((e) => e.uidHash),
-    )
-    jaPresentes.current = porCrachaReal
-
-    // `presentes`: o contador grande do topo — "quantas pessoas estão na
-    // sala agora". Achado em 22/09/2026: ficava contando só crachá, e
-    // travava em zero a aula inteira quando o professor seguia pela via
-    // manual (dongle ausente ou quebrado) — o oposto do que essa tela
-    // precisa mostrar bem na hora em que o crachá falhou.
-    //
-    // Reaproveita `presencasDoDia`, não uma união de "ok" à parte: um "não
-    // presente" depois de um crachá já aceito precisa **descontar**, e só a
-    // regra de "manual mais recente vence" (a mesma do selo por linha,
-    // abaixo) resolve isso — uma união simples de eventos "ok" nunca
-    // esqueceria alguém removido. `hashesDeProfessor` sai antes de entrar
-    // na conta: o crachá do professor grava `origem: 'cracha'` como
-    // qualquer outro (`decidir()`/`contaPresenca`, em `nucleo/sessao.ts`),
-    // e sem filtrar aqui ele contaria como um aluno presente.
-    const semCrachaDeProfessor = daAula.filter(
-      (e) => !(e.origem === 'cracha' && hashesDeProfessor.has(e.uidHash)),
-    )
-    const presentesConjunto = new Set(
-      [...presencasDoDia(semCrachaDeProfessor, sessao.turma, dia)]
-        .filter(([, v]) => v.presente)
-        .map(([chave]) => chave),
-    )
-    presentesRef.current = presentesConjunto
-    setPresentes(presentesConjunto)
-    setPresencasHoje(presencasDoDia(daAula, sessao.turma, dia))
-    setLinhas(
-      daAula
-        // Correção manual entra na mesma lista — é a mesma área da tela que
-        // mostra "o que está acontecendo agora", e uma remoção é parte disso
-        // tanto quanto um crachá aceito.
-        .filter((e) => e.origem === 'cracha' || e.origem === 'manual')
-        .slice(0, 6)
-        .map((e) => ({
-          chave: e.eventoId,
-          // A recusa por dois crachás não tem nome — e "Crachá não cadastrado"
-          // ali seria mentira, além de mandar o professor procurar a pessoa numa
-          // lista onde ela pode muito bem estar.
-          nome:
-            e.resultado === 'rapido_demais'
-              ? 'Dois crachás de uma vez'
-              : e.nome || 'Crachá não cadastrado',
-          hora: hhmm(new Date(e.quando)),
-          // `rapido_demais` cai no tom de 'desconhecido' de propósito: os dois
-          // são recusa, e a lista não precisa de um terceiro vermelho.
-          // Remoção manual (`'removido'`) ganha o tom próprio — vermelho, como
-          // qualquer recusa — pra a lista continuar mostrando o estado atual,
-          // não só chegadas.
-          tom:
-            e.origem === 'manual'
-              ? e.resultado === 'removido'
-                ? 'removido'
-                : 'ok'
-              : e.resultado === 'ok'
-                ? 'ok'
-                : e.resultado === 'duplicado'
-                  ? 'repetido'
-                  : 'desconhecido',
-        })),
-    )
+    const estado = estadoDaChamada(eventos, vinculosAtuais, sessao.turma, dia)
+    fila.current.recomecar(estado.porCracha, marca)
+    presentesRef.current = estado.presentes
+    setPresentes(estado.presentes)
+    setPresencasHoje(estado.presencasHoje)
+    setLinhas(estado.linhas)
   }, [repositorio, sessao, dia])
 
+  // Uma releitura por rajada, não uma por crachá: ver `ambiente/agendador.ts`.
+  const recarregarAtual = useRef(recarregar)
   useEffect(() => {
-    semDono('recarregar a aula', recarregar)
+    recarregarAtual.current = recarregar
   }, [recarregar])
+  const recarregarJa = useMemo(() => criarAgendador(() => recarregarAtual.current()), [])
+
+  useEffect(() => {
+    semDono('recarregar a aula', recarregarJa)
+  }, [recarregar, recarregarJa])
 
   /**
    * Grava o vínculo de um crachá recém-identificado — cadastro do modo de
@@ -450,7 +362,7 @@ export function TelaAula({
           (v) =>
             v.papel === 'professor' &&
             v.uidHash !== uidHash &&
-            (v.sintetico || (pessoa.matricula ? v.matricula === pessoa.matricula : v.nome === pessoa.nome)),
+            (v.sintetico || ehDaPessoa(v, pessoa)),
         )
         if (antigo) {
           await repositorio.removerVinculo(antigo.uidHash)
@@ -493,13 +405,13 @@ export function TelaAula({
       // cada sal (32 alunos na base do Paulo): apagar só o primeiro podia
       // apagar o morto, e a tela não mudava — "nada aconteceu", no ensaio de
       // 23/09/2026. O botão promete que o crachá deixa de valer.
-      const daPessoa = vinculos.filter((v) => (p.matricula ? v.matricula === p.matricula : v.nome === p.nome))
+      const daPessoa = vinculos.filter((v) => ehDaPessoa(v, p))
       if (daPessoa.length === 0) return
       if (!confirm(`Desvincular o crachá de ${p.nomeCompleto}?`)) return
       semDono('remover crachá', async () => {
         for (const vinculo of daPessoa) await repositorio.removerVinculo(vinculo.uidHash)
         registrar('cracha_removido', { vinculos: daPessoa.length })
-        await recarregar()
+        await recarregarJa()
         aoMudarBase()
       })
     },
@@ -546,7 +458,7 @@ export function TelaAula({
       }))
       registrar('manual', { resultado: evento.resultado, evento: evento.eventoId })
       await aoRegistrar?.(evento)
-      await recarregar()
+      await recarregarJa()
       aoMudarBase()
     },
     [config.instalacaoId, efetivo, repositorio, aoRegistrar, recarregar, aoMudarBase],
@@ -570,154 +482,137 @@ export function TelaAula({
         // e redesenhar continuam soltos, como antes.
         const passo = ordemDasLeituras.current.then(async () => {
           const identificado = await identificarCracha(repositorio, leitura.uid)
-          return { ...identificado, identificadoEm: performance.now(), ...decidirEMarcar(identificado) }
+          // Decidir e marcar antes de qualquer `await`: dois crachás de uma
+          // mão chegam em centenas de milissegundos, e o segundo não pode
+          // encontrar a memória desatualizada — seria a fraude passando pela
+          // porta que a regra do intervalo existe para fechar.
+          const decisao = fila.current.decidir(identificado.uidHash, {
+            sessao,
+            vinculo: identificado.vinculo,
+            chamado: aCadastrar,
+            em: leitura.em,
+          })
+          return { ...identificado, identificadoEm: performance.now(), decisao }
         })
         ordemDasLeituras.current = passo.catch(() => undefined)
         const { uidHash, vinculo, sal, identificadoEm, decisao } = await passo
+        // Aceito na memória da fila até a gravação terminar, bem ou mal: ver
+        // `MemoriaDaFila.recomecar`.
+        try {
 
-        function decidirEMarcar({ uidHash, vinculo }: { uidHash: string; vinculo?: Vinculo }) {
-          const decisao = decidir(uidHash, {
-            sessao,
-            vinculo,
-            chamado: aCadastrar,
-            jaPresentes: jaPresentes.current,
-            ultima: ultima.current,
-            agora: leitura.em,
-          })
-
-          // Antes de qualquer `await`, como `jaPresentes`: dois crachás de uma mão
-          // chegam em centenas de milissegundos, e o segundo não pode encontrar
-          // este valor desatualizado — seria a fraude passando pela porta que a
-          // regra existe para fechar.
+          // Crachá que ninguém reconhece, sem ninguém chamado (modo comum):
+          // pergunta de quem é, ali, na hora, com a pessoa na frente. Nada é
+          // gravado enquanto ela não responder. Com alguém chamado, ver o
+          // `cadastro` logo abaixo — não passa por aqui.
           //
-          // A recusa **não** conta como leitura: assim a janela segue medida a
-          // partir do último crachá aceito, e insistir depressa não a reinicia.
+          // Desistir continua sendo um clique fora: quem não quiser vincular
+          // agora fecha, e o registro fica como crachá não cadastrado.
           //
-          // Só `presenca`/`cadastro` vira amostra: `repetido` é o mesmo crachá
-          // relido (outro ritmo, não interessa aqui), e sem `ultima.current`
-          // ainda não há par para medir — é o primeiro crachá da fila.
-          if (ultima.current && (decisao.tipo === 'presenca' || decisao.tipo === 'cadastro')) {
-            intervalos.current.push(leitura.em.getTime() - ultima.current.em.getTime())
-          }
-          if (decisao.tipo !== 'rapido_demais' && vinculo?.papel !== 'professor') {
-            ultima.current = { uidHash, em: leitura.em }
-          }
-
-          // Entra no conjunto antes de qualquer `await`: é isso que faz a leitura
-          // seguinte já saber que esta pessoa passou. Cadastro de professor
-          // (o "Cadastrar" explícito da seção de professores) não entra — ver
-          // `contaPresenca`: é o professor gravando o próprio crachá, não
-          // alguém chegando como aluno.
-          if (contaPresenca(decisao)) {
-            jaPresentes.current.add(uidHash)
-          }
-          return { decisao }
-        }
-
-        // Crachá que ninguém reconhece, sem ninguém chamado (modo comum):
-        // pergunta de quem é, ali, na hora, com a pessoa na frente. Nada é
-        // gravado enquanto ela não responder. Com alguém chamado, ver o
-        // `cadastro` logo abaixo — não passa por aqui.
-        //
-        // Desistir continua sendo um clique fora: quem não quiser vincular
-        // agora fecha, e o registro fica como crachá não cadastrado.
-        //
-        // **Uma busca por vez.** Com a busca aberta, outro crachá desconhecido
-        // não toma o lugar do primeiro: trocar em silêncio fazia o nome
-        // escolhido para quem está na frente ir para o crachá de quem veio
-        // atrás (bancada de 23/09/2026). O segundo é recusado em voz alta e
-        // encosta de novo depois. Crachá conhecido segue contando normalmente.
-        if (decisao.tipo === 'desconhecido') {
-          tocar('desconhecido')
-          if (procurandoRef.current === uidHash) return
-          if (procurandoRef.current) {
-            registrar('desconhecido_durante_busca', { hash: curto(uidHash) })
-            setAvisoDaBusca('Outro crachá novo chegou e não foi contado. Termine esta busca e peça para encostar de novo.')
+          // **Uma busca por vez.** Com a busca aberta, outro crachá desconhecido
+          // não toma o lugar do primeiro: trocar em silêncio fazia o nome
+          // escolhido para quem está na frente ir para o crachá de quem veio
+          // atrás (bancada de 23/09/2026). O segundo é recusado em voz alta e
+          // encosta de novo depois. Crachá conhecido segue contando normalmente.
+          if (decisao.tipo === 'desconhecido') {
+            tocar('desconhecido')
+            if (procurandoRef.current === uidHash) return
+            if (procurandoRef.current) {
+              registrar('desconhecido_durante_busca', { hash: curto(uidHash) })
+              setAvisoDaBusca('Outro crachá novo chegou e não foi contado. Termine esta busca e peça para encostar de novo.')
+              return
+            }
+            registrar('desconhecido', { hash: curto(uidHash) })
+            procurandoRef.current = uidHash
+            setProcurando(uidHash)
             return
           }
-          registrar('desconhecido', { hash: curto(uidHash) })
-          procurandoRef.current = uidHash
-          setProcurando(uidHash)
-          return
-        }
 
-        // Cadastro grava o vínculo antes do evento: se algo falhar no meio,
-        // sobra um crachá vinculado sem presença — que se resolve encostando de
-        // novo — e não uma presença de alguém que o sistema não reconhece.
-        if (decisao.tipo === 'cadastro') {
-          await vincularCracha(decisao.pessoa, uidHash, leitura.em)
-          if (decisao.pessoa.papel === 'aluno') {
-            // Avança sozinho para o próximo pendente, pulando quem já foi
-            // marcado como pulado — mesmo gesto de sempre: chamar um nome não
-            // deveria custar um clique a mais para "próximo". Continua no
-            // modo de chamar nomes; sai dele só quando a fila de alunos
-            // acaba ou o professor volta explicitamente.
-            setChamadoChave((atual) => {
-              const indice = pendentesAlunos.findIndex((p) => p.chave === atual)
-              return proximoPendente(indice + 1)
-            })
-          } else {
-            // Cadastro de professor não é fila — foi um clique explícito em
-            // "Cadastrar", para uma pessoa só. Feito, volta a nada chamado.
-            setChamadoChave(undefined)
+          // Cadastro grava o vínculo antes do evento: se algo falhar no meio,
+          // sobra um crachá vinculado sem presença — que se resolve encostando de
+          // novo — e não uma presença de alguém que o sistema não reconhece.
+          if (decisao.tipo === 'cadastro') {
+            await vincularCracha(decisao.pessoa, uidHash, leitura.em)
+            if (decisao.pessoa.papel === 'aluno') {
+              // Avança sozinho para o próximo pendente, pulando quem já foi
+              // marcado como pulado — mesmo gesto de sempre: chamar um nome não
+              // deveria custar um clique a mais para "próximo". Continua no
+              // modo de chamar nomes; sai dele só quando a fila de alunos
+              // acaba ou o professor volta explicitamente.
+              setChamadoChave((atual) => {
+                const indice = pendentesAlunos.findIndex((p) => p.chave === atual)
+                return proximoPendente(indice + 1)
+              })
+            } else {
+              // Cadastro de professor não é fila — foi um clique explícito em
+              // "Cadastrar", para uma pessoa só. Feito, volta a nada chamado.
+              setChamadoChave(undefined)
+            }
           }
+
+          // Sem id ainda: quem cunha é `gravarEventoNovo`, na hora de gravar.
+          const rascunho = eventoDe(decisao, {
+            eventoId: '',
+            quando: leitura.em,
+            turma: sessao.turma,
+            uidHash,
+          })
+
+          // A tela responde na hora; o som espera a gravação.
+          //
+          // São duas promessas diferentes e vale separá-las: o olho precisa de
+          // resposta imediata para a fila não parecer travada, e o bipe significa
+          // **está salvo** — não "eu ouvi". Gravar antes de mostrar somava a
+          // latência do disco a cada crachá, e numa fila isso se sente.
+          const recado = recadoAntesDeGravar(decisao)
+          if (recado) setRecado(recado)
+
+          const evento =
+            rascunho &&
+            (await gravarEventoNovo(
+              repositorio,
+              config.instalacaoId,
+              leitura.em,
+              (eventoId) => ({ ...rascunho, eventoId }),
+              (ocupado) => registrar('id_ocupado', { evento: ocupado }),
+            ))
+          const gravadoEm = performance.now()
+          if (evento) {
+            await aoRegistrar?.(evento)
+            // O LED do leitor serial significa "está salvo", como o bipe: só
+            // depois da gravação. Leitor de teclado não tem como confirmar.
+            if (ehConfirmavel(leitor)) void leitor.confirmarGravacao()
+          }
+          if (decisao.tipo === 'encerrar') {
+            await repositorio.encerrarSessao()
+            aoEncerrar?.(
+              presentesRef.current.size,
+              leitura.em.getTime() - Date.parse(sessao.abertaEm),
+              fila.current.estatistica(),
+            )
+          }
+
+          // Só limpa o recado **desta** leitura: se outra chegou no meio, o
+          // recado na tela é dela, e apagá-lo escondia a recusa de dois
+          // crachás juntos.
+          const { som, limpaRecado } = depoisDeGravar(decisao, Boolean(evento))
+          if (limpaRecado && minha === geracao.current) setRecado(undefined)
+          if (som) tocar(som)
+          await recarregarJa()
+          aoMudarBase()
+          const fim = performance.now()
+          registrar('cracha', {
+            hash: curto(uidHash),
+            sal: vinculo ? sal : undefined,
+            vinculo: vinculo ? vinculo.papel : 'nenhum',
+            decisao: decisao.tipo,
+            evento: evento?.eventoId,
+            identificar_ms: Math.round(identificadoEm - inicio),
+            gravar_ms: Math.round(gravadoEm - identificadoEm),
+            tela_ms: Math.round(fim - gravadoEm),
+          })
+        } finally {
+          fila.current.concluir(uidHash)
         }
-
-        // Sem id ainda: quem cunha é `gravarEventoNovo`, na hora de gravar.
-        const rascunho = eventoDe(decisao, {
-          eventoId: '',
-          quando: leitura.em,
-          turma: sessao.turma,
-          uidHash,
-        })
-
-        // A tela responde na hora; o som espera a gravação.
-        //
-        // São duas promessas diferentes e vale separá-las: o olho precisa de
-        // resposta imediata para a fila não parecer travada, e o bipe significa
-        // **está salvo** — não "eu ouvi". Gravar antes de mostrar somava a
-        // latência do disco a cada crachá, e numa fila isso se sente.
-        mostrar(decisao)
-
-        const evento =
-          rascunho &&
-          (await gravarEventoNovo(
-            repositorio,
-            config.instalacaoId,
-            leitura.em,
-            (eventoId) => ({ ...rascunho, eventoId }),
-            (ocupado) => registrar('id_ocupado', { evento: ocupado }),
-          ))
-        const gravadoEm = performance.now()
-        if (evento) {
-          await aoRegistrar?.(evento)
-          // O LED do leitor serial significa "está salvo", como o bipe: só
-          // depois da gravação. Leitor de teclado não tem como confirmar.
-          if (ehConfirmavel(leitor)) void leitor.confirmarGravacao()
-        }
-        if (decisao.tipo === 'encerrar') {
-          await repositorio.encerrarSessao()
-          aoEncerrar?.(
-            presentesRef.current.size,
-            leitura.em.getTime() - Date.parse(sessao.abertaEm),
-            estatisticaDeIntervalos(intervalos.current),
-          )
-        }
-
-        confirmar(decisao, evento, minha)
-        await recarregar()
-        aoMudarBase()
-        const fim = performance.now()
-        registrar('cracha', {
-          hash: curto(uidHash),
-          sal: vinculo ? sal : undefined,
-          vinculo: vinculo ? vinculo.papel : 'nenhum',
-          decisao: decisao.tipo,
-          evento: evento?.eventoId,
-          identificar_ms: Math.round(identificadoEm - inicio),
-          gravar_ms: Math.round(gravadoEm - identificadoEm),
-          tela_ms: Math.round(fim - gravadoEm),
-        })
       })().catch((erro: Error) => {
         // Antes a falha aqui era uma promessa rejeitada sem dono: nada na tela,
         // nada em lugar nenhum. O crachá não contou, e ninguém soube por quê.
@@ -777,58 +672,11 @@ export function TelaAula({
       aoEncerrar?.(
         presentesRef.current.size,
         agora.getTime() - Date.parse(sessao.abertaEm),
-        estatisticaDeIntervalos(intervalos.current),
+        fila.current.estatistica(),
       )
       aoMudarBase()
     })
   }, [config.instalacaoId, sessao, repositorio, aoRegistrar, aoEncerrar, aoMudarBase, vinculos])
-
-  /**
-   * Antes de gravar: só pixels, para a fila nunca esperar o disco.
-   *
-   * O nome **não** pisca no lugar do contador. Celebrar cada leitura cansa
-   * depois da quinta, e com um crachá a cada 1,5 s vira ruído — o feedback é a
-   * linha que chega no topo da lista e o número que sobe. Calmo aguenta a aula
-   * inteira; festivo não.
-   */
-  function mostrar(decisao: Decisao) {
-    if (decisao.tipo === 'cedo_demais') {
-      setRecado(`Para encerrar, encoste de novo em ${Math.ceil(decisao.faltamMs / 1000)} s.`)
-    }
-    // Este é o único recado da tela que serve ao **professor** e não a quem
-    // encostou: o app não sabe distinguir fraude de fila apressada, mas sabe
-    // dizer que o padrão é fisicamente implausível. Quem julga está na sala.
-    if (decisao.tipo === 'rapido_demais') {
-      setRecado('Dois crachás quase juntos. O segundo não foi contado. Passe um de cada vez.')
-    }
-  }
-
-  /** Depois de gravar: o som. Bipe significa "está salvo". */
-  function confirmar(decisao: Decisao, evento?: Evento, minha = geracao.current) {
-    // Só limpa o que era **desta** leitura: se outra chegou no meio, o recado na
-    // tela é dela, e apagá-lo escondia a recusa de dois crachás juntos.
-    const limpar = () => minha === geracao.current && setRecado(undefined)
-
-    switch (decisao.tipo) {
-      case 'presenca':
-      case 'cadastro':
-        limpar()
-        return tocar('ok')
-      case 'repetido':
-        limpar()
-        return tocar('repetido')
-      case 'desconhecido':
-        return tocar('desconhecido')
-      case 'rapido_demais':
-        return tocar('desconhecido')
-      case 'cedo_demais':
-        return tocar('desconhecido')
-      case 'encerrar':
-        return tocar('encerramento')
-      default:
-        if (evento) tocar('ok')
-    }
-  }
 
   const chamadoAtual = aCadastrar
   // A fila de "Chamar nomes" (interruptor, setas, "Pular") é só dos alunos —
@@ -866,7 +714,7 @@ export function TelaAula({
           {linhas.map((l) => (
             <li key={l.chave} className={`coleta__linha coleta__linha--${l.tom}`}>
               <span>{l.nome}</span>
-              <time>{l.hora}</time>
+              <time>{hhmm(new Date(l.quando))}</time>
             </li>
           ))}
         </ol>
@@ -1329,7 +1177,7 @@ export function TelaAula({
                 registrar('busca_desistiu', { hash: curto(uidHash), evento: evento.eventoId })
                 await aoRegistrar?.(evento)
               }
-              await recarregar()
+              await recarregarJa()
               aoMudarBase()
             })
           }}
@@ -1362,7 +1210,7 @@ export function TelaAula({
                 await aoRegistrar?.(evento)
               }
               tocar('ok')
-              await recarregar()
+              await recarregarJa()
               aoMudarBase()
             })
           }}

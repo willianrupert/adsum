@@ -53,16 +53,40 @@ async function subpasta(
 }
 
 /**
+ * Gravações no mesmo arquivo andam em fila.
+ *
+ * `createWritable` escreve numa cópia e o `close` troca o arquivo inteiro. Duas
+ * gravações soltas no mesmo arquivo fazem a última a fechar apagar a outra:
+ * um acréscimo leva junto a linha do crachá anterior, uma reescrita com dados
+ * mais velhos vence a mais nova. Na fila, cada uma começa depois de a
+ * anterior fechar, na ordem em que foram pedidas.
+ */
+const filas = new WeakMap<FileSystemDirectoryHandle, Map<string, Promise<unknown>>>()
+
+function emFila<T>(raiz: FileSystemDirectoryHandle, caminho: string, gravar: () => Promise<T>): Promise<T> {
+  let porCaminho = filas.get(raiz)
+  if (!porCaminho) filas.set(raiz, (porCaminho = new Map()))
+  const anterior = porCaminho.get(caminho) ?? Promise.resolve()
+  const esta = anterior.then(gravar)
+  // A fila guarda só o fim: uma falha não trava as gravações seguintes.
+  const fim = esta.catch(() => undefined)
+  porCaminho.set(caminho, fim)
+  void fim.then(() => {
+    if (porCaminho.get(caminho) === fim) porCaminho.delete(caminho)
+  })
+  return esta
+}
+
+/**
  * Escreve um arquivo, criando as pastas do caminho.
  *
- * `close()` do fluxo é o que confirma a gravação — é depois dele que se pode
- * dizer que está no disco, e é por isso que o bipe da coleta vem depois.
+ * `close()` confirma a gravação: o bipe da chamada vem depois dele.
  */
-export async function escrever(
-  raiz: FileSystemDirectoryHandle,
-  caminho: string,
-  texto: string,
-): Promise<void> {
+export function escrever(raiz: FileSystemDirectoryHandle, caminho: string, texto: string): Promise<void> {
+  return emFila(raiz, caminho, () => escreverAgora(raiz, caminho, texto))
+}
+
+async function escreverAgora(raiz: FileSystemDirectoryHandle, caminho: string, texto: string): Promise<void> {
   const partes = caminho.split('/')
   const arquivo = partes.pop()!
   const pasta = await subpasta(raiz, partes)
@@ -118,7 +142,16 @@ export async function listarArquivos(
  * deduplica na junção. Reescrever o arquivo inteiro a cada crachá perderia a
  * aula da outra máquina, silenciosamente.
  */
-export async function acrescentar(
+export function acrescentar(
+  raiz: FileSystemDirectoryHandle,
+  caminho: string,
+  texto: string,
+  cabecalho?: string,
+): Promise<void> {
+  return emFila(raiz, caminho, () => acrescentarAgora(raiz, caminho, texto, cabecalho))
+}
+
+async function acrescentarAgora(
   raiz: FileSystemDirectoryHandle,
   caminho: string,
   texto: string,
