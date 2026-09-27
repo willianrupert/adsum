@@ -264,7 +264,7 @@ portas/       LeitorDeCracha, Repositorio
 adaptadores/  LeitorTeclado (dongle USB), LeitorSerial, LeitorSimulado,
               LeitorWebNfc, RepositorioDexie
 ambiente/     o navegador: pasta, diário, sincronia, agendador, preferências
-ui/           telas; ui/hooks e ui/aula são as peças de Fluxo e TelaAula
+ui/           telas; ui/hooks, ui/aula, ui/ajustes e ui/diagnostico são as peças
 ```
 
 O mapa módulo por módulo, o caminho de um crachá e as garantias sob carga

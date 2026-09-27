@@ -9,6 +9,7 @@ import { montarBancada, renderizarCom, type Bancada } from '../testes/montar.tsx
 import { TelaDiagnostico } from './TelaDiagnostico.tsx'
 import { registrarChamadaEncerrada } from '../ambiente/preferencias.ts'
 import * as arquivos from '../ambiente/arquivos.ts'
+import { gravarEventoNovo } from '../portas/Repositorio.ts'
 
 let bancada: Bancada
 
@@ -126,5 +127,69 @@ describe('exportar faltas', () => {
     expect(linhas[0]).toBe('nome;matricula;17/08/2026')
     expect(linhas).toContain('ANA PAULA MENDES;1;0')
     expect(linhas).toContain('BRENO OLIVEIRA;2;2')
+  })
+})
+
+// Revisão de 25/09/2026: duas ferramentas desta tela escreviam na base por
+// fora das regras que valem para o resto do app.
+describe('as ferramentas do Diagnóstico seguem as regras da base', () => {
+  it('importar registros não descarta linha de evento_id repetido com outro conteúdo', async () => {
+    const usuario = userEvent.setup()
+    const cabecalho = 'evento_id;quando;turma;matricula;nome;origem;resultado;uid_hash'
+    const texto = [
+      cabecalho,
+      'web-a1-20260922-0098;2026-09-22T10:00:00.000Z;IF685 · T01;1;Ana;cracha;ok;aaaa',
+      'web-a1-20260922-0098;2026-09-22T10:01:00.000Z;IF685 · T01;2;Breno;cracha;ok;bbbb',
+    ].join('\n')
+    vi.spyOn(arquivos, 'abrirTexto').mockResolvedValue({ nome: 'IF685-T01.csv', texto })
+
+    renderizarCom(bancada, <TelaDiagnostico />)
+    await usuario.click(await screen.findByRole('button', { name: /Registros/ }))
+    await usuario.click(await screen.findByRole('button', { name: 'Importar' }))
+
+    await waitFor(async () => expect(await bancada.repositorio.contarEventos()).toBe(2))
+  })
+
+  it('semear numera pela sequência reservada, sem ocupar números que ela ainda vai dar', async () => {
+    window.localStorage.setItem('adsum.modoDev', 'sim')
+    try {
+      // Uma chamada já gravada hoje: a numeração reservada está em uso.
+      await gravarEventoNovo(bancada.repositorio, bancada.config.instalacaoId, new Date(), (eventoId) => ({
+        eventoId,
+        quando: new Date().toISOString(),
+        turma: 'IF685 · T01',
+        nome: '',
+        origem: 'professor',
+        resultado: 'ok',
+        uidHash: 'prof',
+      }))
+      const usuario = userEvent.setup()
+      renderizarCom(bancada, <TelaDiagnostico />)
+      await usuario.click(await screen.findByRole('button', { name: /Estado do app/ }))
+      await usuario.click(await screen.findByRole('button', { name: 'Semear' }))
+      await waitFor(async () => expect(await bancada.repositorio.contarEventos()).toBe(5))
+
+      const usados = (await bancada.repositorio.listarEventos()).map((e) => Number(e.eventoId.split('-').pop()))
+      const proximo = await bancada.repositorio.reservarSequencia()
+      expect(usados.every((n) => n < proximo)).toBe(true)
+    } finally {
+      window.localStorage.removeItem('adsum.modoDev')
+    }
+  })
+
+  it('cancelar a pergunta de apagar não vira recado', async () => {
+    window.localStorage.setItem('adsum.modoDev', 'sim')
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    try {
+      const usuario = userEvent.setup()
+      renderizarCom(bancada, <TelaDiagnostico />)
+      await usuario.click(await screen.findByRole('button', { name: /Estado do app/ }))
+      await usuario.click(await screen.findByRole('button', { name: 'Apagar tudo' }))
+      expect(confirmar).toHaveBeenCalled()
+      expect(screen.queryByText(/cancelado/)).not.toBeInTheDocument()
+    } finally {
+      confirmar.mockRestore()
+      window.localStorage.removeItem('adsum.modoDev')
+    }
   })
 })

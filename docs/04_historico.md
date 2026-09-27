@@ -722,3 +722,20 @@ dentro do React inteiro: com a lista indexada e o recálculo coalescido, o
 teste de carga já não mostra o custo que isso resolveria, e é a mudança mais
 arriscada possível no caminho mais sensível. `TelaDiagnostico` e
 `TelaRepositorio` continuam grandes: estão fora do caminho do crachá.
+
+## 27/09/2026 — Base e Diagnóstico em painéis
+
+Pedido do autor, para que a v2 (lançar no SIGAA) comece sobre telas pequenas.
+`TelaDiagnostico` de ~800 para ~140 linhas e `TelaRepositorio` de ~800 para
+~200: painéis em `ui/diagnostico/` e `ui/ajustes/`, e `useTentativa` em
+`ui/hooks/`. Separar mostrou três defeitos, cada um com teste que falhava
+antes do conserto:
+
+- **Importar registros descartava calado a segunda linha de um `evento_id`
+  repetido**: chamava `acrescentarEvento` linha a linha em vez de
+  `importarEventos`, que guarda as duas.
+- **Semear numerava contando eventos**, o mesmo erro de 22/09, fora do
+  caminho da aula. Agora passa por `gravarEventoNovo`.
+- **Desistir de um "Apagar tudo" mostrava "cancelado"** como se fosse erro.
+
+Estão na branch, sem publicar.

@@ -233,8 +233,9 @@ e só depois de uma semana limpa ser lida:
   branch (25/09)** no domínio, na sincronia e nas duas telas grandes. Onde
   "aparelho" e "firmware" sobram, falam do leitor ESP32, que existe. A
   convenção está em `docs/10_codigo.md`.
-- **`TelaDiagnostico` e `TelaRepositorio` (~800 linhas cada)** são as próximas
-  a separar em peças. Fora do caminho do crachá.
+- **~~`TelaDiagnostico` e `TelaRepositorio` (~800 linhas cada).~~ Feito na
+  branch (27/09):** painéis em `ui/diagnostico/` e `ui/ajustes/`. No caminho,
+  três defeitos do Diagnóstico, cada um com teste (`06_falhas_em_sala.md`, U–W).
 
 ### Antes de publicar a branch
 

@@ -12,7 +12,7 @@ nucleo/       domínio puro: regras, formatos, decisões. Sem React, sem Dexie.
 portas/       LeitorDeCracha, Repositorio: o que o domínio precisa do mundo
 adaptadores/  LeitorTeclado, LeitorSerial, LeitorWebNfc, LeitorSimulado, RepositorioDexie
 ambiente/     o navegador: pasta, diário, sincronia, preferências, som, agendador
-ui/           telas; ui/hooks e ui/aula guardam as peças de Fluxo e TelaAula
+ui/           telas; ui/hooks, ui/aula, ui/ajustes e ui/diagnostico guardam as peças
 ```
 
 `ui/adsum.ts` é o único lugar que escolhe adaptadores. Uma tela que importa um
@@ -229,9 +229,17 @@ ajuda a descobrir por que não funcionou (o Diagnóstico, que fica no app).
 - Texto de tela segue a voz da interface do `CLAUDE.md`, não a dos
   comentários.
 
-## O que ainda é grande
+## Base e Diagnóstico: uma composição de painéis
 
-`ui/TelaDiagnostico.tsx` (~800 linhas) e `ui/TelaRepositorio.tsx` (~800) são os
-próximos candidatos a separar em peças. Ficaram para depois porque estão fora
-do caminho do crachá, e mudá-las agora não reduz nenhum ponto de falha da
-chamada.
+`ui/TelaRepositorio.tsx` (Base, ~200 linhas) e `ui/TelaDiagnostico.tsx`
+(~140) só carregam o estado e montam painéis. Cada painel mora em
+`ui/ajustes/` ou `ui/diagnostico/` e recebe o que precisa por props; nenhum
+lê a base por conta própria além do que o botão dele faz.
+
+Os botões dos dois passam por `useTentativa` (`ui/hooks/`): roda a ação,
+mostra o recado (`ok` ou `grave`) e recarrega. Um `confirm` recusado lança
+`CANCELADO`, que o `tentar` engole sem recado: desistir não é erro.
+
+As ferramentas do Diagnóstico seguem as regras da base como qualquer tela:
+importar registros passa por `importarEventos` (linhas com o mesmo
+`evento_id` não somem caladas) e semear numera por `gravarEventoNovo`.
