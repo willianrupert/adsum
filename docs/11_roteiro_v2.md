@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 35%
+## Andamento: 43%
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -55,7 +55,7 @@ leituras inventadas nesse formato, geradas por `src/testes/planilhaSigaa.ts`.
 | 2 | Conciliação por exemplo, e qual turma | 2 | 12 | feito, 27/09 |
 | 3 | As sete leis, sobre entradas geradas | 2 | 10 | feito, 27/09 |
 | 4 | Plano e validador | 3 | 8 | feito, 27/09 |
-| 5 | Protocolo: mensagens, versão, origem, `id` | 4 | 8 |  |
+| 5 | Protocolo: mensagens, versão, origem, `id` | 4 | 8 | feito, 27/09 |
 | 6 | Leitura: bruto provisório, datas das colunas, problemas | 1 | 6 |  |
 | 7 | Dexie v9 e a porta: ajustes e auditoria, só acréscimo | 7 | 10 |  |
 | 8 | Auditoria na pasta: `sigaa/<turma>.csv` | 7 | 5 |  |
@@ -159,6 +159,13 @@ esperam a decisão do autor.
 página abstrata (`ler`/`escrever` por linha e coluna). Lei: desfazer devolve
 cada célula ao valor lido. Build que gera o `javascript:` com teto de
 tamanho. Só os seletores esperam o HTML.
+
+**A decidir aqui:** o `08` diz que o favorito roda o mesmo validador do
+Adsum, e `validarPlano` precisa de uma `LeituraPlanilha`. Mas a interpretação
+da página mora no Adsum, para que mudar o SIGAA seja deploy e não favorito
+novo. Ou o favorito leva `lerPlanilha` junto (e pesa mais), ou valida contra
+o bruto que ele mesmo extraiu (célula ainda vazia, valor inteiro até o
+máximo lido). Visto em 27/09, ao escrever o protocolo.
 
 ### 12 · Jornada sem página (6)
 
