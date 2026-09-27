@@ -72,6 +72,16 @@ describe('validarPlano', () => {
     if (!r.ok) expect(r.problemas.join(' ')).toMatch(motivo)
   })
 
+  it('acha a linha pelo índice da página, não pela posição na lista', () => {
+    // A linha 1 da página teve a matrícula ilegível e ficou fora da leitura.
+    const semALinha1: LeituraPlanilha = {
+      ...leitura,
+      linhas: [leitura.linhas[0], { indice: 2, matricula: '3', celulas: [V, V, { tipo: 'bloqueada', motivo: 'feriado' }, V] }],
+    }
+    expect(validarPlano([ok(2, 0, 2)], semALinha1)).toMatchObject({ ok: true })
+    expect(validarPlano([ok(1, 0, 2)], semALinha1)).toMatchObject({ ok: false })
+  })
+
   it('recusa a mesma célula duas vezes', () => {
     const r = validarPlano([ok(1, 0, 2), ok(1, 0, 0)], leitura)
     expect(r).toMatchObject({ ok: false })
