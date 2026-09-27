@@ -16,7 +16,7 @@ import {
   paraJsonTurma,
   paraJsonVinculos,
 } from '../nucleo/cofre.ts'
-import { cabecalhoCsv, deCsv, linhaCsv, nomeDoArquivo, nomeSeguroDeTurma, paraCsv, porTurma } from '../nucleo/csv.ts'
+import { CABECALHO, cabecalhoCsv, deCsv, linhaCsv, nomeDoArquivo, nomeSeguroDeTurma, paraCsv, porTurma } from '../nucleo/csv.ts'
 import { planilhaDeFaltas, paraCsvDeFaltas } from '../nucleo/faltas.ts'
 import { saisConhecidos, salValido } from '../nucleo/hash.ts'
 import type { Evento } from '../nucleo/tipos.ts'
@@ -366,9 +366,43 @@ export async function lembrarSaisDaPasta(
   if (conteudo && salValido(conteudo.salHex)) await repositorio.lembrarSais(saisConhecidos(conteudo))
 }
 
+/** O que um arquivo solto é, pela pasta de onde veio ou, sem ela, pelo nome e pelo cabeçalho. */
+type Papel = 'config' | 'vinculos' | 'grade' | 'turma' | 'log' | 'fora' | 'desconhecido'
+
+/** Pastas do cofre que não são fonte de dado: relatório, diário, auditoria. */
+const PASTAS_FORA = new Set(['faltas', 'diagnostico', 'auditoria', 'sigaa'])
+
+function papelDoArquivo(arquivo: File, texto: string): Papel {
+  const partes = (arquivo.webkitRelativePath ?? '').split('/')
+  const pasta = partes.length > 2 ? partes[partes.length - 2] : undefined
+  const nome = arquivo.name
+  if (pasta === 'registros') return nome.endsWith('.csv') ? 'log' : 'desconhecido'
+  if (pasta === 'turmas') return nome.endsWith('.json') ? 'turma' : 'desconhecido'
+  if (pasta && PASTAS_FORA.has(pasta)) return 'fora'
+  if (nome === NOMES.config) return 'config'
+  if (nome === NOMES.vinculos) return 'vinculos'
+  if (nome === NOMES.grade) return 'grade'
+  if (nome === NOMES.leiaMe || nome.endsWith('.log')) return 'fora'
+  if (nome.endsWith('.json')) return 'turma'
+  if (!nome.endsWith('.csv')) return 'fora'
+  // Solto, sem pasta: `registros/X.csv` e `faltas/X.csv` têm o mesmo nome.
+  const primeira = texto.replace(/^\uFEFF/, '').split(/\r?\n/, 1)[0].trim()
+  if (primeira === CABECALHO) return 'log'
+  if (primeira.startsWith('nome;') || primeira.startsWith('uid_hex;')) return 'fora'
+  return 'desconhecido'
+}
+
 /**
- * Reconstrói a base a partir de arquivos escolhidos à mão: o caminho do
- * Safari e do Firefox, que leem arquivos mas não têm seletor de pasta.
+ * Traz o sal do cofre: o primeiro passo de qualquer restauração, porque sem
+ * ele os nomes voltam e as pessoas não (o mesmo crachá dá outro hash).
+ *
+ * **Nenhum sal é descartado.** Base vazia adota o do cofre como atual e
+ * guarda o seu no chaveiro; base com crachás mantém o atual e acrescenta os
+ * do cofre. Só o sal: o `instalacaoId` continua diferente em cada navegador,
+ * senão duas instalações cunhariam o mesmo `evento_id`.
+ *
+ * Os arquivos chegam soltos (Safari e Firefox, `webkitdirectory`), e o nome
+ * não identifica: o log e a planilha de faltas de uma turma têm o mesmo.
  */
 export async function restaurarDeArquivos(
   repositorio: Repositorio,
@@ -377,51 +411,51 @@ export async function restaurarDeArquivos(
   const problemas: string[] = []
   const lidos: string[] = []
 
-  const conteudo = new Map<string, string>()
-  for (const arquivo of arquivos) conteudo.set(arquivo.name, await arquivo.text())
+  const porPapel = new Map<Papel, { arquivo: File; texto: string }[]>()
+  for (const arquivo of arquivos) {
+    const texto = await arquivo.text()
+    const papel = papelDoArquivo(arquivo, texto)
+    porPapel.set(papel, [...(porPapel.get(papel) ?? []), { arquivo, texto }])
+  }
+  const doPapel = (papel: Papel) => porPapel.get(papel) ?? []
+  const nomeDe = (arquivo: File) => arquivo.webkitRelativePath || arquivo.name
 
   // O sal antes de tudo: ver `adotarSal`.
-  const configCru = conteudo.get(NOMES.config)
-  if (configCru) {
-    await adotarSal(repositorio, configCru, problemas)
-    lidos.push(NOMES.config)
+  for (const { arquivo, texto } of doPapel('config')) {
+    await adotarSal(repositorio, texto, problemas)
+    lidos.push(nomeDe(arquivo))
   }
 
-  const vinculosCru = conteudo.get('vinculos.json')
-  if (vinculosCru) {
-    const { conteudo: lista, problemas: falhas } = deJsonVinculos(vinculosCru)
+  for (const { arquivo, texto } of doPapel('vinculos')) {
+    const { conteudo: lista, problemas: falhas } = deJsonVinculos(texto)
     for (const vinculo of lista ?? []) await repositorio.gravarVinculo(vinculo)
     problemas.push(...falhas.map((f) => f.motivo))
-    lidos.push('vinculos.json')
+    lidos.push(nomeDe(arquivo))
   }
 
-  const gradeCru = conteudo.get('grade.json')
-  if (gradeCru) {
-    const { conteudo: lista, problemas: falhas } = deJsonGrade(gradeCru)
+  for (const { arquivo, texto } of doPapel('grade')) {
+    const { conteudo: lista, problemas: falhas } = deJsonGrade(texto)
     for (const aula of lista ?? []) await repositorio.gravarAula({ ...aula, id: undefined })
     problemas.push(...falhas.map((f) => f.motivo))
-    lidos.push('grade.json')
+    lidos.push(nomeDe(arquivo))
   }
 
-  for (const [nome, texto] of conteudo) {
-    // O LEIA-ME não conta como arquivo lido: quem escolher só ele ouve que não veio nada.
-    if (nome === NOMES.leiaMe) continue
-    if (nome === 'vinculos.json' || nome === 'grade.json' || nome === 'config.json') continue
+  for (const { arquivo, texto } of doPapel('turma')) {
+    const { conteudo: pessoas, problemas: falhas } = deJsonTurma(texto, arquivo.name)
+    if (pessoas?.length) await repositorio.salvarTurma(pessoas[0].turma, pessoas)
+    problemas.push(...falhas.map((f) => f.motivo))
+    lidos.push(nomeDe(arquivo))
+  }
 
-    if (nome.endsWith('.json')) {
-      const { conteudo: pessoas, problemas: falhas } = deJsonTurma(texto, nome)
-      if (pessoas?.length) await repositorio.salvarTurma(pessoas[0].turma, pessoas)
-      problemas.push(...falhas.map((f) => f.motivo))
-      lidos.push(nome)
-      continue
-    }
+  for (const { arquivo, texto } of doPapel('log')) {
+    const { itens, problemas: falhas } = deCsv(texto)
+    await importarEventos(repositorio, itens)
+    problemas.push(...falhas.map((f) => `${nomeDe(arquivo)}, linha ${f.linha}: ${f.motivo}`))
+    lidos.push(nomeDe(arquivo))
+  }
 
-    if (nome.endsWith('.csv')) {
-      const { itens, problemas: falhas } = deCsv(texto)
-      await importarEventos(repositorio, itens)
-      problemas.push(...falhas.map((f) => `${nome}, linha ${f.linha}: ${f.motivo}`))
-      lidos.push(nome)
-    }
+  for (const { arquivo } of doPapel('desconhecido')) {
+    problemas.push(`${nomeDe(arquivo)}: não parece um arquivo do Adsum, ficou de fora.`)
   }
 
   if (lidos.length === 0) {

@@ -116,15 +116,17 @@ ensaio. Detalhe em `docs/10_codigo.md`.
 | S | Por um instante, o resumo aparecia sobre a chamada ainda montada | `Fluxo` | `esquecerSessao` ao encerrar | `Fluxo.test.tsx` |
 | T | Diário: linha partida por erro com quebra de linha; dia duplicado; leitura antes da gravação; erro síncrono sem dono | `ambiente/diario.ts` | Valores numa linha, lote parcial, descargas em fila, `semDono` com `then` | `diario.test.ts` |
 
-## 27/09: o que separar o Diagnóstico achou
+## 27/09: o que separar o Diagnóstico e começar a v2 acharam
 
-Ferramentas de diagnóstico, fora da aula; nenhuma chegou à sala. Na branch.
+Fora da aula; nenhum chegou à sala. Na branch. O X está também na `main`,
+no caminho de recuperar a pasta onde não há seletor de diretório.
 
 | # | Risco | Onde estava | Conserto | Teste |
 |---|---|---|---|---|
 | U | Importar registros com `evento_id` repetido guardava uma linha só, sem aviso | Diagnóstico, painel de registros | `importarEventos` | `TelaDiagnostico.test.tsx` |
 | V | Semear numerava contando eventos e podia repetir um número já usado | Diagnóstico, semear | `gravarEventoNovo` | `TelaDiagnostico.test.tsx` |
 | W | Desistir de uma confirmação mostrava "cancelado" como erro | Base e Diagnóstico | `useTentativa` engole `CANCELADO` | `TelaDiagnostico.test.tsx` |
+| X | Recuperar a pasta inteira no Safari/Firefox perdia a chamada: `registros/X.csv` e `faltas/X.csv` têm o mesmo nome, e um apagava o outro (0 de 168 eventos no cofre de 22/09); faltas e `uids.csv` viravam um aviso falso por linha | `restaurarDeArquivos` (também na `main`) | Arquivo reconhecido pela pasta de onde veio e, solto, pelo cabeçalho | `restaurarDeArquivos.test.ts` |
 
 ## 24/09: a primeira aula limpa
 
