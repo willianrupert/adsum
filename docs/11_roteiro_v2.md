@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 27%
+## Andamento: 35%
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -54,7 +54,7 @@ leituras inventadas nesse formato, geradas por `src/testes/planilhaSigaa.ts`.
 | 1 | Tipos da leitura e gerador de leituras de teste | 0 | 5 | feito, 27/09 |
 | 2 | Conciliação por exemplo, e qual turma | 2 | 12 | feito, 27/09 |
 | 3 | As sete leis, sobre entradas geradas | 2 | 10 | feito, 27/09 |
-| 4 | Plano e validador | 3 | 8 |  |
+| 4 | Plano e validador | 3 | 8 | feito, 27/09 |
 | 5 | Protocolo: mensagens, versão, origem, `id` | 4 | 8 |  |
 | 6 | Leitura: bruto provisório, datas das colunas, problemas | 1 | 6 |  |
 | 7 | Dexie v9 e a porta: ajustes e auditoria, só acréscimo | 7 | 10 |  |
