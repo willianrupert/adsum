@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 82%
+## Andamento: 94%
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -60,7 +60,7 @@ leituras inventadas nesse formato, geradas por `src/testes/planilhaSigaa.ts`.
 | 7 | Dexie v9 e a porta: ajustes e auditoria, só acréscimo | 7 | 10 | feito, 27/09 |
 | 8 | Auditoria na pasta: `sigaa/<turma>.csv` | 7 | 5 | feito, 27/09 |
 | 9 | Porta `PonteSigaa` e o chão: lista para lançar à mão | porta | 8 | feito, 27/09 |
-| 10 | Folha do Adsum: rota `#/sigaa` e os três estados | 6 | 12 |  |
+| 10 | Folha do Adsum: rota `#/sigaa` e os três estados | 6 | 12 | feito, 27/09 |
 | 11 | Favorito sem DOM: comparar e trocar, desfazer, build | 5 | 10 | feito, 27/09 |
 | 12 | Jornada sem página, sobre cofre com histórico | 8 | 6 |  |
 
@@ -165,8 +165,28 @@ Como ficou, e por quê:
 Rota `#/sigaa` decidida por `decidirRota`; *Tudo confere*, *Há o que
 lançar*, *Recusa*; Preencher com o número de aulas marcadas; Aceitar o
 SIGAA; testada em jsdom contra o `RepositorioDexie` de verdade. As três
-perguntas do fim do `09` definem parte do esperado: os testes dessas partes
-esperam a decisão do autor.
+perguntas do fim do `09` foram decididas pelo autor em 27/09 (nomes atrás do
+toque, "Agora não" só fecha, aceitar num toque com Desfazer).
+
+Como ficou, e por quê:
+
+- **`#/sigaa` é decidida no `App`, como a vitrine, e não em `decidirRota`.**
+  A janela do favorito é uma segunda janela do Adsum, com `sessionStorage`
+  próprio: pelo caminho normal, `abrirBase` → `fecharChamadaDeAntes` fecharia
+  a chamada da janela principal no meio da aula. Ela abre só o repositório
+  (`abrirBaseDaJanelaSigaa`), sem leitor; o teste abre a janela com uma
+  chamada aberta e confere que ela continua.
+- **O que a folha mostra é função pura** (`nucleo/lancar/folha.ts`); a tela só
+  desenha. A conferência grava na auditoria as diferenças, uma vez por
+  leitura; "tudo confere" avisa a planilha na hora ("nada a preencher").
+- **No mesmo instante, vence o ajuste gravado depois**: sem isso, Desfazer
+  logo depois de Aceitar não desfazia (achado aqui, conserto no passo 2).
+
+Fica para depois, fora da conta: o cartão "Lançar no SIGAA" com o favorito
+para arrastar (espera o portão A: arrastar um favorito que ainda não lê a
+planilha não serve a ninguém) e a linha "Conferido com o SIGAA até" no
+cartão da turma (precisa de um registro de conferência sem diferença, que a
+auditoria hoje não guarda).
 
 ### 11 · Favorito sem DOM (10)
 

@@ -38,7 +38,7 @@ envelheceu também é informação.
 | [`05_plano_execucao.md`](05_plano_execucao.md) | registro | A triagem de 15/09/2026 e as quatro fases que saíram dela. Todas encerradas; o que sobrou está no roteiro |
 | [`06_falhas_em_sala.md`](06_falhas_em_sala.md) | vivo | Cada falha com aluno na frente: sintoma, causa, conserto e o teste que segura |
 | [`07_ensaio_antes_da_aula.md`](07_ensaio_antes_da_aula.md) | vivo | O roteiro que roda depois de todo deploy |
-| [`08_lancar_no_sigaa.md`](08_lancar_no_sigaa.md) | especificação | A v2, do micro ao macro. Não implementada |
+| [`08_lancar_no_sigaa.md`](08_lancar_no_sigaa.md) | especificação | A v2, do micro ao macro. Em construção na branch (`11`), nada publicado |
 | [`09_esboco_da_janela.md`](09_esboco_da_janela.md) | especificação | As telas da v2, desenhadas, e as perguntas que ainda são do autor |
 | [`10_codigo.md`](10_codigo.md) | vivo | As camadas, o caminho de um crachá, as garantias sob carga, o porquê de cada módulo e a convenção de comentários |
 | [`11_roteiro_v2.md`](11_roteiro_v2.md) | vivo | O passo a passo da v2 que não depende do HTML do SIGAA, com peso e andamento |

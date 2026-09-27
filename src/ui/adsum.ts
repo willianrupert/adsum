@@ -8,6 +8,8 @@ import { LeitorSimulado } from '../adaptadores/leitor/LeitorSimulado.ts'
 import { LeitorTeclado } from '../adaptadores/leitor/LeitorTeclado.ts'
 import { LeitorWebNfc } from '../adaptadores/leitor/LeitorWebNfc.ts'
 import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts'
+import { PonteJanela } from '../adaptadores/sigaa/PonteJanela.ts'
+import type { PonteSigaa } from '../portas/PonteSigaa.ts'
 import type { Config } from '../nucleo/tipos.ts'
 import type { LeitorDeCracha } from '../portas/LeitorDeCracha.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
@@ -126,6 +128,20 @@ export async function fecharChamadaDeAntes(repositorio: Repositorio): Promise<vo
   await repositorio.encerrarSessao()
   registrar('chamada_fechada_ao_abrir', { aberta_em: aberta.abertaEm })
 }
+
+/**
+ * A janela aberta pelo favorito do SIGAA é uma segunda janela do Adsum, com
+ * `sessionStorage` próprio. Por isso não passa por `abrirBase`: lá,
+ * `fecharChamadaDeAntes` fecharia a chamada da janela principal, no meio da
+ * aula. Aqui só o repositório, sem leitor e sem mexer na sessão.
+ */
+export async function abrirBaseDaJanelaSigaa(): Promise<Repositorio> {
+  const repositorio = new RepositorioDexie()
+  await repositorio.abrir()
+  return repositorio
+}
+
+export const ponteDaJanela = (): PonteSigaa => new PonteJanela(window)
 
 export const ContextoAdsum = createContext<Adsum | undefined>(undefined)
 

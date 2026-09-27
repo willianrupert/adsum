@@ -74,22 +74,15 @@ não como erro.
 Nunca um beco. Diz o que houve, onde clicar no SIGAA, e oferece o chão:
 lançar à mão, vendo quem faltou em cada aula.
 
-## Perguntas em aberto
+## As três perguntas, decididas
 
-Decisões do autor, não do desenho:
+Decididas pelo autor em 27/09/2026, as três pelo que o esboço já mostrava:
 
-1. **Nomes de quem faltou.** A janela mostra nomes ao tocar numa aula (tela
-   3). São dados que o Adsum já tem, na máquina do professor, e o favorito
-   continua sem ler nome nenhum. Mas se a tela estiver no projetor, a turma
-   vê. As opções:
-   - (a) escondidos atrás do toque, como no esboço;
-   - (b) sempre visíveis;
-   - (c) nunca na janela, só na lista para lançar à mão.
-2. **"Agora não".** Hoje só fecha a janela. Poderia também deixar as
-   diferenças pintadas de laranja na planilha, para o professor resolver à
-   mão sem preencher nada. Só fecha, ou fecha e pinta?
-3. **Aceitar o SIGAA.** O esboço aceita com um toque, sem pedir confirmação,
-   no estilo Apple de ação reversível. Como o ajuste é append-only, "voltar
-   atrás" seria um segundo ajuste, com o valor do Adsum — e a linha dele
-   mostraria "Desfazer" no lugar do botão até a janela fechar. Um toque com
-   Desfazer, ou pedir confirmação?
+1. **Nomes de quem faltou: atrás do toque.** O cartão da aula mostra só
+   números; tocar nele mostra quem faltou, pelo nome. Conferir é possível,
+   expor no projetor por acidente não.
+2. **"Agora não" só fecha.** Pintar as diferenças de laranja na planilha pede
+   que o plano leve as diferenças junto; pode vir depois.
+3. **Aceitar o SIGAA: um toque, com Desfazer.** O ajuste é só acréscimo, e
+   voltar atrás grava um segundo ajuste com o valor do Adsum; a linha mostra
+   Desfazer até a janela fechar.

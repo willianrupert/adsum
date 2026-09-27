@@ -1,6 +1,6 @@
 # 08 — Lançar no SIGAA
 
-Especificação da v2, do micro ao macro. Não implementado. Pedida pelo Prof.
+Especificação da v2, do micro ao macro. Em construção na branch, nada publicado. Pedida pelo Prof.
 Paulo em 24/09/2026, no dia da primeira aula limpa: levar as presenças do
 Adsum direto para o SIGAA. Funcionalidade nova: espera as quatro semanas
 limpas do `CLAUDE.md`, e cada camada abaixo só começa com a de baixo
@@ -11,6 +11,10 @@ provada.
 código: é o portão A, o HTML da planilha salvo pelo Prof. Paulo. Três
 perguntas de desenho esperam o autor (fim do `09`). O congelamento vai até a
 quarta semana limpa; a primeira foi a de 24/09.
+
+**Estado em 27/09/2026:** as três perguntas do `09` foram decididas, e tudo o
+que não depende do HTML está sendo construído na branch, passo a passo, em
+`docs/11_roteiro_v2.md`.
 
 Como ler: §1–3 dizem **o quê** e **com que garantias**. §4 diz **como**,
 camada por camada, cada uma com contrato, leis e o que custa se ela falhar.

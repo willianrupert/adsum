@@ -4,16 +4,19 @@
 import { useEffect, useState } from 'react'
 import { planilhaDeFaltas } from '../../nucleo/faltas.ts'
 import { listaParaLancarAMao, textoParaLancarAMao } from '../../nucleo/lancar/aMao.ts'
+import type { Repositorio } from '../../portas/Repositorio.ts'
 import { useAdsum } from '../adsum.ts'
 import { Painel } from '../componentes/Painel.tsx'
 
-function ListaDaTurma({ turmas }: { turmas: string[] }) {
-  const { repositorio } = useAdsum()
-  const [turma, setTurma] = useState(turmas[0] ?? '')
+/** Também na janela do SIGAA, onde não há o contexto do Adsum: o repositório vem por parâmetro. */
+export function ListaParaLancarAMao({ turmas, repositorio }: { turmas: string[]; repositorio: Repositorio }) {  // Derivada, não guardada: as turmas podem chegar depois do primeiro desenho.
+  const [escolhida, setTurma] = useState<string>()
+  const turma = escolhida ?? turmas[0] ?? ''
   const [texto, setTexto] = useState<string>()
   const [recado, setRecado] = useState<string>()
 
   useEffect(() => {
+    if (!turma) return
     let vale = true
     setTexto(undefined)
     setRecado(undefined)
@@ -57,9 +60,10 @@ function ListaDaTurma({ turmas }: { turmas: string[] }) {
 }
 
 export function PainelLancarNoSigaa({ turmas }: { turmas: string[] }) {
+  const { repositorio } = useAdsum()
   return (
     <Painel titulo="Lançar no SIGAA" recolhivel legenda="Quem faltou em cada aula, para passar à frequência.">
-      <ListaDaTurma turmas={turmas} />
+      <ListaParaLancarAMao turmas={turmas} repositorio={repositorio} />
     </Painel>
   )
 }

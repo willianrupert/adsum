@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ProvedorAdsum } from './ui/ProvedorAdsum.tsx'
 import { Fluxo } from './ui/Fluxo.tsx'
 import { Vitrine } from './ui/Vitrine.tsx'
+import { JanelaSigaa } from './ui/sigaa/JanelaSigaa.tsx'
 
 export default function App() {
   // A rota do app decide sozinha qual tela mostrar — ótimo para quem usa, ruim
@@ -17,19 +18,27 @@ export default function App() {
   // Escuta `hashchange` porque ler o hash uma vez fazia `#/vitrine` só
   // funcionar recarregando a página — e quem está desenhando alterna entre as
   // duas o tempo todo.
-  const [naVitrine, setNaVitrine] = useState(
-    () => window.location.hash === '#/vitrine',
-  )
+  const [hash, setHash] = useState(() => window.location.hash)
 
   useEffect(() => {
-    const ouvir = () => setNaVitrine(window.location.hash === '#/vitrine')
+    const ouvir = () => setHash(window.location.hash)
     window.addEventListener('hashchange', ouvir)
     return () => window.removeEventListener('hashchange', ouvir)
   }, [])
 
+  // A janela do favorito do SIGAA não monta o provedor: não liga leitor nem
+  // fecha a chamada da janela principal. Ver `abrirBaseDaJanelaSigaa`.
+  if (hash === '#/sigaa') {
+    return (
+      <div className="app">
+        <JanelaSigaa />
+      </div>
+    )
+  }
+
   return (
     <div className="app">
-      <ProvedorAdsum>{naVitrine ? <Vitrine /> : <Fluxo />}</ProvedorAdsum>
+      <ProvedorAdsum>{hash === '#/vitrine' ? <Vitrine /> : <Fluxo />}</ProvedorAdsum>
     </div>
   )
 }

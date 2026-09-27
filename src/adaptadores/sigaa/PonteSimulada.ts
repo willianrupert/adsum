@@ -12,10 +12,16 @@ export class PonteSimulada implements PonteSigaa {
   readonly entregues: { id: string; instrucoes: Instrucao[] }[] = []
   readonly #leituras = criarEmissor<LeituraRecebida>()
   readonly #abridora = {}
+  readonly #ligada: boolean
   #ouvindo = false
 
+  /** `ligada: false` é a janela aberta à mão, sem favorito. */
+  constructor({ ligada = true }: { ligada?: boolean } = {}) {
+    this.#ligada = ligada
+  }
+
   ligada(): boolean {
-    return true
+    return this.#ligada
   }
 
   iniciar(): void {
@@ -37,9 +43,13 @@ export class PonteSimulada implements PonteSigaa {
 
   /** O favorito clicado na planilha: passa pelo mesmo protocolo da janela de verdade. */
   ler(bruto: unknown, id = `simulada-${Date.now()}`): void {
-    if (!this.#ouvindo) return
-    this.#leituras.emitir(
+    this.receber(
       receberLeitura({ data: mensagemDeLeitura(id, bruto), origin: ORIGEM_SIGAA, source: this.#abridora }, { abridora: this.#abridora }),
     )
+  }
+
+  /** Qualquer coisa que a janela de verdade entregaria, inclusive recusa. */
+  receber(recebida: LeituraRecebida): void {
+    if (this.#ouvindo) this.#leituras.emitir(recebida)
   }
 }
