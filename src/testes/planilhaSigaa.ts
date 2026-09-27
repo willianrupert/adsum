@@ -7,6 +7,7 @@
 // nome nem matrícula de verdade.
 
 import { comoDia, type AjusteSigaa, type Celula, type ColunaDia, type Dia, type LeituraPlanilha } from '../nucleo/lancar/tipos.ts'
+import type { BrutoPlanilha } from '../nucleo/lancar/leitura.ts'
 import type { Evento, Matriculado } from '../nucleo/tipos.ts'
 
 export interface Cenario {
@@ -151,5 +152,37 @@ export function gerarCenario(semente: number): Cenario {
     matriculados,
     eventos,
     ajustes,
+  }
+}
+
+const NOMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+const MOTIVOS = { trancado: 'Trancado', matriculadoDepois: 'Matriculado posteriormente', feriado: 'Feriado', cancelada: 'Aula cancelada' }
+const MARCAS = { lancado: 'Lançado', feriado: 'Feriado', cancelada: 'Cancelada' }
+
+/** O bruto que o favorito extrairia da página que esta leitura descreve. */
+export function brutoDaLeitura(l: LeituraPlanilha): BrutoPlanilha {
+  const meses: BrutoPlanilha['meses'] = []
+  for (const c of l.colunas) {
+    const nome = NOMES[Number(c.dia.slice(5, 7)) - 1]
+    if (meses.at(-1)?.texto === nome) meses.at(-1)!.colunas += 1
+    else meses.push({ texto: nome, colunas: 1 })
+  }
+  return {
+    rodape: `SIGAA | STI - v${l.versaoSigaa}`,
+    cabecalhoTurma: l.cabecalhoTurma,
+    meses,
+    dias: l.colunas.map((c) => ({
+      texto: String(Number(c.dia.slice(8))),
+      ...(c.maximo !== undefined && { maximoTexto: String(c.maximo) }),
+      ...(c.marca && { marcaTexto: MARCAS[c.marca] }),
+    })),
+    linhas: l.linhas.map((linha) => ({
+      matriculaTexto: linha.matricula,
+      celulas: linha.celulas.map((c) =>
+        c.tipo === 'bloqueada'
+          ? { valor: '', desabilitada: true, motivoTexto: MOTIVOS[c.motivo] }
+          : { valor: c.tipo === 'lancada' ? String(c.faltas) : '', desabilitada: false },
+      ),
+    })),
   }
 }

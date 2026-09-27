@@ -7,8 +7,8 @@
 // `id` amarra o plano à leitura de que ele saiu. O que chega de outra janela
 // não é confiável: formato desconhecido é recusa, nunca palpite.
 
-import { validarPlano } from './plano.ts'
-import type { Instrucao, LeituraPlanilha } from './tipos.ts'
+import type { Validacao } from './plano.ts'
+import type { Instrucao } from './tipos.ts'
 
 export const VERSAO_DO_PROTOCOLO = 1
 /** Sobe quando o favorito muda; o Adsum recusa os que não conhece e pede o novo. */
@@ -71,19 +71,24 @@ export type PlanoRecebido =
   | { ok: false; motivo: 'origem' | 'janela' | 'formato' | 'outraLeitura' }
   | { ok: false; motivo: 'planoInvalido'; problemas: string[] }
 
-/** No favorito: o plano só vale da janela que ele abriu, para a leitura que ele mandou. */
+/**
+ * No favorito: o plano só vale da janela que ele abriu, para a leitura que ele
+ * mandou, e só se `validar` o aceitar. O favorito valida contra o bruto que ele
+ * mesmo extraiu (`favorito/aplicar.ts`); o Adsum, antes de entregar, contra a
+ * leitura inteira (`validarPlano`).
+ */
 export function receberPlano(
   evento: Recebido,
-  esperado: { origemAdsum: string; aberta: unknown; leitura: LeituraPlanilha },
+  esperado: { origemAdsum: string; aberta: unknown; id: string; validar: (plano: unknown) => Validacao },
 ): PlanoRecebido {
   if (evento.origin !== esperado.origemAdsum) return { ok: false, motivo: 'origem' }
   if (!esperado.aberta || evento.source !== esperado.aberta) return { ok: false, motivo: 'janela' }
   const d = evento.data
   if (!objeto(d) || d.v !== VERSAO_DO_PROTOCOLO || !idValido(d.id)) return { ok: false, motivo: 'formato' }
   if (d.tipo !== 'nada' && !(d.tipo === 'plano' && 'instrucoes' in d)) return { ok: false, motivo: 'formato' }
-  if (d.id !== esperado.leitura.id) return { ok: false, motivo: 'outraLeitura' }
+  if (d.id !== esperado.id) return { ok: false, motivo: 'outraLeitura' }
   if (d.tipo === 'nada') return { ok: true, instrucoes: [] }
-  const validacao = validarPlano(d.instrucoes, esperado.leitura)
+  const validacao = esperado.validar(d.instrucoes)
   return validacao.ok ? { ok: true, instrucoes: validacao.instrucoes } : { ok: false, motivo: 'planoInvalido', problemas: validacao.problemas }
 }
 

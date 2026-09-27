@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { gerarCenario, sorteador } from '../../testes/planilhaSigaa.ts'
+import { brutoDaLeitura, gerarCenario, sorteador } from '../../testes/planilhaSigaa.ts'
 import { lerPlanilha, type BrutoPlanilha } from './leitura.ts'
-import type { LeituraPlanilha } from './tipos.ts'
 
 /** O bruto que o favorito extrai de uma planilha inventada, com duas turmas de dias. */
 function bruto(mudar: (b: BrutoPlanilha) => void = () => {}): BrutoPlanilha {
@@ -166,42 +165,10 @@ describe('lerPlanilha nunca lança', () => {
 })
 
 describe('ida e volta', () => {
-  const NOMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-  const MOTIVOS = { trancado: 'Trancado', matriculadoDepois: 'Matriculado posteriormente', feriado: 'Feriado', cancelada: 'Aula cancelada' }
-  const MARCAS = { lancado: 'Lançado', feriado: 'Feriado', cancelada: 'Cancelada' }
-
-  /** O bruto que o favorito extrairia da página que esta leitura descreve. */
-  function brutoDe(l: LeituraPlanilha): BrutoPlanilha {
-    const meses: BrutoPlanilha['meses'] = []
-    for (const c of l.colunas) {
-      const nome = NOMES[Number(c.dia.slice(5, 7)) - 1]
-      if (meses.at(-1)?.texto === nome) meses.at(-1)!.colunas += 1
-      else meses.push({ texto: nome, colunas: 1 })
-    }
-    return {
-      rodape: `SIGAA | STI - v${l.versaoSigaa}`,
-      cabecalhoTurma: l.cabecalhoTurma,
-      meses,
-      dias: l.colunas.map((c) => ({
-        texto: String(Number(c.dia.slice(8))),
-        ...(c.maximo !== undefined && { maximoTexto: String(c.maximo) }),
-        ...(c.marca && { marcaTexto: MARCAS[c.marca] }),
-      })),
-      linhas: l.linhas.map((linha) => ({
-        matriculaTexto: linha.matricula,
-        celulas: linha.celulas.map((c) =>
-          c.tipo === 'bloqueada'
-            ? { valor: '', desabilitada: true, motivoTexto: MOTIVOS[c.motivo] }
-            : { valor: c.tipo === 'lancada' ? String(c.faltas) : '', desabilitada: false },
-        ),
-      })),
-    }
-  }
-
   it('ler o bruto de uma leitura devolve a mesma leitura, em 300 cenários', () => {
     for (let semente = 1; semente <= 300; semente++) {
       const { leitura } = gerarCenario(semente)
-      expect(lerPlanilha(brutoDe(leitura), leitura.id), `semente ${semente}`).toEqual({ leitura, problemas: [] })
+      expect(lerPlanilha(brutoDaLeitura(leitura), leitura.id), `semente ${semente}`).toEqual({ leitura, problemas: [] })
     }
   })
 })

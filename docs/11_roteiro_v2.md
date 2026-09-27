@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 72%
+## Andamento: 82%
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -61,7 +61,7 @@ leituras inventadas nesse formato, geradas por `src/testes/planilhaSigaa.ts`.
 | 8 | Auditoria na pasta: `sigaa/<turma>.csv` | 7 | 5 | feito, 27/09 |
 | 9 | Porta `PonteSigaa` e o chão: lista para lançar à mão | porta | 8 | feito, 27/09 |
 | 10 | Folha do Adsum: rota `#/sigaa` e os três estados | 6 | 12 |  |
-| 11 | Favorito sem DOM: comparar e trocar, desfazer, build | 5 | 10 |  |
+| 11 | Favorito sem DOM: comparar e trocar, desfazer, build | 5 | 10 | feito, 27/09 |
 | 12 | Jornada sem página, sobre cofre com histórico | 8 | 6 |  |
 
 ### 1 · Tipos (5)
@@ -175,12 +175,25 @@ página abstrata (`ler`/`escrever` por linha e coluna). Lei: desfazer devolve
 cada célula ao valor lido. Build que gera o `javascript:` com teto de
 tamanho. Só os seletores esperam o HTML.
 
-**A decidir aqui:** o `08` diz que o favorito roda o mesmo validador do
-Adsum, e `validarPlano` precisa de uma `LeituraPlanilha`. Mas a interpretação
-da página mora no Adsum, para que mudar o SIGAA seja deploy e não favorito
-novo. Ou o favorito leva `lerPlanilha` junto (e pesa mais), ou valida contra
-o bruto que ele mesmo extraiu (célula ainda vazia, valor inteiro até o
-máximo lido). Visto em 27/09, ao escrever o protocolo.
+**Decidido em 27/09:** o Adsum valida o plano contra a leitura inteira
+(`validarPlano`); o favorito, contra o bruto que ele mesmo extraiu
+(`favorito/aplicar.ts`: célula vazia na leitura, valor inteiro até o máximo
+lido). As leis 2 e 4 valem dos dois lados, e o favorito não carrega o
+intérprete da página, que continua no Adsum. `receberPlano` recebe a função
+de validação.
+
+Como ficou:
+
+- **Tudo o que depende do HTML** mora num `Localizador`
+  (`favorito/paginaSigaa.ts`), e o de hoje não reconhece página nenhuma: o
+  favorito diz "esta página não é a planilha" em vez de adivinhar. Escrever
+  (com `input` e `change`, como quem digita), pintar e a barra são nossos.
+- **O favorito gerado é conferido no próprio código**: ~8 KB, e sem
+  requisição, clique, envio de formulário, navegação, `eval`, `postMessage`
+  para qualquer origem ou armazenamento no navegador do SIGAA.
+- **Pendente para a folha (passo 10):** o laranja nas diferenças precisa que
+  o plano leve as diferenças junto (mudança de protocolo), e a barra hoje
+  fecha em vez de recolher numa pílula (passada visual).
 
 ### 12 · Jornada sem página (6)
 

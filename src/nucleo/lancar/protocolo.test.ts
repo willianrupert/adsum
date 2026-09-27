@@ -9,6 +9,7 @@ import {
   receberPlano,
   receberPronto,
 } from './protocolo.ts'
+import { validarPlano } from './plano.ts'
 import { comoDia, type LeituraPlanilha } from './tipos.ts'
 
 const ADSUM = 'https://willianrupert.github.io'
@@ -69,7 +70,7 @@ describe('favorito → Adsum: a leitura', () => {
 
 describe('Adsum → favorito: o plano', () => {
   const evento = (data: unknown, origin = ADSUM, source: unknown = adsum) => ({ data, origin, source })
-  const esperado = { origemAdsum: ADSUM, aberta: adsum, leitura }
+  const esperado = { origemAdsum: ADSUM, aberta: adsum, id: leitura.id, validar: (plano: unknown) => validarPlano(plano, leitura) }
   const instrucao = { linha: 0, coluna: 0, antes: 'vazia' as const, valor: 2 }
 
   it('aceita o plano da janela que o favorito abriu, para a leitura que ele mandou', () => {
