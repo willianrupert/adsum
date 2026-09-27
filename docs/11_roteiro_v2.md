@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 64%
+## Andamento: 72%
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -59,7 +59,7 @@ leituras inventadas nesse formato, geradas por `src/testes/planilhaSigaa.ts`.
 | 6 | Leitura: bruto provisório, datas das colunas, problemas | 1 | 6 | feito, 27/09 |
 | 7 | Dexie v9 e a porta: ajustes e auditoria, só acréscimo | 7 | 10 | feito, 27/09 |
 | 8 | Auditoria na pasta: `sigaa/<turma>.csv` | 7 | 5 | feito, 27/09 |
-| 9 | Porta `PonteSigaa` e o chão: lista para lançar à mão | porta | 8 |  |
+| 9 | Porta `PonteSigaa` e o chão: lista para lançar à mão | porta | 8 | feito, 27/09 |
 | 10 | Folha do Adsum: rota `#/sigaa` e os três estados | 6 | 12 |  |
 | 11 | Favorito sem DOM: comparar e trocar, desfazer, build | 5 | 10 |  |
 | 12 | Jornada sem página, sobre cofre com histórico | 8 | 6 |  |
@@ -144,6 +144,21 @@ pasta ganha a linha do arquivo novo.
 A porta, e o primeiro adaptador: a lista para lançar à mão ("14/10: todos
 presentes, exceto" e quem faltou), que não depende de nada do SIGAA e é o que
 o professor usa se o favorito quebrar.
+
+Como ficou, e por quê:
+
+- **A porta é o canal** (`portas/PonteSigaa.ts`): `PonteJanela` (a janela
+  aberta pelo favorito, só `window.opener`, só a origem do SIGAA) e
+  `PonteSimulada` (testes e vitrine). A lista à mão **não** é adaptador dela:
+  não troca mensagem com a página, e uma interface que um lado não cumpre é a
+  mesma armadilha que o `LeitorSimulavel` evita ficando fora da porta.
+- **O protocolo ganhou o "pronto"**: a janela recém-aberta ainda não ouve, e
+  a leitura mandada antes disso se perdia.
+- **A lista à mão sai da planilha de faltas da pasta**, para as duas nunca
+  discordarem, e mora nos Ajustes, painel "Lançar no SIGAA".
+- **Tudo da v2 na tela passa por `lancarNoSigaaLigado()`**
+  (`ambiente/preferencias.ts`), hoje igual ao modo de desenvolvimento: o que
+  for da branch para a `main` antes dos portões não aparece ao professor.
 
 ### 10 · Folha do Adsum (12)
 

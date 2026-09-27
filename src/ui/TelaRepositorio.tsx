@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { abrirTexto, salvarTexto } from '../ambiente/arquivos.ts'
 import { semDono } from '../ambiente/diario.ts'
+import { lancarNoSigaaLigado } from '../ambiente/preferencias.ts'
 import { deJsonGrade, NOMES, paraJsonGrade } from '../nucleo/cofre.ts'
 import { quemFalta } from '../nucleo/sessao.ts'
 import type { Aula, Matriculado, Vinculo } from '../nucleo/tipos.ts'
@@ -14,6 +15,7 @@ import { GradeDeAjustes } from './ajustes/GradeDeAjustes.tsx'
 import { PainelDaPasta } from './ajustes/PainelDaPasta.tsx'
 import { PainelDeCompartilhar } from './ajustes/PainelDeCompartilhar.tsx'
 import { PainelDeVinculos } from './ajustes/PainelDeVinculos.tsx'
+import { PainelLancarNoSigaa } from './ajustes/PainelLancarNoSigaa.tsx'
 import { PainelRecomecar } from './ajustes/PainelRecomecar.tsx'
 import { ResumoDaBase, type TurmaNoResumo } from './ajustes/ResumoDaBase.tsx'
 import { comoFoi, confirmarOuCancelar, useTentativa } from './hooks/useTentativa.ts'
@@ -138,6 +140,8 @@ export function TelaRepositorio({
       {aoVerPresencas && (
         <Painel titulo="Ver presenças" legenda="A planilha do curso, por turma." aoAbrir={aoVerPresencas} />
       )}
+
+      {lancarNoSigaaLigado() && <PainelLancarNoSigaa turmas={turmas} />}
 
       <Painel
         titulo="Grade horária"

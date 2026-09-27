@@ -2583,3 +2583,17 @@ button:focus-visible {
   border-radius: 8px;
   background: var(--fundo-alt);
 }
+
+/* Lançar no SIGAA, à mão: texto para ler de cima para baixo e copiar. */
+.lancar__lista {
+  margin: 0;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: var(--t-menor);
+  white-space: pre-wrap;
+  color: var(--tinta);
+  background: var(--fundo-alt);
+  border-radius: 12px;
+  max-height: 40vh;
+  overflow: auto;
+}

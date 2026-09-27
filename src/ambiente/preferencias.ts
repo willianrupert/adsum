@@ -50,6 +50,14 @@ export function modoDev(): boolean {
   return ler(CHAVES.modoDev) === 'sim'
 }
 
+/**
+ * Lançar no SIGAA (a v2) só aparece com o modo de desenvolvimento, até passar
+ * pelos portões do `docs/08`. Um lugar só para ligar de vez.
+ */
+export function lancarNoSigaaLigado(): boolean {
+  return modoDev()
+}
+
 export function definirModoDev(ligado: boolean): void {
   gravar(CHAVES.modoDev, ligado ? 'sim' : undefined)
 }
