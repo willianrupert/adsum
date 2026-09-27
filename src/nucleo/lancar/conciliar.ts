@@ -106,22 +106,27 @@ export const COBERTURA_MINIMA = 0.8
 
 export type EscolhaDeTurma = { turma: string } | { recusa: 'nenhuma' | 'duas'; candidatas: string[] }
 
-/** O código da disciplina, do cabeçalho da página ou do nome da turma no Adsum. */
-function codigoDe(texto: string): string | undefined {
-  return /^\s*([A-Z]{2,5}\d{3,5})\b/.exec(texto)?.[1]
-}
+/** Código de disciplina: `CIN0144`, `IF685`. `T01` e `2026.2` não são. */
+const CODIGO = /\b[A-Z]{2,6}\d{2,5}\b/g
+
+/** O cabeçalho do SIGAA começa pelo código: `CIN0144 - … - Turma: 01 (2026.2)`. */
+const codigoDaPagina = (cabecalho: string) => /^\s*([A-Z]{2,6}\d{2,5})\b/.exec(cabecalho)?.[1]
+
+/** O nome da turma é texto livre do professor: o código vale em qualquer lugar dele. */
+const codigosDaTurma = (turma: string) => new Set(turma.match(CODIGO) ?? [])
 
 /**
- * A turma do Adsum cujo código casa com o cabeçalho **e** cujas matrículas
- * cobrem a página. Duas candidatas, ou nenhuma, é recusa: lançar na turma
- * errada seria falta para quem estava presente.
+ * A turma do Adsum cujo nome traz o código do cabeçalho **e** cujas
+ * matrículas cobrem a página. Duas candidatas, ou nenhuma, é recusa: lançar
+ * na turma errada seria falta para quem estava presente. Sem código no nome,
+ * as matrículas sozinhas não bastam: a mesma gente cursa outras disciplinas.
  */
 export function escolherTurma(leitura: LeituraPlanilha, matriculados: Matriculado[]): EscolhaDeTurma {
-  const codigo = codigoDe(leitura.cabecalhoTurma)
+  const codigo = codigoDaPagina(leitura.cabecalhoTurma)
   if (!codigo || leitura.linhas.length === 0) return { recusa: 'nenhuma', candidatas: [] }
   const porTurma = new Map<string, Set<string>>()
   for (const m of matriculados) {
-    if (m.papel !== 'aluno' || codigoDe(m.turma) !== codigo) continue
+    if (m.papel !== 'aluno' || !codigosDaTurma(m.turma).has(codigo)) continue
     let s = porTurma.get(m.turma)
     if (!s) porTurma.set(m.turma, (s = new Set()))
     s.add(m.matricula)

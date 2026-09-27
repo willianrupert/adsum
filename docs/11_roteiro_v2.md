@@ -89,7 +89,13 @@ lado de não adivinhar:
   ninguém lança falta para quem o Adsum não conhece.
 - **Qual turma:** o código da disciplina (`CIN0144`) no cabeçalho e no nome
   da turma, e pelo menos 80% das matrículas da página na turma
-  (`COBERTURA_MINIMA`).
+  (`COBERTURA_MINIMA`). **Corrigido no passo 12:** o nome da turma é texto
+  livre do professor, e o cofre real anonimizado tem o código no meio
+  (`2026.2 - TESTE01 - TURMA A`); o código agora vale em qualquer lugar do
+  nome. Turma sem código no nome é recusada, com o motivo: só pelas
+  matrículas, a chamada de uma disciplina iria para a planilha de outra da
+  mesma turma de alunos. **A conferir no zip de sexta:** como as turmas do
+  Prof. Paulo se chamam.
 
 ### 3 · As sete leis (10)
 

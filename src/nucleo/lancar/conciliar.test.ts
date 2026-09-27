@@ -255,6 +255,28 @@ describe('qual turma', () => {
     expect(escolherTurma(pag(3), dez)).toMatchObject({ recusa: 'nenhuma' })
   })
 
+  it('o código pode estar em qualquer lugar do nome que o professor deu à turma', () => {
+    const nomeada = TURMA_TODA.map((a) => ({ ...a, turma: '2026.2 - CIN0144 - TURMA A' }))
+    expect(escolherTurma(pagina(CAB, [ANA, BRENO]), nomeada)).toEqual({ turma: '2026.2 - CIN0144 - TURMA A' })
+  })
+
+  it('a mesma gente em outra disciplina não serve: o código decide', () => {
+    const outraDisciplina = TURMA_TODA.map((a) => ({ ...a, turma: '2026.2 - CIN0114 - TURMA A' }))
+    expect(escolherTurma(pagina(CAB, [ANA, BRENO]), outraDisciplina)).toMatchObject({ recusa: 'nenhuma' })
+  })
+
+  it('turma sem código no nome é recusada, mesmo com as matrículas: nunca se adivinha a disciplina', () => {
+    const semCodigo = TURMA_TODA.map((a) => ({ ...a, turma: 'Programação, turma da manhã' }))
+    expect(escolherTurma(pagina(CAB, [ANA, BRENO]), semCodigo)).toMatchObject({ recusa: 'nenhuma' })
+  })
+
+  it('códigos de outros formatos: IF685, e o código que o anonimizador inventa', () => {
+    const if685 = TURMA_TODA.map((a) => ({ ...a, turma: 'IF685 · T01' }))
+    expect(escolherTurma(pagina('IF685 - ALGORITMOS - Turma: 01 (2026.2)', [ANA, BRENO]), if685)).toEqual({ turma: 'IF685 · T01' })
+    const teste = TURMA_TODA.map((a) => ({ ...a, turma: '2026.2 - TESTE01 - TURMA A' }))
+    expect(escolherTurma(pagina('TESTE01 - INVENTADA - Turma: 01 (2026.2)', [ANA, BRENO]), teste)).toEqual({ turma: '2026.2 - TESTE01 - TURMA A' })
+  })
+
   it('nenhuma turma com o código: recusa', () => {
     expect(escolherTurma(pagina('CIN9999 - OUTRA - Turma: 01 (2026.2)', [ANA]), TURMA_TODA)).toMatchObject({ recusa: 'nenhuma' })
   })
