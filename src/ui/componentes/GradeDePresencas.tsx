@@ -147,7 +147,7 @@ export function GradeDePresencas({
             </p>
           )}
           {editando && (
-            <p className="ferramentas__nota">
+            <p className="planilha__dica">
               Toque numa falta para marcar presença confirmada à mão, ou numa presença para tirá-la.
             </p>
           )}
