@@ -99,6 +99,7 @@ function FolhaDaTurma({
   const [aceitas, setAceitas] = useState<DiferencaDaFolha[]>([])
   const [recado, setRecado] = useState<string>()
   const conferida = useRef(false)
+  const avisada = useRef(false)
 
   const carregar = useCallback(async () => {
     const [eventos, matriculados, ajustes] = await Promise.all([
@@ -137,16 +138,22 @@ function FolhaDaTurma({
     [leitura.versaoSigaa, turma],
   )
 
-  // Uma vez por leitura: as diferenças vão para a auditoria, e "tudo confere" avisa a planilha.
+  // Uma vez por leitura: as diferenças da primeira conferência vão para a auditoria.
   useEffect(() => {
-    if (!relatorio || !resumo || conferida.current) return
+    if (!relatorio || conferida.current) return
     conferida.current = true
     const divergentes = relatorio.celulas.flatMap((c) =>
       c.categoria === 'diverge' ? [linha('conferencia', c.dia, c.matricula, String(c.sigaa), String(c.esperado), '')] : [],
     )
     if (divergentes.length > 0) void repositorio.acrescentarAuditoriaSigaa(divergentes)
-    if (resumo.estado === 'tudoConfere') ponte.entregar(leitura.id, [])
-  }, [relatorio, resumo, linha, repositorio, ponte, leitura.id])
+  }, [relatorio, linha, repositorio])
+
+  // Ficar tudo igual, na hora ou depois de um aceite, avisa a planilha: o favorito espera o plano.
+  useEffect(() => {
+    if (resumo?.estado !== 'tudoConfere' || avisada.current) return
+    avisada.current = true
+    ponte.entregar(leitura.id, [])
+  }, [resumo, ponte, leitura.id])
 
   const aceitar = async (d: DiferencaDaFolha) => {
     await repositorio.gravarAjusteSigaa({ turma, dia: d.dia, matricula: d.matricula, valor: d.sigaa, em: new Date().toISOString() })

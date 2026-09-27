@@ -186,6 +186,19 @@ describe('a folha, quando tudo confere', () => {
   })
 })
 
+describe('a folha, quando o aceite deixa tudo igual', () => {
+  it('avisa a planilha que não há nada a preencher, também depois do aceite', async () => {
+    const usuario = userEvent.setup()
+    abrir()
+    ponte.ler(bruto((b) => {
+      for (const [i, l] of b.linhas.entries()) l.celulas[0].valor = i === 2 ? '2' : '0'
+    }), 'l-3')
+    await usuario.click(await screen.findByRole('button', { name: 'Aceitar o SIGAA' }))
+    expect(await screen.findByRole('heading', { name: 'Tudo confere' })).toBeInTheDocument()
+    await waitFor(() => expect(ponte.entregues).toEqual([{ id: 'l-3', instrucoes: [] }]))
+  })
+})
+
 describe('a folha recusa, e diz o que fazer', () => {
   it('aberta sem o favorito: diz onde clicar, e oferece a lista à mão', async () => {
     const usuario = userEvent.setup()
