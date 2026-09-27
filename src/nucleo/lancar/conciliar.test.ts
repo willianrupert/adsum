@@ -147,6 +147,14 @@ describe('conciliar: o ajuste do professor', () => {
     expect(celula(r, ANA)).toMatchObject({ categoria: 'aLancar', esperado: 1 })
   })
 
+  it('fora da faixa da página, ou num dia sem máximo, não é lançado', () => {
+    const eventos = log(abriu(TER), cracha(TER, ANA))
+    const acima = relatorio(leitura({ [ANA]: [V] }, [{ dia: TER, maximo: 2 }]), eventos, [ajuste(3, '2026-10-20T10:00:00Z')])
+    expect(celula(acima, ANA).categoria).toBe('fora')
+    const semMaximo = relatorio(leitura({ [ANA]: [V] }, [{ dia: TER }]), [], [ajuste(1, '2026-10-20T10:00:00Z')])
+    expect(celula(semMaximo, ANA).categoria).toBe('fora')
+  })
+
   it('de outra turma não conta', () => {
     const r = relatorio(leitura({ [ANA]: [V] }), log(abriu(TER), cracha(TER, ANA)), [
       { ...ajuste(2, '2026-10-20T10:00:00Z'), turma: 'CIN0144 · T02' },

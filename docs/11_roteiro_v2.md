@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 17%
+## Andamento: 27%
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -53,7 +53,7 @@ leituras inventadas nesse formato, geradas por `src/testes/planilhaSigaa.ts`.
 |---|---|---|---|---|
 | 1 | Tipos da leitura e gerador de leituras de teste | 0 | 5 | feito, 27/09 |
 | 2 | Conciliação por exemplo, e qual turma | 2 | 12 | feito, 27/09 |
-| 3 | As sete leis, sobre entradas geradas | 2 | 10 |  |
+| 3 | As sete leis, sobre entradas geradas | 2 | 10 | feito, 27/09 |
 | 4 | Plano e validador | 3 | 8 |  |
 | 5 | Protocolo: mensagens, versão, origem, `id` | 4 | 8 |  |
 | 6 | Leitura: bruto provisório, datas das colunas, problemas | 1 | 6 |  |
@@ -96,6 +96,11 @@ lado de não adivinhar:
 Partição, nunca toca lançado, nunca inventa dia, faixa, idempotência,
 concordância com a v1, monotonia do ajuste. Testadas sobre centenas de
 entradas geradas com semente fixa (sem dependência nova), além dos exemplos.
+
+A lei da faixa achou uma lacuna na semente 4: um ajuste do professor virava
+"a lançar" num dia sem máximo, e um ajuste acima do máximo de hoje passaria.
+Agora ajuste também precisa caber na faixa da página. Cada lei tem uma
+mutação da regra que ela protege, e todas são derrubadas.
 
 ### 4 · Plano e validador (8)
 

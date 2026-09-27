@@ -50,11 +50,15 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes }: En
     .map((c) => c.dia)
   const diaSemMaximo = new Set(semMaximo)
 
-  /** O que o Adsum diria para a célula, ou `undefined` se não tem o que dizer. */
+  /**
+   * O que o Adsum diria para a célula, ou `undefined` se não tem o que dizer.
+   * Sem máximo na página, nada: nem o ajuste, que precisa caber na faixa dela.
+   */
   const esperado = (matricula: string, coluna: (typeof leitura.colunas)[number]) => {
+    if (coluna.maximo === undefined) return undefined
     const ajuste = vigentes.get(`${coluna.dia}|${matricula}`)
-    if (ajuste) return { valor: ajuste.valor, ajustada: true }
-    if (!daTurma.has(matricula) || !diasDeChamada.has(coluna.dia) || coluna.maximo === undefined) return undefined
+    if (ajuste) return ajuste.valor >= 0 && ajuste.valor <= coluna.maximo ? { valor: ajuste.valor, ajustada: true } : undefined
+    if (!daTurma.has(matricula) || !diasDeChamada.has(coluna.dia)) return undefined
     const presente = presencas.get(coluna.dia)?.get(chaveDeIdentidade({ matricula, nome: '' }))?.presente ?? false
     return { valor: presente ? 0 : coluna.maximo, ajustada: false }
   }
