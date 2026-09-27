@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 0%
+## Andamento: 5%
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -47,18 +47,18 @@ leituras inventadas nesse formato, geradas por `src/testes/planilhaSigaa.ts`.
 
 | # | Passo | Camada (`08`) | Peso | Estado |
 |---|---|---|---|---|
-| 1 | Tipos da leitura e gerador de leituras de teste | 0 | 5 | |
-| 2 | Conciliação por exemplo, e qual turma | 2 | 12 | |
-| 3 | As sete leis, sobre entradas geradas | 2 | 10 | |
-| 4 | Plano e validador | 3 | 8 | |
-| 5 | Protocolo: mensagens, versão, origem, `id` | 4 | 8 | |
-| 6 | Leitura: bruto provisório, datas das colunas, problemas | 1 | 6 | |
-| 7 | Dexie v9 e a porta: ajustes e auditoria, só acréscimo | 7 | 10 | |
-| 8 | Auditoria na pasta: `sigaa/<turma>.csv` | 7 | 5 | |
-| 9 | Porta `PonteSigaa` e o chão: lista para lançar à mão | porta | 8 | |
-| 10 | Folha do Adsum: rota `#/sigaa` e os três estados | 6 | 12 | |
-| 11 | Favorito sem DOM: comparar e trocar, desfazer, build | 5 | 10 | |
-| 12 | Jornada sem página, sobre cofre com histórico | 8 | 6 | |
+| 1 | Tipos da leitura e gerador de leituras de teste | 0 | 5 | feito, 27/09 |
+| 2 | Conciliação por exemplo, e qual turma | 2 | 12 |  |
+| 3 | As sete leis, sobre entradas geradas | 2 | 10 |  |
+| 4 | Plano e validador | 3 | 8 |  |
+| 5 | Protocolo: mensagens, versão, origem, `id` | 4 | 8 |  |
+| 6 | Leitura: bruto provisório, datas das colunas, problemas | 1 | 6 |  |
+| 7 | Dexie v9 e a porta: ajustes e auditoria, só acréscimo | 7 | 10 |  |
+| 8 | Auditoria na pasta: `sigaa/<turma>.csv` | 7 | 5 |  |
+| 9 | Porta `PonteSigaa` e o chão: lista para lançar à mão | porta | 8 |  |
+| 10 | Folha do Adsum: rota `#/sigaa` e os três estados | 6 | 12 |  |
+| 11 | Favorito sem DOM: comparar e trocar, desfazer, build | 5 | 10 |  |
+| 12 | Jornada sem página, sobre cofre com histórico | 8 | 6 |  |
 
 ### 1 · Tipos (5)
 
