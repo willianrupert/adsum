@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 5%
+## Andamento: 17%
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -20,6 +20,10 @@ Especificação primeiro, depois teste, depois código:
 3. O código os faz passar, sem mexer no teste.
 4. Suíte inteira, lint e tipos verdes; o passo vira commit, e o percentual
    deste documento muda no mesmo commit.
+
+Teste que passa de primeira não prova nada sozinho: o código é mutado de
+propósito (uma regra desligada por vez) até cada mutação derrubar algum
+teste. Mutação que sobrevive é teste faltando.
 
 Passo pela metade conta zero. Nenhum passo de cima conserta defeito de um de
 baixo: se aparecer, volta-se ao passo de baixo, com teste.
@@ -48,7 +52,7 @@ leituras inventadas nesse formato, geradas por `src/testes/planilhaSigaa.ts`.
 | # | Passo | Camada (`08`) | Peso | Estado |
 |---|---|---|---|---|
 | 1 | Tipos da leitura e gerador de leituras de teste | 0 | 5 | feito, 27/09 |
-| 2 | Conciliação por exemplo, e qual turma | 2 | 12 |  |
+| 2 | Conciliação por exemplo, e qual turma | 2 | 12 | feito, 27/09 |
 | 3 | As sete leis, sobre entradas geradas | 2 | 10 |  |
 | 4 | Plano e validador | 3 | 8 |  |
 | 5 | Protocolo: mensagens, versão, origem, `id` | 4 | 8 |  |
@@ -75,6 +79,17 @@ tabela de categorias do `08` inteira em exemplos, e `escolherTurma` (código do
 cabeçalho **e** matrículas que cobrem a página; duas ou nenhuma, recusa). A
 presença de cada dia vem de `presencasDoDia`, a mesma regra da planilha de
 faltas da v1.
+
+Decidido ao escrever os exemplos, onde o `08` deixava espaço, sempre para o
+lado de não adivinhar:
+
+- **Dia sem máximo:** o dia inteiro fica fora e vai para `semMaximo`,
+  inclusive quem estava presente e as células já lançadas.
+- **Matrícula da página sem par no Adsum** nunca recebe valor esperado:
+  ninguém lança falta para quem o Adsum não conhece.
+- **Qual turma:** o código da disciplina (`CIN0144`) no cabeçalho e no nome
+  da turma, e pelo menos 80% das matrículas da página na turma
+  (`COBERTURA_MINIMA`).
 
 ### 3 · As sete leis (10)
 
