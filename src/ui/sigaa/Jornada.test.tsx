@@ -1,0 +1,141 @@
+// A v2 de ponta a ponta, sem a página real (`docs/08`, camada 8): o cofre de
+// 22/09 (histórico de verdade, anonimizado), a planilha simulada, o favorito
+// e a folha conversando por mensagens, com as origens conferidas nos dois
+// sentidos. Conferir → preencher → "gravar" → conferir dá tudo confere; uma
+// célula mudada à mão vira diferença; aceita, sobrevive a refazer a base.
+
+import { afterEach, describe, expect, it } from 'vitest'
+import { act, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { RepositorioDexie } from '../../adaptadores/repositorio/RepositorioDexie.ts'
+import { PonteJanela } from '../../adaptadores/sigaa/PonteJanela.ts'
+import { conferirAuditoriaSigaa, restaurar } from '../../ambiente/sincronia.ts'
+import { lancarPeloFavorito, type Destino } from '../../favorito/ligacao.ts'
+import { planilhaDeFaltas } from '../../nucleo/faltas.ts'
+import type { BrutoPlanilha } from '../../nucleo/lancar/leitura.ts'
+import { ORIGEM_SIGAA } from '../../nucleo/lancar/protocolo.ts'
+import { comoDia, type LeituraPlanilha } from '../../nucleo/lancar/tipos.ts'
+import { AULA_2209, pastaDoCofre } from '../../testes/cofreDeTeste.ts'
+import { PaginaSigaaFalsa } from '../../testes/paginaSigaaFalsa.ts'
+import { brutoDaLeitura } from '../../testes/planilhaSigaa.ts'
+import { FolhaSigaa } from './FolhaSigaa.tsx'
+
+const ADSUM = 'https://willianrupert.github.io'
+const DESTINO: Destino = { origem: ADSUM, url: `${ADSUM}/adsum/#/sigaa` }
+const TURMA = '2026.2 - TESTE02 - TURMA B'
+/** As duas aulas com chamada no cofre, e uma terça sem chamada, que fica como está. */
+const DIAS = ['2026-09-17', '2026-09-22', '2026-09-24'].map((d) => comoDia(d)!)
+
+afterEach(() => window.localStorage.removeItem('adsum.modoDev'))
+
+/** A planilha da turma B como o SIGAA a mostraria antes de qualquer lançamento. */
+function planilhaVazia(): BrutoPlanilha {
+  const alunos = AULA_2209.turmas[TURMA].filter((m) => m.papel === 'aluno')
+  const leitura: LeituraPlanilha = {
+    id: 'modelo',
+    versaoSigaa: '4.15.0.206',
+    cabecalhoTurma: 'TESTE02 - DISCIPLINA INVENTADA - Turma: 01 (2026.2)',
+    colunas: DIAS.map((dia, indice) => ({ indice, dia, maximo: 2 })),
+    linhas: alunos.map((m, indice) => ({ indice, matricula: m.matricula, celulas: DIAS.map(() => ({ tipo: 'vazia' as const })) })),
+  }
+  return brutoDaLeitura(leitura)
+}
+
+/** A planilha depois do Gravar: o que está nas células vira o lançado. */
+function depoisDoGravar(pagina: PaginaSigaaFalsa): BrutoPlanilha {
+  const b = structuredClone(pagina.bruto!)
+  b.linhas.forEach((l, i) => l.celulas.forEach((c, j) => (c.valor = pagina.valores[i][j])))
+  return b
+}
+
+/**
+ * As duas janelas, ligadas como no navegador: o favorito na planilha abre a
+ * folha, e cada `postMessage` chega ao outro lado com a origem de quem mandou.
+ * Mandar para outra origem que não a do outro lado é defeito, e quebra aqui.
+ */
+function clicarNoFavorito(repositorio: RepositorioDexie, pagina: PaginaSigaaFalsa) {
+  const naPlanilha = new EventTarget()
+  const naFolha = new EventTarget() as EventTarget & { opener: unknown }
+  const entregar = (alvo: EventTarget, origin: string, source: unknown) => (mensagem: unknown, para: string) => {
+    const dono = alvo === naFolha ? ADSUM : ORIGEM_SIGAA
+    if (para !== dono) throw new Error(`mensagem para ${para}, mas a janela é de ${dono}`)
+    queueMicrotask(() => alvo.dispatchEvent(Object.assign(new Event('message'), { data: structuredClone(mensagem), origin, source })))
+  }
+  const planilha = { postMessage: (m: unknown, p: string) => entregar(naPlanilha, ADSUM, folha)(m, p) }
+  const folha = { postMessage: (m: unknown, p: string) => entregar(naFolha, ORIGEM_SIGAA, planilha)(m, p) }
+  naFolha.opener = planilha
+
+  let desmontar = () => {}
+  lancarPeloFavorito({
+    pagina,
+    janela: naPlanilha,
+    destino: DESTINO,
+    gerarId: () => crypto.randomUUID(),
+    abrir: () => {
+      const tela = render(<FolhaSigaa repositorio={repositorio} ponte={new PonteJanela(naFolha as unknown as Window)} fechar={() => desmontar()} />)
+      desmontar = () => tela.unmount()
+      return folha
+    },
+  })
+  return { fechar: () => desmontar() }
+}
+
+describe('lançar no SIGAA, de ponta a ponta, sobre o cofre de 22/09', () => {
+  it('conferir, preencher, gravar e conferir de novo; a diferença aceita sobrevive a refazer a base', async () => {
+    window.localStorage.setItem('adsum.modoDev', 'sim')
+    const usuario = userEvent.setup()
+    const pasta = await pastaDoCofre(AULA_2209)
+    const repositorio = new RepositorioDexie(`adsum-jornada-${Date.now()}`)
+    await repositorio.abrir()
+    await restaurar(repositorio, pasta.handle)
+
+    // 1. Primeira conferência: duas aulas com chamada, a terça sem chamada fica como está.
+    const pagina = new PaginaSigaaFalsa(planilhaVazia())
+    clicarNoFavorito(repositorio, pagina)
+    expect(await screen.findByRole('heading', { name: '2 aulas para lançar' })).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Preencher 2 aulas' }))
+    await waitFor(() => expect(pagina.barra?.texto).toMatch(/^Adsum preencheu 2 aulas\./))
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+
+    // O que foi escrito é a planilha de faltas da pasta, célula por célula.
+    const [eventos, matriculados, aulas] = await Promise.all([
+      repositorio.listarEventos({ turma: TURMA }),
+      repositorio.listarMatriculados(TURMA),
+      repositorio.listarAulas(),
+    ])
+    const v1 = planilhaDeFaltas(eventos, matriculados, aulas, TURMA)
+    pagina.bruto!.linhas.forEach((l, i) => {
+      const porDia = v1.linhas.find((x) => x.matriculado.matricula === l.matriculaTexto)!.porDia
+      expect(pagina.valores[i][0]).toBe(String(porDia.get(DIAS[0])!.faltas))
+      expect(pagina.valores[i][1]).toBe(String(porDia.get(DIAS[1])!.faltas))
+      expect(pagina.valores[i][2]).toBe('')
+    })
+
+    // 2. O professor grava, e muda uma célula à mão antes: a conferência mostra a diferença.
+    const gravada = new PaginaSigaaFalsa(depoisDoGravar(pagina))
+    const alguem = gravada.bruto!.linhas.findIndex((_, i) => gravada.valores[i][0] === '0')
+    gravada.bruto!.linhas[alguem].celulas[0].valor = '2'
+    gravada.valores[alguem][0] = '2'
+    clicarNoFavorito(repositorio, gravada)
+    expect(await screen.findByRole('heading', { name: '1 diferença para olhar' })).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Aceitar o SIGAA' }))
+    expect(await screen.findByRole('heading', { name: 'Tudo confere' })).toBeInTheDocument()
+    expect(screen.getByText('SIGAA e Adsum iguais em 2 aulas. 1 diferença aceita por você.')).toBeInTheDocument()
+    await waitFor(() => expect(gravada.barra?.texto).toBe('Nada a preencher. SIGAA e Adsum já estão iguais.'))
+    await usuario.click(screen.getByRole('button', { name: 'Fechar' }))
+
+    // 3. A pasta leva a auditoria; a base refeita da pasta ainda confere.
+    await conferirAuditoriaSigaa(repositorio, pasta.handle)
+    await repositorio.esvaziarCache()
+    await restaurar(repositorio, pasta.handle)
+    clicarNoFavorito(repositorio, new PaginaSigaaFalsa(structuredClone(gravada.bruto!)))
+    expect(await screen.findByRole('heading', { name: 'Tudo confere' })).toBeInTheDocument()
+
+    const auditoria = await repositorio.listarAuditoriaSigaa(TURMA)
+    expect(auditoria.filter((l) => l.acao === 'preenchimento')).toHaveLength(pagina.escritas)
+    expect(auditoria.filter((l) => l.acao === 'aceite')).toHaveLength(1)
+    const nomes = matriculados.map((m) => m.nome)
+    expect(JSON.stringify(auditoria)).not.toMatch(new RegExp(nomes.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')))
+    await act(async () => repositorio.fechar())
+  }, 30_000)
+})

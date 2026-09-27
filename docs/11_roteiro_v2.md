@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 94%
+## Andamento: 100%
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -62,7 +62,7 @@ leituras inventadas nesse formato, geradas por `src/testes/planilhaSigaa.ts`.
 | 9 | Porta `PonteSigaa` e o chão: lista para lançar à mão | porta | 8 | feito, 27/09 |
 | 10 | Folha do Adsum: rota `#/sigaa` e os três estados | 6 | 12 | feito, 27/09 |
 | 11 | Favorito sem DOM: comparar e trocar, desfazer, build | 5 | 10 | feito, 27/09 |
-| 12 | Jornada sem página, sobre cofre com histórico | 8 | 6 |  |
+| 12 | Jornada sem página, sobre cofre com histórico | 8 | 6 | feito, 27/09 |
 
 ### 1 · Tipos (5)
 
@@ -225,6 +225,15 @@ Como ficou:
 
 Cofre com histórico + planilha simulada + favorito lógico + folha:
 conferir → preencher → "gravar" → conferir dá *Tudo confere*.
+
+Feita sobre o cofre de 22/09 (turma B, 59 alunos, com presença à mão e "Não
+presente"), com o favorito e a folha conversando pela `PonteJanela` de
+verdade e as origens conferidas nos dois sentidos. O que se escreveu na
+planilha é a planilha de faltas da pasta, célula por célula; uma célula
+mudada à mão vira diferença, o aceite a resolve, e a base refeita da pasta
+continua conferindo. A jornada achou dois defeitos, consertados com teste:
+a turma real tem o código no meio do nome, e o aviso de "nada a preencher"
+não saía depois de um aceite.
 
 ## Depois do portão A (fora da conta)
 
