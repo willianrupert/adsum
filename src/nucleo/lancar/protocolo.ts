@@ -1,4 +1,6 @@
 // As mensagens entre a planilha do SIGAA e a janela do Adsum (`docs/08`, camada 4).
+// Além das duas do `08`, um "pronto" do Adsum: sem ele a leitura podia chegar
+// antes de a janela recém-aberta ouvir, e se perder.
 //
 // Funções puras sobre o que um `MessageEvent` traz: `origin`, `source`, `data`.
 // Cada lado só aceita a origem do outro e a janela com que está ligado, e o
@@ -31,6 +33,9 @@ export interface Recebido {
   origin: string
   source: unknown
 }
+
+/** A janela do Adsum acabou de carregar e ouve: só então o favorito manda a leitura. */
+export const mensagemDePronto = () => ({ v: VERSAO_DO_PROTOCOLO, tipo: 'pronto' as const })
 
 export function mensagemDeLeitura(id: string, bruto: unknown): MensagemDeLeitura {
   return { v: VERSAO_DO_PROTOCOLO, tipo: 'leitura', versaoFavorito: VERSAO_DO_FAVORITO, id, bruto }
@@ -80,4 +85,17 @@ export function receberPlano(
   if (d.tipo === 'nada') return { ok: true, instrucoes: [] }
   const validacao = validarPlano(d.instrucoes, esperado.leitura)
   return validacao.ok ? { ok: true, instrucoes: validacao.instrucoes } : { ok: false, motivo: 'planoInvalido', problemas: validacao.problemas }
+}
+
+/** No favorito: a janela que ele abriu avisou que está pronta. */
+export function receberPronto(evento: Recebido, esperado: { origemAdsum: string; aberta: unknown }): boolean {
+  const d = evento.data
+  return (
+    evento.origin === esperado.origemAdsum &&
+    !!esperado.aberta &&
+    evento.source === esperado.aberta &&
+    objeto(d) &&
+    d.v === VERSAO_DO_PROTOCOLO &&
+    d.tipo === 'pronto'
+  )
 }

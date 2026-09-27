@@ -4,8 +4,10 @@ import {
   VERSAO_DO_FAVORITO,
   mensagemDeLeitura,
   mensagemDePlano,
+  mensagemDePronto,
   receberLeitura,
   receberPlano,
+  receberPronto,
 } from './protocolo.ts'
 import { comoDia, type LeituraPlanilha } from './tipos.ts'
 
@@ -101,6 +103,23 @@ describe('Adsum → favorito: o plano', () => {
   it('recusa o que não é um plano', () => {
     expect(receberPlano(evento({ v: 1, tipo: 'plano', id: 'l-1' }), esperado)).toMatchObject({ ok: false, motivo: 'formato' })
     expect(receberPlano(evento(mensagemDeLeitura('l-1', BRUTO)), esperado)).toMatchObject({ ok: false, motivo: 'formato' })
+  })
+})
+
+describe('Adsum → favorito: pronto', () => {
+  // A janela recém-aberta ainda não ouve; o que o favorito mandasse antes disto se perdia.
+  const evento = (data: unknown, origin = ADSUM, source: unknown = adsum) => ({ data, origin, source })
+  const esperado = { origemAdsum: ADSUM, aberta: adsum }
+
+  it('o favorito só manda a leitura quando a janela que ele abriu avisa que está pronta', () => {
+    expect(receberPronto(evento(mensagemDePronto()), esperado)).toBe(true)
+  })
+
+  it('pronto de outra origem, de outra janela ou de outro formato não vale', () => {
+    expect(receberPronto(evento(mensagemDePronto(), 'https://exemplo.com'), esperado)).toBe(false)
+    expect(receberPronto(evento(mensagemDePronto(), ADSUM, sigaa), esperado)).toBe(false)
+    expect(receberPronto(evento({ ...mensagemDePronto(), v: 99 }), esperado)).toBe(false)
+    expect(receberPronto(evento(mensagemDePlano('l-1', [])), esperado)).toBe(false)
   })
 })
 
