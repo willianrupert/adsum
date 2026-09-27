@@ -14,7 +14,7 @@ import {
   esquecerDispensaDaPasta,
   pastaDispensada,
 } from '../../ambiente/preferencias.ts'
-import { acrescentarNoLog, conferirLog, gravarFaltas, repararLog, sincronizar } from '../../ambiente/sincronia.ts'
+import { acrescentarNoLog, conferirAuditoriaSigaa, conferirLog, gravarFaltas, repararLog, sincronizar } from '../../ambiente/sincronia.ts'
 import type { EstadoDaPasta } from '../../nucleo/rota.ts'
 import type { Evento } from '../../nucleo/tipos.ts'
 import type { LeitorDeCracha } from '../../portas/LeitorDeCracha.ts'
@@ -79,6 +79,13 @@ export function usePasta({
             acrescentados_ao_arquivo: c.acrescentados,
             repetidos: c.repetidos,
           })
+        }
+        if (!turma) {
+          const sigaa = await conferirAuditoriaSigaa(repositorio, pasta)
+          for (const c of sigaa.conferidas) {
+            if (c.trazidas > 0 || c.levadas > 0) registrar('conferencia_sigaa', { turma: c.turma, trazidas: c.trazidas, levadas: c.levadas })
+          }
+          for (const problema of sigaa.problemas) registrar('erro_conferencia', { mensagem: problema })
         }
       } catch (erro) {
         registrar('erro_conferencia', { mensagem: (erro as Error).message })

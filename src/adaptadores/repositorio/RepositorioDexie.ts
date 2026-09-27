@@ -310,6 +310,9 @@ export class RepositorioDexie implements Repositorio {
       this.#banco.aulas.clear(),
       this.#banco.eventos.clear(),
       this.#banco.sessao.clear(),
+      // Voltam da pasta: `sigaa/<turma>.csv` guarda cada aceite.
+      this.#banco.ajustesSigaa.clear(),
+      this.#banco.auditoriaSigaa.clear(),
     ])
   }
 

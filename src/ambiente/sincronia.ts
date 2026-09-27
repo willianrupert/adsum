@@ -19,6 +19,8 @@ import {
 import { CABECALHO, cabecalhoCsv, deCsv, linhaCsv, nomeDoArquivo, nomeSeguroDeTurma, paraCsv, porTurma } from '../nucleo/csv.ts'
 import { planilhaDeFaltas, paraCsvDeFaltas } from '../nucleo/faltas.ts'
 import { saisConhecidos, salValido } from '../nucleo/hash.ts'
+import { ajustesDaAuditoria, CABECALHO_DA_AUDITORIA, cabecalhoDaAuditoria, deCsvDaAuditoria, linhaDaAuditoria } from '../nucleo/lancar/auditoria.ts'
+import type { LinhaDeAuditoria } from '../nucleo/lancar/tipos.ts'
 import type { Evento } from '../nucleo/tipos.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
 import { acrescentar, escrever, ler, listarArquivos } from './pasta.ts'
@@ -34,6 +36,10 @@ export function caminhoDosRegistros(turma: string): string {
 
 export function caminhoDasFaltas(turma: string): string {
   return `faltas/${nomeSeguroDeTurma(turma)}.csv`
+}
+
+export function caminhoDaAuditoriaSigaa(turma: string): string {
+  return `sigaa/${nomeSeguroDeTurma(turma)}.csv`
 }
 
 /**
@@ -212,6 +218,79 @@ export async function conferirLog(
   return resultado
 }
 
+/** Linhas de auditoria que a base não tem entram nela, e cada aceite volta a ser ajuste. */
+async function trazerAuditoria(repositorio: Repositorio, turma: string, doArquivo: LinhaDeAuditoria[]): Promise<number> {
+  const naBase = new Set((await repositorio.listarAuditoriaSigaa(turma)).map(linhaDaAuditoria))
+  const novas = new Map<string, LinhaDeAuditoria>()
+  for (const l of doArquivo) if (!naBase.has(linhaDaAuditoria(l))) novas.set(linhaDaAuditoria(l), l)
+  const lista = [...novas.values()]
+  if (lista.length === 0) return 0
+  await repositorio.acrescentarAuditoriaSigaa(lista)
+  for (const ajuste of ajustesDaAuditoria(lista)) await repositorio.gravarAjusteSigaa(ajuste)
+  return lista.length
+}
+
+/**
+ * O nome do arquivo não guarda a turma inteira (`CIN0144 · T01` vira
+ * `CIN0144-T01`): ela sai das turmas que a base conhece, e ambiguidade é
+ * problema dito.
+ */
+async function turmasPorNomeDeArquivo(repositorio: Repositorio): Promise<Map<string, string[]>> {
+  const turmas = new Set(await repositorio.listarTurmas())
+  for (const e of await repositorio.listarEventos()) turmas.add(e.turma)
+  const porNome = new Map<string, string[]>()
+  for (const t of turmas) porNome.set(`${nomeSeguroDeTurma(t)}.csv`, [...(porNome.get(`${nomeSeguroDeTurma(t)}.csv`) ?? []), t])
+  return porNome
+}
+
+const problemaDeTurma = (nome: string, candidatas: string[] = []) =>
+  candidatas.length === 0
+    ? `${nome}: nenhuma turma da base com este nome de arquivo, ficou de fora.`
+    : `${nome}: mais de uma turma da base com este nome de arquivo (${candidatas.join(', ')}), ficou de fora.`
+
+/**
+ * A auditoria do SIGAA contra a pasta, nos dois sentidos, sem reescrever
+ * nada: linha só na pasta entra na base (e o aceite volta a ser ajuste);
+ * linha só na base vai para o fim do arquivo. Turma sem auditoria não ganha
+ * arquivo.
+ */
+export async function conferirAuditoriaSigaa(
+  repositorio: Repositorio,
+  pasta: FileSystemDirectoryHandle,
+): Promise<{ conferidas: { turma: string; trazidas: number; levadas: number }[]; problemas: string[] }> {
+  const problemas: string[] = []
+  const porNome = await turmasPorNomeDeArquivo(repositorio)
+  const turmas = new Set<string>()
+  for (const nome of await listarArquivos(pasta, ['sigaa'])) {
+    const candidatas = porNome.get(nome)
+    if (candidatas?.length === 1) turmas.add(candidatas[0])
+    else problemas.push(problemaDeTurma(`sigaa/${nome}`, candidatas))
+  }
+  for (const lista of porNome.values()) for (const t of lista) turmas.add(t)
+
+  const conferidas: { turma: string; trazidas: number; levadas: number }[] = []
+  for (const turma of turmas) {
+    const caminho = caminhoDaAuditoriaSigaa(turma)
+    const homonimas = porNome.get(caminho.slice('sigaa/'.length)) ?? []
+    if (homonimas.length > 1) {
+      if ((await repositorio.listarAuditoriaSigaa(turma)).length > 0) problemas.push(problemaDeTurma(caminho, homonimas))
+      continue
+    }
+    const texto = await ler(pasta, caminho)
+    const { itens, problemas: falhas } = deCsvDaAuditoria(texto ?? '', turma)
+    problemas.push(...falhas.map((f) => `${caminho}, linha ${f.linha}: ${f.motivo}`))
+
+    const trazidas = await trazerAuditoria(repositorio, turma, itens)
+    const noArquivo = new Set(itens.map(linhaDaAuditoria))
+    const faltando = (await repositorio.listarAuditoriaSigaa(turma)).filter((l) => !noArquivo.has(linhaDaAuditoria(l)))
+    if (faltando.length > 0) {
+      await acrescentar(pasta, caminho, faltando.map((l) => linhaDaAuditoria(l) + '\n').join(''), cabecalhoDaAuditoria())
+    }
+    if (texto !== undefined || faltando.length > 0) conferidas.push({ turma, trazidas, levadas: faltando.length })
+  }
+  return { conferidas, problemas }
+}
+
 /**
  * Traz da pasta o que a base não tem, sem tocar no que ela tem. É o que ligar
  * uma pasta faz quando a base já tem dados: sem isto, a primeira gravação
@@ -367,10 +446,10 @@ export async function lembrarSaisDaPasta(
 }
 
 /** O que um arquivo solto é, pela pasta de onde veio ou, sem ela, pelo nome e pelo cabeçalho. */
-type Papel = 'config' | 'vinculos' | 'grade' | 'turma' | 'log' | 'fora' | 'desconhecido'
+type Papel = 'config' | 'vinculos' | 'grade' | 'turma' | 'log' | 'sigaa' | 'fora' | 'desconhecido'
 
 /** Pastas do cofre que não são fonte de dado: relatório, diário, auditoria. */
-const PASTAS_FORA = new Set(['faltas', 'diagnostico', 'auditoria', 'sigaa'])
+const PASTAS_FORA = new Set(['faltas', 'diagnostico', 'auditoria'])
 
 function papelDoArquivo(arquivo: File, texto: string): Papel {
   const partes = (arquivo.webkitRelativePath ?? '').split('/')
@@ -378,6 +457,7 @@ function papelDoArquivo(arquivo: File, texto: string): Papel {
   const nome = arquivo.name
   if (pasta === 'registros') return nome.endsWith('.csv') ? 'log' : 'desconhecido'
   if (pasta === 'turmas') return nome.endsWith('.json') ? 'turma' : 'desconhecido'
+  if (pasta === 'sigaa') return nome.endsWith('.csv') ? 'sigaa' : 'desconhecido'
   if (pasta && PASTAS_FORA.has(pasta)) return 'fora'
   if (nome === NOMES.config) return 'config'
   if (nome === NOMES.vinculos) return 'vinculos'
@@ -388,6 +468,7 @@ function papelDoArquivo(arquivo: File, texto: string): Papel {
   // Solto, sem pasta: `registros/X.csv` e `faltas/X.csv` têm o mesmo nome.
   const primeira = texto.replace(/^\uFEFF/, '').split(/\r?\n/, 1)[0].trim()
   if (primeira === CABECALHO) return 'log'
+  if (primeira === CABECALHO_DA_AUDITORIA) return 'sigaa'
   if (primeira.startsWith('nome;') || primeira.startsWith('uid_hex;')) return 'fora'
   return 'desconhecido'
 }
@@ -454,6 +535,20 @@ export async function restaurarDeArquivos(
     lidos.push(nomeDe(arquivo))
   }
 
+  // Depois das turmas e dos logs: a turma sai do nome do arquivo.
+  const porNome = doPapel('sigaa').length > 0 ? await turmasPorNomeDeArquivo(repositorio) : new Map<string, string[]>()
+  for (const { arquivo, texto } of doPapel('sigaa')) {
+    const candidatas = porNome.get(arquivo.name)
+    if (candidatas?.length !== 1) {
+      problemas.push(problemaDeTurma(nomeDe(arquivo), candidatas))
+      continue
+    }
+    const { itens, problemas: falhas } = deCsvDaAuditoria(texto, candidatas[0])
+    await trazerAuditoria(repositorio, candidatas[0], itens)
+    problemas.push(...falhas.map((f) => `${nomeDe(arquivo)}, linha ${f.linha}: ${f.motivo}`))
+    lidos.push(nomeDe(arquivo))
+  }
+
   for (const { arquivo } of doPapel('desconhecido')) {
     problemas.push(`${nomeDe(arquivo)}: não parece um arquivo do Adsum, ficou de fora.`)
   }
@@ -512,6 +607,10 @@ export async function restaurar(
     problemas.push(...falhas.map((f) => `${nome}, linha ${f.linha}: ${f.motivo}`))
     arquivos.push(`registros/${nome}`)
   }
+
+  const auditoria = await conferirAuditoriaSigaa(repositorio, pasta)
+  problemas.push(...auditoria.problemas)
+  arquivos.push(...auditoria.conferidas.map((c) => caminhoDaAuditoriaSigaa(c.turma)))
 
   return { arquivos, problemas }
 }

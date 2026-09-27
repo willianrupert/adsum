@@ -76,7 +76,10 @@ export interface LinhaDeAuditoria {
   lido: string
   /** O que o Adsum diria, `''` se nada. */
   proposto: string
-  /** O que ficou na célula depois da ação, `''` se ela não mudou. */
+  /**
+   * O que ficou valendo: na célula (preencher, desfazer) ou, no aceite, o
+   * valor que o professor aceitou, e de onde o ajuste volta. `''` se nada mudou.
+   */
   aplicado: string
 }
 

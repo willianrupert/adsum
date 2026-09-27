@@ -155,6 +155,24 @@ Uma linha por crachá, na primeira vez que é lido. `uid_hash` é o do vínculo
 em que ele foi achado, não o do sal atual: é o que permite refazer o vínculo
 se aquele sal se perder. `;` e BOM, como os outros.
 
+## Lançar no SIGAA: `sigaa/<turma>.csv`
+
+Na branch da v2 (`docs/08`, `docs/11`), ainda não publicado.
+
+```
+quando;acao;versao_sigaa;dia_aula;matricula;lido;proposto;aplicado
+```
+
+Uma linha por célula tocada ou divergente, em cada `conferencia`,
+`preenchimento`, `desfeito` e `aceite`. `lido` é como a célula estava (vazia,
+o número, ou o motivo do bloqueio); `proposto`, o que o Adsum diria;
+`aplicado`, o que ficou valendo. No `aceite`, a célula do SIGAA não muda, e
+`aplicado` é o valor que o professor aceitou: é dessa linha que o ajuste
+volta quando a base é refeita. Sem nome, e sem turma: ela é o nome do
+arquivo, casado com as turmas da base (ambiguidade é problema dito). `;` e
+BOM, só acréscimo. Conferido contra a base nos dois sentidos ao ligar a
+pasta; a janela do SIGAA grava só na base.
+
 ## O que sobreviveu, e não era herança
 
 No inventário do `CLAUDE.md` eu listei `;` e BOM como herança do firmware.

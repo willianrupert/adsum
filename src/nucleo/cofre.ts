@@ -170,6 +170,11 @@ O QUE TEM AQUI
       recadastrar. É o arquivo mais sensível da pasta: com ele, dá
       para copiar crachás.
 
+  sigaa/
+      O que o Adsum fez na planilha de frequência do SIGAA, célula
+      por célula: o que leu, o que propôs e o que ficou. Sem nome.
+      As diferenças que você aceitou ficam guardadas aqui.
+
 
 COMO RECUPERAR TUDO
 -------------------
