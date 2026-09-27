@@ -155,6 +155,13 @@ describe('conciliar: o ajuste do professor', () => {
     expect(celula(semMaximo, ANA).categoria).toBe('fora')
   })
 
+  it('no mesmo instante, vence o gravado depois: Desfazer logo depois de Aceitar desfaz', () => {
+    const eventos = log(abriu(TER), cracha(TER, ANA))
+    const mesmoInstante = '2026-10-20T10:00:00.000Z'
+    const r = relatorio(leitura({ [ANA]: [L(2)] }), eventos, [ajuste(2, mesmoInstante), ajuste(0, mesmoInstante)])
+    expect(celula(r, ANA)).toMatchObject({ categoria: 'diverge', sigaa: 2, esperado: 0 })
+  })
+
   it('de outra turma não conta', () => {
     const r = relatorio(leitura({ [ANA]: [V] }), log(abriu(TER), cracha(TER, ANA)), [
       { ...ajuste(2, '2026-10-20T10:00:00Z'), turma: 'CIN0144 · T02' },

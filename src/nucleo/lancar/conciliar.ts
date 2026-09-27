@@ -17,14 +17,14 @@ export interface EntradaDaConciliacao {
   ajustes: AjusteSigaa[]
 }
 
-/** O ajuste mais recente de cada (dia, matrícula) da turma. */
+/** O ajuste mais recente de cada (dia, matrícula) da turma. No mesmo instante, o gravado depois. */
 function ajustesVigentes(ajustes: AjusteSigaa[], turma: string): Map<string, AjusteSigaa> {
   const vigentes = new Map<string, AjusteSigaa>()
   for (const a of ajustes) {
     if (a.turma !== turma) continue
     const chave = `${a.dia}|${a.matricula}`
     const atual = vigentes.get(chave)
-    if (!atual || a.em > atual.em) vigentes.set(chave, a)
+    if (!atual || a.em >= atual.em) vigentes.set(chave, a)
   }
   return vigentes
 }
