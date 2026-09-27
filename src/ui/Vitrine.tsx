@@ -20,6 +20,7 @@ import { TelaCronograma } from './TelaCronograma.tsx'
 import { Busca } from './componentes/Busca.tsx'
 import { Baixar } from './componentes/Simbolos.tsx'
 import { GradeDePresencas } from './componentes/GradeDePresencas.tsx'
+import { CenasDoSigaa } from './sigaa/VitrineSigaa.tsx'
 import type { Evento, Matriculado } from '../nucleo/tipos.ts'
 import { diaLocal } from '../nucleo/faltas.ts'
 
@@ -337,6 +338,10 @@ export function Vitrine() {
           <TelaPresencas aoFechar={() => {}} />
         </Cena>
       )}
+
+      {/* A v2, ainda na branch: a janela que o favorito do SIGAA abre, com
+          gente inventada numa base só dela. */}
+      {ehDesenvolvimento && <CenasDoSigaa embrulho={Cena} />}
 
       {ehDesenvolvimento ? (
         <Cena titulo="Diagnóstico" quando="folha, quando algo falha">

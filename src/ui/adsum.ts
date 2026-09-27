@@ -9,7 +9,8 @@ import { LeitorTeclado } from '../adaptadores/leitor/LeitorTeclado.ts'
 import { LeitorWebNfc } from '../adaptadores/leitor/LeitorWebNfc.ts'
 import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts'
 import { PonteJanela } from '../adaptadores/sigaa/PonteJanela.ts'
-import type { PonteSigaa } from '../portas/PonteSigaa.ts'
+import { PonteSimulada } from '../adaptadores/sigaa/PonteSimulada.ts'
+import type { PonteSigaa, PonteSimulavel } from '../portas/PonteSigaa.ts'
 import type { Config } from '../nucleo/tipos.ts'
 import type { LeitorDeCracha } from '../portas/LeitorDeCracha.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
@@ -142,6 +143,19 @@ export async function abrirBaseDaJanelaSigaa(): Promise<Repositorio> {
 }
 
 export const ponteDaJanela = (): PonteSigaa => new PonteJanela(window)
+
+/**
+ * A vitrine mostra a janela do SIGAA com gente inventada, numa base só dela
+ * (`nome`), apagada a cada vez: nunca a base de quem abre.
+ */
+export async function baseDaVitrine(nome: string): Promise<Repositorio> {
+  const repositorio = new RepositorioDexie(nome)
+  await repositorio.abrir()
+  await repositorio.apagarTudo()
+  return repositorio
+}
+
+export const ponteDeEnsaio = (opcoes?: { ligada?: boolean }): PonteSimulavel => new PonteSimulada(opcoes)
 
 export const ContextoAdsum = createContext<Adsum | undefined>(undefined)
 

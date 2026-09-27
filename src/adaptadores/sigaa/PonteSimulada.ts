@@ -4,10 +4,10 @@
 import { receberLeitura, mensagemDeLeitura, ORIGEM_SIGAA, type LeituraRecebida } from '../../nucleo/lancar/protocolo.ts'
 import type { Instrucao } from '../../nucleo/lancar/tipos.ts'
 import type { Cancelar } from '../../portas/LeitorDeCracha.ts'
-import type { PonteSigaa } from '../../portas/PonteSigaa.ts'
+import type { PonteSimulavel } from '../../portas/PonteSigaa.ts'
 import { criarEmissor } from '../leitor/emissor.ts'
 
-export class PonteSimulada implements PonteSigaa {
+export class PonteSimulada implements PonteSimulavel {
   readonly nome = 'Planilha simulada'
   readonly entregues: { id: string; instrucoes: Instrucao[] }[] = []
   readonly #leituras = criarEmissor<LeituraRecebida>()

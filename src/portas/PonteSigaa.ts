@@ -22,3 +22,11 @@ export interface PonteSigaa {
   /** Devolve o plano da leitura `id`. `false` se não há a quem entregar. */
   entregar(id: string, instrucoes: Instrucao[]): boolean
 }
+
+/**
+ * Ponte que aceita leitura injetada, para a vitrine e os testes. Fica fora da
+ * porta de propósito, como `LeitorSimulavel`: a janela de verdade não faz isto.
+ */
+export interface PonteSimulavel extends PonteSigaa {
+  ler(bruto: unknown, id?: string): void
+}
