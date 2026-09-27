@@ -10,6 +10,7 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { Aula, Config, Evento, Matriculado, Vinculo } from '../../nucleo/tipos.ts'
 import type { Sessao } from '../../nucleo/sessao.ts'
+import type { AjusteSigaa, LinhaDeAuditoria } from '../../nucleo/lancar/tipos.ts'
 
 export interface LinhaConfig extends Config {
   id: number
@@ -26,6 +27,8 @@ export type BancoAdsum = Dexie & {
   pasta: EntityTable<{ id: number; handle: FileSystemDirectoryHandle }, 'id'>
   aulas: EntityTable<Aula, 'id'>
   eventos: EntityTable<Evento, 'eventoId'>
+  ajustesSigaa: EntityTable<AjusteSigaa & { id?: number }, 'id'>
+  auditoriaSigaa: EntityTable<LinhaDeAuditoria & { id?: number }, 'id'>
 }
 
 export const NOME_DO_BANCO = 'adsum'
@@ -96,6 +99,13 @@ export function criarBanco(nome: string = NOME_DO_BANCO): BancoAdsum {
         config.instalacaoId = config.instalacaoId ?? config.aparelhoId
         delete config.aparelhoId
       })
+  })
+
+  // v9: a v2, lançar no SIGAA. O ajuste ("o professor decidiu diferente") e a
+  // auditoria de cada célula tocada. Chave autoincremental: são só acréscimo.
+  banco.version(9).stores({
+    ajustesSigaa: '++id, turma',
+    auditoriaSigaa: '++id, turma',
   })
 
   return banco

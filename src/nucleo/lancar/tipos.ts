@@ -61,6 +61,25 @@ export interface AjusteSigaa {
   em: string
 }
 
+/**
+ * Uma linha de `sigaa/<turma>.csv`: cada célula tocada ou divergente, em cada
+ * conferência, preenchimento e aceite. Sem nome. Só acréscimo.
+ */
+export interface LinhaDeAuditoria {
+  turma: string
+  quando: string
+  acao: 'conferencia' | 'preenchimento' | 'desfeito' | 'aceite'
+  versaoSigaa: string
+  dia: Dia
+  matricula: string
+  /** Como a célula estava: `''` vazia, o número lançado, ou o motivo do bloqueio. */
+  lido: string
+  /** O que o Adsum diria, `''` se nada. */
+  proposto: string
+  /** O que ficou na célula depois da ação, `''` se ela não mudou. */
+  aplicado: string
+}
+
 /** Escrever `valor` na célula, só se ela ainda estiver vazia. */
 export interface Instrucao {
   linha: number

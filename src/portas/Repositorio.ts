@@ -8,6 +8,7 @@
 //    camada, e nunca do caminho da leitura.
 
 import type { Aula, Config, Evento, Matriculado, Uid, UidHash, Vinculo } from '../nucleo/tipos.ts'
+import type { AjusteSigaa, LinhaDeAuditoria } from '../nucleo/lancar/tipos.ts'
 import { calcularUidHash, idDoSal, saisConhecidos } from '../nucleo/hash.ts'
 import { proximoEventoId, type Sessao } from '../nucleo/sessao.ts'
 
@@ -96,6 +97,17 @@ export interface Repositorio {
    */
   listarEventos(opcoes?: { turma?: string; limite?: number }): Promise<Evento[]>
   contarEventos(): Promise<number>
+
+  /**
+   * Lançar no SIGAA (`docs/08`). Como os eventos, só acréscimo: voltar atrás
+   * num ajuste é outro ajuste, e o mais recente vale.
+   */
+  gravarAjusteSigaa(ajuste: AjusteSigaa): Promise<void>
+  /** Na ordem em que foram gravados. Sem `turma`, todos. */
+  lerAjustesSigaa(turma?: string): Promise<AjusteSigaa[]>
+  acrescentarAuditoriaSigaa(linhas: LinhaDeAuditoria[]): Promise<void>
+  /** Na ordem em que foram gravadas. */
+  listarAuditoriaSigaa(turma: string): Promise<LinhaDeAuditoria[]>
 
   /**
    * A pasta escolhida, se houver. Guardar o handle é o que dispensa reescolher

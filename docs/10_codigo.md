@@ -180,6 +180,10 @@ grade (depois da turma, antes do leitor), leitor, chamada, repouso.
   a turma inteira foi recadastrada num sal que só existia na memória da aba.
 - A marca de sal dos vínculos antigos vai em lote, com o navegador ocioso:
   gravada a cada crachá, fez o teste de 100 alunos perder leitura.
+- **Ajustes e auditoria do SIGAA (Dexie v9, branch da v2)** seguem a regra
+  dos eventos: `gravarAjusteSigaa` e `acrescentarAuditoriaSigaa`, sem
+  atualizar nem remover. Voltar atrás num ajuste é outro ajuste; o mais
+  recente vale (`nucleo/lancar/conciliar.ts`).
 
 ### `ambiente/pasta.ts`, `sincronia.ts`, `agendador.ts`: o disco
 

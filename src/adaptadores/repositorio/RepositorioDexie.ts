@@ -5,6 +5,7 @@
 import { saisConhecidos, sortearSal } from '../../nucleo/hash.ts'
 import type { Aula, Config, Evento, Matriculado, UidHash, Vinculo } from '../../nucleo/tipos.ts'
 import type { Sessao } from '../../nucleo/sessao.ts'
+import type { AjusteSigaa, LinhaDeAuditoria } from '../../nucleo/lancar/tipos.ts'
 import type { DiagnosticoRepositorio, Repositorio } from '../../portas/Repositorio.ts'
 import { criarBanco, ID_DA_CONFIG, NOME_DO_BANCO, type BancoAdsum } from './banco.ts'
 
@@ -12,6 +13,13 @@ function sortearInstalacaoId(): string {
   const bytes = new Uint8Array(2)
   crypto.getRandomValues(bytes)
   return `web-${Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')}`
+}
+
+/** A chave autoincremental é do banco, não do domínio. */
+function semId<T extends { id?: number }>(linha: T): Omit<T, 'id'> {
+  const copia = { ...linha }
+  delete copia.id
+  return copia
 }
 
 export class RepositorioDexie implements Repositorio {
@@ -261,6 +269,26 @@ export class RepositorioDexie implements Repositorio {
 
   async contarEventos(): Promise<number> {
     return await this.#banco.eventos.count()
+  }
+
+  async gravarAjusteSigaa(ajuste: AjusteSigaa): Promise<void> {
+    await this.#banco.ajustesSigaa.add({ ...ajuste })
+  }
+
+  async lerAjustesSigaa(turma?: string): Promise<AjusteSigaa[]> {
+    const linhas = turma === undefined
+      ? await this.#banco.ajustesSigaa.orderBy('id').toArray()
+      : await this.#banco.ajustesSigaa.where('turma').equals(turma).sortBy('id')
+    return linhas.map(semId)
+  }
+
+  async acrescentarAuditoriaSigaa(linhas: LinhaDeAuditoria[]): Promise<void> {
+    await this.#banco.auditoriaSigaa.bulkAdd(linhas.map((l) => ({ ...l })))
+  }
+
+  async listarAuditoriaSigaa(turma: string): Promise<LinhaDeAuditoria[]> {
+    const linhas = await this.#banco.auditoriaSigaa.where('turma').equals(turma).sortBy('id')
+    return linhas.map(semId)
   }
 
   async lerPasta(): Promise<FileSystemDirectoryHandle | undefined> {
