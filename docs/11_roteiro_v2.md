@@ -595,3 +595,43 @@ dela. O arquivo ganhou limite próprio de 30 s.
   Desenho em `docs/08`, se voltar.
 - Os portões C a E do `08`: uso real, primeiro preenchimento, outros
   professores.
+
+## O que falta melhorar (levantado em 29/09/2026)
+
+Revisão pedida pelo autor ao fim da fase 3. Nada disto muda o que o app
+faz; é a qualidade do que já existe. Medido no dia: 901 testes em 83
+arquivos, ~16.800 linhas de código e ~14.600 de teste; camadas conferidas
+(nenhuma tela importa adaptador, o núcleo não importa React nem Dexie, o
+favorito não depende das telas).
+
+1. **Separar `ui/sigaa/FolhaSigaa.tsx`** (406 linhas, quatro telas num
+   arquivo: recusa, pergunta da turma, folha da turma e a que escolhe entre
+   elas). Um arquivo por tela, sem mudar comportamento; os testes cobrem
+   tudo. O único item que convém fazer antes de publicar.
+2. **Separar `ambiente/sincronia.ts`** (616 linhas). Já decidido: na próxima
+   mudança que tocar nele, não antes.
+3. **Paralelizar a suíte.** Hoje roda em série (`fileParallelism: false`,
+   `vitest.config.ts`), uns 4 minutos. O motivo registrado ali: o
+   `vi.useFakeTimers` de um arquivo vazava para o relógio de outro rodando
+   junto. Caminho a investigar: isolamento por processo (`pool: 'forks'`),
+   ou só os arquivos que mexem no relógio em série, e os outros em paralelo.
+   Critério de pronto: a suíte cai bem de tempo e roda 20 vezes seguidas sem
+   um falso negativo. As leis sobre a planilha real (`leisReais.test.ts`)
+   sozinhas levam ~28 s; reduzir as 200 variações não é opção sem medir o
+   que cada uma pega.
+4. **Automatizar as mutações.** Hoje a prova de que os testes pegam defeito é
+   feita à mão, regra por regra (passos 23 e 30). Uma ferramenta de mutação
+   (Stryker) sobre `nucleo/lancar/` rodando de vez em quando, não a cada
+   commit.
+5. **O que só o Chrome prova.** O Prototype do SIGAA trocando os nativos e o
+   remetente do `postMessage` escapam do jsdom (`favorito/ambienteLimpo.test.ts`
+   cobre o primeiro em parte). Enquanto não houver teste em navegador de
+   verdade (Playwright contra a bancada), mudança no favorito pede o ensaio
+   na bancada antes do commit.
+6. **O esboço inteiro no estado atual.** Três telas do `docs/esboco_sigaa`
+   (`lancar`, `escolher`, `confere`) ainda têm textos anteriores ao código
+   (o topo com "Fechar", o cartão da diferença). Redesenhar e gerar de novo.
+
+Também anotado: o commit do passo 26 (`3eac19b`) saiu sem o estilo do
+cartão e sem a ligação no painel, que foram no do passo 27. O código final
+está certo; reescrever o histórico já enviado não vale o risco.
