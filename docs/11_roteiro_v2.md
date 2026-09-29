@@ -460,7 +460,7 @@ tela pensada para o tamanho, e ao Preencher fecha e devolve a planilha.
 | 25 | A barra na planilha no padrão do Adsum, clara e escura | 10 | feito, 29/09 |
 | 26 | O favorito chega ao professor: gerado no build e oferecido em Ajustes, com o gesto de arrastar | 20 | feito, 29/09 |
 | 27 | Histórico em Ajustes: o que foi lançado, quando, em cada turma | 10 | feito, 29/09 |
-| 28 | Ensaio no Chrome, em janela e em tela cheia | 20 |  |
+| 28 | Ensaio no Chrome, em janela e em tela cheia | 20 | em janela, 29/09; falta a tela cheia, com o autor |
 | 29 | Esboço (`docs/09`), vitrine e documentos | 10 | feito, 29/09 |
 | 30 | A aula dada em outra data: o professor diz em qual aula do SIGAA a chamada entra | 20 | feito, 29/09 |
 
@@ -548,6 +548,28 @@ derrubadas (uma revelou uma cláusula redundante, que saiu).
 
 A planilha de presenças do Adsum continua com a data real da chamada: o
 remanejo é só sobre onde ela entra no SIGAA.
+
+### 28 · Ensaio no Chrome (em janela)
+
+Pela extensão Claude in Chrome, na bancada, com o favorito do passo 27:
+
+- **O salvamento automático, provado.** Cinco minutos depois do Preencher,
+  sem Gravar, a página mandou sozinha as 135 células para a bancada (log:
+  "salvamento automático: 135 célula(s) mudaram"). A barra trocou para "O
+  SIGAA já salvou o preenchimento", sem Desfazer; o favorito de novo deu
+  "Tudo confere" em 15 aulas. É a premissa da opção A, agora vista com os
+  scripts do SIGAA.
+- **A conta das faltas fecha:** a barra diz 28, e há 28 células em azul forte.
+- **Defeito achado e consertado:** a aba do Adsum deixada aberta (a da tela
+  cheia, sem Fechar) era reaproveitada pelo favorito sem recarregar, com a
+  leitura velha e o favorito à espera. Agora o endereço leva o id da leitura
+  (`?leitura=`), e cada clique recarrega. Testado, e visto no Chrome com a
+  aba velha aberta.
+- O histórico não aparece no ensaio: a base da bancada é refeita a cada
+  janela, de propósito. Coberto pelos testes, sobre a base de verdade.
+
+Falta a parte em tela cheia, que pede o autor: a extensão não põe o Chrome
+em tela cheia. Passo pela metade conta zero: a fase fica em 83%.
 
 ### 29 · Esboço, vitrine e documentos
 
