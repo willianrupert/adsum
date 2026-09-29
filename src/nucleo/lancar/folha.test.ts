@@ -16,7 +16,7 @@ const leitura = (linhas: number): LeituraPlanilha => ({
 })
 const pos = (linha: number, dia = TER) => ({ linha, coluna: dia === TER ? 0 : 1, matricula: String(linha + 1), dia })
 const relatorio = (celulas: Conciliada[], extra: Partial<Relatorio> = {}): Relatorio => ({
-  turma: TURMA, celulas, semParSigaa: [], semParAdsum: [], semOndeLancar: [], semMaximo: [], vaziasEmAulaLancada: [], ...extra,
+  turma: TURMA, celulas, semParSigaa: [], semParAdsum: [], semOndeLancar: [], semMaximo: [], vaziasEmAulaLancada: [], remanejadas: [], aulasSemChamada: [], ...extra,
 })
 
 describe('o resumo da folha', () => {
@@ -78,7 +78,7 @@ describe('o resumo da folha', () => {
   it('suspensa, bloqueado e fora do período entram na linha do que fica de fora', () => {
     const r = resumoDaFolha({
       relatorio: relatorio([{ ...pos(0), categoria: 'aLancar', esperado: 0 }], {
-        semOndeLancar: [{ dia: comoDia('2026-10-06')!, motivo: 'suspensa' }, { dia: comoDia('2026-12-15')!, motivo: 'foraDoPeriodo' }],
+        semOndeLancar: [{ dia: comoDia('2026-10-06')!, motivo: 'suspensa', presentes: 0, faltas: 0 }, { dia: comoDia('2026-12-15')!, motivo: 'foraDoPeriodo', presentes: 0, faltas: 0 }],
       }),
       leitura: { ...leitura(1), linhas: [...leitura(1).linhas, { indice: 1, matricula: '2', celulas: [{ tipo: 'bloqueada', motivo: 'bloqueado' }, { tipo: 'vazia' }] }] },
       matriculados: MATRICULADOS, desmarcadas: [],
@@ -117,7 +117,7 @@ describe('o resumo da folha', () => {
       relatorio: relatorio([{ ...pos(0), categoria: 'aLancar', esperado: 0 }], {
         semParSigaa: ['99'],
         semParAdsum: ['3'],
-        semOndeLancar: [{ dia: comoDia('2026-10-12')!, motivo: 'feriado' }, { dia: comoDia('2026-10-20')!, motivo: 'semColuna' }],
+        semOndeLancar: [{ dia: comoDia('2026-10-12')!, motivo: 'feriado', presentes: 0, faltas: 0 }, { dia: comoDia('2026-10-20')!, motivo: 'semColuna', presentes: 0, faltas: 0 }],
         semMaximo: [QUI],
       }),
       leitura: { ...leitura(2), linhas: [...leitura(1).linhas, { indice: 1, matricula: '99', celulas: [{ tipo: 'bloqueada', motivo: 'trancado' }, { tipo: 'bloqueada', motivo: 'trancado' }] }] },
@@ -128,5 +128,60 @@ describe('o resumo da folha', () => {
       '1 trancado, 1 matrícula que não está na turma, 1 aluno do Adsum que não está na planilha, o feriado de 12/10, a chamada de 20/10 que não está na planilha e o dia 15/10 sem máximo na planilha ficam de fora.',
     )
     expect(r.informativos).not.toMatch(/—/)
+  })
+})
+
+describe('a chamada sem lugar no SIGAA', () => {
+  const SAB = comoDia('2026-10-17')!
+  const SEG = comoDia('2026-10-05')!
+  const semLugar = (motivo: 'semColuna' | 'cancelada' = 'semColuna') =>
+    relatorio([], { semOndeLancar: [{ dia: SAB, motivo, presentes: 2, faltas: 1 }], aulasSemChamada: [SEG, TER, QUI] })
+
+  it('vira pergunta, com as aulas possíveis, da mais perto para a mais longe', () => {
+    const r = resumoDaFolha({ relatorio: semLugar(), leitura: leitura(3), matriculados: MATRICULADOS, desmarcadas: [] })
+    expect(r.estado).toBe('lancar')
+    expect(r.titulo).toBe('1 chamada sem lugar no SIGAA')
+    expect(r.semLugar).toEqual([
+      {
+        dia: SAB,
+        rotulo: 'Sáb, 17/10',
+        presentes: 2,
+        faltas: 1,
+        explicacao: 'O SIGAA não tem aula neste dia. Em qual aula ela entra?',
+        opcoes: [
+          { dia: QUI, rotulo: 'Qui, 15/10' },
+          { dia: TER, rotulo: 'Ter, 13/10' },
+          { dia: SEG, rotulo: 'Seg, 05/10' },
+        ],
+      },
+    ])
+    // Quem virou pergunta não se repete na linha do que fica de fora.
+    expect(r.informativos).toBeUndefined()
+  })
+
+  it('a aula cancelada no SIGAA diz isso', () => {
+    const r = resumoDaFolha({ relatorio: semLugar('cancelada'), leitura: leitura(3), matriculados: MATRICULADOS, desmarcadas: [] })
+    expect(r.semLugar[0].explicacao).toBe('O SIGAA tem esta aula como cancelada. Em qual aula ela entra?')
+  })
+
+  it('sem aula possível, fica na linha do que fica de fora, como antes', () => {
+    const r = resumoDaFolha({
+      relatorio: relatorio([], { semOndeLancar: [{ dia: SAB, motivo: 'semColuna', presentes: 2, faltas: 1 }] }),
+      leitura: leitura(3),
+      matriculados: MATRICULADOS,
+      desmarcadas: [],
+    })
+    expect(r.semLugar).toEqual([])
+    expect(r.informativos).toBe('a chamada de 17/10 que não está na planilha fica de fora.')
+  })
+
+  it('a aula que recebeu a chamada de outro dia diz de onde ela veio', () => {
+    const r = resumoDaFolha({
+      relatorio: relatorio([{ ...pos(0), categoria: 'aLancar', esperado: 0 }], { remanejadas: [{ de: SAB, para: TER }] }),
+      leitura: leitura(1),
+      matriculados: MATRICULADOS,
+      desmarcadas: [],
+    })
+    expect(r.aulas[0].de).toEqual({ dia: SAB, rotulo: 'Sáb, 17/10' })
   })
 })

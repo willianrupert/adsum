@@ -40,6 +40,8 @@ describe('planejar', () => {
     semOndeLancar: [],
     semMaximo: [],
     vaziasEmAulaLancada: [],
+    remanejadas: [],
+    aulasSemChamada: [],
   }
 
   it('uma instrução por célula "a lançar", e nenhuma de outra categoria', () => {

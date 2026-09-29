@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { conciliar, escolherTurma } from './conciliar.ts'
-import { comoDia, type AjusteSigaa, type Celula, type ColunaDia, type Conciliada, type LeituraPlanilha } from './tipos.ts'
+import { comoDia, type AjusteSigaa, type Celula, type ColunaDia, type Conciliada, type LeituraPlanilha, type RemanejoSigaa } from './tipos.ts'
 import type { Evento, Matriculado } from '../tipos.ts'
 
 const TURMA = 'CIN0144 · T01'
@@ -127,7 +127,7 @@ describe('conciliar: o que decide a presença', () => {
   it('chamada num dia que a página não tem: nada é lançado em outro dia', () => {
     const r = relatorio(leitura({ [ANA]: [V] }), log(abriu(QUI), cracha(QUI, ANA)))
     expect(celula(r, ANA).categoria).toBe('fora')
-    expect(r.semOndeLancar).toEqual([{ dia: QUI, motivo: 'semColuna' }])
+    expect(r.semOndeLancar).toMatchObject([{ dia: QUI, motivo: 'semColuna' }])
   })
 })
 
@@ -200,7 +200,7 @@ describe('conciliar: o que fica fora da grade', () => {
       ),
       log(abriu(TER), abriu(QUI), abriu('2026-10-20')),
     )
-    expect(r.semOndeLancar).toEqual([
+    expect(r.semOndeLancar).toMatchObject([
       { dia: TER, motivo: 'feriado' },
       { dia: QUI, motivo: 'cancelada' },
       { dia: '2026-10-20', motivo: 'semColuna' },
@@ -227,7 +227,7 @@ describe('conciliar: o que fica fora da grade', () => {
       ]),
       log(abriu(TER), abriu(QUI)),
     )
-    expect(r.semOndeLancar).toEqual([
+    expect(r.semOndeLancar).toMatchObject([
       { dia: TER, motivo: 'suspensa' },
       { dia: QUI, motivo: 'foraDoPeriodo' },
     ])
@@ -342,5 +342,98 @@ describe('qual turma', () => {
       recusa: 'duas',
       candidatas: [TURMA, 'CIN0144 · T01b'],
     })
+  })
+})
+
+describe('conciliar: a aula que mudou de data', () => {
+  // A chamada foi numa quinta (15/10) que o SIGAA não tem; a aula dela, no SIGAA, é a terça (13/10).
+  const QUI_REAL = '2026-10-15'
+  const remanejo = (de: string, para: string, em = '2026-10-16T10:00:00.000Z'): RemanejoSigaa => ({ turma: TURMA, de: comoDia(de)!, para: comoDia(para)!, em })
+  const comRemanejos = (l: LeituraPlanilha, eventos: Evento[], remanejos: RemanejoSigaa[]) =>
+    conciliar({ leitura: l, turma: TURMA, matriculados: TURMA_TODA, eventos, ajustes: [], remanejos })
+  const chamadaDaQuinta = () => log(abriu(QUI_REAL), cracha(QUI_REAL, ANA))
+
+  it('sem decisão, a chamada fica sem onde entrar, com as contas dela', () => {
+    const r = comRemanejos(leitura({ [ANA]: [V], [BRENO]: [V] }), chamadaDaQuinta(), [])
+    expect(r.semOndeLancar).toEqual([{ dia: QUI_REAL, motivo: 'semColuna', presentes: 1, faltas: 1 }])
+    expect(celula(r, ANA).categoria).toBe('fora')
+  })
+
+  it('o professor escolhe a terça: a chamada da quinta preenche a terça', () => {
+    const r = comRemanejos(leitura({ [ANA]: [V], [BRENO]: [V] }), chamadaDaQuinta(), [remanejo(QUI_REAL, TER)])
+    expect(celula(r, ANA)).toMatchObject({ categoria: 'aLancar', esperado: 0 })
+    expect(celula(r, BRENO)).toMatchObject({ categoria: 'aLancar', esperado: 2 })
+    expect(r.semOndeLancar).toEqual([])
+    expect(r.remanejadas).toEqual([{ de: QUI_REAL, para: TER }])
+  })
+
+  it('depois do Gravar, a terça confere com a chamada da quinta', () => {
+    const r = comRemanejos(leitura({ [ANA]: [L(0)], [BRENO]: [L(2)] }, [{ dia: TER, maximo: 2, marca: 'lancado' }]), chamadaDaQuinta(), [remanejo(QUI_REAL, TER)])
+    expect(celula(r, ANA)).toMatchObject({ categoria: 'confere' })
+    expect(celula(r, BRENO)).toMatchObject({ categoria: 'confere' })
+  })
+
+  it('desfeito (a quinta volta para a quinta), a chamada volta a ficar sem lugar', () => {
+    const r = comRemanejos(leitura({ [ANA]: [V] }), chamadaDaQuinta(), [remanejo(QUI_REAL, TER), remanejo(QUI_REAL, QUI_REAL, '2026-10-17T10:00:00.000Z')])
+    expect(r.semOndeLancar).toMatchObject([{ dia: QUI_REAL, motivo: 'semColuna' }])
+    expect(r.remanejadas).toEqual([])
+  })
+
+  it('a terça com chamada própria não recebe a da quinta: nenhuma chamada apaga outra', () => {
+    const r = comRemanejos(leitura({ [ANA]: [V], [BRENO]: [V] }), log(abriu(TER), cracha(TER, BRENO), abriu(QUI_REAL), cracha(QUI_REAL, ANA)), [remanejo(QUI_REAL, TER)])
+    expect(celula(r, BRENO)).toMatchObject({ categoria: 'aLancar', esperado: 0 })
+    expect(r.semOndeLancar).toMatchObject([{ dia: QUI_REAL, motivo: 'semColuna' }])
+    expect(r.remanejadas).toEqual([])
+  })
+
+  it('duas chamadas para a mesma aula: vale a decisão mais nova, a outra volta a ficar sem lugar', () => {
+    const SAB = '2026-10-17'
+    const eventos = log(abriu(QUI_REAL), cracha(QUI_REAL, ANA), abriu(SAB), cracha(SAB, BRENO))
+    const r = comRemanejos(leitura({ [ANA]: [V], [BRENO]: [V] }), eventos, [remanejo(QUI_REAL, TER), remanejo(SAB, TER, '2026-10-18T10:00:00.000Z')])
+    expect(celula(r, BRENO)).toMatchObject({ categoria: 'aLancar', esperado: 0 })
+    expect(r.remanejadas).toEqual([{ de: SAB, para: TER }])
+    expect(r.semOndeLancar).toMatchObject([{ dia: QUI_REAL, motivo: 'semColuna' }])
+  })
+
+  it('a quinta que o SIGAA tem como cancelada também pode ir para a terça', () => {
+    const l = leitura({ [ANA]: [V, V] }, [{ dia: TER, maximo: 2 }, { dia: QUI_REAL, maximo: 2, marca: 'cancelada' }])
+    expect(comRemanejos(l, chamadaDaQuinta(), []).semOndeLancar).toMatchObject([{ dia: QUI_REAL, motivo: 'cancelada' }])
+    const r = comRemanejos(l, chamadaDaQuinta(), [remanejo(QUI_REAL, TER)])
+    expect(celula(r, ANA)).toMatchObject({ categoria: 'aLancar', esperado: 0 })
+    expect(r.semOndeLancar).toEqual([])
+  })
+
+  it('as aulas que podem receber uma chamada: sem chamada própria, não lançadas, aceitando valor', () => {
+    const SEX = '2026-10-16'
+    const l = leitura({ [ANA]: [V, V, V, L(0)] }, [
+      { dia: TER, maximo: 2 },
+      { dia: '2026-10-14', maximo: 2, marca: 'feriado' },
+      { dia: SEX, maximo: 2 },
+      { dia: '2026-10-19', maximo: 2, marca: 'lancado' },
+    ])
+    expect(comRemanejos(l, log(abriu(SEX), cracha(SEX, ANA), abriu(QUI_REAL)), []).aulasSemChamada).toEqual([TER])
+    expect(comRemanejos(l, log(abriu(QUI_REAL)), [remanejo(QUI_REAL, TER)]).aulasSemChamada).toEqual([SEX])
+  })
+
+  it('a chamada que foi para outra aula sai da aula do dia dela', () => {
+    const l = leitura({ [ANA]: [V, V] }, [{ dia: TER, maximo: 2 }, { dia: QUI_REAL, maximo: 2 }])
+    const r = comRemanejos(l, chamadaDaQuinta(), [remanejo(QUI_REAL, TER)])
+    expect(celula(r, ANA, TER)).toMatchObject({ categoria: 'aLancar', esperado: 0 })
+    expect(celula(r, ANA, QUI_REAL).categoria).toBe('fora')
+  })
+
+  it('para feriado, cancelada ou suspensa, a decisão não vale', () => {
+    for (const marca of ['feriado', 'cancelada', 'suspensa'] as const) {
+      const l = leitura({ [ANA]: [V] }, [{ dia: TER, maximo: 2, marca }])
+      const r = comRemanejos(l, chamadaDaQuinta(), [remanejo(QUI_REAL, TER)])
+      expect(r.remanejadas).toEqual([])
+      expect(r.semOndeLancar).toMatchObject([{ dia: QUI_REAL, motivo: 'semColuna' }])
+    }
+  })
+
+  it('para uma aula que a página não tem, a decisão não vale', () => {
+    const r = comRemanejos(leitura({ [ANA]: [V] }), chamadaDaQuinta(), [remanejo(QUI_REAL, '2026-10-20')])
+    expect(r.semOndeLancar).toMatchObject([{ dia: QUI_REAL, motivo: 'semColuna' }])
+    expect(r.remanejadas).toEqual([])
   })
 })

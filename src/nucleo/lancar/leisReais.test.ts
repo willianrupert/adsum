@@ -81,7 +81,9 @@ function aplicarALancar(leitura: LeituraPlanilha, r: Relatorio): LeituraPlanilha
   }
 }
 
-describe('portão B: as leis sobre a planilha real de CIN0114, em 200 variações', () => {
+// 200 variações de uma planilha de 45 × 38: a lei 7 leva perto de 5 s sozinha,
+// e sob a suíte inteira passava do limite padrão. O limite é do arquivo, não da lei.
+describe('portão B: as leis sobre a planilha real de CIN0114, em 200 variações', { timeout: 30_000 }, () => {
   it('as variações exercitam o que importa: há o que lançar, o que confere e o que diverge', () => {
     const vistas = new Set<string>()
     paraCada(({ relatorio }) => relatorio.celulas.forEach((c) => vistas.add(c.categoria)))

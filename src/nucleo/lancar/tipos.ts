@@ -65,6 +65,20 @@ export interface LeituraPlanilha {
   linhas: LinhaAluno[]
 }
 
+/**
+ * A chamada de um dia vai para a aula de outro dia no SIGAA: o professor deu
+ * a aula em outra data, e decide em qual aula da planilha ela entra. `para`
+ * igual a `de` desfaz. Mora na auditoria (`remanejo`), que volta da pasta.
+ */
+export interface RemanejoSigaa {
+  turma: string
+  /** O dia da chamada no Adsum. */
+  de: Dia
+  /** O dia da aula no SIGAA. */
+  para: Dia
+  em: string
+}
+
 /** "O professor decidiu diferente": nasce de "Aceitar o SIGAA". Só acréscimo. */
 export interface AjusteSigaa {
   turma: string
@@ -81,7 +95,7 @@ export interface AjusteSigaa {
 export interface LinhaDeAuditoria {
   turma: string
   quando: string
-  acao: 'conferencia' | 'preenchimento' | 'desfeito' | 'aceite'
+  acao: 'conferencia' | 'preenchimento' | 'desfeito' | 'aceite' | 'remanejo'
   versaoSigaa: string
   dia: Dia
   matricula: string
@@ -125,6 +139,9 @@ export type Categoria = Conciliada['categoria']
 export interface SemOndeLancar {
   dia: Dia
   motivo: 'semColuna' | 'feriado' | 'cancelada' | 'suspensa' | 'foraDoPeriodo'
+  /** Os alunos da página nessa chamada: é o que o professor vê para decidir onde ela entra. */
+  presentes: number
+  faltas: number
 }
 
 export interface Relatorio {
@@ -143,4 +160,12 @@ export interface Relatorio {
    * que entraram na turma depois daquelas aulas (`docs/12`).
    */
   vaziasEmAulaLancada: { dia: Dia; quantas: number }[]
+  /** Chamadas que o professor mandou para a aula de outro dia, e valem nesta página. */
+  remanejadas: { de: Dia; para: Dia }[]
+  /**
+   * Aulas da página que podem receber a chamada de outro dia: sem chamada
+   * própria nem remanejada, não lançadas, fora de feriado, cancelada e
+   * suspensa, com máximo e com alguma célula que aceita valor.
+   */
+  aulasSemChamada: Dia[]
 }

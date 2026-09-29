@@ -417,6 +417,14 @@ descritos em §5. Testada em jsdom contra o `RepositorioDexie` de verdade.
   divergente, por conferência, preenchimento e aceite:
   `quando;acao;versao_sigaa;dia_aula;matricula;lido;proposto;aplicado`.
   Sem nome. `;` e BOM, como os outros CSV.
+- **Aula dada em outra data** (pedido do autor, 29/09): o professor realocou
+  a aula, e a chamada do Adsum está num dia que o SIGAA não espera. A folha
+  pergunta em qual aula da planilha ela entra, e a resposta é uma linha
+  `remanejo` na auditoria: `dia_aula` é a aula do SIGAA, `lido` o dia da
+  chamada, sem matrícula. Desfazer é outra linha, com os dois dias iguais. É
+  uma ação nova no mesmo formato: nenhuma coluna muda, e a decisão volta da
+  pasta com o resto da auditoria. Só aula da página, sem chamada própria, e
+  fora de feriado, cancelada e suspensa: nenhuma chamada apaga outra.
 - A janela não pede permissão de pasta: grava no IndexedDB, e o Adsum
   principal leva para a pasta na próxima abertura. O que pode esperar,
   espera.

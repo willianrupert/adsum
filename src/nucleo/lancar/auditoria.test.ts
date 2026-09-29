@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ajustesDaAuditoria, CABECALHO_DA_AUDITORIA, deCsvDaAuditoria, linhaDaAuditoria } from './auditoria.ts'
+import { ajustesDaAuditoria, CABECALHO_DA_AUDITORIA, deCsvDaAuditoria, linhaDaAuditoria, remanejosDaAuditoria } from './auditoria.ts'
 import { comoDia, type LinhaDeAuditoria } from './tipos.ts'
 
 const TURMA = 'CIN0144 · T01'
@@ -69,5 +69,28 @@ describe('os ajustes vêm das linhas de aceite', () => {
       { turma: TURMA, dia: '2026-10-13', matricula: '20260000001', valor: 1, em: '2026-10-20T13:05:00.000Z' },
       { turma: TURMA, dia: '2026-10-13', matricula: '20260000001', valor: 0, em: '2026-10-20T13:06:00.000Z' },
     ])
+  })
+})
+
+describe('a aula que mudou de data, na auditoria', () => {
+  // `dia_aula` é a aula do SIGAA; `lido` é o dia da chamada; sem matrícula: vale para a turma.
+  const remanejo = (de: string, para: string, quando = '2026-10-16T10:00:00.000Z') =>
+    linha({ acao: 'remanejo', quando, dia: comoDia(para)!, matricula: '', lido: de, proposto: para, aplicado: para })
+
+  it('ida e volta, e cada linha volta a ser a decisão', () => {
+    const linhas = [remanejo('2026-10-15', '2026-10-13'), remanejo('2026-10-15', '2026-10-15', '2026-10-17T10:00:00.000Z')]
+    const { itens, problemas } = deCsvDaAuditoria(arquivo(...linhas.map(linhaDaAuditoria)), TURMA)
+    expect(problemas).toEqual([])
+    expect(itens).toEqual(linhas)
+    expect(remanejosDaAuditoria(itens)).toEqual([
+      { turma: TURMA, de: '2026-10-15', para: '2026-10-13', em: '2026-10-16T10:00:00.000Z' },
+      { turma: TURMA, de: '2026-10-15', para: '2026-10-15', em: '2026-10-17T10:00:00.000Z' },
+    ])
+  })
+
+  it('remanejo sem o dia da chamada é problema, com o motivo', () => {
+    const { itens, problemas } = deCsvDaAuditoria(arquivo(linhaDaAuditoria(remanejo('15/10', '2026-10-13'))), TURMA)
+    expect(itens).toEqual([])
+    expect(problemas).toMatchObject([{ linha: 2, motivo: 'remanejo sem o dia da chamada' }])
   })
 })

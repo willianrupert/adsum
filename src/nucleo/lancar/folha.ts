@@ -16,6 +16,19 @@ export interface AulaDaFolha {
   marcada: boolean
   /** Dia com mais aulas que o comum da planilha: quanto a falta vale, dito antes de preencher. */
   aviso?: string
+  /** A chamada veio de outro dia, por decisão do professor. */
+  de?: { dia: Dia; rotulo: string }
+}
+
+/** Chamada do Adsum sem aula no SIGAA para entrar: o professor escolhe em qual. */
+export interface ChamadaSemLugar {
+  dia: Dia
+  rotulo: string
+  presentes: number
+  faltas: number
+  explicacao: string
+  /** As aulas que podem recebê-la, da mais perto para a mais longe. */
+  opcoes: { dia: Dia; rotulo: string }[]
 }
 
 export interface DiferencaDaFolha {
@@ -33,6 +46,7 @@ export interface ResumoDaFolha {
   apoio: string
   diferencas: DiferencaDaFolha[]
   aulas: AulaDaFolha[]
+  semLugar: ChamadaSemLugar[]
   informativos?: string
   /** Só quando há aula para lançar. */
   botao?: string
@@ -47,7 +61,7 @@ function juntar(partes: string[]): string {
   return partes.length <= 1 ? (partes[0] ?? '') : `${partes.slice(0, -1).join(', ')} e ${partes.at(-1)}`
 }
 
-function informativos(relatorio: Relatorio, leitura: LeituraPlanilha): string | undefined {
+function informativos(relatorio: Relatorio, leitura: LeituraPlanilha, perguntadas: ReadonlySet<Dia>): string | undefined {
   const comMotivo = (motivo: string) =>
     leitura.linhas.filter((l) => l.celulas.some((c) => c.tipo === 'bloqueada' && c.motivo === motivo)).length
   const partes: string[] = []
@@ -66,6 +80,7 @@ function informativos(relatorio: Relatorio, leitura: LeituraPlanilha): string | 
   const vaziasEmLancadas = relatorio.vaziasEmAulaLancada.reduce((soma, v) => soma + v.quantas, 0)
   if (vaziasEmLancadas) partes.push(contar(vaziasEmLancadas, 'vazia em aula já lançada', 'vazias em aulas já lançadas'))
   for (const { dia, motivo } of relatorio.semOndeLancar) {
+    if (perguntadas.has(dia)) continue
     if (motivo === 'feriado') partes.push(`o feriado de ${curto(dia)}`)
     else if (motivo === 'cancelada') partes.push(`a aula cancelada de ${curto(dia)}`)
     else if (motivo === 'suspensa') partes.push(`a aula suspensa de ${curto(dia)}`)
@@ -78,6 +93,29 @@ function informativos(relatorio: Relatorio, leitura: LeituraPlanilha): string | 
   // A vírgula que fecha um aposto só fica quando ele é o último, antes do verbo.
   const semVirgula = partes.map((p, i) => (i < partes.length - 1 ? p.replace(/,$/, '') : p))
   return `${juntar(semVirgula)} ${umSo ? 'fica' : 'ficam'} de fora.`
+}
+
+/** Quantas aulas possíveis a folha oferece por chamada: as mais perto bastam. */
+const OPCOES = 4
+
+const EXPLICACAO: Record<Relatorio['semOndeLancar'][number]['motivo'], string> = {
+  semColuna: 'O SIGAA não tem aula neste dia. Em qual aula ela entra?',
+  feriado: 'O SIGAA tem este dia como feriado. Em qual aula ela entra?',
+  cancelada: 'O SIGAA tem esta aula como cancelada. Em qual aula ela entra?',
+  suspensa: 'O SIGAA tem esta aula como suspensa. Em qual aula ela entra?',
+  foraDoPeriodo: 'Este dia está fora do período letivo. Em qual aula ela entra?',
+}
+
+const distancia = (a: string, b: string) => Math.abs(Date.parse(`${a}T12:00:00Z`) - Date.parse(`${b}T12:00:00Z`))
+
+function chamadasSemLugar(relatorio: Relatorio): ChamadaSemLugar[] {
+  return relatorio.semOndeLancar.flatMap(({ dia, motivo, presentes, faltas }) => {
+    const opcoes = [...relatorio.aulasSemChamada]
+      .sort((a, b) => distancia(a, dia) - distancia(b, dia) || a.localeCompare(b))
+      .slice(0, OPCOES)
+      .map((d) => ({ dia: d, rotulo: rotuloDoDia(d) }))
+    return opcoes.length === 0 ? [] : [{ dia, rotulo: rotuloDoDia(dia), presentes, faltas, explicacao: EXPLICACAO[motivo], opcoes }]
+  })
 }
 
 export function resumoDaFolha({
@@ -105,6 +143,11 @@ export function resumoDaFolha({
     return m !== undefined && comum !== undefined && m > comum ? `Dia de ${m} aulas: quem faltou leva ${m} faltas.` : undefined
   }
 
+  const vindaDe = new Map(relatorio.remanejadas.map((r) => [r.para as string, r.de]))
+  const origemDe = (dia: Dia) => {
+    const de = vindaDe.get(dia)
+    return de ? { de: { dia: de, rotulo: rotuloDoDia(de) } } : {}
+  }
   const porDia = new Map<Dia, AulaDaFolha>()
   const diferencas: DiferencaDaFolha[] = []
   let aceitas = 0
@@ -112,7 +155,7 @@ export function resumoDaFolha({
   for (const c of relatorio.celulas) {
     if (c.categoria === 'aLancar') {
       let aula = porDia.get(c.dia)
-      if (!aula) porDia.set(c.dia, (aula = { dia: c.dia, rotulo: rotuloDoDia(c.dia), presentes: 0, faltas: 0, ausentes: [], marcada: !fora.has(c.dia), aviso: avisoDo(c.dia) }))
+      if (!aula) porDia.set(c.dia, (aula = { dia: c.dia, rotulo: rotuloDoDia(c.dia), presentes: 0, faltas: 0, ausentes: [], marcada: !fora.has(c.dia), aviso: avisoDo(c.dia), ...origemDe(c.dia) }))
       if (c.esperado === 0) aula.presentes += 1
       else {
         aula.faltas += 1
@@ -129,9 +172,10 @@ export function resumoDaFolha({
   const semPar = relatorio.semParSigaa.length
   const total = leitura.linhas.length
   const pelaMatricula = semPar === 0 ? 'todos pela matrícula' : `${total - semPar} pela matrícula`
-  const informa = informativos(relatorio, leitura)
+  const semLugar = chamadasSemLugar(relatorio)
+  const informa = informativos(relatorio, leitura, new Set(semLugar.map((s) => s.dia)))
 
-  if (aulas.length === 0 && diferencas.length === 0) {
+  if (aulas.length === 0 && diferencas.length === 0 && semLugar.length === 0) {
     const aceitasTexto = aceitas > 0 ? ` ${contar(aceitas, 'diferença aceita', 'diferenças aceitas')} por você.` : ''
     return {
       estado: 'tudoConfere',
@@ -139,6 +183,7 @@ export function resumoDaFolha({
       apoio: iguais.size > 0 ? `SIGAA e Adsum iguais em ${contar(iguais.size, 'aula', 'aulas')}.${aceitasTexto}` : 'Nada do Adsum para lançar nesta planilha.',
       diferencas,
       aulas,
+      semLugar,
       informativos: informa,
     }
   }
@@ -146,10 +191,16 @@ export function resumoDaFolha({
   const marcadas = aulas.filter((a) => a.marcada).length
   return {
     estado: 'lancar',
-    titulo: aulas.length > 0 ? `${contar(aulas.length, 'aula', 'aulas')} para lançar` : `${contar(diferencas.length, 'diferença', 'diferenças')} para olhar`,
+    titulo:
+      aulas.length > 0
+        ? `${contar(aulas.length, 'aula', 'aulas')} para lançar`
+        : diferencas.length > 0
+          ? `${contar(diferencas.length, 'diferença', 'diferenças')} para olhar`
+          : `${contar(semLugar.length, 'chamada', 'chamadas')} sem lugar no SIGAA`,
     apoio: `${relatorio.turma}. Planilha lida agora, ${contar(total, 'aluno', 'alunos')}, ${pelaMatricula}.`,
     diferencas,
     aulas,
+    semLugar,
     informativos: informa,
     botao: aulas.length === 0 ? undefined : marcadas === 0 ? 'Nada marcado' : `Preencher ${contar(marcadas, 'aula', 'aulas')}`,
   }

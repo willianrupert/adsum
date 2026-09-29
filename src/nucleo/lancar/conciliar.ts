@@ -6,7 +6,7 @@
 
 import { chaveDeIdentidade, diaLocal, presencasDoDia } from '../faltas.ts'
 import type { Evento, Matriculado } from '../tipos.ts'
-import { comoDia, type AjusteSigaa, type Conciliada, type Dia, type LeituraPlanilha, type Relatorio, type SemOndeLancar } from './tipos.ts'
+import { comoDia, type AjusteSigaa, type Conciliada, type Dia, type LeituraPlanilha, type Relatorio, type RemanejoSigaa, type SemOndeLancar } from './tipos.ts'
 
 export interface EntradaDaConciliacao {
   leitura: LeituraPlanilha
@@ -15,6 +15,8 @@ export interface EntradaDaConciliacao {
   /** Mais recente primeiro, como `listarEventos`. */
   eventos: Evento[]
   ajustes: AjusteSigaa[]
+  /** A aula dada em outra data: a decisão do professor de onde a chamada entra. */
+  remanejos?: RemanejoSigaa[]
 }
 
 /** O ajuste mais recente de cada (dia, matrícula) da turma. No mesmo instante, o gravado depois. */
@@ -32,7 +34,39 @@ function ajustesVigentes(ajustes: AjusteSigaa[], turma: string): Map<string, Aju
 /** Dia em que não houve aula, pelo SIGAA: nada a lançar nele. */
 const semAula = (c: { marca?: string }) => c.marca === 'feriado' || c.marca === 'cancelada' || c.marca === 'suspensa'
 
-export function conciliar({ leitura, turma, matriculados, eventos, ajustes }: EntradaDaConciliacao): Relatorio {
+/**
+ * De que chamada vem cada aula da página. A própria, e a de outro dia quando
+ * o professor decidiu (`RemanejoSigaa`). A decisão vale só para aula que a
+ * página tem, que não é feriado, cancelada nem suspensa, e que **não tem
+ * chamada própria**: nenhuma chamada apaga outra. Duas para a mesma aula, a
+ * mais nova vale.
+ */
+function fontesDasAulas(leitura: LeituraPlanilha, turma: string, diasDeChamada: Set<Dia>, remanejos: RemanejoSigaa[]) {
+  const ultimo = new Map<Dia, RemanejoSigaa>()
+  for (const r of remanejos) {
+    if (r.turma !== turma) continue
+    const atual = ultimo.get(r.de)
+    if (!atual || r.em >= atual.em) ultimo.set(r.de, r)
+  }
+  const porDia = new Map(leitura.colunas.map((c) => [c.dia as string, c]))
+  const porPara = new Map<Dia, RemanejoSigaa>()
+  for (const r of ultimo.values()) {
+    const coluna = porDia.get(r.para)
+    // Desfazer (`para` igual a `de`) cai aqui também: a aula de destino é a da própria chamada.
+    if (!diasDeChamada.has(r.de) || diasDeChamada.has(r.para) || !coluna || semAula(coluna)) continue
+    const atual = porPara.get(r.para)
+    if (!atual || r.em >= atual.em) porPara.set(r.para, r)
+  }
+  const fonte = new Map<Dia, Dia>([...diasDeChamada].map((d) => [d, d]))
+  const saiu = new Set<Dia>()
+  for (const r of porPara.values()) saiu.add(r.de)
+  for (const d of saiu) fonte.delete(d)
+  for (const r of porPara.values()) fonte.set(r.para, r.de)
+  const remanejadas = [...porPara.values()].map((r) => ({ de: r.de, para: r.para })).sort((a, b) => a.para.localeCompare(b.para))
+  return { fonte, saiu, remanejadas }
+}
+
+export function conciliar({ leitura, turma, matriculados, eventos, ajustes, remanejos = [] }: EntradaDaConciliacao): Relatorio {
   const alunos = matriculados.filter((m) => m.turma === turma && m.papel === 'aluno')
   const daTurma = new Set(alunos.map((a) => a.matricula))
   const naPagina = new Set(leitura.linhas.map((l) => l.matricula))
@@ -46,10 +80,12 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes }: En
   }
   const presencas = new Map<Dia, Map<string, { presente: boolean }>>()
   for (const dia of diasDeChamada) presencas.set(dia, presencasDoDia(eventos, turma, dia))
+  const presenteNo = (dia: Dia, matricula: string) => presencas.get(dia)?.get(chaveDeIdentidade({ matricula, nome: '' }))?.presente ?? false
+  const { fonte, saiu, remanejadas } = fontesDasAulas(leitura, turma, diasDeChamada, remanejos)
 
   // Dia com o que lançar e sem máximo: inteiro fora, com o motivo.
   const semMaximo = leitura.colunas
-    .filter((c) => c.maximo === undefined && !semAula(c) && diasDeChamada.has(c.dia))
+    .filter((c) => c.maximo === undefined && !semAula(c) && fonte.has(c.dia))
     .map((c) => c.dia)
   const diaSemMaximo = new Set(semMaximo)
 
@@ -61,9 +97,9 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes }: En
     if (coluna.maximo === undefined) return undefined
     const ajuste = vigentes.get(`${coluna.dia}|${matricula}`)
     if (ajuste) return ajuste.valor >= 0 && ajuste.valor <= coluna.maximo ? { valor: ajuste.valor, ajustada: true } : undefined
-    if (!daTurma.has(matricula) || !diasDeChamada.has(coluna.dia)) return undefined
-    const presente = presencas.get(coluna.dia)?.get(chaveDeIdentidade({ matricula, nome: '' }))?.presente ?? false
-    return { valor: presente ? 0 : coluna.maximo, ajustada: false }
+    const origem = fonte.get(coluna.dia)
+    if (!daTurma.has(matricula) || !origem) return undefined
+    return { valor: presenteNo(origem, matricula) ? 0 : coluna.maximo, ajustada: false }
   }
 
   const celulas: Conciliada[] = []
@@ -91,13 +127,17 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes }: En
   }
 
   const porDia = new Map(leitura.colunas.map((c) => [c.dia as string, c]))
+  const naTurma = leitura.linhas.filter((l) => daTurma.has(l.matricula))
   const semOndeLancar: SemOndeLancar[] = [...diasDeChamada].sort().flatMap((dia): SemOndeLancar[] => {
+    if (saiu.has(dia)) return []
+    const presentes = naTurma.filter((l) => presenteNo(dia, l.matricula)).length
+    const contas = { presentes, faltas: naTurma.length - presentes }
     const coluna = porDia.get(dia)
-    if (!coluna) return [{ dia, motivo: 'semColuna' }]
-    if (coluna.marca === 'feriado' || coluna.marca === 'cancelada' || coluna.marca === 'suspensa') return [{ dia, motivo: coluna.marca }]
+    if (!coluna) return [{ dia, motivo: 'semColuna', ...contas }]
+    if (coluna.marca === 'feriado' || coluna.marca === 'cancelada' || coluna.marca === 'suspensa') return [{ dia, motivo: coluna.marca, ...contas }]
     // A página recusa o dia inteiro fora do período letivo (`docs/12`): nenhuma célula aceita valor.
     const daColuna = leitura.linhas.map((l) => l.celulas[coluna.indice])
-    if (daColuna.length > 0 && daColuna.every((c) => c.tipo === 'bloqueada' && c.motivo === 'foraDoPeriodo')) return [{ dia, motivo: 'foraDoPeriodo' }]
+    if (daColuna.length > 0 && daColuna.every((c) => c.tipo === 'bloqueada' && c.motivo === 'foraDoPeriodo')) return [{ dia, motivo: 'foraDoPeriodo', ...contas }]
     return []
   })
 
@@ -109,6 +149,16 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes }: En
     semOndeLancar,
     semMaximo,
     vaziasEmAulaLancada: [...vaziasEmLancada].map(([dia, quantas]) => ({ dia, quantas })),
+    remanejadas,
+    aulasSemChamada: leitura.colunas
+      .filter(
+        (c) =>
+          c.maximo !== undefined &&
+          c.marca === undefined &&
+          !fonte.has(c.dia) &&
+          leitura.linhas.some((l) => l.celulas[c.indice].tipo === 'vazia'),
+      )
+      .map((c) => c.dia),
   }
 }
 

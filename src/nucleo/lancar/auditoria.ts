@@ -1,15 +1,15 @@
 // `sigaa/<turma>.csv`: o registro do que o Adsum fez na planilha do SIGAA.
 //
 // Uma linha por célula tocada ou divergente, em cada conferência,
-// preenchimento, desfazer e aceite. Sem nome, sem turma (é o nome do
+// preenchimento, desfazer e aceite; e uma por aula remanejada, sem matrícula. Sem nome, sem turma (é o nome do
 // arquivo), `;` e BOM como os outros CSV. Só acréscimo. É também de onde os
 // ajustes voltam quando a base é refeita: a pasta é a dona.
 
-import { comoDia, type AjusteSigaa, type LinhaDeAuditoria } from './tipos.ts'
+import { comoDia, type AjusteSigaa, type LinhaDeAuditoria, type RemanejoSigaa } from './tipos.ts'
 
 const BOM = '﻿'
 const SEP = ';'
-const ACOES: readonly LinhaDeAuditoria['acao'][] = ['conferencia', 'preenchimento', 'desfeito', 'aceite']
+const ACOES: readonly LinhaDeAuditoria['acao'][] = ['conferencia', 'preenchimento', 'desfeito', 'aceite', 'remanejo']
 
 export const CABECALHO_DA_AUDITORIA = 'quando;acao;versao_sigaa;dia_aula;matricula;lido;proposto;aplicado'
 
@@ -45,6 +45,7 @@ export function deCsvDaAuditoria(texto: string, turma: string): { itens: LinhaDe
       const dia = comoDia(diaTexto)
       if (!dia) return recusar(`"${diaTexto}" não é um dia de aula`)
       if (acao === 'aceite' && !/^\d+$/.test(aplicado)) return recusar('aceite sem o valor aceito')
+      if (acao === 'remanejo' && !comoDia(lido)) return recusar('remanejo sem o dia da chamada')
       itens.push({ turma, quando, acao: acao as LinhaDeAuditoria['acao'], versaoSigaa, dia, matricula, lido, proposto, aplicado })
     })
   return { itens, problemas }
@@ -55,4 +56,15 @@ export function ajustesDaAuditoria(linhas: LinhaDeAuditoria[]): AjusteSigaa[] {
   return linhas
     .filter((l) => l.acao === 'aceite' && /^\d+$/.test(l.aplicado))
     .map((l) => ({ turma: l.turma, dia: l.dia, matricula: l.matricula, valor: Number(l.aplicado), em: l.quando }))
+}
+
+/**
+ * Cada remanejo é a decisão de uma chamada: a do dia `lido` vai para a aula
+ * do dia `dia_aula`. Desfazer é outra linha, com os dois dias iguais.
+ */
+export function remanejosDaAuditoria(linhas: LinhaDeAuditoria[]): RemanejoSigaa[] {
+  return linhas.flatMap((l) => {
+    const de = l.acao === 'remanejo' ? comoDia(l.lido) : undefined
+    return de ? [{ turma: l.turma, de, para: l.dia, em: l.quando }] : []
+  })
 }

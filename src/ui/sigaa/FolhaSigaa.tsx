@@ -11,7 +11,8 @@ import { resumoDaFolha, type DiferencaDaFolha } from '../../nucleo/lancar/folha.
 import { lerPlanilha } from '../../nucleo/lancar/leitura.ts'
 import { planejar, validarPlano } from '../../nucleo/lancar/plano.ts'
 import type { LeituraRecebida } from '../../nucleo/lancar/protocolo.ts'
-import type { AjusteSigaa, Dia, LeituraPlanilha, LinhaDeAuditoria } from '../../nucleo/lancar/tipos.ts'
+import { remanejosDaAuditoria } from '../../nucleo/lancar/auditoria.ts'
+import type { AjusteSigaa, Dia, LeituraPlanilha, LinhaDeAuditoria, RemanejoSigaa } from '../../nucleo/lancar/tipos.ts'
 import type { Evento, Matriculado } from '../../nucleo/tipos.ts'
 import type { PonteSigaa } from '../../portas/PonteSigaa.ts'
 import type { Repositorio } from '../../portas/Repositorio.ts'
@@ -120,7 +121,7 @@ function FolhaDaTurma({
   avisos: string[]
   fechar: () => void
 }) {
-  const [dados, setDados] = useState<{ eventos: Evento[]; matriculados: Matriculado[]; ajustes: AjusteSigaa[] }>()
+  const [dados, setDados] = useState<{ eventos: Evento[]; matriculados: Matriculado[]; ajustes: AjusteSigaa[]; remanejos: RemanejoSigaa[] }>()
   const [desmarcadas, setDesmarcadas] = useState<Dia[]>([])
   const [aberta, setAberta] = useState<Dia>()
   const [aceitas, setAceitas] = useState<DiferencaDaFolha[]>([])
@@ -129,12 +130,13 @@ function FolhaDaTurma({
   const avisada = useRef(false)
 
   const carregar = useCallback(async () => {
-    const [eventos, matriculados, ajustes] = await Promise.all([
+    const [eventos, matriculados, ajustes, auditoria] = await Promise.all([
       repositorio.listarEventos({ turma }),
       repositorio.listarMatriculados(turma),
       repositorio.lerAjustesSigaa(turma),
+      repositorio.listarAuditoriaSigaa(turma),
     ])
-    setDados({ eventos, matriculados, ajustes })
+    setDados({ eventos, matriculados, ajustes, remanejos: remanejosDaAuditoria(auditoria) })
   }, [repositorio, turma])
 
   useEffect(() => {
@@ -142,7 +144,7 @@ function FolhaDaTurma({
   }, [carregar])
 
   const relatorio = useMemo(
-    () => dados && conciliar({ leitura, turma, matriculados: dados.matriculados, eventos: dados.eventos, ajustes: dados.ajustes }),
+    () => dados && conciliar({ leitura, turma, matriculados: dados.matriculados, eventos: dados.eventos, ajustes: dados.ajustes, remanejos: dados.remanejos }),
     [dados, leitura, turma],
   )
   const resumo = useMemo(
@@ -197,6 +199,12 @@ function FolhaDaTurma({
     await carregar()
   }
 
+  /** A chamada de `de` entra na aula `para` do SIGAA; `para` igual a `de` desfaz. Só acréscimo. */
+  const remanejar = async (de: Dia, para: Dia) => {
+    await repositorio.acrescentarAuditoriaSigaa([linha('remanejo', para, '', de, para, para)])
+    await carregar()
+  }
+
   const preencher = async () => {
     if (!relatorio) return
     const plano = planejar(relatorio, desmarcadas)
@@ -247,6 +255,21 @@ function FolhaDaTurma({
         </p>
       ))}
 
+      {resumo.semLugar.map((s) => (
+        <section key={s.dia} aria-label={`Chamada de ${s.rotulo}`} className="cartao folha-sigaa__sem-lugar">
+          <strong>{s.rotulo}</strong>
+          <small>{`${contar(s.presentes, 'presente', 'presentes')}, ${contar(s.faltas, 'falta', 'faltas')}`}</small>
+          <p>{s.explicacao}</p>
+          <div className="folha-sigaa__opcoes">
+            {s.opcoes.map((o) => (
+              <button key={o.dia} onClick={() => void remanejar(s.dia, o.dia)}>
+                {o.rotulo}
+              </button>
+            ))}
+          </div>
+        </section>
+      ))}
+
       {resumo.aulas.map((a) => (
         <div key={a.dia} className="cartao folha-sigaa__aula">
           <input type="checkbox" checked={a.marcada} onChange={() => alternar(a.dia)} aria-label={`Incluir ${a.rotulo}`} />
@@ -254,7 +277,17 @@ function FolhaDaTurma({
             <strong>{a.rotulo}</strong>
             <small>{`${contar(a.presentes, 'presente', 'presentes')}, ${contar(a.faltas, 'falta', 'faltas')}`}</small>
             {a.aviso && <small className="folha-sigaa__aviso">{a.aviso}</small>}
+            {a.de && <small>{`Chamada de ${a.de.rotulo}`}</small>}
           </button>
+          {a.de && (
+            <button
+              className="botao--quieto"
+              aria-label={`Desfazer: a chamada de ${a.de.rotulo} volta a ficar sem lugar`}
+              onClick={() => void remanejar(a.de!.dia, a.de!.dia)}
+            >
+              Desfazer
+            </button>
+          )}
           {aberta === a.dia && (
             <ul className="folha-sigaa__ausentes">
               {a.ausentes.length === 0 ? <li>Ninguém faltou.</li> : a.ausentes.map((p) => <li key={p.matricula}>{`${p.nome}, ${valorLegivel(p.faltas)}`}</li>)}

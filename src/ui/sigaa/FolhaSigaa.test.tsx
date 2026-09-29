@@ -305,3 +305,45 @@ describe('a folha pergunta a turma, quando a planilha não basta', () => {
     expect(window.localStorage.getItem('adsum.sigaa.turmas')).toBeNull()
   })
 })
+
+describe('a aula dada em outra data', () => {
+  const SAB = '2026-10-17'
+  const SEG = comoDia('2026-10-19')!
+  /** Terça vazia, quinta lançada, e uma segunda (19/10) vazia, sem chamada no Adsum. */
+  const comSegunda = (): BrutoPlanilha =>
+    brutoDaLeitura({
+      id: 'modelo',
+      versaoSigaa: '4.15.0.206',
+      cabecalhoTurma: 'CIN0144 - PROGRAMAÇÃO INVENTADA - Turma: 01 (2026.2)',
+      colunas: [
+        { indice: 0, dia: TER, maximo: 2 },
+        { indice: 1, dia: QUI, maximo: 2, marca: 'lancado' },
+        { indice: 2, dia: SEG, maximo: 2 },
+      ],
+      linhas: MATRICULAS.map((matricula, indice) => ({
+        indice,
+        matricula,
+        celulas: [{ tipo: 'vazia' }, { tipo: 'lancada', faltas: 0 }, { tipo: 'vazia' }],
+      })),
+    })
+
+  it('o professor diz em qual aula a chamada entra, e pode desfazer', async () => {
+    const usuario = userEvent.setup()
+    await repositorio.acrescentarEvento(ev(SAB, { origem: 'professor', resultado: 'ok' }))
+    await repositorio.acrescentarEvento(ev(SAB, { origem: 'cracha', resultado: 'ok', matricula: '20260000001' }))
+    abrir()
+    ponte.ler(comSegunda(), 'l-1')
+    expect(await screen.findByText('O SIGAA não tem aula neste dia. Em qual aula ela entra?')).toBeInTheDocument()
+    expect(screen.getByText('1 presente, 2 faltas')).toBeInTheDocument()
+
+    await usuario.click(screen.getByRole('button', { name: 'Seg, 19/10' }))
+    expect(await screen.findByRole('heading', { name: '2 aulas para lançar' })).toBeInTheDocument()
+    expect(screen.getByText('Chamada de Sáb, 17/10')).toBeInTheDocument()
+    const auditoria = await repositorio.listarAuditoriaSigaa(TURMA)
+    expect(auditoria.filter((l) => l.acao === 'remanejo')).toMatchObject([{ dia: '2026-10-19', lido: SAB, matricula: '' }])
+
+    await usuario.click(screen.getByRole('button', { name: 'Desfazer: a chamada de Sáb, 17/10 volta a ficar sem lugar' }))
+    expect(await screen.findByRole('heading', { name: '1 aula para lançar' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Seg, 19/10' })).toBeInTheDocument()
+  })
+})

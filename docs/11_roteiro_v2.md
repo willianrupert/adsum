@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 100% da fase 2, 70% da fase 3
+## Andamento: 100% da fase 1, 100% da fase 2, 75% da fase 3
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -462,6 +462,7 @@ tela pensada para o tamanho, e ao Preencher fecha e devolve a planilha.
 | 27 | Histórico em Ajustes: o que foi lançado, quando, em cada turma | 10 | feito, 29/09 |
 | 28 | Ensaio no Chrome, em janela e em tela cheia | 20 |  |
 | 29 | Esboço (`docs/09`), vitrine e documentos | 10 |  |
+| 30 | A aula dada em outra data: o professor diz em qual aula do SIGAA a chamada entra | 20 | feito, 29/09 |
 
 ### 23 · Escolha da turma
 
@@ -521,6 +522,36 @@ turmas, em uma linha cada ("CIN0114 · T01, 29/09 às 18:40: 2 aulas, 1
 falta"). Sai da auditoria (`historicoDeLancamentos`); para isso, um
 Preencher grava todas as suas linhas com o mesmo instante (testado). É o que
 o Adsum mandou: o que ficou valendo, o favorito confere na vez seguinte.
+
+**Fora, por decisão do autor (29/09):** a lista para lançar à mão, nos
+Ajustes e nas recusas da folha. "Ver presenças" já mostra quem faltou em
+cada aula, e é dali que se copia à mão.
+
+### 30 · A aula dada em outra data
+
+Pedido do autor: o SIGAA espera a aula num dia, e a chamada do Adsum está
+em outro, porque o professor realocou a aula. Quem decide o lugar é ele.
+Antes, a chamada caía em "fica de fora". Agora a folha mostra um cartão:
+"Sáb, 17/10. 1 presente, 2 faltas. O SIGAA não tem aula neste dia. Em qual
+aula ela entra?", com até quatro aulas possíveis, da mais perto para a mais
+longe. Um toque e a aula escolhida entra na lista para lançar, dizendo
+"Chamada de Sáb, 17/10", com Desfazer.
+
+Aula possível (`aulasSemChamada`): está na página, não tem chamada própria
+nem recebida, não está lançada, não é feriado, cancelada nem suspensa, tem
+máximo e aceita valor. Na conciliação (`fontesDasAulas`), a decisão só vale
+dentro dessas regras (nenhuma chamada apaga outra; duas para a mesma aula,
+vale a mais nova), e a chamada que foi para outra aula sai da aula do seu
+dia. A decisão mora na auditoria, como `remanejo` (`docs/08`), e volta da
+pasta; nenhuma tabela nova no Dexie. Sete mutações da regra, e as sete
+derrubadas (uma revelou uma cláusula redundante, que saiu).
+
+A planilha de presenças do Adsum continua com a data real da chamada: o
+remanejo é só sobre onde ela entra no SIGAA.
+
+**De passagem:** a lei 7 das leis reais levava 4,8 s, colada no limite de
+5 s, e caía sob a suíte inteira. Medido antes da mudança (4,77 s): não era
+dela. O arquivo ganhou limite próprio de 30 s.
 
 ## Fora das fases
 
