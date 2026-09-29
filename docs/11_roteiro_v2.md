@@ -241,7 +241,7 @@ O portão A trouxe a planilha de CIN0114 e mudou três coisas no desenho
 (`docs/08`, "O que a planilha real mudou"): a planilha salva sozinha a cada
 5 minutos, o favorito lê os dados da página em vez de raspar a tabela, e o
 máximo do dia não é fixo. A rota por dia ("Lançar Frequência") fica fora, por
-decisão do autor em 29/09. Mesma regra da fase 1: teste antes, peso por
+decisão do autor em 29/09. A página, por dentro, está em `docs/12`. Mesma regra da fase 1: teste antes, peso por
 passo, passo pela metade conta zero.
 
 | # | Passo | Peso | Estado |
@@ -250,7 +250,7 @@ passo, passo pela metade conta zero.
 | 14 | Leitura real: o bruto passa a ser `auxAulas` e `auxAlunos` | 12 | |
 | 15 | Localizador: escrever o texto da célula, como a coleta do SIGAA lê | 10 | |
 | 16 | Regras da página: data futura, período letivo, bloqueios, dia parcial, máximo fora do comum | 10 | |
-| 17 | Salvamento automático: Preencher, Desfazer e os textos da folha e da barra (espera decisão do autor) | 12 | |
+| 17 | Salvamento automático (opção A, 29/09): a folha avisa, o Desfazer vale até a primeira coleta | 12 | |
 | 18 | Bancada local: a página anonimizada com os scripts, e um servidor que registra o que o Gravar e o salvamento enviariam | 16 | |
 | 19 | Jornada sobre a fixture real | 10 | |
 | 20 | Portão B: as leis sobre a fixture real | 8 | |

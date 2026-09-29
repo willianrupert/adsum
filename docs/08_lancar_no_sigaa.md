@@ -82,8 +82,11 @@ escrever**, com três mudanças de desenho e algumas regras novas.
    favorito escrevesse: **Preencher passa a ser o gesto que grava**, em até 5
    minutos, com ou sem Gravar. E o Desfazer deixa de ser confiável depois do
    primeiro salvamento: a coleta muda o valor guardado na página, e célula
-   vazia, dali em diante, mantém o que foi escrito. **Decisão do autor
-   pendente** sobre como a folha e a barra tratam isso (§5 e camada 5).
+   vazia, dali em diante, mantém o que foi escrito. **Decidido pelo autor em
+   29/09 (opção A):** a folha avisa antes de preencher que o SIGAA salva
+   sozinho em até 5 minutos; o Desfazer vale até a primeira coleta (o
+   favorito percebe pelo campo `form:frequencias` mudando) e, depois dela, a
+   barra diz como corrigir: clicando na célula, como sempre.
 2. **Ler pelos dados, escrever na tabela.** O favorito lê `auxAulas` e
    `auxAlunos`, que são o modelo da própria página, em vez de raspar a
    tabela; escreve o texto nas células, que é o que a coleta lê. O bruto
@@ -103,8 +106,10 @@ escrito no SIGAA, apenas acrescenta, e avisa o que não modificou e por quê. É
 a lei 2 ("nunca toca lançado") e a linha de informativos da folha, agora
 dita por ele.
 
-**O que não entra no repositório:** a página e os scripts do SIGAA (código da
-UFRN, e com dados de alunos). A fixture versionada é o modelo de dados,
+**O que não entra no repositório:** a página e os scripts do SIGAA. As
+páginas vieram do SIGAA da UFPE, pelo Prof. Paulo, e têm dados de alunos; o
+software é da UFRN, licenciado à UFPE. A descrição detalhada de ambas está
+em `docs/12_planilha_sigaa.md`. A fixture versionada é o modelo de dados,
 anonimizado e no nosso formato; a bancada com a página inteira fica local.
 
 ## 3. Princípios que não se negociam
