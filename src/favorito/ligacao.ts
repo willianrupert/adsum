@@ -64,7 +64,12 @@ export function lancarPeloFavorito({ pagina, janela, abrir, destino, gerarId, en
   if (!bruto) return pagina.mostrarBarra({ texto: TEXTOS.naoEhAPlanilha })
 
   const id = gerarId()
-  const aberta = abrir(destino.url, 'adsum-sigaa', RECURSOS)
+  // Um endereço por clique: a janela do Adsum deixada aberta (a aba da tela
+  // cheia, sem Fechar) tem o mesmo nome, e com o mesmo endereço o navegador
+  // não a recarregaria. Ela ficaria com a leitura velha, e o favorito à espera.
+  const endereco = new URL(destino.url)
+  endereco.searchParams.set('leitura', id)
+  const aberta = abrir(endereco.href, 'adsum-sigaa', RECURSOS)
   if (!aberta) return pagina.mostrarBarra({ texto: TEXTOS.bloqueada })
 
   const ouvir = (evento: Event) => {
