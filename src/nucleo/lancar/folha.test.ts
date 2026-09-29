@@ -16,7 +16,7 @@ const leitura = (linhas: number): LeituraPlanilha => ({
 })
 const pos = (linha: number, dia = TER) => ({ linha, coluna: dia === TER ? 0 : 1, matricula: String(linha + 1), dia })
 const relatorio = (celulas: Conciliada[], extra: Partial<Relatorio> = {}): Relatorio => ({
-  turma: TURMA, celulas, semParSigaa: [], semParAdsum: [], semOndeLancar: [], semMaximo: [], ...extra,
+  turma: TURMA, celulas, semParSigaa: [], semParAdsum: [], semOndeLancar: [], semMaximo: [], vaziasEmAulaLancada: [], ...extra,
 })
 
 describe('o resumo da folha', () => {
@@ -84,6 +84,16 @@ describe('o resumo da folha', () => {
       matriculados: MATRICULADOS, desmarcadas: [],
     })
     expect(r.informativos).toBe('1 bloqueado, a aula suspensa de 06/10 e a chamada de 15/12, fora do período letivo, ficam de fora.')
+  })
+
+  it('vazias em aulas já lançadas ficam como estão, e a linha diz quantas', () => {
+    const r = resumoDaFolha({
+      relatorio: relatorio([{ ...pos(0), categoria: 'aLancar', esperado: 0 }], {
+        vaziasEmAulaLancada: [{ dia: TER, quantas: 15 }, { dia: QUI, quantas: 15 }],
+      }),
+      leitura: leitura(1), matriculados: MATRICULADOS, desmarcadas: [],
+    })
+    expect(r.informativos).toBe('30 vazias em aulas já lançadas ficam de fora.')
   })
 
   it('dia com mais aulas que o comum avisa quanto a falta vale', () => {

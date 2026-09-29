@@ -137,4 +137,10 @@ export interface Relatorio {
   semOndeLancar: SemOndeLancar[]
   /** Dias com o que lançar, mas sem máximo legível: nenhuma instrução sai deles. */
   semMaximo: Dia[]
+  /**
+   * Células vazias em aula que o SIGAA já tem como lançada: a aula é do
+   * professor, e o Adsum não acrescenta nela. Na planilha real, são os alunos
+   * que entraram na turma depois daquelas aulas (`docs/12`).
+   */
+  vaziasEmAulaLancada: { dia: Dia; quantas: number }[]
 }

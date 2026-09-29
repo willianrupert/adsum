@@ -63,6 +63,8 @@ function informativos(relatorio: Relatorio, leitura: LeituraPlanilha): string | 
   if (relatorio.semParAdsum.length) {
     partes.push(contar(relatorio.semParAdsum.length, 'aluno do Adsum que não está na planilha', 'alunos do Adsum que não estão na planilha'))
   }
+  const vaziasEmLancadas = relatorio.vaziasEmAulaLancada.reduce((soma, v) => soma + v.quantas, 0)
+  if (vaziasEmLancadas) partes.push(contar(vaziasEmLancadas, 'vazia em aula já lançada', 'vazias em aulas já lançadas'))
   for (const { dia, motivo } of relatorio.semOndeLancar) {
     if (motivo === 'feriado') partes.push(`o feriado de ${curto(dia)}`)
     else if (motivo === 'cancelada') partes.push(`a aula cancelada de ${curto(dia)}`)

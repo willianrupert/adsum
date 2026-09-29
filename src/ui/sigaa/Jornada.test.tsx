@@ -5,23 +5,18 @@
 // célula mudada à mão vira diferença; aceita, sobrevive a refazer a base.
 
 import { afterEach, describe, expect, it } from 'vitest'
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RepositorioDexie } from '../../adaptadores/repositorio/RepositorioDexie.ts'
-import { PonteJanela } from '../../adaptadores/sigaa/PonteJanela.ts'
 import { conferirAuditoriaSigaa, restaurar } from '../../ambiente/sincronia.ts'
-import { lancarPeloFavorito, type Destino } from '../../favorito/ligacao.ts'
 import { planilhaDeFaltas } from '../../nucleo/faltas.ts'
 import type { BrutoPlanilha } from '../../nucleo/lancar/leitura.ts'
-import { ORIGEM_SIGAA } from '../../nucleo/lancar/protocolo.ts'
 import { comoDia, type LeituraPlanilha } from '../../nucleo/lancar/tipos.ts'
 import { AULA_2209, pastaDoCofre } from '../../testes/cofreDeTeste.ts'
 import { PaginaSigaaFalsa } from '../../testes/paginaSigaaFalsa.ts'
 import { brutoDaLeitura } from '../../testes/planilhaSigaa.ts'
-import { FolhaSigaa } from './FolhaSigaa.tsx'
+import { clicarNoFavorito } from '../../testes/duasJanelas.tsx'
 
-const ADSUM = 'https://willianrupert.github.io'
-const DESTINO: Destino = { origem: ADSUM, url: `${ADSUM}/adsum/#/sigaa` }
 const TURMA = '2026.2 - TESTE02 - TURMA B'
 /** As duas aulas com chamada no cofre, e uma terça sem chamada, que fica como está. */
 const DIAS = ['2026-09-17', '2026-09-22', '2026-09-24'].map((d) => comoDia(d)!)
@@ -63,38 +58,6 @@ function depoisDoGravar(pagina: PaginaSigaaFalsa): BrutoPlanilha {
   return b
 }
 
-/**
- * As duas janelas, ligadas como no navegador: o favorito na planilha abre a
- * folha, e cada `postMessage` chega ao outro lado com a origem de quem mandou.
- * Mandar para outra origem que não a do outro lado é defeito, e quebra aqui.
- */
-function clicarNoFavorito(repositorio: RepositorioDexie, pagina: PaginaSigaaFalsa) {
-  const naPlanilha = new EventTarget()
-  const naFolha = new EventTarget() as EventTarget & { opener: unknown }
-  const entregar = (alvo: EventTarget, origin: string, source: unknown) => (mensagem: unknown, para: string) => {
-    const dono = alvo === naFolha ? ADSUM : ORIGEM_SIGAA
-    if (para !== dono) throw new Error(`mensagem para ${para}, mas a janela é de ${dono}`)
-    queueMicrotask(() => alvo.dispatchEvent(Object.assign(new Event('message'), { data: structuredClone(mensagem), origin, source })))
-  }
-  const planilha = { postMessage: (m: unknown, p: string) => entregar(naPlanilha, ADSUM, folha)(m, p) }
-  const folha = { postMessage: (m: unknown, p: string) => entregar(naFolha, ORIGEM_SIGAA, planilha)(m, p) }
-  naFolha.opener = planilha
-
-  let desmontar = () => {}
-  lancarPeloFavorito({
-    pagina,
-    janela: naPlanilha,
-    destino: DESTINO,
-    gerarId: () => crypto.randomUUID(),
-    abrir: () => {
-      const tela = render(<FolhaSigaa repositorio={repositorio} ponte={new PonteJanela(naFolha as unknown as Window)} fechar={() => desmontar()} />)
-      desmontar = () => tela.unmount()
-      return folha
-    },
-  })
-  return { fechar: () => desmontar() }
-}
-
 describe('lançar no SIGAA, de ponta a ponta, sobre o cofre de 22/09', () => {
   it('conferir, preencher, gravar e conferir de novo; a diferença aceita sobrevive a refazer a base', async () => {
     window.localStorage.setItem('adsum.modoDev', 'sim')
@@ -110,7 +73,8 @@ describe('lançar no SIGAA, de ponta a ponta, sobre o cofre de 22/09', () => {
     expect(await screen.findByRole('heading', { name: '2 aulas para lançar' }, ESPERA)).toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Preencher 2 aulas' }))
     await waitFor(() => expect(pagina.barra?.texto).toMatch(/^Adsum preencheu 2 aulas\./), ESPERA)
-    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+    // A folha fecha depois de registrar o preenchimento na auditoria: espera, não supõe.
+    await waitFor(() => expect(screen.queryByRole('heading')).not.toBeInTheDocument(), ESPERA)
 
     // O que foi escrito é a planilha de faltas da pasta, célula por célula.
     const [eventos, matriculados, aulas] = await Promise.all([

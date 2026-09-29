@@ -42,8 +42,9 @@ function bruto(valores: string[][] = [['', '0'], ['', '2'], ['', '0']], mudar: (
     versaoSigaa: '4.15.0.206',
     cabecalhoTurma: 'CIN0144 - PROGRAMAÇÃO INVENTADA - Turma: 01 (2026.2)',
     colunas: [
-      { indice: 0, dia: TER, maximo: maximos[0] },
-      { indice: 1, dia: QUI, maximo: maximos[1], marca: 'lancado' },
+      // Lançada, como no SIGAA real, só a aula que tem algum valor.
+      { indice: 0, dia: TER, maximo: maximos[0], ...(valores.some((l) => l[0] !== '') && { marca: 'lancado' as const }) },
+      { indice: 1, dia: QUI, maximo: maximos[1], ...(valores.some((l) => l[1] !== '') && { marca: 'lancado' as const }) },
     ],
     linhas: valores.map((linha, indice) => ({
       indice,

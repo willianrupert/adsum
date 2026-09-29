@@ -175,6 +175,8 @@ casos continuam cobertos só pelos cenários inventados.
   depois do preenchimento, a página já recolheu os valores; dali em diante o
   Desfazer não volta a `null`, e a barra diz como corrigir: clicando na
   célula, como sempre.
+- **Aula lançada é do professor.** Vazia em aula já lançada (quem entrou
+  depois) fica como está: o Adsum não sabe a data de entrada de ninguém.
 - **As mesmas travas da página.** Nada em data futura, fora do período
   letivo, feriado, cancelada, suspensa, trancado, matriculado depois ou
   bloqueado.

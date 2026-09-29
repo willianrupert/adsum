@@ -101,6 +101,13 @@ trancado, matriculado depois, bloqueado, feriado, cancelada ou suspensa. Dia
 já lançado com células vazias é normal (quem entrou depois); os alunos da
 página sem par no Adsum ficam vazios e são ditos.
 
+**Aula já lançada é do professor (29/09/2026).** Na planilha real, quem
+entrou na turma depois fica vazio nas aulas já lançadas, sem marca de
+"matriculado depois"; o Adsum, que não sabe quando cada aluno entrou,
+proporia falta a quem nem estava na turma. Por isso o Adsum não acrescenta
+nada em aula que o SIGAA já tem como lançada: ali ele só confere, e as vazias
+são ditas.
+
 **Regra do professor (29/09/2026):** o Adsum nunca modifica o que já está
 escrito no SIGAA, apenas acrescenta, e avisa o que não modificou e por quê. É
 a lei 2 ("nunca toca lançado") e a linha de informativos da folha, agora

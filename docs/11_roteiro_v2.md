@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 66% da fase 2
+## Andamento: 100% da fase 1, 76% da fase 2
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -252,7 +252,7 @@ passo, passo pela metade conta zero.
 | 16 | Regras da página: data futura, período letivo, bloqueios, dia parcial, máximo fora do comum | 10 | feito, 29/09 |
 | 17 | Salvamento automático (opção A, 29/09): a folha avisa, o Desfazer vale até a primeira coleta | 12 | feito, 29/09 |
 | 18 | Bancada local: a página anonimizada com os scripts, e um servidor que registra o que o Gravar e o salvamento enviariam | 16 | feito, 29/09 |
-| 19 | Jornada sobre a fixture real | 10 |  |
+| 19 | Jornada sobre a fixture real | 10 | feito, 29/09 |
 | 20 | Portão B: as leis sobre a fixture real | 8 |  |
 | 21 | Segunda turma e planilha depois do Gravar (captura e mensagem de sucesso) | 8 |  |
 | 22 | Ensaio na bancada | 8 |  |
@@ -356,6 +356,27 @@ npm run dev
 ```
 
 e abrir http://localhost:8080 no Chrome e clicar em "Favorito (ensaio)".
+
+### 19 · Jornada sobre a planilha real
+
+`ui/sigaa/JornadaReal.test.tsx`: a página de CIN0114 com a estrutura do
+`docs/12`, o localizador de verdade, o favorito e a folha por mensagens, e o
+Adsum com a mesma turma (`testes/cenarioDaBancada.ts`, que a bancada também
+usa). Conferir dá 3 aulas para lançar; preencher muda 135 células (45 × 3), só
+nelas; gravado, o favorito de novo dá "Tudo confere" em 15 aulas.
+
+**A planilha real mostrou um erro de desenho**, consertado com teste antes:
+nas aulas já lançadas, quem entrou na turma depois ficou vazio, sem a marca de
+"matriculado depois", e o Adsum, que não sabe quando cada aluno entrou,
+proporia 2 faltas a cada um (60 faltas erradas). Regra nova, na linha da do
+professor: **aula já lançada no SIGAA é do professor, e o Adsum não acrescenta
+nela.** As vazias dali ficam como estão e são ditas ("60 vazias em aulas já
+lançadas ficam de fora"); o que está lançado continua conferido.
+
+**Correção ao passo 15:** a instabilidade da jornada não era carga. A folha
+fecha depois de gravar a auditoria, e o teste conferia "fechou" logo que a
+barra do favorito aparecia, às vezes antes. Medido: 7 de 10 rodadas passavam;
+com o teste esperando o fechamento, 20 de 20.
 
 ## Fora das duas fases
 

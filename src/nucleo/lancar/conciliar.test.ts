@@ -207,6 +207,17 @@ describe('conciliar: o que fica fora da grade', () => {
     ])
   })
 
+  it('aula já lançada no SIGAA é do professor: vazia ali fica como está, contada; lançada ali continua conferida', () => {
+    // Na planilha real, quem entrou na turma depois ficou vazio nas aulas já lançadas.
+    const r = relatorio(
+      leitura({ [ANA]: [V], [BRENO]: [L(2)] }, [{ dia: TER, maximo: 2, marca: 'lancado' }]),
+      log(abriu(TER), cracha(TER, BRENO)),
+    )
+    expect(celula(r, ANA).categoria).toBe('fora')
+    expect(celula(r, BRENO)).toMatchObject({ categoria: 'diverge', sigaa: 2, esperado: 0 })
+    expect(r.vaziasEmAulaLancada).toEqual([{ dia: TER, quantas: 1 }])
+  })
+
   it('aula suspensa e chamada fora do período letivo também não têm onde lançar, com o motivo', () => {
     const fora = { tipo: 'bloqueada' as const, motivo: 'foraDoPeriodo' as const }
     const r = relatorio(

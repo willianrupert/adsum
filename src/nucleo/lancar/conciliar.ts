@@ -67,6 +67,7 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes }: En
   }
 
   const celulas: Conciliada[] = []
+  const vaziasEmLancada = new Map<Dia, number>()
   for (const linha of leitura.linhas) {
     for (const coluna of leitura.colunas) {
       const posicao = { linha: linha.indice, coluna: coluna.indice, matricula: linha.matricula, dia: coluna.dia }
@@ -74,6 +75,9 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes }: En
       const e = diaSemMaximo.has(coluna.dia) ? undefined : esperado(linha.matricula, coluna)
       if (sigaa.tipo === 'bloqueada' || (diaSemMaximo.has(coluna.dia) && daTurma.has(linha.matricula))) {
         celulas.push({ ...posicao, categoria: 'fora' })
+      } else if (sigaa.tipo === 'vazia' && coluna.marca === 'lancado') {
+        celulas.push({ ...posicao, categoria: 'fora' })
+        vaziasEmLancada.set(coluna.dia, (vaziasEmLancada.get(coluna.dia) ?? 0) + 1)
       } else if (sigaa.tipo === 'vazia') {
         celulas.push(e ? { ...posicao, categoria: 'aLancar', esperado: e.valor } : { ...posicao, categoria: 'fora' })
       } else if (!e) {
@@ -104,6 +108,7 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes }: En
     semParAdsum: alunos.map((a) => a.matricula).filter((m) => !naPagina.has(m)),
     semOndeLancar,
     semMaximo,
+    vaziasEmAulaLancada: [...vaziasEmLancada].map(([dia, quantas]) => ({ dia, quantas })),
   }
 }
 
