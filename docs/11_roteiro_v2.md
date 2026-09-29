@@ -238,5 +238,7 @@ não saía depois de um aceite.
 ## Depois do portão A (fora da conta)
 
 - O extrator do favorito (página → bruto) e os seletores de escrita.
+- A rota por dia ("Lançar Frequência"), se a planilha falhar no portão A ou o
+  professor preferir: o professor navega, o favorito orienta (`docs/08`).
 - `scripts/anonimizar_sigaa.py` e as fixtures da planilha real.
 - A jornada completa sobre a fixture, e os portões B a E do `08`.

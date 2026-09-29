@@ -61,6 +61,7 @@ Sucesso é, medido em uso real:
 | O Gravar envia só o que mudou ou tudo? O que faz com vazia? | HTML antes e depois | **falta** |
 | Mensagem de sucesso e de erro do Gravar | HTML depois | **falta** |
 | O SIGAA manda `Cross-Origin-Opener-Policy`? | cabeçalhos da resposta | **falta** |
+| "Lançar Frequência" é em duas etapas: calendário (verde = lançado, vermelho = feriado, amarelo = cancelada), e só depois de escolher o dia, a lista de alunos com uma lista de opções por aluno ("presente" ou quantas aulas perdeu) | tela do SIGAA de teste da UFRRJ, v3.53 (2020), vista em 29/09/2026 | referência: a UFPE roda a 4.15, e o HTML pode diferir |
 
 Tudo o que está como **falta** vem de uma coisa só: a planilha do docente,
 salva antes e depois de um Gravar, com os cabeçalhos. Ver §6.
@@ -382,6 +383,41 @@ confere*. **Sobre cofre com histórico**, nunca base limpa — é a regra de
 2. **Favorito + janela** — a rota. **Decidido pelo autor, 24/09/2026**:
    extensão não entra, nem como plano B.
 
+### A rota por dia: o professor navega, o favorito orienta
+
+Decidido pelo autor em 29/09/2026. A tela "Lançar Frequência" é em duas
+etapas: um calendário, e a lista de alunos só depois de escolher o dia. **O
+favorito não navega por ela.** Clicar num dia do calendário é uma requisição
+ao SIGAA em nome do professor, e a regra do §3 (nunca clica, navega nem envia
+formulário) vale aqui como na planilha. Quem clica no dia e no Gravar é o
+professor; o favorito lê a tela em que ele está, entende o dia aberto e diz em
+uma frase o que fazer, com no máximo uma ação.
+
+**No calendário, sem dia aberto**, o favorito compara os dias marcados como
+lançados com as chamadas do Adsum: "Faltam 2 aulas: 16/03 e 17/03. Clique em
+16/03 no calendário." Isso já é uma conferência do semestre inteiro.
+
+**Com um dia aberto:**
+
+| Situação do dia aberto | O que a janela diz | Ação |
+|---|---|---|
+| Vazio no SIGAA, com chamada no Adsum | "16/03: 46 presentes, 2 faltas." | Preencher |
+| Já lançado e igual ao Adsum | "16/03 já confere. Próximo: 17/03." | nenhuma |
+| Já lançado e diferente | a diferença, com nome e os dois valores | Aceitar o SIGAA |
+| Sem chamada no Adsum | "O Adsum não tem chamada de 16/03. Nada a preencher." | nenhuma |
+| Feriado ou aula cancelada | "16/03 é feriado no SIGAA." | nenhuma |
+
+Depois de preencher, a barra no pé diz "Adsum preencheu 16/03. Confira e
+clique em Gravar. Depois, o próximo é 17/03." A orientação tem sempre a mesma
+forma: o estado do dia em uma frase, e o próximo dia pendente.
+
+**O núcleo não muda.** Conciliação, leis, plano e validador já trabalham por
+dia: uma página com um dia só é uma planilha de uma coluna. O trabalho novo é
+de borda: ler o calendário e a data aberta, escrever em lista de opções (o
+`Localizador`), e os textos acima. Custa três cliques por dia contra um Gravar
+para vários dias na planilha: a planilha continua a rota principal, e esta
+entra se a planilha falhar no portão A ou se o professor preferir esta tela.
+
 ## 5. A experiência
 
 As telas desenhadas, com as perguntas que ainda são do autor, estão em
@@ -448,8 +484,12 @@ comparar e trocar.
 A rota é validada em portões. Cada um tem critério de passagem e o que muda
 se não passar. Nenhum portão depois do C escreve no SIGAA sem o anterior.
 
-**A · HTML do docente** (Paulo salva a planilha antes e depois de um Gravar,
-com os cabeçalhos; fora do repositório).
+**A · HTML do docente** (fora do repositório). O mínimo, pedido em
+29/09/2026, tudo salvo **antes** de lançar, em "Página da Web, completa":
+"Lançar Freq. em Planilha" numa turma com dias já lançados (a coluna de hoje,
+vazia, ao lado de dias com 0, responde vazia ≠ 0); e, para a rota por dia,
+"Lançar Frequência" com o calendário e com um dia aberto. A planilha depois de
+um Gravar e os cabeçalhos da resposta (COOP) são segunda rodada.
 Passa se: células legíveis por código, vazia ≠ 0, máximo do dia encontrável,
 sem COOP que corte a ligação entre janelas.
 Se não passar: célula ilegível ou vazia = 0 muda a rota para a tela de um dia
@@ -515,7 +555,10 @@ Dois pedidos independentes, e o primeiro vale mais que o segundo:
 2. **Ambiente de homologação ou turma de teste**, para o portão D. Sem ele,
    o portão D acontece numa turma real, com o professor ao lado — mais lento,
    não mais perigoso, porque o Gravar é dele e a falta só vira definitiva na
-   ratificação.
+   ratificação. Esses ambientes existem em instalações do SIGAA: a UFRRJ tem
+   um (`testesigaa.ufrrj.br`, com docente e turma fictícios). Com um na UFPE,
+   até o Gravar se testa sem dado real, e o pedido pode andar em paralelo ao
+   HTML do professor.
 
 O perfil que lança frequência é o de docente. O pedido tem de sair do
 professor, ou com ele.
