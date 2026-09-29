@@ -55,8 +55,8 @@ export type LeituraRecebida =
   | { ok: false; motivo: 'origem' | 'janela' | 'formato' | 'versaoDoFavorito' }
 
 /** No Adsum: a leitura só vale do SIGAA, e da janela que abriu esta. */
-export function receberLeitura(evento: Recebido, esperado: { abridora: unknown }): LeituraRecebida {
-  if (evento.origin !== ORIGEM_SIGAA) return { ok: false, motivo: 'origem' }
+export function receberLeitura(evento: Recebido, esperado: { abridora: unknown; origem?: string }): LeituraRecebida {
+  if (evento.origin !== (esperado.origem ?? ORIGEM_SIGAA)) return { ok: false, motivo: 'origem' }
   if (!esperado.abridora || evento.source !== esperado.abridora) return { ok: false, motivo: 'janela' }
   const d = evento.data
   if (!objeto(d) || d.v !== VERSAO_DO_PROTOCOLO || d.tipo !== 'leitura' || !idValido(d.id) || !('bruto' in d)) {

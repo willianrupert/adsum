@@ -11,7 +11,8 @@ import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts
 import { PonteJanela } from '../adaptadores/sigaa/PonteJanela.ts'
 import { PonteSimulada } from '../adaptadores/sigaa/PonteSimulada.ts'
 import type { PonteSigaa, PonteSimulavel } from '../portas/PonteSigaa.ts'
-import type { Config } from '../nucleo/tipos.ts'
+import type { Config, Evento, Matriculado } from '../nucleo/tipos.ts'
+import { ORIGEM_SIGAA } from '../nucleo/lancar/protocolo.ts'
 import type { LeitorDeCracha } from '../portas/LeitorDeCracha.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
 import { modoDev } from '../ambiente/preferencias.ts'
@@ -137,12 +138,35 @@ export async function fecharChamadaDeAntes(repositorio: Repositorio): Promise<vo
  * aula. Aqui só o repositório, sem leitor e sem mexer na sessão.
  */
 export async function abrirBaseDaJanelaSigaa(): Promise<Repositorio> {
+  if (import.meta.env.DEV && naBancada()) return baseDaBancada()
   const repositorio = new RepositorioDexie()
   await repositorio.abrir()
   return repositorio
 }
 
-export const ponteDaJanela = (): PonteSigaa => new PonteJanela(window)
+export const ponteDaJanela = (): PonteSigaa =>
+  new PonteJanela(window, import.meta.env.DEV && naBancada() ? ORIGEM_DA_BANCADA : ORIGEM_SIGAA)
+
+/**
+ * Só em desenvolvimento: a janela aberta pelo favorito de ensaio da bancada
+ * local (`scripts/bancada_sigaa.mjs`), com `?bancada` no endereço. O `if` com
+ * `import.meta.env.DEV` na própria condição tira tudo isto do app publicado.
+ */
+const ORIGEM_DA_BANCADA = 'http://localhost:8080'
+export const naBancada = (): boolean => import.meta.env.DEV && new URLSearchParams(window.location.search).has('bancada')
+
+/** A turma da bancada (as mesmas matrículas inventadas da página) numa base só dela, refeita a cada abertura. */
+async function baseDaBancada(): Promise<Repositorio> {
+  const cenario = (await (await fetch(`${ORIGEM_DA_BANCADA}/bancada/cenario.json`)).json()) as {
+    turma: string
+    matriculados: Matriculado[]
+    eventos: Evento[]
+  }
+  const repositorio = await baseDaVitrine('adsum-bancada')
+  await repositorio.salvarTurma(cenario.turma, cenario.matriculados)
+  for (const evento of cenario.eventos) await repositorio.acrescentarEvento(evento)
+  return repositorio
+}
 
 /**
  * A vitrine mostra a janela do SIGAA com gente inventada, numa base só dela

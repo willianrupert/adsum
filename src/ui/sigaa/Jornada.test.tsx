@@ -28,7 +28,7 @@ const DIAS = ['2026-09-17', '2026-09-22', '2026-09-24'].map((d) => comoDia(d)!)
 
 afterEach(() => window.localStorage.removeItem('adsum.modoDev'))
 
-/** O teste mais pesado da suíte (59 alunos, duas janelas): com a suíte inteira em paralelo, 1 s não basta. */
+/** O teste mais pesado da suíte (59 alunos, duas janelas): no fim da suíte longa, com a máquina carregada, 1 s não bastou. */
 const ESPERA = { timeout: 5000 }
 
 /** A planilha da turma B como o SIGAA a mostraria antes de qualquer lançamento. */

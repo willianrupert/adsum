@@ -2,7 +2,7 @@
 // código gerado: pequeno, e sem nada que o `docs/08` proíbe.
 
 import { beforeAll, describe, expect, it } from 'vitest'
-import { construirFavorito, TETO_DO_FAVORITO } from './construir.ts'
+import { codigoDoFavorito, construirFavorito, TETO_DO_FAVORITO } from './construir.ts'
 import { DESTINO } from './destino.ts'
 
 let codigo: string
@@ -13,6 +13,16 @@ beforeAll(async () => {
   codigo = decodeURIComponent(favorito.slice('javascript:'.length))
 }, 30_000)
 
+describe('o favorito da bancada', () => {
+  it('troca o destino na hora de gerar, não por algo que a página pudesse mudar', async () => {
+    const local = { origem: 'http://localhost:5173', url: 'http://localhost:5173/?bancada#/sigaa' }
+    const deEnsaio = await codigoDoFavorito({ destino: local })
+    expect(deEnsaio).toContain('http://localhost:5173/?bancada#/sigaa')
+    expect(deEnsaio).not.toContain(DESTINO.url)
+    expect(deEnsaio).not.toMatch(/__ADSUM|window\.DESTINO|globalThis\.DESTINO/)
+  }, 30_000)
+})
+
 describe('o favorito gerado', () => {
   it('é um javascript: pequeno', () => {
     expect(favorito.startsWith('javascript:')).toBe(true)
@@ -21,6 +31,10 @@ describe('o favorito gerado', () => {
 
   it('conhece o Adsum pela origem exata', () => {
     expect(codigo).toContain(DESTINO.origem)
+  })
+
+  it('o publicado nunca aponta para uma bancada local', () => {
+    expect(codigo).not.toMatch(/localhost|127\.0\.0\.1/)
   })
 
   it.each([

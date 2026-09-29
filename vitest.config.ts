@@ -9,7 +9,7 @@ export default defineConfig({
   test: {
     // jsdom para todos: o núcleo não se importa, e as telas precisam.
     environment: 'jsdom',
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'scripts/**/*.test.mjs'],
     setupFiles: ['./src/testes/preparo.ts'],
     restoreMocks: true,
     // `vi.useFakeTimers` de um arquivo vazava pro relógio de outro rodando em

@@ -63,6 +63,22 @@ describe('PonteJanela: a janela do Adsum aberta pelo favorito', () => {
     expect(ponte.entregar('l-1', [])).toBe(false)
   })
 
+  it('com outra origem configurada (a bancada local), só ela vale, e só para ela vai o plano', () => {
+    const abridora = { postMessage: vi.fn() }
+    const janela = Object.assign(new EventTarget(), { opener: abridora }) as unknown as Window
+    const ponte = new PonteJanela(janela, 'http://localhost:8080')
+    const recebidas: LeituraRecebida[] = []
+    ponte.aoLer((r) => recebidas.push(r))
+    ponte.iniciar()
+    expect(abridora.postMessage).toHaveBeenCalledWith(mensagemDePronto(), 'http://localhost:8080')
+    const chegar = (origin: string) => janela.dispatchEvent(Object.assign(new Event('message'), { data: mensagemDeLeitura('l-1', {}), origin, source: abridora }))
+    chegar(ORIGEM_SIGAA)
+    chegar('http://localhost:8080')
+    expect(recebidas).toEqual([{ ok: true, id: 'l-1', bruto: {} }])
+    ponte.entregar('l-1', [])
+    expect(abridora.postMessage).toHaveBeenLastCalledWith(mensagemDePlano('l-1', []), 'http://localhost:8080')
+  })
+
   it('parada, não ouve mais', () => {
     const { ponte, chegar, recebidas } = montar()
     ponte.iniciar()

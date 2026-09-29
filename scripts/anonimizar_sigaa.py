@@ -25,8 +25,14 @@ No fim o script procura, no texto gerado, cada nome (e cada parte de nome com
 
 Uso:
     python3 scripts/anonimizar_sigaa.py PLANILHA_SALVA.html SAIDA.json
+    python3 scripts/anonimizar_sigaa.py PLANILHA_SALVA.html SAIDA.json --pagina PAGINA.html
+
+Com `--pagina`, grava também a página inteira com as mesmas trocas, para a
+bancada local (`scripts/bancada_sigaa.mjs`). Ela nunca entra no repositório:
+tem os scripts do SIGAA. A mesma conferência roda sobre ela.
 """
 
+import html as html_lib
 import json
 import re
 import sys
@@ -34,6 +40,9 @@ from pathlib import Path
 
 ID_MAT, MAT, NOME, ID_FREQ, ID_DISCENTE = 0, 1, 2, 6, 9
 CAMPOS_DO_ALUNO = 16
+# Fronteira de palavra sem o `_`: o id do aluno aparece colado em `aluno_<id>`,
+# nas classes das células, e também tem de ser trocado e conferido ali.
+LETRA = r"[0-9A-Za-zÀ-ÿ]"
 CAMPOS_DA_AULA = 10
 
 
@@ -60,10 +69,19 @@ def data(pagina: str, nome: str) -> str:
 
 
 def main() -> int:
-    if len(sys.argv) != 3:
+    argumentos = sys.argv[1:]
+    pagina_saida = None
+    if "--pagina" in argumentos:
+        i = argumentos.index("--pagina")
+        if i + 1 >= len(argumentos):
+            print(__doc__)
+            return 2
+        pagina_saida = Path(argumentos[i + 1])
+        del argumentos[i : i + 2]
+    if len(argumentos) != 2:
         print(__doc__)
         return 2
-    entrada, saida = Path(sys.argv[1]), Path(sys.argv[2])
+    entrada, saida = Path(argumentos[0]), Path(argumentos[1])
     pagina = ler_pagina(entrada)
 
     aulas = [a.split(",") for a in variavel(pagina, "auxAulas").split(";") if a]
@@ -120,10 +138,35 @@ def main() -> int:
     proibidos = {*nomes, *(a[MAT] for a in alunos), *id_mat, *id_discente, *id_freq, disciplina}
     for nome in nomes:
         proibidos.update(parte for parte in nome.split() if len(parte) >= 4)
-    vazou = sorted(p for p in proibidos if p and re.search(rf"(?<![\w]){re.escape(p)}(?![\w])", texto))
+    def vazamentos(conteudo: str) -> list[str]:
+        alvos = [conteudo, html_lib.unescape(conteudo)]
+        return sorted(p for p in proibidos if p and any(re.search(rf"(?<!{LETRA}){re.escape(p)}(?!{LETRA})", a) for a in alvos))
+
+    vazou = vazamentos(texto)
     if vazou:
         print(f"Recusado: {len(vazou)} valor(es) do original apareceriam no arquivo.", file=sys.stderr)
         return 1
+
+    if pagina_saida:
+        # As mesmas trocas na página inteira: dados, tabela já desenhada, classes e campo escondido.
+        trocas: dict[str, str] = {disciplina: "DISCIPLINA ANONIMIZADA"}
+        for a in alunos:
+            n = numero[a[ID_MAT]]
+            trocas[a[NOME]] = f"ALUNO {n:03d} INVENTADO"
+            trocas[a[MAT]] = f"20269{n:06d}"
+        trocas.update(id_mat)
+        trocas.update(id_discente)
+        trocas.update(id_freq)
+        anonima = pagina
+        for original in sorted(trocas, key=len, reverse=True):
+            anonima = re.sub(rf"(?<!{LETRA}){re.escape(original)}(?!{LETRA})", trocas[original], anonima)
+        vazou = vazamentos(anonima)
+        if vazou:
+            print(f"Recusado: {len(vazou)} valor(es) do original sobrariam na página.", file=sys.stderr)
+            return 1
+        pagina_saida.parent.mkdir(parents=True, exist_ok=True)
+        pagina_saida.write_text(anonima, encoding="utf-8")
+        print(f"{pagina_saida}: página anonimizada, só para a bancada local.")
 
     saida.parent.mkdir(parents=True, exist_ok=True)
     saida.write_text(texto, encoding="utf-8")

@@ -11,17 +11,20 @@ import { criarEmissor } from '../leitor/emissor.ts'
 export class PonteJanela implements PonteSigaa {
   readonly nome = 'Janela do favorito'
   readonly #janela: Window
+  /** A do SIGAA; em desenvolvimento, a da bancada local (`ui/adsum.ts`). */
+  readonly #origem: string
   readonly #leituras = criarEmissor<LeituraRecebida>()
   readonly #ouvir = (evento: Event) => {
     const { data, origin, source } = evento as MessageEvent
-    const recebida = receberLeitura({ data, origin, source }, { abridora: this.#janela.opener })
+    const recebida = receberLeitura({ data, origin, source }, { abridora: this.#janela.opener, origem: this.#origem })
     // Mensagem que não é da planilha não é para a folha: extensões e abas também falam.
     if (!recebida.ok && (recebida.motivo === 'origem' || recebida.motivo === 'janela')) return
     this.#leituras.emitir(recebida)
   }
 
-  constructor(janela: Window = window) {
+  constructor(janela: Window = window, origem: string = ORIGEM_SIGAA) {
     this.#janela = janela
+    this.#origem = origem
   }
 
   ligada(): boolean {
@@ -30,7 +33,7 @@ export class PonteJanela implements PonteSigaa {
 
   iniciar(): void {
     this.#janela.addEventListener('message', this.#ouvir)
-    this.#janela.opener?.postMessage(mensagemDePronto(), ORIGEM_SIGAA)
+    this.#janela.opener?.postMessage(mensagemDePronto(), this.#origem)
   }
 
   parar(): void {
@@ -44,7 +47,7 @@ export class PonteJanela implements PonteSigaa {
   entregar(id: string, instrucoes: Instrucao[]): boolean {
     const abridora = this.#janela.opener
     if (!abridora) return false
-    abridora.postMessage(mensagemDePlano(id, instrucoes), ORIGEM_SIGAA)
+    abridora.postMessage(mensagemDePlano(id, instrucoes), this.#origem)
     return true
   }
 }

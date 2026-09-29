@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { lancarNoSigaaLigado } from '../../ambiente/preferencias.ts'
 import type { PonteSigaa } from '../../portas/PonteSigaa.ts'
 import type { Repositorio } from '../../portas/Repositorio.ts'
-import { abrirBaseDaJanelaSigaa, ponteDaJanela } from '../adsum.ts'
+import { abrirBaseDaJanelaSigaa, naBancada, ponteDaJanela } from '../adsum.ts'
 import { FolhaSigaa } from './FolhaSigaa.tsx'
 
 export function JanelaSigaa({
@@ -17,7 +17,7 @@ export function JanelaSigaa({
   criarPonte?: () => PonteSigaa
   fechar?: () => void
 }) {
-  const ligado = lancarNoSigaaLigado()
+  const ligado = lancarNoSigaaLigado() || naBancada()
   const [repositorio, setRepositorio] = useState<Repositorio>()
   const [ponte] = useState(criarPonte)
 

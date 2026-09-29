@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 50% da fase 2
+## Andamento: 100% da fase 1, 66% da fase 2
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -251,7 +251,7 @@ passo, passo pela metade conta zero.
 | 15 | Localizador: escrever o texto da célula, como a coleta do SIGAA lê | 10 | feito, 29/09 |
 | 16 | Regras da página: data futura, período letivo, bloqueios, dia parcial, máximo fora do comum | 10 | feito, 29/09 |
 | 17 | Salvamento automático (opção A, 29/09): a folha avisa, o Desfazer vale até a primeira coleta | 12 | feito, 29/09 |
-| 18 | Bancada local: a página anonimizada com os scripts, e um servidor que registra o que o Gravar e o salvamento enviariam | 16 |  |
+| 18 | Bancada local: a página anonimizada com os scripts, e um servidor que registra o que o Gravar e o salvamento enviariam | 16 | feito, 29/09 |
 | 19 | Jornada sobre a fixture real | 10 |  |
 | 20 | Portão B: as leis sobre a fixture real | 8 |  |
 | 21 | Segunda turma e planilha depois do Gravar (captura e mensagem de sucesso) | 8 |  |
@@ -291,8 +291,8 @@ bancada (passo 18).
 
 O favorito dobrou (~16 KB), por levar leitura, validador e localizador; o
 teto do teste foi a 32 KB. A jornada ganhou esperas de 5 s e desmonta a folha
-antes de fechar a base: com a suíte inteira em paralelo, falhou uma vez por
-tempo e deixou um `DatabaseClosedError` solto.
+antes de fechar a base: no fim da suíte longa (que roda em série), falhou uma
+vez por tempo e deixou um `DatabaseClosedError` solto.
 
 ### 16 · Regras da página
 
@@ -315,6 +315,47 @@ depois de escrever e o vigia a cada segundo; quando muda, a barra troca o
 Desfazer por "O SIGAA já salvou o preenchimento. Para mudar uma célula,
 clique nela, como sempre." O próprio clique em Desfazer confere de novo, para
 não dizer "Desfeito" em vão se a coleta passou um instante antes.
+
+### 18 · Bancada local
+
+A planilha real, anonimizada, rodando com os scripts do próprio SIGAA, sem
+nenhuma requisição à UFPE:
+
+- `scripts/anonimizar_sigaa.py … --pagina PAGINA.html` troca nomes,
+  matrículas e ids na página inteira, inclusive nas classes `aluno_<id>` das
+  células (a primeira versão deixava esses ids: a conferência independente
+  pegou, e a fronteira de palavra deixou de tratar `_` como letra). A página
+  fica fora do repositório.
+- `scripts/bancada_sigaa.mjs PASTA` serve a página com os endereços da UFPE
+  reescritos para ela mesma, um botão "Favorito (ensaio)" que carrega o
+  favorito gerado com destino local, e responde ao Gravar e ao salvamento
+  automático registrando o que chegaria no `form:frequencias`
+  (`/bancada/registros`). Serve também a mesma turma para o Adsum
+  (`/bancada/cenario.json`).
+- No app, só em desenvolvimento, `?bancada` faz a janela do Adsum aceitar a
+  origem da bancada e usar uma base própria semeada com esse cenário. O
+  pacote publicado não leva nada disso (conferido: zero ocorrências), e o
+  favorito publicado nunca aponta para `localhost` (teste).
+
+**Provado com o script verdadeiro do SIGAA** (29/09): o nosso localizador
+extrai as 45 linhas da página real; escreve `2` numa célula vazia; a coleta
+da própria página (`atualizarFrequencias`, a do Gravar e do salvamento) põe
+`2` no registro certo; o marco de coleta muda; a página refaz o total da
+linha; e o Gravar envia exatamente essa mudança e nenhuma outra ("aluno
+900008, 29/09: null → 2"), que volta gravada ao recarregar.
+
+**Não provado aqui:** as duas janelas conversando. O navegador embutido não
+abre janela nova (o `window.open` navega a própria aba). Isso fica para o
+Chrome, no ensaio (passo 22):
+
+```
+python3 scripts/anonimizar_sigaa.py PLANILHA_SALVA.html /tmp/x.json --pagina PASTA/planilha.html
+cp -R "PASTA_DOS_ARQUIVOS_DA_PAGINA" PASTA/
+node scripts/bancada_sigaa.mjs PASTA
+npm run dev
+```
+
+e abrir http://localhost:8080 no Chrome e clicar em "Favorito (ensaio)".
 
 ## Fora das duas fases
 
