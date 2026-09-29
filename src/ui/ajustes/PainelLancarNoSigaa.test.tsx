@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../../testes/montar.tsx'
 import type { Evento } from '../../nucleo/tipos.ts'
@@ -31,19 +31,14 @@ beforeEach(async () => {
 
 afterEach(() => window.localStorage.removeItem('adsum.modoDev'))
 
-describe('Lançar no SIGAA, à mão', () => {
-  it('mostra, aula por aula, quem faltou, e copia a lista inteira', async () => {
+describe('Lançar no SIGAA, nos Ajustes', () => {
+  it('oferece o favorito e o histórico, e não a lista à mão', async () => {
     const usuario = userEvent.setup()
-    // Depois do `setup`: ele instala a própria área de transferência.
-    const copiar = vi.spyOn(navigator.clipboard, 'writeText')
     renderizarCom(bancada, <PainelLancarNoSigaa turmas={[TURMA]} />)
     await usuario.click(screen.getByRole('button', { name: /Lançar no SIGAA/ }))
-
-    expect(await screen.findByText(/13\/10: todos presentes, exceto:/)).toBeInTheDocument()
-    expect(screen.getByText(/BRENO LIMA INVENTADO \(1\), matrícula 2/)).toBeInTheDocument()
-    await usuario.click(screen.getByRole('button', { name: 'Copiar a lista' }))
-    await waitFor(() => expect(copiar).toHaveBeenCalledWith(expect.stringContaining('BRENO LIMA INVENTADO (1)')))
-    expect(await screen.findByText('Copiado.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Adsum' })).toBeInTheDocument()
+    expect(await screen.findByText('Nenhum lançamento ainda.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Copiar a lista' })).not.toBeInTheDocument()
   })
 
   it('só aparece nos Ajustes com o modo de desenvolvimento ligado, enquanto a v2 não sai', async () => {

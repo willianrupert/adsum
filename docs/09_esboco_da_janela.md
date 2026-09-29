@@ -74,8 +74,9 @@ não como erro.
 
 ![Janela explicando que a página não é a planilha de frequência](esboco_sigaa/recusa.png)
 
-Nunca um beco. Diz o que houve, onde clicar no SIGAA, e oferece o chão:
-lançar à mão, vendo quem faltou em cada aula.
+Nunca um beco. Diz o que houve e onde clicar no SIGAA. O chão, se o
+favorito falhar, é "Ver presenças" no Adsum: quem faltou em cada aula, para
+lançar à mão (a lista própria para isso saiu em 29/09).
 
 ## As três perguntas, decididas
 

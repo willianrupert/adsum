@@ -435,6 +435,9 @@ confere*. **Sobre cofre com histórico**, nunca base limpa — é a regra de
 1. **Lista para lançar à mão** — "14/10: todos presentes, exceto" e quem
    faltou. Não depende de nada do SIGAA. É o chão: se o favorito quebrar num
    dia de SIGAA diferente, o professor lança igual, sem esperar conserto.
+   **Retirada em 29/09, por decisão do autor:** "Ver presenças" já mostra
+   quem faltou em cada aula, e é dali que o professor copia à mão. O chão
+   continua existindo; só não é mais uma tela a parte.
 2. **Favorito + janela** — a rota. **Decidido pelo autor, 24/09/2026**:
    extensão não entra, nem como plano B.
 

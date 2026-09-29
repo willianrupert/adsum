@@ -16,14 +16,11 @@ import type { Evento, Matriculado } from '../../nucleo/tipos.ts'
 import type { PonteSigaa } from '../../portas/PonteSigaa.ts'
 import type { Repositorio } from '../../portas/Repositorio.ts'
 import { confirmarTurma, turmasConfirmadas } from '../../ambiente/preferencias.ts'
-import { ListaParaLancarAMao } from '../ajustes/PainelLancarNoSigaa.tsx'
 
 interface Recusa {
   titulo: string
   texto: string
   detalhes?: string[]
-  /** Oferece o chão: a lista para lançar à mão. */
-  aMao?: boolean
 }
 
 type Pergunta = { candidatas: string[] } | { confirmar: string; codigo: string }
@@ -38,15 +35,14 @@ const RECUSAS = {
   semFavorito: {
     titulo: 'Abra pela planilha do SIGAA',
     texto: 'No SIGAA, abra "Lançar Freq. em Planilha" da turma e clique no favorito do Adsum.',
-    aMao: true,
   },
-  naoRespondeu: { titulo: 'A planilha não respondeu', texto: 'Clique no favorito de novo, na planilha do SIGAA.', aMao: true },
+  naoRespondeu: { titulo: 'A planilha não respondeu', texto: 'Clique no favorito de novo, na planilha do SIGAA.' },
   favoritoAntigo: {
     titulo: 'Favorito antigo',
     texto: 'Este favorito é de uma versão antiga. Arraste o novo, nos Ajustes do Adsum, para a barra de favoritos.',
   },
   formato: { titulo: 'Mensagem estranha', texto: 'A planilha mandou algo que o Adsum não entende. Clique no favorito de novo.' },
-  naoEstaNoAdsum: { titulo: 'Esta turma não está no Adsum', texto: 'Nenhuma turma do Adsum tem o código e as matrículas desta planilha.', aMao: true },
+  naoEstaNoAdsum: { titulo: 'Esta turma não está no Adsum', texto: 'Nenhuma turma do Adsum tem o código e as matrículas desta planilha.' },
   baseVazia: {
     titulo: 'Nenhuma turma neste navegador',
     texto: 'O Adsum deste navegador não tem turma cadastrada. Abra o SIGAA no mesmo navegador em que você faz a chamada.',
@@ -56,12 +52,7 @@ const RECUSAS = {
 const valorLegivel = (n: number) => (n === 0 ? 'presente' : n === 1 ? '1 falta' : `${n} faltas`)
 const contar = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
 
-function TelaDeRecusa({ recusa, repositorio }: { recusa: Recusa; repositorio: Repositorio }) {
-  const [aMao, setAMao] = useState(false)
-  const [turmas, setTurmas] = useState<string[]>([])
-  useEffect(() => {
-    if (aMao) void repositorio.listarTurmas().then(setTurmas)
-  }, [aMao, repositorio])
+function TelaDeRecusa({ recusa }: { recusa: Recusa }) {
   return (
     <main className="folha-sigaa">
       <h1>{recusa.titulo}</h1>
@@ -73,14 +64,6 @@ function TelaDeRecusa({ recusa, repositorio }: { recusa: Recusa; repositorio: Re
           ))}
         </ul>
       )}
-      {recusa.aMao &&
-        (aMao ? (
-          <ListaParaLancarAMao turmas={turmas} repositorio={repositorio} />
-        ) : (
-          <button className="botao--quieto" onClick={() => setAMao(true)}>
-            Lançar à mão
-          </button>
-        ))}
     </main>
   )
 }
@@ -334,7 +317,7 @@ export function FolhaSigaa({
       if (!recebida.ok) return recusar(recebida.motivo === 'versaoDoFavorito' ? RECUSAS.favoritoAntigo : RECUSAS.formato)
       const { leitura, problemas } = lerPlanilha(recebida.bruto, recebida.id, agora())
       const detalhes = problemas.map((p) => `${p.onde}: ${p.motivo}${p.conteudo ? ` ("${p.conteudo}")` : ''}`)
-      if (!leitura) return recusar({ titulo: 'Não deu para ler a planilha', texto: 'O Adsum não preencheu nada. O motivo:', detalhes, aMao: true })
+      if (!leitura) return recusar({ titulo: 'Não deu para ler a planilha', texto: 'O Adsum não preencheu nada. O motivo:', detalhes })
       const matriculados = await repositorio.listarMatriculados()
       if (matriculados.length === 0) return recusar(RECUSAS.baseVazia)
       const escolha = escolherTurma(leitura, matriculados, turmasConfirmadas())
@@ -365,7 +348,7 @@ export function FolhaSigaa({
       </main>
     )
   }
-  if (estado.tipo === 'recusa') return <TelaDeRecusa recusa={estado.recusa} repositorio={repositorio} />
+  if (estado.tipo === 'recusa') return <TelaDeRecusa recusa={estado.recusa} />
   if (estado.tipo === 'pergunta') {
     const { leitura, avisos } = estado
     return (

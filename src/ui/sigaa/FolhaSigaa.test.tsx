@@ -231,12 +231,10 @@ describe('a folha e a ponte', () => {
 })
 
 describe('a folha recusa, e diz o que fazer', () => {
-  it('aberta sem o favorito: diz onde clicar, e oferece a lista à mão', async () => {
-    const usuario = userEvent.setup()
+  it('aberta sem o favorito: diz onde clicar', async () => {
     abrir({ ponte: new PonteSimulada({ ligada: false }) })
     expect(await screen.findByRole('heading', { name: 'Abra pela planilha do SIGAA' })).toBeInTheDocument()
-    await usuario.click(screen.getByRole('button', { name: 'Lançar à mão' }))
-    expect(await screen.findByText(/13\/10: todos presentes, exceto:/)).toBeInTheDocument()
+    expect(screen.getByText('No SIGAA, abra "Lançar Freq. em Planilha" da turma e clique no favorito do Adsum.')).toBeInTheDocument()
   })
 
   it('favorito antigo: pede o novo', async () => {
@@ -297,14 +295,13 @@ describe('a folha pergunta a turma, quando a planilha não basta', () => {
     expect(await screen.findByRole('heading', { name: 'Tudo confere' })).toBeInTheDocument()
   })
 
-  it('"Não é esta": nada é lembrado, e sobra a lista à mão', async () => {
+  it('"Não é esta": nada é lembrado', async () => {
     const usuario = userEvent.setup()
     await copiar('Programação')
     abrir()
     ponte.ler(bruto(undefined, (b) => (b.legenda = 'CIN0555 - X - Turma: 01 (2026.2)')), 'l-1')
     await usuario.click(await screen.findByRole('button', { name: 'Não é esta' }))
     expect(await screen.findByRole('heading', { name: 'Esta turma não está no Adsum' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Lançar à mão' })).toBeInTheDocument()
     expect(window.localStorage.getItem('adsum.sigaa.turmas')).toBeNull()
   })
 })
