@@ -80,13 +80,23 @@ export function criarPaginaSigaa(documento: Document, localizador: Localizador):
     },
     mostrarBarra({ texto, aoDesfazer }) {
       fecharBarra()
+      // Um cartão que flutua no pé da planilha, claro ou escuro como o
+      // sistema: as mesmas cores do Adsum (`estilo.css`), sem vidro, porque
+      // contraste aqui é requisito. Estilo em linha: a página do SIGAA não
+      // tem as folhas de estilo do Adsum.
+      const escuro = documento.defaultView?.matchMedia?.('(prefers-color-scheme: dark)').matches === true
+      const cor = escuro
+        ? { fundo: '#1c1c1e', tinta: '#f5f5f7', botao: '#2c2c2e', acao: '#0a84ff', sombra: '0 8px 30px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.08)' }
+        : { fundo: '#ffffff', tinta: '#1d1d1f', botao: '#f5f5f7', acao: '#0071e3', sombra: '0 8px 30px rgba(0,0,0,.14), 0 0 0 1px rgba(0,0,0,.06)' }
       const barra = documento.createElement('div')
       barra.dataset.adsum = 'barra'
+      barra.dataset.tema = escuro ? 'escuro' : 'claro'
       barra.setAttribute('role', 'status')
       barra.style.cssText =
-        'position:fixed;left:0;right:0;bottom:0;z-index:2147483647;display:flex;gap:12px;align-items:center;' +
-        'padding:10px 16px;font:15px/1.3 -apple-system,system-ui,sans-serif;color:#1d1d1f;background:#fff;' +
-        'box-shadow:0 -1px 0 rgba(0,0,0,.12)'
+        'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483647;box-sizing:border-box;' +
+        'width:max-content;max-width:min(680px,calc(100vw - 32px));display:flex;gap:10px;align-items:center;' +
+        `padding:12px 12px 12px 18px;border-radius:16px;background:${cor.fundo};color:${cor.tinta};box-shadow:${cor.sombra};` +
+        'font:15px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased'
       const frase = documento.createElement('span')
       frase.style.flex = '1'
       frase.textContent = texto
@@ -96,14 +106,14 @@ export function criarPaginaSigaa(documento: Document, localizador: Localizador):
         b.type = 'button'
         b.dataset.adsum = papel
         b.textContent = rotulo
-        b.style.cssText = 'font:inherit;border:0;border-radius:999px;padding:6px 14px;cursor:pointer;background:#f5f5f7;color:#0071e3'
+        b.style.cssText = `flex:none;font:inherit;font-weight:590;border:0;border-radius:999px;padding:7px 14px;cursor:pointer;background:${cor.botao};color:${cor.acao}`
         b.addEventListener('click', acao)
         barra.append(b)
       }
       if (aoDesfazer) botao('Desfazer', 'desfazer', aoDesfazer)
       botao('Fechar', 'fechar', fecharBarra)
       espacoOriginal = documento.body.style.paddingBottom
-      documento.body.style.paddingBottom = '56px'
+      documento.body.style.paddingBottom = '96px'
       documento.body.append(barra)
     },
   }

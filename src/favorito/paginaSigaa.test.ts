@@ -64,6 +64,18 @@ describe('a página do SIGAA, pelo favorito', () => {
     expect(document.body.style.paddingBottom).toBe('')
   })
 
+  it('a barra segue o claro e o escuro do sistema, como o Adsum', () => {
+    const pagina = criarPaginaSigaa(document, inventado)
+    const escuro = vi.fn((consulta: string) => ({ matches: consulta.includes('dark') }) as MediaQueryList)
+    vi.stubGlobal('matchMedia', escuro)
+    pagina.mostrarBarra({ texto: 'Nada a preencher.' })
+    expect(document.querySelector<HTMLElement>('[data-adsum="barra"]')!.dataset.tema).toBe('escuro')
+    vi.stubGlobal('matchMedia', () => ({ matches: false }) as MediaQueryList)
+    pagina.mostrarBarra({ texto: 'Nada a preencher.' })
+    expect(document.querySelector<HTMLElement>('[data-adsum="barra"]')!.dataset.tema).toBe('claro')
+    vi.unstubAllGlobals()
+  })
+
   it('enquanto não há HTML real, nenhuma página é reconhecida como a planilha', () => {
     expect(criarPaginaSigaa(document, LOCALIZADOR_SEM_HTML).extrair()).toBeUndefined()
   })

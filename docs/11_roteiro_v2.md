@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 100% da fase 2, 30% da fase 3
+## Andamento: 100% da fase 1, 100% da fase 2, 40% da fase 3
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -457,7 +457,7 @@ tela pensada para o tamanho, e ao Preencher fecha e devolve a planilha.
 |---|---|---|---|
 | 23 | Escolha da turma: entre duas, o professor escolhe; sem o código no nome, as matrículas propõem a turma e ele confirma | 15 | feito, 29/09 |
 | 24 | A folha nos dois tamanhos: ao lado da planilha e em tela cheia | 15 | feito, 29/09 |
-| 25 | A barra na planilha no padrão do Adsum, clara e escura | 10 |  |
+| 25 | A barra na planilha no padrão do Adsum, clara e escura | 10 | feito, 29/09 |
 | 26 | O favorito chega ao professor: gerado no build e oferecido em Ajustes, com o gesto de arrastar | 20 |  |
 | 27 | Histórico em Ajustes: o que foi lançado, quando, em cada turma | 10 |  |
 | 28 | Ensaio no Chrome, em janela e em tela cheia | 20 |  |
@@ -488,6 +488,14 @@ decisão: centrada na vertical, título e apoio centrados, o ícone do Adsum no
 alto dizendo onde a pessoa está. Só CSS (`estilo.css`, fim do bloco da
 folha); `safe center` não corta o alto quando a folha é maior que a tela.
 Visto no Chrome, na bancada; o endereço do ícone ganha o `/adsum/` no build.
+
+### 25 · A barra na planilha
+
+Era uma faixa branca de ponta a ponta. Agora é um cartão que flutua no pé
+da planilha, centrado, com cantos de 16 px, a fonte do sistema e as cores do
+Adsum, claro ou escuro conforme o sistema (`data-tema`, testado). Sem vidro:
+o fundo é a planilha, e contraste é requisito. O estilo vai em linha porque
+a página do SIGAA não tem as folhas do Adsum. Visto no Chrome, na bancada.
 
 ## Fora das fases
 
