@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 100% da fase 2, 15% da fase 3
+## Andamento: 100% da fase 1, 100% da fase 2, 30% da fase 3
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -456,7 +456,7 @@ tela pensada para o tamanho, e ao Preencher fecha e devolve a planilha.
 | # | Passo | Peso | Estado |
 |---|---|---|---|
 | 23 | Escolha da turma: entre duas, o professor escolhe; sem o código no nome, as matrículas propõem a turma e ele confirma | 15 | feito, 29/09 |
-| 24 | A folha nos dois tamanhos: ao lado da planilha e em tela cheia | 15 |  |
+| 24 | A folha nos dois tamanhos: ao lado da planilha e em tela cheia | 15 | feito, 29/09 |
 | 25 | A barra na planilha no padrão do Adsum, clara e escura | 10 |  |
 | 26 | O favorito chega ao professor: gerado no build e oferecido em Ajustes, com o gesto de arrastar | 20 |  |
 | 27 | Histórico em Ajustes: o que foi lançado, quando, em cada turma | 10 |  |
@@ -479,6 +479,15 @@ da disciplina no nome ("Programação, manhã"). Agora a folha pergunta:
 
 Com isso, o nome da turma deixa de ser requisito. Quatro mutações da regra,
 as quatro derrubadas.
+
+### 24 · A folha nos dois tamanhos
+
+Na janela de 420 × 640 ao lado da planilha, nada muda: a folha começa no
+alto. De 700 × 760 para cima (a aba da tela cheia), ela vira uma tela de
+decisão: centrada na vertical, título e apoio centrados, o ícone do Adsum no
+alto dizendo onde a pessoa está. Só CSS (`estilo.css`, fim do bloco da
+folha); `safe center` não corta o alto quando a folha é maior que a tela.
+Visto no Chrome, na bancada; o endereço do ícone ganha o `/adsum/` no build.
 
 ## Fora das fases
 

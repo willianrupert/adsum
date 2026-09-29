@@ -2630,6 +2630,40 @@ button:focus-visible {
   text-align: center;
 }
 
+/* Janela grande: em tela cheia no Mac o Chrome abre a folha como aba, e ela
+   ocupa a tela toda. Aí vira uma tela de decisão, centrada, com o ícone do
+   Adsum dizendo onde a pessoa está. `safe center` não corta o alto quando a
+   folha é maior que a tela; onde não existe, fica o alinhamento do alto. */
+@media (min-width: 700px) and (min-height: 760px) {
+  .folha-sigaa {
+    box-sizing: border-box;
+    min-height: 100dvh;
+    max-width: 520px;
+    padding: 48px 24px;
+    justify-content: flex-start;
+    justify-content: safe center;
+  }
+
+  .folha-sigaa::before {
+    content: '';
+    align-self: center;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 8px;
+    border-radius: 15px;
+    background: url('/icone.svg') center / contain no-repeat;
+  }
+
+  .folha-sigaa > h1,
+  .folha-sigaa > .folha-sigaa__apoio {
+    text-align: center;
+  }
+
+  .folha-sigaa > h1 {
+    font-size: 34px;
+  }
+}
+
 .folha-sigaa__diferencas {
   display: flex;
   flex-direction: column;
