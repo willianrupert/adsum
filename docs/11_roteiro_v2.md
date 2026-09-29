@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 84% da fase 2
+## Andamento: 100% da fase 1, 91% da fase 2
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -254,7 +254,7 @@ passo, passo pela metade conta zero.
 | 18 | Bancada local: a página anonimizada com os scripts, e um servidor que registra o que o Gravar e o salvamento enviariam | 16 | feito, 29/09 |
 | 19 | Jornada sobre a fixture real | 10 | feito, 29/09 |
 | 20 | Portão B: as leis sobre a fixture real | 8 | feito, 29/09 |
-| 21 | Segunda turma e planilha depois do Gravar (captura e mensagem de sucesso) | 8 |  |
+| 21 | Segunda turma e planilha depois do Gravar (captura e mensagem de sucesso) | — | fora, 29/09: sem captura |
 | 22 | Ensaio na bancada | 8 |  |
 
 ### 14 · Leitura real
@@ -388,6 +388,21 @@ nova: nada "a lançar" em aula já lançada. O plano passa no validador do Adsum
 no do favorito sobre o mesmo bruto. Uma mutação sobreviveu na primeira versão
 (ausência valendo sempre 2): a lei da faixa passou a exigir o máximo daquele
 dia, e a conferir que os dias de 4 e de 12 aulas aparecem.
+
+### 21 · Fora da conta
+
+Decidido pelo autor em 29/09: não haverá captura da segunda turma nem da
+planilha depois do Gravar. O passo sai da conta (84 de 92 pesos, 91%), e o
+que ele cobriria fica dito:
+
+- **Trancado, matriculado depois, bloqueado e aula cancelada** não aparecem
+  em CIN0114. Continuam cobertos só pelos cenários inventados, na forma que
+  o script da página descreve (`docs/12`). O risco é a página marcar esses
+  casos de um jeito que o script não mostra.
+- **A mensagem depois do Gravar** não é lida pelo Adsum: a conferência é
+  clicar no favorito de novo, sobre a página que o servidor devolve. O que se
+  perde é só saber como a página diz sucesso ou erro, para a folha poder
+  citar as mesmas palavras.
 
 ## Fora das duas fases
 

@@ -185,4 +185,6 @@ casos continuam cobertos só pelos cenários inventados.
 
 - A planilha **depois** de um Gravar: a mensagem de sucesso e de erro.
 - A planilha da **segunda turma**: outros casos (trancado, cancelada).
+
+Nenhuma das duas virá (decisão do autor, 29/09); ver o passo 21 do `docs/11`.
 - Os **cabeçalhos da resposta**, em especial `Cross-Origin-Opener-Policy`.
