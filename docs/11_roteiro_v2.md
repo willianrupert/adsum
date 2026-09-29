@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 18% da fase 2
+## Andamento: 100% da fase 1, 28% da fase 2
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -248,7 +248,7 @@ passo, passo pela metade conta zero.
 |---|---|---|---|
 | 13 | Anonimizador da planilha: o modelo de dados vira fixture, sem nome, matrícula nem id real | 6 | feito, 29/09 |
 | 14 | Leitura real: o bruto passa a ser `auxAulas` e `auxAlunos` | 12 | feito, 29/09 |
-| 15 | Localizador: escrever o texto da célula, como a coleta do SIGAA lê | 10 |  |
+| 15 | Localizador: escrever o texto da célula, como a coleta do SIGAA lê | 10 | feito, 29/09 |
 | 16 | Regras da página: data futura, período letivo, bloqueios, dia parcial, máximo fora do comum | 10 |  |
 | 17 | Salvamento automático (opção A, 29/09): a folha avisa, o Desfazer vale até a primeira coleta | 12 |  |
 | 18 | Bancada local: a página anonimizada com os scripts, e um servidor que registra o que o Gravar e o salvamento enviariam | 16 |  |
@@ -275,6 +275,24 @@ folha e do favorito: sem ela, testes com datas de outubro quebrariam hoje e
 voltariam a passar em novembro. E a folha usa um relógio fora do componente:
 uma função nova a cada desenho refazia a ligação com a planilha, em laço
 (achado aqui, com teste).
+
+### 15 · Localizador
+
+`favorito/localizadorSigaa.ts` reconhece a planilha (tabela `#planilha` e
+campo `form:frequencias`), tira legenda, período e as duas strings do texto
+dos scripts da página (o estado que veio do servidor) e o texto atual de cada
+célula, e acha a célula pela linha e pela coluna na ordem da página. Escreve
+o número como texto, que é o que a coleta lê, e pede à página que refaça os
+totais da linha, como o clique faria. Célula aberta em edição pelo professor
+nunca é vazia para o favorito. A prova é em jsdom, sobre a página montada
+com a estrutura do `docs/12` e uma coleta reescrita pela descrição: depois de
+escrever, só o registro certo muda. A prova com o script verdadeiro é a
+bancada (passo 18).
+
+O favorito dobrou (~16 KB), por levar leitura, validador e localizador; o
+teto do teste foi a 32 KB. A jornada ganhou esperas de 5 s e desmonta a folha
+antes de fechar a base: com a suíte inteira em paralelo, falhou uma vez por
+tempo e deixou um `DatabaseClosedError` solto.
 
 ## Fora das duas fases
 

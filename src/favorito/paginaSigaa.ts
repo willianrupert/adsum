@@ -1,28 +1,37 @@
 // A planilha do SIGAA vista pelo favorito, no DOM.
 //
-// O que depende do HTML do docente (onde estão as células, os cabeçalhos, o
-// máximo) mora inteiro num `Localizador`, e o de hoje não reconhece página
-// nenhuma: ele só é escrito com o HTML real salvo (portão A do `docs/08`).
-// Escrever, pintar e a barra são nossos, e valem para qualquer HTML.
+// O que depende do HTML do SIGAA (onde estão os dados e as células) mora num
+// `Localizador`; o da planilha real é `localizadorSigaa.ts`. Escrever, pintar
+// e a barra são nossos. Célula de tabela recebe o número como texto, que é o
+// que a coleta do SIGAA lê (`docs/12`); campo de formulário recebe valor e
+// eventos, como quem digita.
 
 import type { BrutoPlanilha } from '../nucleo/lancar/leitura.ts'
 import type { PaginaDePlanilha } from './pagina.ts'
 
 export interface Localizador {
   extrair(documento: Document): BrutoPlanilha | undefined
-  celula(documento: Document, linha: number, coluna: number): HTMLInputElement | undefined
+  celula(documento: Document, linha: number, coluna: number): HTMLElement | undefined
+  /** Depois de escrever: o que a página precisa refazer (os totais da linha, na planilha). */
+  depoisDeEscrever?(documento: Document, celula: HTMLElement): void
 }
 
-/** Até o portão A: o favorito diz que esta não é a planilha, em vez de adivinhar. */
+/** Página que o favorito não reconhece: ele diz que não é a planilha, em vez de adivinhar. */
 export const LOCALIZADOR_SEM_HTML: Localizador = {
   extrair: () => undefined,
   celula: () => undefined,
 }
 
+const ehCampo = (el: Element): el is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement =>
+  el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement
+
+/** Aberta em edição pelo professor: nunca é vazia para o favorito, que não escreve por cima. */
+export const EM_EDICAO = '(em edição)'
+
 const AZUL = 'rgba(0, 113, 227, 0.18)'
 
 export function criarPaginaSigaa(documento: Document, localizador: Localizador): PaginaDePlanilha {
-  const estiloOriginal = new WeakMap<HTMLInputElement, { fundo: string; titulo: string }>()
+  const estiloOriginal = new WeakMap<HTMLElement, { fundo: string; titulo: string }>()
   const celula = (linha: number, coluna: number) => localizador.celula(documento, linha, coluna)
   let espacoOriginal: string | undefined
 
@@ -34,14 +43,26 @@ export function criarPaginaSigaa(documento: Document, localizador: Localizador):
 
   return {
     extrair: () => localizador.extrair(documento),
-    valor: (linha, coluna) => celula(linha, coluna)?.value,
+    valor(linha, coluna) {
+      const alvo = celula(linha, coluna)
+      if (!alvo) return undefined
+      if (ehCampo(alvo)) return alvo.value
+      const aberta = alvo.querySelector('input, select, textarea')
+      if (aberta) return (aberta as HTMLInputElement).value || EM_EDICAO
+      return alvo.textContent ?? ''
+    },
     escrever(linha, coluna, valor) {
       const alvo = celula(linha, coluna)
       if (!alvo) return
-      alvo.value = valor
-      // Como uma pessoa digitando: a página pode depender disso para o Gravar.
-      alvo.dispatchEvent(new Event('input', { bubbles: true }))
-      alvo.dispatchEvent(new Event('change', { bubbles: true }))
+      if (ehCampo(alvo)) {
+        alvo.value = valor
+        // Como uma pessoa digitando: a página pode depender disso para gravar.
+        alvo.dispatchEvent(new Event('input', { bubbles: true }))
+        alvo.dispatchEvent(new Event('change', { bubbles: true }))
+      } else {
+        alvo.textContent = valor
+      }
+      localizador.depoisDeEscrever?.(documento, alvo)
     },
     pintar(linha, coluna, marca, dica) {
       const alvo = celula(linha, coluna)

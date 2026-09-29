@@ -3,10 +3,11 @@
 
 import { DESTINO } from './destino.ts'
 import { lancarPeloFavorito } from './ligacao.ts'
-import { criarPaginaSigaa, LOCALIZADOR_SEM_HTML } from './paginaSigaa.ts'
+import { LOCALIZADOR_SIGAA } from './localizadorSigaa.ts'
+import { criarPaginaSigaa } from './paginaSigaa.ts'
 
 lancarPeloFavorito({
-  pagina: criarPaginaSigaa(document, LOCALIZADOR_SEM_HTML),
+  pagina: criarPaginaSigaa(document, LOCALIZADOR_SIGAA),
   janela: window,
   abrir: (url, nome, recursos) => window.open(url, nome, recursos),
   destino: DESTINO,

@@ -3,8 +3,12 @@
 
 import { rolldown } from 'rolldown'
 
-/** Favorito grande demais é sinal de que entrou o que não devia (React, o Adsum inteiro). */
-export const TETO_DO_FAVORITO = 16 * 1024
+/**
+ * Favorito grande demais é sinal de que entrou o que não devia (React, o Adsum
+ * inteiro). Desde a leitura real (passo 14 do `docs/11`) ele leva a leitura e
+ * o validador do Adsum e o localizador da planilha, por decisão: ~16 KB.
+ */
+export const TETO_DO_FAVORITO = 32 * 1024
 
 export async function construirFavorito(): Promise<string> {
   // Relativo à raiz do projeto, de onde o build e os testes rodam.

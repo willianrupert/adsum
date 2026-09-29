@@ -28,6 +28,9 @@ const DIAS = ['2026-09-17', '2026-09-22', '2026-09-24'].map((d) => comoDia(d)!)
 
 afterEach(() => window.localStorage.removeItem('adsum.modoDev'))
 
+/** O teste mais pesado da suíte (59 alunos, duas janelas): com a suíte inteira em paralelo, 1 s não basta. */
+const ESPERA = { timeout: 5000 }
+
 /** A planilha da turma B como o SIGAA a mostraria antes de qualquer lançamento. */
 function planilhaVazia(): BrutoPlanilha {
   const alunos = AULA_2209.turmas[TURMA].filter((m) => m.papel === 'aluno')
@@ -104,9 +107,9 @@ describe('lançar no SIGAA, de ponta a ponta, sobre o cofre de 22/09', () => {
     // 1. Primeira conferência: duas aulas com chamada, a terça sem chamada fica como está.
     const pagina = new PaginaSigaaFalsa(planilhaVazia())
     clicarNoFavorito(repositorio, pagina)
-    expect(await screen.findByRole('heading', { name: '2 aulas para lançar' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '2 aulas para lançar' }, ESPERA)).toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Preencher 2 aulas' }))
-    await waitFor(() => expect(pagina.barra?.texto).toMatch(/^Adsum preencheu 2 aulas\./))
+    await waitFor(() => expect(pagina.barra?.texto).toMatch(/^Adsum preencheu 2 aulas\./), ESPERA)
     expect(screen.queryByRole('heading')).not.toBeInTheDocument()
 
     // O que foi escrito é a planilha de faltas da pasta, célula por célula.
@@ -129,25 +132,27 @@ describe('lançar no SIGAA, de ponta a ponta, sobre o cofre de 22/09', () => {
     const alguem = gravada.valores.findIndex((v) => v[0] === '0')
     gravada.digitar(alguem, 0, '2')
     clicarNoFavorito(repositorio, gravada)
-    expect(await screen.findByRole('heading', { name: '1 diferença para olhar' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '1 diferença para olhar' }, ESPERA)).toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Aceitar o SIGAA' }))
-    expect(await screen.findByRole('heading', { name: 'Tudo confere' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Tudo confere' }, ESPERA)).toBeInTheDocument()
     expect(screen.getByText('SIGAA e Adsum iguais em 2 aulas. 1 diferença aceita por você.')).toBeInTheDocument()
-    await waitFor(() => expect(gravada.barra?.texto).toBe('Nada a preencher. SIGAA e Adsum já estão iguais.'))
+    await waitFor(() => expect(gravada.barra?.texto).toBe('Nada a preencher. SIGAA e Adsum já estão iguais.'), ESPERA)
     await usuario.click(screen.getByRole('button', { name: 'Fechar' }))
 
     // 3. A pasta leva a auditoria; a base refeita da pasta ainda confere.
     await conferirAuditoriaSigaa(repositorio, pasta.handle)
     await repositorio.esvaziarCache()
     await restaurar(repositorio, pasta.handle)
-    clicarNoFavorito(repositorio, new PaginaSigaaFalsa(depoisDoGravar(gravada)))
-    expect(await screen.findByRole('heading', { name: 'Tudo confere' })).toBeInTheDocument()
+    const ultima = clicarNoFavorito(repositorio, new PaginaSigaaFalsa(depoisDoGravar(gravada)))
+    expect(await screen.findByRole('heading', { name: 'Tudo confere' }, ESPERA)).toBeInTheDocument()
 
     const auditoria = await repositorio.listarAuditoriaSigaa(TURMA)
     expect(auditoria.filter((l) => l.acao === 'preenchimento')).toHaveLength(pagina.escritas)
     expect(auditoria.filter((l) => l.acao === 'aceite')).toHaveLength(1)
     const nomes = matriculados.map((m) => m.nome)
     expect(JSON.stringify(auditoria)).not.toMatch(new RegExp(nomes.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')))
+    // A folha desmonta antes de a base fechar: nada dela fica pendente numa base fechada.
+    await act(async () => ultima.fechar())
     await act(async () => repositorio.fechar())
   }, 30_000)
 })
