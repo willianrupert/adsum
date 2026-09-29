@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 0% da fase 2
+## Andamento: 100% da fase 1, 6% da fase 2
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -246,16 +246,16 @@ passo, passo pela metade conta zero.
 
 | # | Passo | Peso | Estado |
 |---|---|---|---|
-| 13 | Anonimizador da planilha: o modelo de dados vira fixture, sem nome, matrícula nem id real | 6 | |
-| 14 | Leitura real: o bruto passa a ser `auxAulas` e `auxAlunos` | 12 | |
-| 15 | Localizador: escrever o texto da célula, como a coleta do SIGAA lê | 10 | |
-| 16 | Regras da página: data futura, período letivo, bloqueios, dia parcial, máximo fora do comum | 10 | |
-| 17 | Salvamento automático (opção A, 29/09): a folha avisa, o Desfazer vale até a primeira coleta | 12 | |
-| 18 | Bancada local: a página anonimizada com os scripts, e um servidor que registra o que o Gravar e o salvamento enviariam | 16 | |
-| 19 | Jornada sobre a fixture real | 10 | |
-| 20 | Portão B: as leis sobre a fixture real | 8 | |
-| 21 | Segunda turma e planilha depois do Gravar (captura e mensagem de sucesso) | 8 | |
-| 22 | Ensaio na bancada | 8 | |
+| 13 | Anonimizador da planilha: o modelo de dados vira fixture, sem nome, matrícula nem id real | 6 | feito, 29/09 |
+| 14 | Leitura real: o bruto passa a ser `auxAulas` e `auxAlunos` | 12 |  |
+| 15 | Localizador: escrever o texto da célula, como a coleta do SIGAA lê | 10 |  |
+| 16 | Regras da página: data futura, período letivo, bloqueios, dia parcial, máximo fora do comum | 10 |  |
+| 17 | Salvamento automático (opção A, 29/09): a folha avisa, o Desfazer vale até a primeira coleta | 12 |  |
+| 18 | Bancada local: a página anonimizada com os scripts, e um servidor que registra o que o Gravar e o salvamento enviariam | 16 |  |
+| 19 | Jornada sobre a fixture real | 10 |  |
+| 20 | Portão B: as leis sobre a fixture real | 8 |  |
+| 21 | Segunda turma e planilha depois do Gravar (captura e mensagem de sucesso) | 8 |  |
+| 22 | Ensaio na bancada | 8 |  |
 
 ## Fora das duas fases
 
