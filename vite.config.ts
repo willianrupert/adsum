@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { pluginDoFavorito } from './src/favorito/construir.ts'
 
 // O GitHub Pages serve o site em `/<repositório>/`, então o `base` do build
 // precisa casar com o nome do repositório. Renomeou o repositório? Ajuste aqui,
@@ -25,6 +26,13 @@ export default defineConfig(({ command, isPreview }) => ({
   base: command === 'serve' && !isPreview ? '/' : base,
   plugins: [
     react(),
+    // Em desenvolvimento o favorito abre este servidor, em ensaio (`?bancada`);
+    // no build, o site publicado (`favorito/destino.ts`).
+    pluginDoFavorito(
+      command === 'serve' && !isPreview
+        ? { destino: { origem: 'http://localhost:5173', url: 'http://localhost:5173/?bancada#/sigaa' } }
+        : {},
+    ),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: null,

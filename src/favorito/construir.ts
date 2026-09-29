@@ -28,6 +28,9 @@ export async function codigoDoFavorito(opcoes: { destino?: Destino } = {}): Prom
   return emAmbienteLimpo(output[0].code)
 }
 
+/** O nome, no iframe, da função de envio que o carregador deixa (`entrada.ts`). */
+export const ENVIAR = 'adsumEnviar'
+
 /**
  * O favorito roda num iframe vazio, invisível, que fica na página: a planilha
  * do SIGAA carrega Prototype 1.6 e Ext, que trocam `Array.from`, `entries`,
@@ -39,13 +42,28 @@ export async function codigoDoFavorito(opcoes: { destino?: Destino } = {}): Prom
  * como remetente a janela de quem chama `postMessage`, e o Adsum só aceita a
  * janela que o abriu, a da planilha, não o iframe.
  */
-/** O nome, no iframe, da função de envio que o carregador deixa (`entrada.ts`). */
-export const ENVIAR = 'adsumEnviar'
-
 export function emAmbienteLimpo(codigo: string): string {
   return `(function(c){var f=document.createElement("iframe");f.setAttribute("data-adsum","favorito");f.style.display="none";document.body.appendChild(f);var w=f.contentWindow;w.${ENVIAR}=function(j,m,o){j.postMessage(m,o)};var d=w.document,s=d.createElement("script");s.textContent=c;(d.head||d.documentElement).appendChild(s)})(${JSON.stringify(codigo)});`
 }
 
-export async function construirFavorito(): Promise<string> {
-  return `javascript:${encodeURIComponent(await codigoDoFavorito())}`
+export async function construirFavorito(opcoes: { destino?: Destino } = {}): Promise<string> {
+  return `javascript:${encodeURIComponent(await codigoDoFavorito(opcoes))}`
+}
+
+/**
+ * O favorito para a tela, como módulo `virtual:favorito` (`FAVORITO`, o
+ * `javascript:` inteiro): gerado no build, nunca à mão, para o que o professor
+ * arrasta ser sempre o do código publicado. Usado pelo `vite.config.ts` e pelo
+ * `vitest.config.ts`.
+ */
+export function pluginDoFavorito(opcoes: { destino?: Destino } = {}) {
+  const id = 'virtual:favorito'
+  return {
+    name: 'favorito-do-adsum',
+    resolveId: (fonte: string) => (fonte === id ? `\0${id}` : null),
+    async load(modulo: string) {
+      if (modulo !== `\0${id}`) return null
+      return `export const FAVORITO = ${JSON.stringify(await construirFavorito(opcoes))}`
+    },
+  }
 }

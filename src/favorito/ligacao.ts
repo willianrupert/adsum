@@ -68,7 +68,9 @@ export function lancarPeloFavorito({ pagina, janela, abrir, destino, gerarId, en
   if (!aberta) return pagina.mostrarBarra({ texto: TEXTOS.bloqueada })
 
   const ouvir = (evento: Event) => {
-    const { origin, source } = evento as MessageEvent
+    // `source` como `unknown`: nos tipos do Node (o build lê este arquivo pelo
+    // `vite.config.ts`), a origem de uma mensagem é só `MessagePort`.
+    const { origin, source } = evento as unknown as { origin: string; source: unknown }
     // Só o que vem do Adsum que ele abriu, e copiado para cá: os objetos da
     // mensagem nascem na página, com os métodos que ela trocou (`entrada.ts`).
     if (origin !== destino.origem || source !== aberta) return
@@ -87,8 +89,11 @@ export function lancarPeloFavorito({ pagina, janela, abrir, destino, gerarId, en
 
     const { escritas, puladas } = aplicar(pagina, plano.instrucoes)
     const aulas = new Set(escritas.map((e) => e.coluna)).size
+    const faltas = escritas.filter((e) => e.valor !== '0').length
     const texto = [
-      `Adsum preencheu ${plural(aulas, 'aula', 'aulas')}. Azul é o que mudou. O SIGAA salva sozinho em até 5 minutos, ou agora, em Gravar Frequências.`,
+      `Adsum preencheu ${plural(aulas, 'aula', 'aulas')}.`,
+      faltas === 0 ? 'Azul é o que mudou.' : `Azul é o que mudou, e ${faltas === 1 ? 'a falta está' : `as ${faltas} faltas estão`} em azul forte.`,
+      'O SIGAA salva sozinho em até 5 minutos, ou agora, em Gravar Frequências.',
       puladas.length > 0 &&
         `${plural(puladas.length, 'célula mudou', 'células mudaram')} depois da leitura e ${puladas.length === 1 ? 'ficou' : 'ficaram'} como você deixou.`,
     ]

@@ -1,8 +1,9 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
+import { pluginDoFavorito } from './src/favorito/construir.ts'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), pluginDoFavorito()],
   // O carimbo da build vem de `vite.config.ts`, que o vitest não usa. Sem isto,
   // qualquer tela que o mostre estoura no teste por um motivo que não é do app.
   define: { __CARIMBO__: JSON.stringify('em teste') },
