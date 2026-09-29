@@ -292,9 +292,33 @@ describe('qual turma', () => {
     expect(escolherTurma(pagina(CAB, [ANA, BRENO]), outraDisciplina)).toMatchObject({ recusa: 'nenhuma' })
   })
 
-  it('turma sem código no nome é recusada, mesmo com as matrículas: nunca se adivinha a disciplina', () => {
+  it('turma sem código no nome, com as matrículas: proposta, para o professor confirmar', () => {
     const semCodigo = TURMA_TODA.map((a) => ({ ...a, turma: 'Programação, turma da manhã' }))
-    expect(escolherTurma(pagina(CAB, [ANA, BRENO]), semCodigo)).toMatchObject({ recusa: 'nenhuma' })
+    expect(escolherTurma(pagina(CAB, [ANA, BRENO]), semCodigo)).toEqual({ confirmar: 'Programação, turma da manhã', codigo: 'CIN0144' })
+  })
+
+  it('confirmada uma vez, a turma sem código não é perguntada de novo', () => {
+    const semCodigo = TURMA_TODA.map((a) => ({ ...a, turma: 'Programação' }))
+    expect(escolherTurma(pagina(CAB, [ANA, BRENO]), semCodigo, { CIN0144: 'Programação' })).toEqual({ turma: 'Programação' })
+    // A lembrança de outra turma, ou de outro código, não vale.
+    expect(escolherTurma(pagina(CAB, [ANA, BRENO]), semCodigo, { CIN0144: 'Outra' })).toEqual({ confirmar: 'Programação', codigo: 'CIN0144' })
+    expect(escolherTurma(pagina(CAB, [ANA, BRENO]), semCodigo, { CIN0114: 'Programação' })).toEqual({ confirmar: 'Programação', codigo: 'CIN0144' })
+  })
+
+  it('a turma com o código ganha da que não tem, sem perguntar', () => {
+    const semCodigo = TURMA_TODA.map((a) => ({ ...a, turma: 'Programação' }))
+    expect(escolherTurma(pagina(CAB, [ANA, BRENO]), [...TURMA_TODA, ...semCodigo])).toEqual({ turma: TURMA })
+  })
+
+  it('sem código no nome e sem as matrículas: recusa', () => {
+    const outra = [aluno('7', 'Caio', 'Programação'), aluno('8', 'Duda', 'Programação')]
+    expect(escolherTurma(pagina(CAB, [ANA, BRENO]), outra)).toMatchObject({ recusa: 'nenhuma' })
+  })
+
+  it('duas turmas sem código cobrem a página: as duas, para o professor escolher', () => {
+    const manha = TURMA_TODA.map((a) => ({ ...a, turma: 'Programação' }))
+    const copia = TURMA_TODA.map((a) => ({ ...a, turma: 'Programação (cópia)' }))
+    expect(escolherTurma(pagina(CAB, [ANA, BRENO]), [...manha, ...copia])).toEqual({ recusa: 'duas', candidatas: ['Programação', 'Programação (cópia)'] })
   })
 
   it('códigos de outros formatos: IF685, e o código que o anonimizador inventa', () => {

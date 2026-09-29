@@ -86,6 +86,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   window.localStorage.removeItem('adsum.modoDev')
+  window.localStorage.removeItem('adsum.sigaa.turmas')
   await repositorio.fechar()
 })
 
@@ -259,5 +260,49 @@ describe('a folha recusa, e diz o que fazer', () => {
   it('planilha que não responde: pede o favorito de novo', async () => {
     abrir({ esperaMs: 20 })
     expect(await screen.findByRole('heading', { name: 'A planilha não respondeu' })).toBeInTheDocument()
+  })
+})
+
+describe('a folha pergunta a turma, quando a planilha não basta', () => {
+  const copiar = (turma: string) =>
+    repositorio.listarMatriculados(TURMA).then((ms) => repositorio.salvarTurma(turma, ms.map((m) => ({ ...m, turma }))))
+
+  it('duas turmas servem: o professor escolhe, e a folha segue com a escolhida', async () => {
+    const usuario = userEvent.setup()
+    await copiar('CIN0144 · T01b')
+    abrir()
+    ponte.ler(bruto(), 'l-1')
+    expect(await screen.findByRole('heading', { name: 'Qual é a turma desta planilha?' })).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'CIN0144 · T01' }))
+    expect(await screen.findByRole('heading', { name: '1 aula para lançar' })).toBeInTheDocument()
+  })
+
+  it('turma sem o código no nome: pergunta uma vez, e depois lembra', async () => {
+    const usuario = userEvent.setup()
+    await copiar('Programação')
+    const outroCodigo = () => bruto(undefined, (b) => (b.legenda = 'CIN0555 - PROGRAMAÇÃO INVENTADA - Turma: 01 (2026.2)'))
+    const primeira = abrir()
+    ponte.ler(outroCodigo(), 'l-1')
+    expect(await screen.findByRole('heading', { name: 'Esta planilha é de CIN0555' })).toBeInTheDocument()
+    expect(screen.getByText('A turma Programação do Adsum tem as mesmas matrículas, mas o nome não traz CIN0555.')).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Usar Programação' }))
+    expect(await screen.findByRole('heading', { name: 'Tudo confere' })).toBeInTheDocument()
+    primeira.unmount()
+
+    ponte = new PonteSimulada()
+    abrir()
+    ponte.ler(outroCodigo(), 'l-2')
+    expect(await screen.findByRole('heading', { name: 'Tudo confere' })).toBeInTheDocument()
+  })
+
+  it('"Não é esta": nada é lembrado, e sobra a lista à mão', async () => {
+    const usuario = userEvent.setup()
+    await copiar('Programação')
+    abrir()
+    ponte.ler(bruto(undefined, (b) => (b.legenda = 'CIN0555 - X - Turma: 01 (2026.2)')), 'l-1')
+    await usuario.click(await screen.findByRole('button', { name: 'Não é esta' }))
+    expect(await screen.findByRole('heading', { name: 'Esta turma não está no Adsum' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Lançar à mão' })).toBeInTheDocument()
+    expect(window.localStorage.getItem('adsum.sigaa.turmas')).toBeNull()
   })
 })

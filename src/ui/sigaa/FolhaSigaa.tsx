@@ -15,6 +15,7 @@ import type { AjusteSigaa, Dia, LeituraPlanilha, LinhaDeAuditoria } from '../../
 import type { Evento, Matriculado } from '../../nucleo/tipos.ts'
 import type { PonteSigaa } from '../../portas/PonteSigaa.ts'
 import type { Repositorio } from '../../portas/Repositorio.ts'
+import { confirmarTurma, turmasConfirmadas } from '../../ambiente/preferencias.ts'
 import { ListaParaLancarAMao } from '../ajustes/PainelLancarNoSigaa.tsx'
 
 interface Recusa {
@@ -25,7 +26,13 @@ interface Recusa {
   aMao?: boolean
 }
 
-type Estado = { tipo: 'esperando' } | { tipo: 'recusa'; recusa: Recusa } | { tipo: 'pronta'; leitura: LeituraPlanilha; turma: string; avisos: string[] }
+type Pergunta = { candidatas: string[] } | { confirmar: string; codigo: string }
+
+type Estado =
+  | { tipo: 'esperando' }
+  | { tipo: 'recusa'; recusa: Recusa }
+  | { tipo: 'pergunta'; leitura: LeituraPlanilha; avisos: string[]; pergunta: Pergunta }
+  | { tipo: 'pronta'; leitura: LeituraPlanilha; turma: string; avisos: string[] }
 
 const RECUSAS = {
   semFavorito: {
@@ -39,6 +46,7 @@ const RECUSAS = {
     texto: 'Este favorito é de uma versão antiga. Arraste o novo, nos Ajustes do Adsum, para a barra de favoritos.',
   },
   formato: { titulo: 'Mensagem estranha', texto: 'A planilha mandou algo que o Adsum não entende. Clique no favorito de novo.' },
+  naoEstaNoAdsum: { titulo: 'Esta turma não está no Adsum', texto: 'Nenhuma turma do Adsum tem o código e as matrículas desta planilha.', aMao: true },
   baseVazia: {
     titulo: 'Nenhuma turma neste navegador',
     texto: 'O Adsum deste navegador não tem turma cadastrada. Abra o SIGAA no mesmo navegador em que você faz a chamada.',
@@ -73,6 +81,42 @@ function TelaDeRecusa({ recusa, repositorio }: { recusa: Recusa; repositorio: Re
             Lançar à mão
           </button>
         ))}
+    </main>
+  )
+}
+
+/** A planilha não basta para achar a turma: o professor diz qual é, num toque. */
+function TelaDaPergunta({ pergunta, escolher, recusar }: { pergunta: Pergunta; escolher: (turma: string) => void; recusar: () => void }) {
+  if ('confirmar' in pergunta) {
+    const { confirmar, codigo } = pergunta
+    return (
+      <main className="folha-sigaa">
+        <h1>{`Esta planilha é de ${codigo}`}</h1>
+        <p className="folha-sigaa__apoio">{`A turma ${confirmar} do Adsum tem as mesmas matrículas, mas o nome não traz ${codigo}.`}</p>
+        <button
+          className="botao--acento folha-sigaa__acao"
+          onClick={() => {
+            confirmarTurma(codigo, confirmar)
+            escolher(confirmar)
+          }}
+        >
+          {`Usar ${confirmar}`}
+        </button>
+        <button className="botao--quieto" onClick={recusar}>
+          Não é esta
+        </button>
+      </main>
+    )
+  }
+  return (
+    <main className="folha-sigaa">
+      <h1>Qual é a turma desta planilha?</h1>
+      <p className="folha-sigaa__apoio">Mais de uma turma do Adsum tem as matrículas desta planilha.</p>
+      {pergunta.candidatas.map((turma) => (
+        <button key={turma} className="cartao folha-sigaa__turma" onClick={() => escolher(turma)}>
+          {turma}
+        </button>
+      ))}
     </main>
   )
 }
@@ -291,15 +335,11 @@ export function FolhaSigaa({
       if (!leitura) return recusar({ titulo: 'Não deu para ler a planilha', texto: 'O Adsum não preencheu nada. O motivo:', detalhes, aMao: true })
       const matriculados = await repositorio.listarMatriculados()
       if (matriculados.length === 0) return recusar(RECUSAS.baseVazia)
-      const escolha = escolherTurma(leitura, matriculados)
-      if ('recusa' in escolha) {
-        return recusar(
-          escolha.recusa === 'nenhuma'
-            ? { titulo: 'Esta turma não está no Adsum', texto: 'Nenhuma turma do Adsum tem o código e as matrículas desta planilha.', aMao: true }
-            : { titulo: 'Duas turmas servem', texto: 'Mais de uma turma do Adsum casa com esta planilha:', detalhes: escolha.candidatas },
-        )
-      }
-      setEstado({ tipo: 'pronta', leitura, turma: escolha.turma, avisos: detalhes })
+      const escolha = escolherTurma(leitura, matriculados, turmasConfirmadas())
+      if ('turma' in escolha) return setEstado({ tipo: 'pronta', leitura, turma: escolha.turma, avisos: detalhes })
+      if ('confirmar' in escolha) return setEstado({ tipo: 'pergunta', leitura, avisos: detalhes, pergunta: escolha })
+      if (escolha.recusa === 'duas') return setEstado({ tipo: 'pergunta', leitura, avisos: detalhes, pergunta: { candidatas: escolha.candidatas } })
+      recusar(RECUSAS.naoEstaNoAdsum)
     },
     [repositorio, agora],
   )
@@ -324,6 +364,16 @@ export function FolhaSigaa({
     )
   }
   if (estado.tipo === 'recusa') return <TelaDeRecusa recusa={estado.recusa} repositorio={repositorio} />
+  if (estado.tipo === 'pergunta') {
+    const { leitura, avisos } = estado
+    return (
+      <TelaDaPergunta
+        pergunta={estado.pergunta}
+        escolher={(turma) => setEstado({ tipo: 'pronta', leitura, turma, avisos })}
+        recusar={() => setEstado({ tipo: 'recusa', recusa: RECUSAS.naoEstaNoAdsum })}
+      />
+    )
+  }
   return (
     <FolhaDaTurma
       key={estado.leitura.id}

@@ -115,7 +115,11 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes }: En
 /** Parte das matrículas da página que precisa estar na turma para ela ser a turma. */
 export const COBERTURA_MINIMA = 0.8
 
-export type EscolhaDeTurma = { turma: string } | { recusa: 'nenhuma' | 'duas'; candidatas: string[] }
+export type EscolhaDeTurma =
+  | { turma: string }
+  /** Sem o código no nome, mas com as matrículas: o professor confirma. */
+  | { confirmar: string; codigo: string }
+  | { recusa: 'nenhuma' | 'duas'; candidatas: string[] }
 
 /** Código de disciplina: `CIN0144`, `IF685`. `T01` e `2026.2` não são. */
 const CODIGO = /\b[A-Z]{2,6}\d{2,5}\b/g
@@ -128,24 +132,39 @@ const codigosDaTurma = (turma: string) => new Set(turma.match(CODIGO) ?? [])
 
 /**
  * A turma do Adsum cujo nome traz o código do cabeçalho **e** cujas
- * matrículas cobrem a página. Duas candidatas, ou nenhuma, é recusa: lançar
- * na turma errada seria falta para quem estava presente. Sem código no nome,
- * as matrículas sozinhas não bastam: a mesma gente cursa outras disciplinas.
+ * matrículas cobrem a página. Lançar na turma errada seria falta para quem
+ * estava presente, e por isso nada aqui adivinha:
+ *
+ * - com o código no nome, uma turma só: é ela;
+ * - sem turma com o código, uma turma **sem código nenhum** no nome que
+ *   cubra a página é proposta, e o professor confirma. A mesma gente cursa
+ *   outras disciplinas: a matrícula sozinha não decide, o professor decide;
+ * - turma com **outro** código é de outra disciplina, e nunca serve;
+ * - duas que servem: o professor escolhe. Nenhuma: recusa.
  */
-export function escolherTurma(leitura: LeituraPlanilha, matriculados: Matriculado[]): EscolhaDeTurma {
+export function escolherTurma(
+  leitura: LeituraPlanilha,
+  matriculados: Matriculado[],
+  /** Código → turma que o professor já confirmou: não se pergunta de novo. */
+  confirmadas: Readonly<Record<string, string>> = {},
+): EscolhaDeTurma {
   const codigo = codigoDaPagina(leitura.cabecalhoTurma)
   if (!codigo || leitura.linhas.length === 0) return { recusa: 'nenhuma', candidatas: [] }
   const porTurma = new Map<string, Set<string>>()
   for (const m of matriculados) {
-    if (m.papel !== 'aluno' || !codigosDaTurma(m.turma).has(codigo)) continue
+    if (m.papel !== 'aluno') continue
     let s = porTurma.get(m.turma)
     if (!s) porTurma.set(m.turma, (s = new Set()))
     s.add(m.matricula)
   }
-  const candidatas = [...porTurma].filter(([, matriculas]) => {
-    const cobertas = leitura.linhas.filter((l) => matriculas.has(l.matricula)).length
-    return cobertas / leitura.linhas.length >= COBERTURA_MINIMA
-  }).map(([turma]) => turma)
-  if (candidatas.length === 1) return { turma: candidatas[0] }
-  return { recusa: candidatas.length === 0 ? 'nenhuma' : 'duas', candidatas }
+  const cobrem = [...porTurma]
+    .filter(([, matriculas]) => leitura.linhas.filter((l) => matriculas.has(l.matricula)).length / leitura.linhas.length >= COBERTURA_MINIMA)
+    .map(([turma]) => turma)
+
+  const comCodigo = cobrem.filter((t) => codigosDaTurma(t).has(codigo))
+  if (comCodigo.length === 1) return { turma: comCodigo[0] }
+  if (comCodigo.length > 1) return { recusa: 'duas', candidatas: comCodigo }
+  const semCodigo = cobrem.filter((t) => codigosDaTurma(t).size === 0)
+  if (semCodigo.length === 1) return confirmadas[codigo] === semCodigo[0] ? { turma: semCodigo[0] } : { confirmar: semCodigo[0], codigo }
+  return { recusa: semCodigo.length > 1 ? 'duas' : 'nenhuma', candidatas: semCodigo }
 }

@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 100% da fase 2
+## Andamento: 100% da fase 1, 100% da fase 2, 15% da fase 3
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -95,7 +95,9 @@ lado de não adivinhar:
   nome. Turma sem código no nome é recusada, com o motivo: só pelas
   matrículas, a chamada de uma disciplina iria para a planilha de outra da
   mesma turma de alunos. **A conferir no zip de sexta:** como as turmas do
-  Prof. Paulo se chamam.
+  Prof. Paulo se chamam. **Revisto no passo 23:** a turma sem código nenhum
+  no nome é proposta, e o professor confirma; a com outro código continua
+  fora.
 
 ### 3 · As sete leis (10)
 
@@ -437,7 +439,48 @@ que ele cobriria fica dito:
   perde é só saber como a página diz sucesso ou erro, para a folha poder
   citar as mesmas palavras.
 
-## Fora das duas fases
+## Fase 3: o caminho do professor, sem atrito (desde 29/09/2026)
+
+Pedida pelo autor depois do ensaio: o caminho ideal, com menos etapas e
+confiabilidade máxima. Avaliado e **decidido pelo autor em 29/09: a decisão
+continua na janela do Adsum**. A folha sobre a planilha, com o Adsum só
+buscando os dados e fechando, foi descartada: depois da decisão a janela
+ainda grava na base (a auditoria do preenchimento e o "Aceitar o SIGAA"), e
+a página do SIGAA não alcança essa base. Fechar antes obrigaria a auditoria
+a registrar o proposto em vez do feito, ou uma segunda janela relâmpago.
+
+Em janela, o Adsum fica ao lado da planilha. Em tela cheia no Mac, o Chrome
+abre a janela como aba, e a página não tem como mudar isso: a folha vira uma
+tela pensada para o tamanho, e ao Preencher fecha e devolve a planilha.
+
+| # | Passo | Peso | Estado |
+|---|---|---|---|
+| 23 | Escolha da turma: entre duas, o professor escolhe; sem o código no nome, as matrículas propõem a turma e ele confirma | 15 | feito, 29/09 |
+| 24 | A folha nos dois tamanhos: ao lado da planilha e em tela cheia | 15 |  |
+| 25 | A barra na planilha no padrão do Adsum, clara e escura | 10 |  |
+| 26 | O favorito chega ao professor: gerado no build e oferecido em Ajustes, com o gesto de arrastar | 20 |  |
+| 27 | Histórico em Ajustes: o que foi lançado, quando, em cada turma | 10 |  |
+| 28 | Ensaio no Chrome, em janela e em tela cheia | 20 |  |
+| 29 | Esboço (`docs/09`), vitrine e documentos | 10 |  |
+
+### 23 · Escolha da turma
+
+Antes, a folha recusava em dois casos que o professor resolve num toque:
+duas turmas que servem (uma cadastrada duas vezes), e a turma sem o código
+da disciplina no nome ("Programação, manhã"). Agora a folha pergunta:
+
+- **Duas servem:** "Qual é a turma desta planilha?", uma linha por turma.
+- **Sem o código no nome, mas com as matrículas:** "Esta planilha é de
+  CIN0144", com "Usar Programação" e "Não é esta". A matrícula sozinha não
+  decide, porque a mesma gente cursa outras disciplinas: decide o professor,
+  uma vez. O Adsum lembra (preferência deste computador,
+  `turmasConfirmadas`) e não pergunta de novo.
+- **Turma com outro código** continua fora: é outra disciplina.
+
+Com isso, o nome da turma deixa de ser requisito. Quatro mutações da regra,
+as quatro derrubadas.
+
+## Fora das fases
 
 - A rota por dia ("Lançar Frequência"): fora por decisão do autor (29/09).
   Desenho em `docs/08`, se voltar.

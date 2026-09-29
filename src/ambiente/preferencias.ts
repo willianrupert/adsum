@@ -21,6 +21,7 @@ const CHAVES = {
   versaoDeNovidadeVista: 'adsum.novidade.versao',
   modoDeGrade: 'adsum.grade.modo',
   auditoriaDeUids: 'adsum.auditoria.uids',
+  turmasDoSigaa: 'adsum.sigaa.turmas',
 } as const
 
 function ler(chave: string): string | undefined {
@@ -56,6 +57,25 @@ export function modoDev(): boolean {
  */
 export function lancarNoSigaaLigado(): boolean {
   return modoDev()
+}
+
+/**
+ * Código da disciplina → turma do Adsum sem o código no nome, confirmada pelo
+ * professor na janela do SIGAA (`escolherTurma`). Perder isto custa uma
+ * pergunta a mais, e só.
+ */
+export function turmasConfirmadas(): Record<string, string> {
+  try {
+    const lido: unknown = JSON.parse(ler(CHAVES.turmasDoSigaa) ?? '{}')
+    if (typeof lido !== 'object' || lido === null) return {}
+    return Object.fromEntries(Object.entries(lido).filter((par): par is [string, string] => typeof par[1] === 'string'))
+  } catch {
+    return {}
+  }
+}
+
+export function confirmarTurma(codigo: string, turma: string): void {
+  gravar(CHAVES.turmasDoSigaa, JSON.stringify({ ...turmasConfirmadas(), [codigo]: turma }))
 }
 
 export function definirModoDev(ligado: boolean): void {

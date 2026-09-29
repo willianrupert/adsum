@@ -2664,6 +2664,15 @@ button:focus-visible {
   color: var(--tinta-fraca);
 }
 
+.folha-sigaa__turma {
+  justify-content: flex-start;
+  padding: 14px 16px;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
 .folha-sigaa__aula {
   flex-wrap: wrap;
   padding: 14px 16px;
