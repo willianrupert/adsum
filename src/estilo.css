@@ -2758,3 +2758,122 @@ button:focus-visible {
   display: block;
   color: var(--alerta);
 }
+
+/* ── O favorito do SIGAA, em Ajustes (`ui/ajustes/CartaoDoFavorito.tsx`) ── */
+/* Um botão de verdade para arrastar, e acima dele o gesto desenhado: uma
+   barra de favoritos e o botão subindo até ela. Sem movimento para quem
+   pediu menos movimento: o desenho fica parado, já no lugar. */
+.favorito {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0 8px;
+  text-align: center;
+}
+
+.favorito__texto {
+  margin: 0;
+  max-width: 34ch;
+}
+
+.favorito__palco {
+  position: relative;
+  width: 240px;
+  height: 72px;
+}
+
+.favorito__barra {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: var(--fundo-alt);
+  box-shadow: inset 0 0 0 1px var(--separador);
+}
+
+.favorito__barra span {
+  width: 44px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--separador);
+}
+
+.favorito__barra .favorito__destino {
+  width: 56px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--acao);
+  opacity: 0.5;
+}
+
+.favorito__fantasma {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--acao);
+  color: #fff;
+  font-size: var(--t-nota);
+  font-weight: 600;
+  transform: translateX(-50%);
+  animation: favorito-arrastar 3.2s ease-in-out infinite;
+}
+
+@keyframes favorito-arrastar {
+  0%,
+  15% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+  55%,
+  80% {
+    transform: translate(22px, -46px) scale(0.9);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(22px, -46px) scale(0.9);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .favorito__fantasma {
+    animation: none;
+    transform: translate(22px, -46px) scale(0.9);
+  }
+}
+
+.favorito__botao {
+  padding: 10px 22px;
+  border-radius: 999px;
+  background: var(--acao);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: grab;
+}
+
+.favorito__botao:active {
+  cursor: grabbing;
+}
+
+.favorito__nota {
+  margin: 0;
+  font-size: var(--t-menor);
+  color: var(--tinta-fraca);
+}
+
+.lancar__subtitulo {
+  margin: 16px 0 0;
+  font-size: var(--t-corpo);
+}
+
+.lancar__historico {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: var(--t-menor);
+  line-height: 1.6;
+}

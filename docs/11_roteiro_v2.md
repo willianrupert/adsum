@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 100% da fase 2, 40% da fase 3
+## Andamento: 100% da fase 1, 100% da fase 2, 70% da fase 3
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -458,8 +458,8 @@ tela pensada para o tamanho, e ao Preencher fecha e devolve a planilha.
 | 23 | Escolha da turma: entre duas, o professor escolhe; sem o código no nome, as matrículas propõem a turma e ele confirma | 15 | feito, 29/09 |
 | 24 | A folha nos dois tamanhos: ao lado da planilha e em tela cheia | 15 | feito, 29/09 |
 | 25 | A barra na planilha no padrão do Adsum, clara e escura | 10 | feito, 29/09 |
-| 26 | O favorito chega ao professor: gerado no build e oferecido em Ajustes, com o gesto de arrastar | 20 |  |
-| 27 | Histórico em Ajustes: o que foi lançado, quando, em cada turma | 10 |  |
+| 26 | O favorito chega ao professor: gerado no build e oferecido em Ajustes, com o gesto de arrastar | 20 | feito, 29/09 |
+| 27 | Histórico em Ajustes: o que foi lançado, quando, em cada turma | 10 | feito, 29/09 |
 | 28 | Ensaio no Chrome, em janela e em tela cheia | 20 |  |
 | 29 | Esboço (`docs/09`), vitrine e documentos | 10 |  |
 
@@ -496,6 +496,31 @@ da planilha, centrado, com cantos de 16 px, a fonte do sistema e as cores do
 Adsum, claro ou escuro conforme o sistema (`data-tema`, testado). Sem vidro:
 o fundo é a planilha, e contraste é requisito. O estilo vai em linha porque
 a página do SIGAA não tem as folhas do Adsum. Visto no Chrome, na bancada.
+
+**As faltas, mais evidentes (pedido do autor, 29/09).** Para conferir à mão
+a integridade do preenchimento: presença escrita pelo Adsum fica no azul
+claro; falta fica em azul forte, com o número em branco e negrito; a barra
+diz quantas ("e as 28 faltas estão em azul forte"), e a conta da barra fecha
+com o que se vê na planilha. Desfazer devolve cor, tinta e peso originais.
+
+### 26 · O favorito chega ao professor
+
+Até aqui o favorito só existia na bancada e nos testes. Agora o build o
+gera (`pluginDoFavorito`, módulo `virtual:favorito`) e os Ajustes o
+oferecem no painel "Lançar no SIGAA": um botão "Adsum" para arrastar à barra
+de favoritos, com o gesto desenhado acima (parado para quem pediu menos
+movimento) e o atalho da barra de favoritos. Clicar nele dentro do Adsum não
+roda nada: diz que é para arrastar. O React recusa `javascript:` no `href`,
+e o favorito entra direto no DOM. Em desenvolvimento ele abre o Adsum de
+ensaio; no build, o publicado. Visto no Chrome: 19 KB, abaixo do teto.
+
+### 27 · Histórico em Ajustes
+
+"Últimos preenchimentos": os cinco lançamentos mais novos, de todas as
+turmas, em uma linha cada ("CIN0114 · T01, 29/09 às 18:40: 2 aulas, 1
+falta"). Sai da auditoria (`historicoDeLancamentos`); para isso, um
+Preencher grava todas as suas linhas com o mesmo instante (testado). É o que
+o Adsum mandou: o que ficou valendo, o favorito confere na vez seguinte.
 
 ## Fora das fases
 

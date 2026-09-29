@@ -148,6 +148,8 @@ describe('a folha, com o que lançar', () => {
       ['20260000002', '0'],
       ['20260000003', '2'],
     ])
+    // Um Preencher, um instante: é por ele que o histórico dos Ajustes junta o lançamento.
+    expect(new Set(auditoria.filter((l) => l.acao === 'preenchimento').map((l) => l.quando)).size).toBe(1)
   })
 
   it('a conferência registra a diferença na auditoria, sem nome', async () => {

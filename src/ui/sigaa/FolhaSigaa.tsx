@@ -168,9 +168,9 @@ function FolhaDaTurma({
   )
 
   const linha = useCallback(
-    (acao: LinhaDeAuditoria['acao'], dia: Dia, matricula: string, lido: string, proposto: string, aplicado: string): LinhaDeAuditoria => ({
+    (acao: LinhaDeAuditoria['acao'], dia: Dia, matricula: string, lido: string, proposto: string, aplicado: string, quando = new Date().toISOString()): LinhaDeAuditoria => ({
       turma,
-      quando: new Date().toISOString(),
+      quando,
       acao,
       versaoSigaa: leitura.versaoSigaa,
       dia,
@@ -221,10 +221,12 @@ function FolhaDaTurma({
     if (!validacao.ok) return setRecado('O plano não confere com a planilha. Nada foi mandado. Clique no favorito de novo.')
     if (!ponte.entregar(leitura.id, plano)) return setRecado('A planilha foi fechada. Clique no favorito de novo.')
     const porPosicao = new Map(relatorio.celulas.map((c) => [`${c.linha}|${c.coluna}`, c]))
+    // Um instante para o Preencher inteiro: o histórico junta o lançamento por ele.
+    const quando = new Date().toISOString()
     await repositorio.acrescentarAuditoriaSigaa(
       plano.map((i) => {
         const c = porPosicao.get(`${i.linha}|${i.coluna}`)!
-        return linha('preenchimento', c.dia, c.matricula, '', String(i.valor), String(i.valor))
+        return linha('preenchimento', c.dia, c.matricula, '', String(i.valor), String(i.valor), quando)
       }),
     )
     fechar()

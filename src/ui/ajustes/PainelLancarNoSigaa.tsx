@@ -7,6 +7,8 @@ import { listaParaLancarAMao, textoParaLancarAMao } from '../../nucleo/lancar/aM
 import type { Repositorio } from '../../portas/Repositorio.ts'
 import { useAdsum } from '../adsum.ts'
 import { Painel } from '../componentes/Painel.tsx'
+import { CartaoDoFavorito } from './CartaoDoFavorito.tsx'
+import { HistoricoDoSigaa } from './HistoricoDoSigaa.tsx'
 
 /** Também na janela do SIGAA, onde não há o contexto do Adsum: o repositório vem por parâmetro. */
 export function ListaParaLancarAMao({ turmas, repositorio }: { turmas: string[]; repositorio: Repositorio }) {  // Derivada, não guardada: as turmas podem chegar depois do primeiro desenho.
@@ -62,7 +64,11 @@ export function ListaParaLancarAMao({ turmas, repositorio }: { turmas: string[];
 export function PainelLancarNoSigaa({ turmas }: { turmas: string[] }) {
   const { repositorio } = useAdsum()
   return (
-    <Painel titulo="Lançar no SIGAA" recolhivel legenda="Quem faltou em cada aula, para passar à frequência.">
+    <Painel titulo="Lançar no SIGAA" recolhivel legenda="Um clique na planilha de frequência preenche as aulas.">
+      <CartaoDoFavorito />
+      <HistoricoDoSigaa turmas={turmas} repositorio={repositorio} />
+      <h3 className="lancar__subtitulo">À mão</h3>
+      <p className="ferramentas__nota">Quem faltou em cada aula, para passar à frequência sem o favorito.</p>
       <ListaParaLancarAMao turmas={turmas} repositorio={repositorio} />
     </Painel>
   )
