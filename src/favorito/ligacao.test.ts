@@ -63,6 +63,16 @@ describe('o favorito na planilha', () => {
   describe('o salvamento automático do SIGAA (opção A)', () => {
     afterEach(() => vi.useRealTimers())
 
+    it('com faltas, a barra diz quantas, e que estão em azul forte', () => {
+      const { chegar, pagina } = montar()
+      const { linha, coluna } = celulaLivre()
+      chegar(mensagemDePronto())
+      chegar(mensagemDePlano('l-1', [{ linha, coluna, antes: 'vazia', valor: 2 }]))
+      expect(pagina.barra?.texto).toBe(
+        'Adsum preencheu 1 aula. Azul é o que mudou, e a falta está em azul forte. O SIGAA salva sozinho em até 5 minutos, ou agora, em Gravar Frequências.',
+      )
+    })
+
     it('a barra diz que o SIGAA salva sozinho, e o Desfazer vale enquanto a página não coletou', () => {
       const { chegar, pagina } = montar()
       const { linha, coluna } = celulaLivre()

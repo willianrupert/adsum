@@ -40,6 +40,21 @@ describe('a página do SIGAA, pelo favorito', () => {
     expect(input.title).toBe('')
   })
 
+  it('a falta ganha o azul forte e o número em branco, e despinta como a presença', () => {
+    const pagina = criarPaginaSigaa(document, inventado)
+    const input = document.querySelector<HTMLInputElement>('#c-0-0')!
+    pagina.pintar(0, 0, 'mudou', '')
+    const presenca = input.style.background
+    pagina.pintar(0, 0, 'falta', 'Adsum: ausente, 2 faltas. Antes: vazia.')
+    expect(input.style.background).not.toBe(presenca)
+    expect(input.style.color).toBe('rgb(255, 255, 255)')
+    expect(input.style.fontWeight).toBe('700')
+    pagina.pintar(0, 0)
+    expect(input.style.background).toBe('')
+    expect(input.style.color).toBe('')
+    expect(input.style.fontWeight).toBe('')
+  })
+
   it('a barra no pé reserva o próprio espaço, troca de texto sem se duplicar, e o Desfazer chama de volta', () => {
     const pagina = criarPaginaSigaa(document, inventado)
     const desfazer = vi.fn()

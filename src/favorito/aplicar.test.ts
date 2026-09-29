@@ -70,7 +70,8 @@ describe('aplicar: comparar e trocar', () => {
   it('pinta o que mudou, com a dica de antes e depois', () => {
     const { plano, pagina } = preparado(3)
     const feito = aplicar(pagina, plano)
-    for (const e of feito.escritas) expect(pagina.pinturas.get(`${e.linha}|${e.coluna}`)?.marca).toBe('mudou')
+    for (const e of feito.escritas) expect(pagina.pinturas.get(`${e.linha}|${e.coluna}`)?.marca).toBe(e.valor === '0' ? 'mudou' : 'falta')
+    expect(feito.escritas.some((e) => e.valor !== '0')).toBe(true)
   })
 })
 

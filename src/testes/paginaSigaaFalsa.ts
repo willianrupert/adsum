@@ -11,7 +11,7 @@ export class PaginaSigaaFalsa implements PaginaDePlanilha {
   /** `ID_MAT` de cada linha, na ordem da página. */
   readonly ids: string[]
   readonly valores: string[][]
-  readonly pinturas = new Map<string, { marca?: 'mudou'; dica?: string }>()
+  readonly pinturas = new Map<string, { marca?: 'mudou' | 'falta'; dica?: string }>()
   barra?: { texto: string; aoDesfazer?: () => void }
   escritas = 0
 
@@ -41,7 +41,7 @@ export class PaginaSigaaFalsa implements PaginaDePlanilha {
     this.valores[linha][coluna] = valor
   }
 
-  pintar(linha: number, coluna: number, marca?: 'mudou', dica?: string): void {
+  pintar(linha: number, coluna: number, marca?: 'mudou' | 'falta', dica?: string): void {
     this.pinturas.set(`${linha}|${coluna}`, { marca, dica })
   }
 

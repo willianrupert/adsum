@@ -10,8 +10,8 @@ export interface PaginaDePlanilha {
   /** O valor da célula agora, que pode não ser o lido: o professor digita. */
   valor(linha: number, coluna: number): string | undefined
   escrever(linha: number, coluna: number, valor: string): void
-  /** `mudou` é o azul; sem marca, a célula volta ao natural. */
-  pintar(linha: number, coluna: number, marca?: 'mudou', dica?: string): void
+  /** `mudou` é o azul claro, `falta` o azul forte; sem marca, a célula volta ao natural. */
+  pintar(linha: number, coluna: number, marca?: 'mudou' | 'falta', dica?: string): void
   mostrarBarra(barra: { texto: string; aoDesfazer?: () => void }): void
   /**
    * Muda quando a página recolhe os valores das células para o servidor (o

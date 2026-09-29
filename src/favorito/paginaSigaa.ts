@@ -33,9 +33,10 @@ const ehCampo = (el: Element): el is HTMLInputElement | HTMLSelectElement | HTML
 export const EM_EDICAO = '(em edição)'
 
 const AZUL = 'rgba(0, 113, 227, 0.18)'
+const AZUL_FORTE = '#0071e3'
 
 export function criarPaginaSigaa(documento: Document, localizador: Localizador): PaginaDePlanilha {
-  const estiloOriginal = new WeakMap<HTMLElement, { fundo: string; titulo: string }>()
+  const estiloOriginal = new WeakMap<HTMLElement, { fundo: string; titulo: string; cor: string; peso: string }>()
   const celula = (linha: number, coluna: number) => localizador.celula(documento, linha, coluna)
   let espacoOriginal: string | undefined
 
@@ -73,10 +74,16 @@ export function criarPaginaSigaa(documento: Document, localizador: Localizador):
     pintar(linha, coluna, marca, dica) {
       const alvo = celula(linha, coluna)
       if (!alvo) return
-      if (!estiloOriginal.has(alvo)) estiloOriginal.set(alvo, { fundo: alvo.style.background, titulo: alvo.title })
+      if (!estiloOriginal.has(alvo)) {
+        estiloOriginal.set(alvo, { fundo: alvo.style.background, titulo: alvo.title, cor: alvo.style.color, peso: alvo.style.fontWeight })
+      }
       const original = estiloOriginal.get(alvo)!
-      alvo.style.background = marca === 'mudou' ? AZUL : original.fundo
-      alvo.title = marca === 'mudou' ? (dica ?? '') : original.titulo
+      // A falta salta aos olhos, para a conferência à mão: azul forte, número em branco.
+      const falta = marca === 'falta'
+      alvo.style.background = falta ? AZUL_FORTE : marca === 'mudou' ? AZUL : original.fundo
+      alvo.style.color = falta ? '#ffffff' : original.cor
+      alvo.style.fontWeight = falta ? '700' : original.peso
+      alvo.title = marca ? (dica ?? '') : original.titulo
     },
     mostrarBarra({ texto, aoDesfazer }) {
       fecharBarra()
@@ -94,7 +101,7 @@ export function criarPaginaSigaa(documento: Document, localizador: Localizador):
       barra.setAttribute('role', 'status')
       barra.style.cssText =
         'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483647;box-sizing:border-box;' +
-        'width:max-content;max-width:min(680px,calc(100vw - 32px));display:flex;gap:10px;align-items:center;' +
+        'width:max-content;max-width:min(680px,calc(100vw - 32px));display:flex;gap:10px;align-items:center;text-align:left;' +
         `padding:12px 12px 12px 18px;border-radius:16px;background:${cor.fundo};color:${cor.tinta};box-shadow:${cor.sombra};` +
         'font:15px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased'
       const frase = documento.createElement('span')

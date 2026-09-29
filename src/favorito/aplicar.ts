@@ -45,7 +45,7 @@ export function aplicar(pagina: PaginaDePlanilha, instrucoes: Instrucao[]): { es
       continue
     }
     pagina.escrever(linha, coluna, String(valor))
-    pagina.pintar(linha, coluna, 'mudou', dicaDaCelula(String(valor), agora))
+    pagina.pintar(linha, coluna, valor === 0 ? 'mudou' : 'falta', dicaDaCelula(String(valor), agora))
     escritas.push({ linha, coluna, valor: String(valor), antes: agora })
   }
   return { escritas, puladas }

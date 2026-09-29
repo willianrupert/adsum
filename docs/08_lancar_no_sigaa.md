@@ -519,10 +519,12 @@ redimensiona, minimiza e fecha. Dentro, uma folha:
 consegue ficar sempre por cima; por isso ela não precisa. Se sumir atrás do
 Chrome antes disso, o favorito de novo a traz de volta, no mesmo estado.
 
-**De volta à planilha.** Azul no que mudou, laranja nas diferenças, barra de
-uma linha no pé que reserva o próprio espaço e recolhe para uma pílula:
-"Adsum preencheu 3 aulas. Azul é o que mudou. O SIGAA salva sozinho em até
-5 minutos, ou agora, em Gravar Frequências." e **Desfazer**, que vale até a
+**De volta à planilha.** Azul claro na presença que o Adsum escreveu, **azul
+forte com o número em branco na falta** (pedido do autor em 29/09: a falta é o
+que se confere à mão), e um cartão flutuante no pé:
+"Adsum preencheu 3 aulas. Azul é o que mudou, e as 28 faltas estão em azul
+forte. O SIGAA salva sozinho em até 5 minutos, ou agora, em Gravar
+Frequências." e **Desfazer**, que vale até a
 página coletar os valores; depois, a barra diz "O SIGAA já salvou o
 preenchimento. Para mudar uma célula, clique nela, como sempre." (29/09). O mouse sobre uma célula azul diz "Adsum:
 ausente, 2 faltas. Antes: vazia".
