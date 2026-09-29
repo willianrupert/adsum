@@ -224,6 +224,7 @@ function FolhaDaTurma({
           <button className="folha-sigaa__abrir" aria-expanded={aberta === a.dia} onClick={() => setAberta(aberta === a.dia ? undefined : a.dia)}>
             <strong>{a.rotulo}</strong>
             <small>{`${contar(a.presentes, 'presente', 'presentes')}, ${contar(a.faltas, 'falta', 'faltas')}`}</small>
+            {a.aviso && <small className="folha-sigaa__aviso">{a.aviso}</small>}
           </button>
           {aberta === a.dia && (
             <ul className="folha-sigaa__ausentes">

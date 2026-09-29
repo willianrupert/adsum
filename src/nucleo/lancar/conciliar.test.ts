@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { conciliar, escolherTurma } from './conciliar.ts'
-import { comoDia, type AjusteSigaa, type Celula, type Conciliada, type LeituraPlanilha } from './tipos.ts'
+import { comoDia, type AjusteSigaa, type Celula, type ColunaDia, type Conciliada, type LeituraPlanilha } from './tipos.ts'
 import type { Evento, Matriculado } from '../tipos.ts'
 
 const TURMA = 'CIN0144 · T01'
@@ -44,7 +44,7 @@ const L = (faltas: number): Celula => ({ tipo: 'lancada', faltas })
 
 function leitura(
   linhas: Record<string, Celula[]>,
-  colunas: { dia: string; maximo?: number; marca?: 'lancado' | 'feriado' | 'cancelada' }[] = [{ dia: TER, maximo: 2 }],
+  colunas: { dia: string; maximo?: number; marca?: ColunaDia['marca'] }[] = [{ dia: TER, maximo: 2 }],
 ): LeituraPlanilha {
   return {
     id: 'l1',
@@ -205,6 +205,22 @@ describe('conciliar: o que fica fora da grade', () => {
       { dia: QUI, motivo: 'cancelada' },
       { dia: '2026-10-20', motivo: 'semColuna' },
     ])
+  })
+
+  it('aula suspensa e chamada fora do período letivo também não têm onde lançar, com o motivo', () => {
+    const fora = { tipo: 'bloqueada' as const, motivo: 'foraDoPeriodo' as const }
+    const r = relatorio(
+      leitura({ [ANA]: [{ tipo: 'bloqueada', motivo: 'suspensa' }, fora], [BRENO]: [{ tipo: 'bloqueada', motivo: 'suspensa' }, fora] }, [
+        { dia: TER, maximo: 2, marca: 'suspensa' },
+        { dia: QUI, maximo: 2 },
+      ]),
+      log(abriu(TER), abriu(QUI)),
+    )
+    expect(r.semOndeLancar).toEqual([
+      { dia: TER, motivo: 'suspensa' },
+      { dia: QUI, motivo: 'foraDoPeriodo' },
+    ])
+    expect(r.semMaximo).toEqual([])
   })
 
   it('dia com chamada e sem máximo: o dia inteiro fica fora, e vai para "sem máximo"', () => {

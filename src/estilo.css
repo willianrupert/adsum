@@ -2710,3 +2710,8 @@ button:focus-visible {
   padding: 14px 16px;
   font-size: var(--t-corpo);
 }
+
+.folha-sigaa__aviso {
+  display: block;
+  color: var(--alerta);
+}

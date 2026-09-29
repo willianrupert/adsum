@@ -29,6 +29,9 @@ function ajustesVigentes(ajustes: AjusteSigaa[], turma: string): Map<string, Aju
   return vigentes
 }
 
+/** Dia em que não houve aula, pelo SIGAA: nada a lançar nele. */
+const semAula = (c: { marca?: string }) => c.marca === 'feriado' || c.marca === 'cancelada' || c.marca === 'suspensa'
+
 export function conciliar({ leitura, turma, matriculados, eventos, ajustes }: EntradaDaConciliacao): Relatorio {
   const alunos = matriculados.filter((m) => m.turma === turma && m.papel === 'aluno')
   const daTurma = new Set(alunos.map((a) => a.matricula))
@@ -46,7 +49,7 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes }: En
 
   // Dia com o que lançar e sem máximo: inteiro fora, com o motivo.
   const semMaximo = leitura.colunas
-    .filter((c) => c.maximo === undefined && c.marca !== 'feriado' && c.marca !== 'cancelada' && diasDeChamada.has(c.dia))
+    .filter((c) => c.maximo === undefined && !semAula(c) && diasDeChamada.has(c.dia))
     .map((c) => c.dia)
   const diaSemMaximo = new Set(semMaximo)
 
@@ -87,7 +90,10 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes }: En
   const semOndeLancar: SemOndeLancar[] = [...diasDeChamada].sort().flatMap((dia): SemOndeLancar[] => {
     const coluna = porDia.get(dia)
     if (!coluna) return [{ dia, motivo: 'semColuna' }]
-    if (coluna.marca === 'feriado' || coluna.marca === 'cancelada') return [{ dia, motivo: coluna.marca }]
+    if (coluna.marca === 'feriado' || coluna.marca === 'cancelada' || coluna.marca === 'suspensa') return [{ dia, motivo: coluna.marca }]
+    // A página recusa o dia inteiro fora do período letivo (`docs/12`): nenhuma célula aceita valor.
+    const daColuna = leitura.linhas.map((l) => l.celulas[coluna.indice])
+    if (daColuna.length > 0 && daColuna.every((c) => c.tipo === 'bloqueada' && c.motivo === 'foraDoPeriodo')) return [{ dia, motivo: 'foraDoPeriodo' }]
     return []
   })
 

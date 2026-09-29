@@ -75,6 +75,33 @@ describe('o resumo da folha', () => {
     expect(r.apoio).toBe('SIGAA e Adsum iguais em 2 aulas. 1 diferença aceita por você.')
   })
 
+  it('suspensa, bloqueado e fora do período entram na linha do que fica de fora', () => {
+    const r = resumoDaFolha({
+      relatorio: relatorio([{ ...pos(0), categoria: 'aLancar', esperado: 0 }], {
+        semOndeLancar: [{ dia: comoDia('2026-10-06')!, motivo: 'suspensa' }, { dia: comoDia('2026-12-15')!, motivo: 'foraDoPeriodo' }],
+      }),
+      leitura: { ...leitura(1), linhas: [...leitura(1).linhas, { indice: 1, matricula: '2', celulas: [{ tipo: 'bloqueada', motivo: 'bloqueado' }, { tipo: 'vazia' }] }] },
+      matriculados: MATRICULADOS, desmarcadas: [],
+    })
+    expect(r.informativos).toBe('1 bloqueado, a aula suspensa de 06/10 e a chamada de 15/12, fora do período letivo, ficam de fora.')
+  })
+
+  it('dia com mais aulas que o comum avisa quanto a falta vale', () => {
+    const colunas = [
+      { indice: 0, dia: TER, maximo: 2 },
+      { indice: 1, dia: QUI, maximo: 12 },
+    ]
+    const r = resumoDaFolha({
+      relatorio: relatorio([
+        { ...pos(0), categoria: 'aLancar', esperado: 2 },
+        { ...pos(0, QUI), categoria: 'aLancar', esperado: 12 },
+      ]),
+      leitura: { ...leitura(1), colunas },
+      matriculados: MATRICULADOS, desmarcadas: [],
+    })
+    expect(r.aulas.map((a) => a.aviso)).toEqual([undefined, 'Dia de 12 aulas: quem faltou leva 12 faltas.'])
+  })
+
   it('o que fica de fora cabe numa linha, sem travessão', () => {
     const r = resumoDaFolha({
       relatorio: relatorio([{ ...pos(0), categoria: 'aLancar', esperado: 0 }], {

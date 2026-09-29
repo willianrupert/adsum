@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 28% da fase 2
+## Andamento: 100% da fase 1, 38% da fase 2
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -249,7 +249,7 @@ passo, passo pela metade conta zero.
 | 13 | Anonimizador da planilha: o modelo de dados vira fixture, sem nome, matrícula nem id real | 6 | feito, 29/09 |
 | 14 | Leitura real: o bruto passa a ser `auxAulas` e `auxAlunos` | 12 | feito, 29/09 |
 | 15 | Localizador: escrever o texto da célula, como a coleta do SIGAA lê | 10 | feito, 29/09 |
-| 16 | Regras da página: data futura, período letivo, bloqueios, dia parcial, máximo fora do comum | 10 |  |
+| 16 | Regras da página: data futura, período letivo, bloqueios, dia parcial, máximo fora do comum | 10 | feito, 29/09 |
 | 17 | Salvamento automático (opção A, 29/09): a folha avisa, o Desfazer vale até a primeira coleta | 12 |  |
 | 18 | Bancada local: a página anonimizada com os scripts, e um servidor que registra o que o Gravar e o salvamento enviariam | 16 |  |
 | 19 | Jornada sobre a fixture real | 10 |  |
@@ -293,6 +293,17 @@ O favorito dobrou (~16 KB), por levar leitura, validador e localizador; o
 teto do teste foi a 32 KB. A jornada ganhou esperas de 5 s e desmonta a folha
 antes de fechar a base: com a suíte inteira em paralelo, falhou uma vez por
 tempo e deixou um `DatabaseClosedError` solto.
+
+### 16 · Regras da página
+
+A leitura já bloqueava como a página (passo 14); aqui a conciliação e a folha
+passam a **dizer** cada caso, pela regra do professor de avisar o que não foi
+mexido e por quê: aula suspensa e chamada fora do período letivo viram "sem
+onde lançar", aluno bloqueado entra na linha do que fica de fora, e o dia com
+mais aulas que o comum da planilha avisa no cartão quanto a falta vale ("Dia
+de 12 aulas: quem faltou leva 12 faltas."), antes do Preencher. O dia
+parcial não pede regra nova: quem está na página sem par no Adsum já fica
+vazio e dito.
 
 ## Fora das duas fases
 

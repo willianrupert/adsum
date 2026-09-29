@@ -36,14 +36,14 @@ const AGORA = () => new Date('2026-10-20T12:00:00')
  * A planilha como o SIGAA a guarda (`docs/12`), a partir de uma grade de valores:
  * terça vazia no SIGAA (o Caio faltou); quinta lançada, com o Breno diferente do Adsum.
  */
-function bruto(valores: string[][] = [['', '0'], ['', '2'], ['', '0']], mudar: (b: BrutoPlanilha) => void = () => {}): BrutoPlanilha {
+function bruto(valores: string[][] = [['', '0'], ['', '2'], ['', '0']], mudar: (b: BrutoPlanilha) => void = () => {}, maximos = [2, 2]): BrutoPlanilha {
   const leitura: LeituraPlanilha = {
     id: 'modelo',
     versaoSigaa: '4.15.0.206',
     cabecalhoTurma: 'CIN0144 - PROGRAMAÇÃO INVENTADA - Turma: 01 (2026.2)',
     colunas: [
-      { indice: 0, dia: TER, maximo: 2 },
-      { indice: 1, dia: QUI, maximo: 2, marca: 'lancado' },
+      { indice: 0, dia: TER, maximo: maximos[0] },
+      { indice: 1, dia: QUI, maximo: maximos[1], marca: 'lancado' },
     ],
     linhas: valores.map((linha, indice) => ({
       indice,
@@ -173,6 +173,12 @@ describe('a folha, com o que lançar', () => {
     expect(await screen.findByRole('group', { name: 'Diferenças' })).toBeInTheDocument()
     expect((await repositorio.lerAjustesSigaa(TURMA)).map((a) => a.valor)).toEqual([2, 0])
     expect((await repositorio.listarAuditoriaSigaa(TURMA)).filter((l) => l.acao === 'aceite').map((l) => l.aplicado)).toEqual(['2', '0'])
+  })
+
+  it('dia com mais aulas que o comum avisa, antes de preencher, quanto a falta vale', async () => {
+    abrir()
+    ponte.ler(bruto([['', ''], ['', ''], ['', '']], undefined, [2, 12]), 'l-12')
+    expect(await screen.findByText('Dia de 12 aulas: quem faltou leva 12 faltas.')).toBeInTheDocument()
   })
 
   it('Agora não só fecha', async () => {

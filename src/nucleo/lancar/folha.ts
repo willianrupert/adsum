@@ -14,6 +14,8 @@ export interface AulaDaFolha {
   /** Atrás do toque: o cartão mostra os números, e o nome só quando aberto (decidido em 27/09). */
   ausentes: { matricula: string; nome: string; faltas: number }[]
   marcada: boolean
+  /** Dia com mais aulas que o comum da planilha: quanto a falta vale, dito antes de preencher. */
+  aviso?: string
 }
 
 export interface DiferencaDaFolha {
@@ -53,6 +55,8 @@ function informativos(relatorio: Relatorio, leitura: LeituraPlanilha): string | 
   if (trancados) partes.push(contar(trancados, 'trancado', 'trancados'))
   const depois = comMotivo('matriculadoDepois')
   if (depois) partes.push(contar(depois, 'matriculado depois', 'matriculados depois'))
+  const bloqueados = comMotivo('bloqueado')
+  if (bloqueados) partes.push(contar(bloqueados, 'bloqueado', 'bloqueados'))
   if (relatorio.semParSigaa.length) {
     partes.push(contar(relatorio.semParSigaa.length, 'matrícula que não está na turma', 'matrículas que não estão na turma'))
   }
@@ -62,12 +66,16 @@ function informativos(relatorio: Relatorio, leitura: LeituraPlanilha): string | 
   for (const { dia, motivo } of relatorio.semOndeLancar) {
     if (motivo === 'feriado') partes.push(`o feriado de ${curto(dia)}`)
     else if (motivo === 'cancelada') partes.push(`a aula cancelada de ${curto(dia)}`)
+    else if (motivo === 'suspensa') partes.push(`a aula suspensa de ${curto(dia)}`)
+    else if (motivo === 'foraDoPeriodo') partes.push(`a chamada de ${curto(dia)}, fora do período letivo,`)
     else partes.push(`a chamada de ${curto(dia)} que não está na planilha`)
   }
   for (const dia of relatorio.semMaximo) partes.push(`o dia ${curto(dia)} sem máximo na planilha`)
   if (partes.length === 0) return undefined
   const umSo = partes.length === 1 && /^(1 |o |a )/.test(partes[0])
-  return `${juntar(partes)} ${umSo ? 'fica' : 'ficam'} de fora.`
+  // A vírgula que fecha um aposto só fica quando ele é o último, antes do verbo.
+  const semVirgula = partes.map((p, i) => (i < partes.length - 1 ? p.replace(/,$/, '') : p))
+  return `${juntar(semVirgula)} ${umSo ? 'fica' : 'ficam'} de fora.`
 }
 
 export function resumoDaFolha({
@@ -85,6 +93,16 @@ export function resumoDaFolha({
   const nomeDe = (matricula: string) => nomes.get(matricula) ?? `matrícula ${matricula}`
   const fora = new Set<string>(desmarcadas)
 
+  // O máximo mais comum da planilha (no empate, o menor): o dia fora dele avisa quanto a falta vale.
+  const frequencia = new Map<number, number>()
+  for (const c of leitura.colunas) if (c.maximo !== undefined) frequencia.set(c.maximo, (frequencia.get(c.maximo) ?? 0) + 1)
+  const comum = [...frequencia].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0]
+  const maximoDoDia = new Map(leitura.colunas.map((c) => [c.dia as string, c.maximo]))
+  const avisoDo = (dia: Dia) => {
+    const m = maximoDoDia.get(dia)
+    return m !== undefined && comum !== undefined && m > comum ? `Dia de ${m} aulas: quem faltou leva ${m} faltas.` : undefined
+  }
+
   const porDia = new Map<Dia, AulaDaFolha>()
   const diferencas: DiferencaDaFolha[] = []
   let aceitas = 0
@@ -92,7 +110,7 @@ export function resumoDaFolha({
   for (const c of relatorio.celulas) {
     if (c.categoria === 'aLancar') {
       let aula = porDia.get(c.dia)
-      if (!aula) porDia.set(c.dia, (aula = { dia: c.dia, rotulo: rotuloDoDia(c.dia), presentes: 0, faltas: 0, ausentes: [], marcada: !fora.has(c.dia) }))
+      if (!aula) porDia.set(c.dia, (aula = { dia: c.dia, rotulo: rotuloDoDia(c.dia), presentes: 0, faltas: 0, ausentes: [], marcada: !fora.has(c.dia), aviso: avisoDo(c.dia) }))
       if (c.esperado === 0) aula.presentes += 1
       else {
         aula.faltas += 1
