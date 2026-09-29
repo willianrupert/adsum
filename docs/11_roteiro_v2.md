@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 100% da fase 2, 83% da fase 3
+## Andamento: 100% da fase 1, 100% da fase 2, 100% da fase 3
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -460,7 +460,7 @@ tela pensada para o tamanho, e ao Preencher fecha e devolve a planilha.
 | 25 | A barra na planilha no padrão do Adsum, clara e escura | 10 | feito, 29/09 |
 | 26 | O favorito chega ao professor: gerado no build e oferecido em Ajustes, com o gesto de arrastar | 20 | feito, 29/09 |
 | 27 | Histórico em Ajustes: o que foi lançado, quando, em cada turma | 10 | feito, 29/09 |
-| 28 | Ensaio no Chrome, em janela e em tela cheia | 20 | em janela, 29/09; falta a tela cheia, com o autor |
+| 28 | Ensaio no Chrome, em janela e em tela cheia | 20 | feito, 29/09 |
 | 29 | Esboço (`docs/09`), vitrine e documentos | 10 | feito, 29/09 |
 | 30 | A aula dada em outra data: o professor diz em qual aula do SIGAA a chamada entra | 20 | feito, 29/09 |
 
@@ -568,8 +568,9 @@ Pela extensão Claude in Chrome, na bancada, com o favorito do passo 27:
 - O histórico não aparece no ensaio: a base da bancada é refeita a cada
   janela, de propósito. Coberto pelos testes, sobre a base de verdade.
 
-Falta a parte em tela cheia, que pede o autor: a extensão não põe o Chrome
-em tela cheia. Passo pela metade conta zero: a fase fica em 83%.
+**Em tela cheia, pelo autor (29/09):** a folha abre como aba, centrada;
+Preencher fecha a aba e devolve a planilha; o favorito de novo abre a folha
+atualizada. Aprovado ("adorei").
 
 ### 29 · Esboço, vitrine e documentos
 
