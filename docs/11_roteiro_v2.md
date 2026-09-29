@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 76% da fase 2
+## Andamento: 100% da fase 1, 84% da fase 2
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -253,7 +253,7 @@ passo, passo pela metade conta zero.
 | 17 | Salvamento automático (opção A, 29/09): a folha avisa, o Desfazer vale até a primeira coleta | 12 | feito, 29/09 |
 | 18 | Bancada local: a página anonimizada com os scripts, e um servidor que registra o que o Gravar e o salvamento enviariam | 16 | feito, 29/09 |
 | 19 | Jornada sobre a fixture real | 10 | feito, 29/09 |
-| 20 | Portão B: as leis sobre a fixture real | 8 |  |
+| 20 | Portão B: as leis sobre a fixture real | 8 | feito, 29/09 |
 | 21 | Segunda turma e planilha depois do Gravar (captura e mensagem de sucesso) | 8 |  |
 | 22 | Ensaio na bancada | 8 |  |
 
@@ -377,6 +377,17 @@ lançadas ficam de fora"); o que está lançado continua conferido.
 fecha depois de gravar a auditoria, e o teste conferia "fechou" logo que a
 barra do favorito aparecia, às vezes antes. Medido: 7 de 10 rodadas passavam;
 com o teste esperando o fechamento, 20 de 20.
+
+### 20 · Portão B
+
+`nucleo/lancar/leisReais.test.ts`: as leis sobre a planilha real de CIN0114,
+em 200 variações do que a vida faz com ela (o dia do clique, as presenças do
+Adsum nas aulas não lançadas, o professor mexendo em células antes, ajustes, e
+dias em que a chamada foi no papel e o Adsum não tem). Mais a lei 8, da regra
+nova: nada "a lançar" em aula já lançada. O plano passa no validador do Adsum e
+no do favorito sobre o mesmo bruto. Uma mutação sobreviveu na primeira versão
+(ausência valendo sempre 2): a lei da faixa passou a exigir o máximo daquele
+dia, e a conferir que os dias de 4 e de 12 aulas aparecem.
 
 ## Fora das duas fases
 

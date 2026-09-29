@@ -24,6 +24,8 @@ function hash(texto: string): number {
 export function cenarioDaBancada(
   { legenda, auxAulas, auxAlunos }: { legenda: string; auxAulas: string; auxAlunos: string },
   agora: Date = new Date(),
+  /** Outra semente, outras presenças inventadas nos dias sem lançamento. */
+  semente = 0,
 ): { turma: string; matriculados: Matriculado[]; eventos: Evento[] } {
   const codigo = /^\s*([A-Z]{2,6}\d{2,5})\b/.exec(legenda)?.[1] ?? 'CIN0000'
   const turma = `2026.2 - ${codigo} - TURMA DA BANCADA`
@@ -48,7 +50,7 @@ export function cenarioDaBancada(
     evento(dia, { origem: 'professor' })
     for (const r of vistos.values()) {
       const doDia = alunos.find((x) => x[ID_MAT] === r[ID_MAT] && x[DIA] === a[0] && x[MES] === a[1])
-      const presente = a[4] === 'true' ? doDia?.[NUM_FALTAS] === '0' : hash(`${r[ID_MAT]}|${j}`) % 10 < 8
+      const presente = a[4] === 'true' ? doDia?.[NUM_FALTAS] === '0' : hash(`${semente ? `${semente}|` : ''}${r[ID_MAT]}|${j}`) % 10 < 8
       if (presente) evento(dia, { origem: 'cracha', matricula: r[MAT], nome: r[NOME] })
     }
   })

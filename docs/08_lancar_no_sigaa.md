@@ -557,7 +557,8 @@ Se não passar: célula ilegível ou vazia = 0 muda a rota para a tela de um dia
 pela área de transferência, com um clique a mais. Máximo não encontrável é
 o único que para tudo — aí se conversa com a STI.
 
-**B · Núcleo provado.** Camadas 0–4 com as leis passando sobre as fixtures
+**B · Núcleo provado.** **Passou sobre a planilha de CIN0114 em 29/09/2026**
+(`nucleo/lancar/leisReais.test.ts`, 200 variações; falta a segunda turma). Camadas 0–4 com as leis passando sobre as fixtures
 anonimizadas (`scripts/anonimizar_sigaa.py`, irmão do `anonimizar_cofre.py`:
 troca nomes e matrículas, remove `jsessionid` e `ViewState`, e recusa gravar
 se sobrar dado original). Passa se: todas as leis, e a jornada completa (8).
