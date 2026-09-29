@@ -26,6 +26,10 @@ function idsDasLinhas(documento: Document): string[] {
   return ids
 }
 
+/** A célula de um aluno numa aula: as duas classes que a página lhe dá (`docs/12`). */
+const celulaDe = (documento: Document, id: string, aula: number) =>
+  (documento.getElementsByClassName(`aluno_${id} aula_${aula}`)[0] as HTMLElement | undefined) ?? undefined
+
 /** O texto de agora da célula; aberta em edição, o valor do campo. */
 function textoDaCelula(td: Element): string {
   const aberta = td.querySelector('input')
@@ -46,7 +50,7 @@ export const LOCALIZADOR_SIGAA: Localizador = {
     const textos: Record<string, string[]> = {}
     for (const id of idsDasLinhas(documento)) {
       textos[id] = Array.from({ length: aulas }, (_, n) => {
-        const td = documento.querySelector(`td.aluno_${CSS.escape(id)}.aula_${n}`)
+        const td = celulaDe(documento, id, n)
         return td ? textoDaCelula(td) : ''
       })
     }
@@ -56,7 +60,7 @@ export const LOCALIZADOR_SIGAA: Localizador = {
   celula(documento, linha, coluna) {
     const id = idsDasLinhas(documento)[linha]
     if (id === undefined || !Number.isInteger(coluna) || coluna < 0) return undefined
-    return documento.querySelector<HTMLElement>(`td.aluno_${CSS.escape(id)}.aula_${coluna}`) ?? undefined
+    return celulaDe(documento, id, coluna)
   },
 
   // A coleta do Gravar e do salvamento automático reescreve este campo (`docs/12`).

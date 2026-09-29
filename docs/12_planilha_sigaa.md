@@ -23,6 +23,17 @@ Prototype), PrimeFaces para os diálogos, e um script próprio da planilha,
 planilha é desenhada à mão, célula por célula, a partir de duas strings que o
 servidor escreve na página.
 
+**A página troca os nativos do JavaScript.** Medido na bancada em 29/09:
+Prototype 1.6.0.3 e Ext substituem mais de cem métodos, entre eles
+`Array.from` (ignora a função), `Array.prototype.entries` (devolve o próprio
+array), `reduce` (não reduz), `map`, `filter`, `find`, `Object.keys`,
+`Object.values`, `String.prototype.trim` e `Function.prototype.bind`, e põem
+um `toJSON` em arrays e textos. Código escrito para um navegador limpo erra
+aqui sem dar erro. Por isso o favorito roda num iframe vazio que ele mesmo
+cria (`favorito/construir.ts`), com os nativos do navegador, e só toca a
+página pelo DOM. Os testes reproduzem o comportamento medido em
+`testes/prototypeDoSigaa.ts`.
+
 ## Como se chega à planilha
 
 A tela "Lançar Frequência" (`FrequenciaAluno/form.jsf`) mostra o calendário do

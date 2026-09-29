@@ -26,12 +26,27 @@ export interface Dependencias {
   abrir: (url: string, nome: string, recursos: string) => JanelaQueRecebe | null | undefined
   destino: Destino
   gerarId: () => string
+  /** Como mandar a mensagem; o favorito montado manda pela página (`construir.ts`). */
+  enviar?: (janela: JanelaQueRecebe, mensagem: unknown, origem: string) => void
   /** A leitura bloqueia o dia futuro, como a página; o teste fixa o relógio. */
   agora?: () => Date
 }
 
 /** Encostada à direita, do tamanho de uma folha: o esboço do `docs/09`. */
 const RECURSOS = 'popup,width=420,height=640,left=10000,top=80'
+
+/** Cópia de dado de mensagem com os objetos deste ambiente. */
+function copiar(valor: unknown): unknown {
+  if (Array.isArray(valor)) {
+    const copia: unknown[] = []
+    for (let i = 0; i < valor.length; i++) copia.push(copiar(valor[i]))
+    return copia
+  }
+  if (typeof valor !== 'object' || valor === null) return valor
+  const copia: Record<string, unknown> = {}
+  for (const chave of Object.keys(valor)) copia[chave] = copiar((valor as Record<string, unknown>)[chave])
+  return copia
+}
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
 
@@ -44,7 +59,7 @@ export const TEXTOS = {
   jaSalvou: 'O SIGAA já salvou o preenchimento. Para mudar uma célula, clique nela, como sempre.',
 }
 
-export function lancarPeloFavorito({ pagina, janela, abrir, destino, gerarId, agora = () => new Date() }: Dependencias): void {
+export function lancarPeloFavorito({ pagina, janela, abrir, destino, gerarId, enviar = (j, m, o) => j.postMessage(m, o), agora = () => new Date() }: Dependencias): void {
   const bruto = pagina.extrair()
   if (!bruto) return pagina.mostrarBarra({ texto: TEXTOS.naoEhAPlanilha })
 
@@ -53,11 +68,14 @@ export function lancarPeloFavorito({ pagina, janela, abrir, destino, gerarId, ag
   if (!aberta) return pagina.mostrarBarra({ texto: TEXTOS.bloqueada })
 
   const ouvir = (evento: Event) => {
-    const { data, origin, source } = evento as MessageEvent
-    const recebido = { data, origin, source }
+    const { origin, source } = evento as MessageEvent
+    // Só o que vem do Adsum que ele abriu, e copiado para cá: os objetos da
+    // mensagem nascem na página, com os métodos que ela trocou (`entrada.ts`).
+    if (origin !== destino.origem || source !== aberta) return
+    const recebido = { data: copiar((evento as MessageEvent).data), origin, source }
     // A janela recarregada avisa de novo; a leitura vai de novo, com o mesmo id.
     if (receberPronto(recebido, { origemAdsum: destino.origem, aberta })) {
-      aberta.postMessage(mensagemDeLeitura(id, bruto), destino.origem)
+      enviar(aberta, mensagemDeLeitura(id, bruto), destino.origem)
       return
     }
     const plano = receberPlano(recebido, { origemAdsum: destino.origem, aberta, id, validar: (p) => conferirContraBruto(p, bruto, agora()) })

@@ -24,8 +24,10 @@ export const LOCALIZADOR_SEM_HTML: Localizador = {
   celula: () => undefined,
 }
 
+// Pelo nome da etiqueta, não por `instanceof`: o favorito roda num iframe
+// próprio (`construir.ts`), e as classes de lá não são as da página.
 const ehCampo = (el: Element): el is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement =>
-  el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement
+  el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA'
 
 /** Aberta em edição pelo professor: nunca é vazia para o favorito, que não escreve por cima. */
 export const EM_EDICAO = '(em edição)'
@@ -60,8 +62,9 @@ export function criarPaginaSigaa(documento: Document, localizador: Localizador):
       if (ehCampo(alvo)) {
         alvo.value = valor
         // Como uma pessoa digitando: a página pode depender disso para gravar.
-        alvo.dispatchEvent(new Event('input', { bubbles: true }))
-        alvo.dispatchEvent(new Event('change', { bubbles: true }))
+        const Evento = documento.defaultView?.Event ?? Event
+        alvo.dispatchEvent(new Evento('input', { bubbles: true }))
+        alvo.dispatchEvent(new Evento('change', { bubbles: true }))
       } else {
         alvo.textContent = valor
       }
