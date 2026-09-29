@@ -53,18 +53,59 @@ Sucesso é, medido em uso real:
 | SIGAA v4.15.0.206, RichFaces 3.3.3 / a4j, jQuery 1.4; versão no rodapé | SIGAA, página do aluno | sabido |
 | Paulo: mesmo Chrome e perfil para SIGAA e Adsum; computador próprio, sem políticas | autor, 24/09 | sabido |
 | Paulo lança na planilha, dia a dia | autor, 24/09 | sabido |
-| Célula vazia é distinguível de célula `0`? | HTML do docente | **falta** |
-| Célula é `<input>`? Ligada à matrícula por `name` ou pela linha? | HTML do docente | **falta** |
-| Onde está o máximo de faltas de cada dia? | HTML do docente | **falta** |
-| Como a página marca lançado / cancelado / feriado / trancado / matriculado depois | HTML do docente | **falta** |
-| Mudar a célula dispara evento de que o Gravar depende? | HTML do docente | **falta** |
-| O Gravar envia só o que mudou ou tudo? O que faz com vazia? | HTML antes e depois | **falta** |
+| Célula vazia é distinguível de célula `0`? Sim: faltas `null` × `0` | planilha real (CIN0114, 29/09) | sabido |
+| A célula é um `<td>` com texto, classes `aluno_<id> aula_<n>`; clicar cria um `<input>` temporário | planilha real (CIN0114, 29/09) | sabido |
+| O máximo de cada dia está nos dados da aula (número de aulas do dia). Não é sempre 2: há dias de 4 e de 12 | planilha real (CIN0114, 29/09) | sabido |
+| Lançada, feriado, cancelada, suspensa e extra vêm por aula; trancado, matriculado depois e bloqueado, por aluno × aula | planilha real (CIN0114, 29/09) | sabido |
+| Os dados chegam estruturados em variáveis da página (`auxAulas`, `auxAlunos`), e a tabela é desenhada por script | planilha real (CIN0114, 29/09) | sabido |
+| O Gravar lê o **texto das células** no envio (`atualizarFrequencias`) e manda a grade inteira num campo só; célula vazia mantém o valor que tinha. Nenhum evento é necessário | planilha real (CIN0114, 29/09) | sabido |
+| **A planilha salva sozinha a cada 5 minutos**, pelo mesmo caminho do Gravar. Ver "O que a planilha real mudou" | planilha real (CIN0114, 29/09) | sabido |
+| A página recusa lançar data futura e data fora do período letivo | planilha real (CIN0114, 29/09) | sabido |
+| Dia lançado com células vazias existe e é aceito (alunos que entraram depois) | planilha real (CIN0114, 29/09) | sabido |
 | Mensagem de sucesso e de erro do Gravar | HTML depois | **falta** |
 | O SIGAA manda `Cross-Origin-Opener-Policy`? | cabeçalhos da resposta | **falta** |
 | "Lançar Frequência" é em duas etapas: calendário (verde = lançado, vermelho = feriado, amarelo = cancelada), e só depois de escolher o dia, a lista de alunos com uma lista de opções por aluno ("presente" ou quantas aulas perdeu) | tela do SIGAA de teste da UFRRJ, v3.53 (2020), vista em 29/09/2026 | referência: a UFPE roda a 4.15, e o HTML pode diferir |
 
-Tudo o que está como **falta** vem de uma coisa só: a planilha do docente,
-salva antes e depois de um Gravar, com os cabeçalhos. Ver §6.
+O que ainda **falta** vem da planilha depois de um Gravar e dos cabeçalhos da
+resposta. Ver §6.
+
+### O que a planilha real mudou (portão A, 29/09/2026)
+
+Capturada com o Prof. Paulo: a planilha de CIN0114 (45 alunos, 38 aulas, 12
+lançadas, 1 feriado) e a tela do calendário. Fora do repositório, analisada
+com nomes e matrículas mascarados. **A rota funciona para ler e para
+escrever**, com três mudanças de desenho e algumas regras novas.
+
+1. **Salvamento automático.** A cada 5 minutos a página chama
+   `atualizarFrequencias`, que recolhe o texto de todas as células, e envia a
+   grade ao servidor. Vale para os cliques do professor e valeria para o que o
+   favorito escrevesse: **Preencher passa a ser o gesto que grava**, em até 5
+   minutos, com ou sem Gravar. E o Desfazer deixa de ser confiável depois do
+   primeiro salvamento: a coleta muda o valor guardado na página, e célula
+   vazia, dali em diante, mantém o que foi escrito. **Decisão do autor
+   pendente** sobre como a folha e a barra tratam isso (§5 e camada 5).
+2. **Ler pelos dados, escrever na tabela.** O favorito lê `auxAulas` e
+   `auxAlunos`, que são o modelo da própria página, em vez de raspar a
+   tabela; escreve o texto nas células, que é o que a coleta lê. O bruto
+   provisório da camada 1 passa a ser esses dados.
+3. **O máximo não é fixo.** Há dias de 4 e de 12 aulas. Ausente num dia de 12
+   leva 12 faltas: a folha mostra quanto a falta vale quando o dia não é o
+   comum.
+
+Regras da página que o favorito respeita como a própria página: não escreve
+em data futura nem fora do período letivo; não escreve em célula de
+trancado, matriculado depois, bloqueado, feriado, cancelada ou suspensa. Dia
+já lançado com células vazias é normal (quem entrou depois); os alunos da
+página sem par no Adsum ficam vazios e são ditos.
+
+**Regra do professor (29/09/2026):** o Adsum nunca modifica o que já está
+escrito no SIGAA, apenas acrescenta, e avisa o que não modificou e por quê. É
+a lei 2 ("nunca toca lançado") e a linha de informativos da folha, agora
+dita por ele.
+
+**O que não entra no repositório:** a página e os scripts do SIGAA (código da
+UFRN, e com dados de alunos). A fixture versionada é o modelo de dados,
+anonimizado e no nosso formato; a bancada com a página inteira fica local.
 
 ## 3. Princípios que não se negociam
 
@@ -75,7 +116,9 @@ salva antes e depois de um Gravar, com os cabeçalhos. Ver §6.
   mantém sessão: usa a página que o professor já abriu.
 - **Art. 54, II** — o usuário responde pelos efeitos de todo acesso com a sua
   identificação. **O Gravar é sempre um clique do professor**, depois de ver
-  o que mudou. A ferramenta nunca clica em botão do SIGAA.
+  o que mudou. A ferramenta nunca clica em botão do SIGAA. **(29/09/2026)** A planilha salva sozinha a cada 5 minutos: o clique que
+  grava passa a ser o Preencher, depois de ver o que muda (§2, "O que a
+  planilha real mudou").
 - **Art. 10** — ética, legalidade, finalidade. A ferramenta faz só o que o
   professor faria à mão, na tela que o SIGAA oferece para isso.
 - A PoSIC não fala de automação; por isso a ferramenta fica no que é
@@ -484,7 +527,9 @@ comparar e trocar.
 A rota é validada em portões. Cada um tem critério de passagem e o que muda
 se não passar. Nenhum portão depois do C escreve no SIGAA sem o anterior.
 
-**A · HTML do docente** (fora do repositório). O mínimo, pedido em
+**A · HTML do docente** (fora do repositório). **Passou em parte em
+29/09/2026** (§2): leitura e escrita possíveis; falta a planilha depois de um
+Gravar, a segunda turma e os cabeçalhos. O mínimo, pedido em
 29/09/2026, tudo salvo **antes** de lançar, em "Página da Web, completa":
 "Lançar Freq. em Planilha" numa turma com dias já lançados (a coluna de hoje,
 vazia, ao lado de dias com 0, responde vazia ≠ 0); e, para a rota por dia,

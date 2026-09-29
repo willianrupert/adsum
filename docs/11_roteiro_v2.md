@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100%
+## Andamento: 100% da fase 1, 0% da fase 2
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -235,10 +235,31 @@ continua conferindo. A jornada achou dois defeitos, consertados com teste:
 a turma real tem o código no meio do nome, e o aviso de "nada a preencher"
 não saía depois de um aceite.
 
-## Depois do portão A (fora da conta)
+## Fase 2: com a planilha real (desde 29/09/2026)
 
-- O extrator do favorito (página → bruto) e os seletores de escrita.
-- A rota por dia ("Lançar Frequência"), se a planilha falhar no portão A ou o
-  professor preferir: o professor navega, o favorito orienta (`docs/08`).
-- `scripts/anonimizar_sigaa.py` e as fixtures da planilha real.
-- A jornada completa sobre a fixture, e os portões B a E do `08`.
+O portão A trouxe a planilha de CIN0114 e mudou três coisas no desenho
+(`docs/08`, "O que a planilha real mudou"): a planilha salva sozinha a cada
+5 minutos, o favorito lê os dados da página em vez de raspar a tabela, e o
+máximo do dia não é fixo. A rota por dia ("Lançar Frequência") fica fora, por
+decisão do autor em 29/09. Mesma regra da fase 1: teste antes, peso por
+passo, passo pela metade conta zero.
+
+| # | Passo | Peso | Estado |
+|---|---|---|---|
+| 13 | Anonimizador da planilha: o modelo de dados vira fixture, sem nome, matrícula nem id real | 6 | |
+| 14 | Leitura real: o bruto passa a ser `auxAulas` e `auxAlunos` | 12 | |
+| 15 | Localizador: escrever o texto da célula, como a coleta do SIGAA lê | 10 | |
+| 16 | Regras da página: data futura, período letivo, bloqueios, dia parcial, máximo fora do comum | 10 | |
+| 17 | Salvamento automático: Preencher, Desfazer e os textos da folha e da barra (espera decisão do autor) | 12 | |
+| 18 | Bancada local: a página anonimizada com os scripts, e um servidor que registra o que o Gravar e o salvamento enviariam | 16 | |
+| 19 | Jornada sobre a fixture real | 10 | |
+| 20 | Portão B: as leis sobre a fixture real | 8 | |
+| 21 | Segunda turma e planilha depois do Gravar (captura e mensagem de sucesso) | 8 | |
+| 22 | Ensaio na bancada | 8 | |
+
+## Fora das duas fases
+
+- A rota por dia ("Lançar Frequência"): fora por decisão do autor (29/09).
+  Desenho em `docs/08`, se voltar.
+- Os portões C a E do `08`: uso real, primeiro preenchimento, outros
+  professores.
