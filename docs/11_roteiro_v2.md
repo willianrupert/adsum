@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 38% da fase 2
+## Andamento: 100% da fase 1, 50% da fase 2
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -250,7 +250,7 @@ passo, passo pela metade conta zero.
 | 14 | Leitura real: o bruto passa a ser `auxAulas` e `auxAlunos` | 12 | feito, 29/09 |
 | 15 | Localizador: escrever o texto da célula, como a coleta do SIGAA lê | 10 | feito, 29/09 |
 | 16 | Regras da página: data futura, período letivo, bloqueios, dia parcial, máximo fora do comum | 10 | feito, 29/09 |
-| 17 | Salvamento automático (opção A, 29/09): a folha avisa, o Desfazer vale até a primeira coleta | 12 |  |
+| 17 | Salvamento automático (opção A, 29/09): a folha avisa, o Desfazer vale até a primeira coleta | 12 | feito, 29/09 |
 | 18 | Bancada local: a página anonimizada com os scripts, e um servidor que registra o que o Gravar e o salvamento enviariam | 16 |  |
 | 19 | Jornada sobre a fixture real | 10 |  |
 | 20 | Portão B: as leis sobre a fixture real | 8 |  |
@@ -304,6 +304,17 @@ mais aulas que o comum da planilha avisa no cartão quanto a falta vale ("Dia
 de 12 aulas: quem faltou leva 12 faltas."), antes do Preencher. O dia
 parcial não pede regra nova: quem está na página sem par no Adsum já fica
 vazio e dito.
+
+### 17 · Salvamento automático (opção A)
+
+Os textos deixaram de prometer o que a planilha real não cumpre: a folha diz
+"Ao preencher, o SIGAA salva sozinho em até 5 minutos.", e a barra, "O SIGAA
+salva sozinho em até 5 minutos, ou agora, em Gravar Frequências." O Desfazer
+vale até a página coletar os valores: o favorito guarda o `form:frequencias`
+depois de escrever e o vigia a cada segundo; quando muda, a barra troca o
+Desfazer por "O SIGAA já salvou o preenchimento. Para mudar uma célula,
+clique nela, como sempre." O próprio clique em Desfazer confere de novo, para
+não dizer "Desfeito" em vão se a coleta passou um instante antes.
 
 ## Fora das duas fases
 

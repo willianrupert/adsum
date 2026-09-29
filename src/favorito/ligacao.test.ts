@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mensagemDeLeitura, mensagemDePlano, mensagemDePronto } from '../nucleo/lancar/protocolo.ts'
 import { brutoDaLeitura, gerarCenario } from '../testes/planilhaSigaa.ts'
 import { PaginaSigaaFalsa } from '../testes/paginaSigaaFalsa.ts'
@@ -54,10 +54,51 @@ describe('o favorito na planilha', () => {
     chegar(mensagemDePronto())
     chegar(mensagemDePlano('l-1', [{ linha, coluna, antes: 'vazia', valor: 0 }]))
     expect(pagina.valor(linha, coluna)).toBe('0')
-    expect(pagina.barra?.texto).toBe('Adsum preencheu 1 aula. Azul é o que mudou. Confira e clique em Gravar Frequências.')
+    expect(pagina.barra?.texto).toMatch(/^Adsum preencheu 1 aula\./)
     pagina.barra!.aoDesfazer!()
     expect(pagina.valor(linha, coluna)).toBe('')
     expect(pagina.barra?.texto).toBe('Desfeito. A planilha voltou ao que estava.')
+  })
+
+  describe('o salvamento automático do SIGAA (opção A)', () => {
+    afterEach(() => vi.useRealTimers())
+
+    it('a barra diz que o SIGAA salva sozinho, e o Desfazer vale enquanto a página não coletou', () => {
+      const { chegar, pagina } = montar()
+      const { linha, coluna } = celulaLivre()
+      chegar(mensagemDePronto())
+      chegar(mensagemDePlano('l-1', [{ linha, coluna, antes: 'vazia', valor: 0 }]))
+      expect(pagina.barra?.texto).toBe(
+        'Adsum preencheu 1 aula. Azul é o que mudou. O SIGAA salva sozinho em até 5 minutos, ou agora, em Gravar Frequências.',
+      )
+      pagina.barra!.aoDesfazer!()
+      expect(pagina.valor(linha, coluna)).toBe('')
+    })
+
+    it('depois da coleta da página, a barra tira o Desfazer e diz como corrigir', () => {
+      vi.useFakeTimers()
+      const { chegar, pagina } = montar()
+      const { linha, coluna } = celulaLivre()
+      chegar(mensagemDePronto())
+      chegar(mensagemDePlano('l-1', [{ linha, coluna, antes: 'vazia', valor: 0 }]))
+      pagina.coletar()
+      vi.advanceTimersByTime(1000)
+      expect(pagina.barra?.texto).toBe('O SIGAA já salvou o preenchimento. Para mudar uma célula, clique nela, como sempre.')
+      expect(pagina.barra?.aoDesfazer).toBeUndefined()
+    })
+
+    it('Desfazer clicado logo depois da coleta não desfaz, e não diz que desfez', () => {
+      vi.useFakeTimers()
+      const { chegar, pagina } = montar()
+      const { linha, coluna } = celulaLivre()
+      chegar(mensagemDePronto())
+      chegar(mensagemDePlano('l-1', [{ linha, coluna, antes: 'vazia', valor: 0 }]))
+      const desfazer = pagina.barra!.aoDesfazer!
+      pagina.coletar()
+      desfazer()
+      expect(pagina.valor(linha, coluna)).toBe('0')
+      expect(pagina.barra?.texto).toBe('O SIGAA já salvou o preenchimento. Para mudar uma célula, clique nela, como sempre.')
+    })
   })
 
   it('diz quantas células o professor mexeu no meio tempo e ficaram como ele deixou', () => {

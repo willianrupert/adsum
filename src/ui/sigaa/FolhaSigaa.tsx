@@ -255,7 +255,7 @@ function FolhaDaTurma({
           <button className="botao--quieto" onClick={fechar}>
             Agora não
           </button>
-          <p className="folha-sigaa__garantia">Nada é gravado aqui. Você confere e grava no SIGAA.</p>
+          <p className="folha-sigaa__garantia">Ao preencher, o SIGAA salva sozinho em até 5 minutos.</p>
         </>
       )}
     </main>

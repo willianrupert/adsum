@@ -35,8 +35,11 @@ O que o professor vê ao clicar no favorito na planilha do SIGAA.
 - **Cada aula é um cartão** com o círculo azul de incluir.
 - **Uma ação só, que diz o que vai fazer**: "Preencher 3 aulas". Abaixo,
   quieto, "Agora não".
-- **A garantia sempre visível**: "Nada é gravado aqui. Você confere e grava
-  no SIGAA."
+- **A garantia sempre visível.** No esboço, "Nada é gravado aqui. Você
+  confere e grava no SIGAA." A planilha real salva sozinha a cada 5 minutos
+  (`docs/12`), e a frase passou a ser "Ao preencher, o SIGAA salva sozinho em
+  até 5 minutos." (29/09). O `esboco.html` já tem a frase nova; as imagens
+  saem de novo pelo `scripts/gerar_esboco_sigaa.py`.
 - O que não pede atenção (trancados, feriado) cabe numa linha.
 
 ## 3. O professor escolhe

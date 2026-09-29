@@ -14,6 +14,8 @@ export interface Localizador {
   celula(documento: Document, linha: number, coluna: number): HTMLElement | undefined
   /** Depois de escrever: o que a página precisa refazer (os totais da linha, na planilha). */
   depoisDeEscrever?(documento: Document, celula: HTMLElement): void
+  /** O que muda quando a página coleta os valores para o servidor. */
+  marcoDeColeta?(documento: Document): string | undefined
 }
 
 /** Página que o favorito não reconhece: ele diz que não é a planilha, em vez de adivinhar. */
@@ -43,6 +45,7 @@ export function criarPaginaSigaa(documento: Document, localizador: Localizador):
 
   return {
     extrair: () => localizador.extrair(documento),
+    marcoDeColeta: () => localizador.marcoDeColeta?.(documento),
     valor(linha, coluna) {
       const alvo = celula(linha, coluna)
       if (!alvo) return undefined

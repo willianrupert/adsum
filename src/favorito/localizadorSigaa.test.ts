@@ -95,6 +95,15 @@ describe('escrever como a coleta do SIGAA lê', () => {
     expect(td.style.background).toBe('rgb(255, 238, 238)')
   })
 
+  it('o marco da coleta é o campo que o Gravar e o salvamento automático preenchem', () => {
+    const pagina = criarPaginaSigaa(document, LOCALIZADOR_SIGAA)
+    const marco = pagina.marcoDeColeta!()
+    pagina.escrever(7, 14, '2')
+    expect(pagina.marcoDeColeta!()).toBe(marco)
+    coletarComoOSigaa(document)
+    expect(pagina.marcoDeColeta!()).not.toBe(marco)
+  })
+
   it('linha ou coluna que não existe não é achada', () => {
     const pagina = criarPaginaSigaa(document, LOCALIZADOR_SIGAA)
     expect(pagina.valor(45, 0)).toBeUndefined()

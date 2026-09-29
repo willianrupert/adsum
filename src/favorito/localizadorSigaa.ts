@@ -59,6 +59,9 @@ export const LOCALIZADOR_SIGAA: Localizador = {
     return documento.querySelector<HTMLElement>(`td.aluno_${CSS.escape(id)}.aula_${coluna}`) ?? undefined
   },
 
+  // A coleta do Gravar e do salvamento automático reescreve este campo (`docs/12`).
+  marcoDeColeta: (documento) => (documento.getElementById('form:frequencias') as HTMLInputElement | null)?.value,
+
   // Os totais da linha, pela função da própria página, se ela existir: é o que
   // um clique do professor também faria. Não envia nada.
   depoisDeEscrever(documento, celula) {

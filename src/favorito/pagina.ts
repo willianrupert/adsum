@@ -13,4 +13,10 @@ export interface PaginaDePlanilha {
   /** `mudou` é o azul; sem marca, a célula volta ao natural. */
   pintar(linha: number, coluna: number, marca?: 'mudou', dica?: string): void
   mostrarBarra(barra: { texto: string; aoDesfazer?: () => void }): void
+  /**
+   * Muda quando a página recolhe os valores das células para o servidor (o
+   * salvamento automático da planilha, ou o Gravar). Depois disso, desfazer
+   * não volta a célula a vazio (`docs/12`).
+   */
+  marcoDeColeta?(): string | undefined
 }

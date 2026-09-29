@@ -498,8 +498,9 @@ redimensiona, minimiza e fecha. Dentro, uma folha:
   trancados e o feriado de 12/10 ficam de fora"). Uma ação, pílula azul de
   largura cheia que conta o que vai fazer: **Preencher 3 aulas** — o número
   acompanha o que está marcado. Abaixo, quieto, **Agora não**. E a frase que
-  sustenta a confiança, sempre visível sob o botão: "Nada é gravado aqui.
-  Você confere e grava no SIGAA."
+  sustenta a confiança, sempre visível sob o botão. Era "Nada é gravado aqui.
+  Você confere e grava no SIGAA."; a planilha real salva sozinha (§2), e
+  desde 29/09 é "Ao preencher, o SIGAA salva sozinho em até 5 minutos."
 - O título é o estado em uma frase ("3 aulas para lançar", "Tudo confere"),
   com a turma e "planilha lida agora, 48 alunos, todos pela matrícula" como
   apoio. Tokens, pílulas, cartões e tipografia são os do `estilo.css`: a
@@ -513,8 +514,10 @@ Chrome antes disso, o favorito de novo a traz de volta, no mesmo estado.
 
 **De volta à planilha.** Azul no que mudou, laranja nas diferenças, barra de
 uma linha no pé que reserva o próprio espaço e recolhe para uma pílula:
-"Adsum preencheu 3 aulas. Azul é o que mudou. Confira e clique em Gravar
-Frequências." e **Desfazer**. O mouse sobre uma célula azul diz "Adsum:
+"Adsum preencheu 3 aulas. Azul é o que mudou. O SIGAA salva sozinho em até
+5 minutos, ou agora, em Gravar Frequências." e **Desfazer**, que vale até a
+página coletar os valores; depois, a barra diz "O SIGAA já salvou o
+preenchimento. Para mudar uma célula, clique nela, como sempre." (29/09). O mouse sobre uma célula azul diz "Adsum:
 ausente, 2 faltas. Antes: vazia".
 
 **Depois do Gravar.** Favorito de novo: *Tudo confere*. É essa conferência

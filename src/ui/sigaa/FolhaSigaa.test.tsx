@@ -102,7 +102,7 @@ describe('a folha, com o que lançar', () => {
     expect(within(diferenca).getByText('Qui, 15/10. No SIGAA, 2 faltas. No Adsum, presente.')).toBeInTheDocument()
     expect(within(diferenca).getByText('O SIGAA fica como está.')).toBeInTheDocument()
     expect(screen.getByText('2 presentes, 1 falta')).toBeInTheDocument()
-    expect(screen.getByText('Nada é gravado aqui. Você confere e grava no SIGAA.')).toBeInTheDocument()
+    expect(screen.getByText('Ao preencher, o SIGAA salva sozinho em até 5 minutos.')).toBeInTheDocument()
   })
 
   it('quem faltou só aparece pelo nome depois do toque na aula', async () => {

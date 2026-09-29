@@ -49,6 +49,18 @@ export class PaginaSigaaFalsa implements PaginaDePlanilha {
     this.barra = barra
   }
 
+  /** O que a página já coletou; muda a cada coleta, como o campo `form:frequencias`. */
+  #coletas = 0
+
+  marcoDeColeta(): string {
+    return String(this.#coletas)
+  }
+
+  /** O salvamento automático do SIGAA passando (`docs/12`). */
+  coletar(): void {
+    this.#coletas += 1
+  }
+
   /** O professor digitando na célula, fora do favorito. */
   digitar(linha: number, coluna: number, valor: string): void {
     this.valores[linha][coluna] = valor

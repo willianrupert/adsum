@@ -41,6 +41,7 @@ export const TEXTOS = {
   nada: 'Nada a preencher. SIGAA e Adsum já estão iguais.',
   naoConfere: 'O plano do Adsum não confere com esta página. Nada foi preenchido.',
   desfeito: 'Desfeito. A planilha voltou ao que estava.',
+  jaSalvou: 'O SIGAA já salvou o preenchimento. Para mudar uma célula, clique nela, como sempre.',
 }
 
 export function lancarPeloFavorito({ pagina, janela, abrir, destino, gerarId, agora = () => new Date() }: Dependencias): void {
@@ -69,15 +70,29 @@ export function lancarPeloFavorito({ pagina, janela, abrir, destino, gerarId, ag
     const { escritas, puladas } = aplicar(pagina, plano.instrucoes)
     const aulas = new Set(escritas.map((e) => e.coluna)).size
     const texto = [
-      `Adsum preencheu ${plural(aulas, 'aula', 'aulas')}. Azul é o que mudou. Confira e clique em Gravar Frequências.`,
+      `Adsum preencheu ${plural(aulas, 'aula', 'aulas')}. Azul é o que mudou. O SIGAA salva sozinho em até 5 minutos, ou agora, em Gravar Frequências.`,
       puladas.length > 0 &&
         `${plural(puladas.length, 'célula mudou', 'células mudaram')} depois da leitura e ${puladas.length === 1 ? 'ficou' : 'ficaram'} como você deixou.`,
     ]
       .filter(Boolean)
       .join(' ')
+
+    // O Desfazer vale até a página coletar: depois disso, esvaziar a célula não
+    // volta o registro a vazio (`docs/12`). Vigia a cada segundo, e confere de
+    // novo no próprio clique, para não dizer "Desfeito" em vão.
+    const marco = pagina.marcoDeColeta?.()
+    const coletou = () => marco !== undefined && pagina.marcoDeColeta?.() !== marco
+    let vigia: ReturnType<typeof setInterval> | undefined
+    const jaSalvou = () => {
+      clearInterval(vigia)
+      pagina.mostrarBarra({ texto: TEXTOS.jaSalvou })
+    }
+    if (marco !== undefined && escritas.length > 0) vigia = setInterval(() => coletou() && jaSalvou(), 1000)
     pagina.mostrarBarra({
       texto,
       aoDesfazer: () => {
+        if (coletou()) return jaSalvou()
+        clearInterval(vigia)
         desfazer(pagina, escritas)
         pagina.mostrarBarra({ texto: TEXTOS.desfeito })
       },
