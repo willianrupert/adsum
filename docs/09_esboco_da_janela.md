@@ -1,8 +1,9 @@
 # 09 — Esboço da janela do favorito
 
-As telas da v2 (`docs/08_lancar_no_sigaa.md`) antes de uma linha de código.
-Esboço de 24/09/2026. Especificação, não implementada; as três perguntas do
-fim continuam em aberto em 25/09/2026. É desenho, não captura: o desenho é
+As telas da v2 (`docs/08_lancar_no_sigaa.md`). Esboço de 24/09/2026, feito
+antes do código; as telas da fase 3 (`docs/11`, passos 23 a 30) foram
+redesenhadas em 29/09 conforme implementadas. As telas de verdade, com gente
+inventada, estão na vitrine (`#/vitrine`, em desenvolvimento). É desenho, não captura: o desenho é
 [`esboco_sigaa/esboco.html`](esboco_sigaa/esboco.html), com os tokens do
 `estilo.css` e gente inventada, e as imagens saem dele por
 `scripts/gerar_esboco_sigaa.py`. Mudar uma tela é mudar o HTML e rodar o
@@ -15,11 +16,11 @@ palavra.
 
 ## 1. Instalar, uma vez
 
-![Cartão "Lançar no SIGAA" nos Ajustes do Adsum](esboco_sigaa/instalar.png)
+![Painel "Lançar no SIGAA" nos Ajustes do Adsum](esboco_sigaa/instalar.png)
 
-Nos Ajustes. O botão azul é o favorito: **arrasta-se** para a barra, e
-clicar nele ali não faz nada — é assim que o Chrome protege quem usa. Três
-passos, uma frase de garantia no pé.
+Nos Ajustes. O botão azul "Adsum" é o favorito, gerado no build: **arrasta-se**
+para a barra, e o gesto está desenhado acima dele. Clicado ali, não roda:
+diz que é para arrastar. Embaixo, os últimos preenchimentos, um por linha.
 
 ## 2. Há o que lançar
 
@@ -53,30 +54,52 @@ título e o botão acompanham: "2 aulas".
 
 ## 4. De volta à planilha
 
-![Planilha do SIGAA com células em azul e a barra do Adsum no pé](esboco_sigaa/barra.png)
+![Planilha do SIGAA com células em azul e o cartão do Adsum no pé](esboco_sigaa/barra.png)
 
-Preencher fecha a janela. Na planilha, azul é o que o Adsum escreveu,
-laranja é a diferença que ele não tocou, e a aula desmarcada ficou vazia. A
-barra no pé fala a mesma língua da janela, com **Desfazer** à mão e o
-chevron que a recolhe para uma pílula. O favorito aparece na barra de
-favoritos, onde mora. Os botões do SIGAA continuam do SIGAA: quem grava é o
-professor.
+Preencher fecha a janela. Na planilha, azul claro é presença que o Adsum
+escreveu, **azul forte com o número em branco é falta**: é o que se confere
+à mão, e o cartão diz quantas são. A aula desmarcada ficou vazia. O cartão
+flutua no pé, claro ou escuro como o sistema, com **Desfazer** enquanto a
+página não coletou. O favorito mora na barra de favoritos. Os botões do
+SIGAA continuam do SIGAA: quem grava é o professor.
+
+Em tela cheia no Mac, o Chrome abre a janela como aba. A folha, então,
+fica centrada, com o ícone do Adsum no alto, e ao Preencher a aba fecha e a
+planilha volta.
 
 ## 5. Tudo confere
 
 ![Janela com um visto grande e "Tudo confere"](esboco_sigaa/confere.png)
 
-O favorito de novo, depois do Gravar. É esta tela que atualiza "Conferido
-até" no cartão da turma. O ajuste feito pelo professor aparece como fato,
+O favorito de novo, depois do Gravar. Seria esta tela a atualizar
+"Conferido até" no cartão da turma, que ainda não existe. O ajuste feito pelo professor aparece como fato,
 não como erro.
 
 ## 6. Recusa
 
-![Janela explicando que a página não é a planilha de frequência](esboco_sigaa/recusa.png)
+![Janela dizendo que a turma da planilha não está no Adsum](esboco_sigaa/recusa.png)
 
-Nunca um beco. Diz o que houve e onde clicar no SIGAA. O chão, se o
-favorito falhar, é "Ver presenças" no Adsum: quem faltou em cada aula, para
-lançar à mão (a lista própria para isso saiu em 29/09).
+Nunca um beco: diz o que houve e o que fazer. Se o favorito falhar, o chão é
+"Ver presenças" no Adsum, onde está quem faltou em cada aula, para lançar à
+mão. A lista própria para isso saiu em 29/09.
+
+## 7. Qual é a turma
+
+![Janela perguntando qual de duas turmas é a da planilha](esboco_sigaa/pergunta.png)
+
+Quando duas turmas do Adsum servem (uma cadastrada duas vezes), a folha
+pergunta, em vez de recusar. Se a turma não tem o código da disciplina no
+nome, a pergunta é outra, "Esta planilha é de ENG0101", com "Usar" e "Não é
+esta"; confirmada uma vez, não se repete.
+
+## 8. A aula dada em outra data
+
+![Chamada de um sábado sem aula no SIGAA, com as aulas onde ela pode entrar](esboco_sigaa/semlugar.png)
+
+O professor realocou a aula, e a chamada está num dia que o SIGAA não tem.
+Quem decide o lugar é ele: as aulas possíveis (sem chamada, não lançadas),
+da mais perto para a mais longe. Um toque, e a aula escolhida entra na lista
+com "Chamada de Sáb, 18/10" e Desfazer.
 
 ## As três perguntas, decididas
 

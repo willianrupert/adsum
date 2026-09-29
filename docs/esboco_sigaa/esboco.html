@@ -62,6 +62,15 @@ h1{font-size:28px;font-weight:600;letter-spacing:-.6px;margin:4px 0 2px}
 .caixa{flex:1;background:#f1f3f4;border-radius:980px;padding:6px 14px}
 .favoritos{display:flex;gap:16px;padding:5px 14px 7px;font-size:12px;color:#3c4043;background:var(--f);border-bottom:.5px solid var(--sep)}
 .favoritos b{font-weight:500;color:var(--ac)}
+/* Fase 3 (docs/11, passos 23 a 30) */
+.azf{background:var(--ac);color:#fff;font-weight:700;border-radius:6px}
+.flutua{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);width:640px;display:flex;align-items:center;gap:10px;background:var(--f);border-radius:16px;padding:12px 12px 12px 18px;font-size:14px;line-height:1.35;box-shadow:0 8px 30px rgb(0 0 0/.14),0 0 0 1px rgb(0 0 0/.06)}
+.flutua button{background:var(--fa);font-weight:600;padding:7px 14px;flex:none}
+.opcoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.opcoes button{background:var(--acf);color:var(--ac);font-size:14px;font-weight:600;padding:7px 14px}
+.mini-barra{display:flex;gap:8px;align-items:center;height:28px;padding:0 10px;border-radius:8px;background:var(--fa);box-shadow:inset 0 0 0 1px var(--sep);width:240px;margin:0 auto}
+.mini-barra i{width:44px;height:10px;border-radius:980px;background:var(--sep);display:block}
+.mini-barra b{padding:3px 12px;border-radius:980px;background:var(--ac);color:#fff;font-size:12px}
 @media (prefers-color-scheme:dark){.abas{background:#202124}.aba,.enderecos,.favoritos{color:#e8eaed}.caixa{background:#303134}}
 </style>
 </head>
@@ -127,49 +136,83 @@ h1{font-size:28px;font-weight:600;letter-spacing:-.6px;margin:4px 0 2px}
   </div>
 </div></div></section>
 
-<!-- #recusa — o favorito clicado fora da planilha -->
+<!-- #recusa — a planilha não casa com nenhuma turma do Adsum -->
 <section class="estado" id="recusa"><div class="palco"><div class="janela">
   <div class="cromo"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="endereco">willianrupert.github.io</span></div>
   <div class="corpo" style="padding-bottom:26px">
-    <div style="text-align:right"><button style="color:var(--tf);padding:0;font-size:14px">Fechar</button></div>
     <div class="icone" style="width:56px;height:56px;font-size:26px;background:var(--alf);color:var(--al);margin:10px 0 14px">!</div>
-    <h1 style="font-size:24px">Esta página não é a planilha de frequência</h1>
-    <p class="apoio" style="font-size:15px;line-height:1.47;margin:10px 0 18px">Na Turma Virtual, abra Alunos e depois Lançar Freq. em Planilha. Então clique no favorito de novo.</p>
-    <div class="cartao"><div class="icone" style="background:var(--f);color:var(--tf)">≡</div><div style="flex:1"><div style="font-size:15px">Prefere lançar à mão?</div><div class="fraco">Veja quem faltou em cada aula.</div></div><span class="seta">›</span></div>
+    <h1 style="font-size:24px">Esta turma não está no Adsum</h1>
+    <p class="apoio" style="font-size:15px;line-height:1.47;margin:10px 0 0">Nenhuma turma do Adsum tem o código e as matrículas desta planilha.</p>
   </div>
 </div></div></section>
 
-<!-- #barra — a janela fechou; a planilha do SIGAA com o que mudou -->
-<section class="estado" id="barra"><div class="palco"><div class="navegador" style="width:760px"><div class="abas"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="aba">SIGAA · Turma Virtual</span></div><div class="enderecos"><span>‹ ›</span><span class="caixa">sigaa.ufpe.br/sigaa/ava/index.jsf</span></div><div class="favoritos"><span>Favoritos</span><b>Adsum → SIGAA</b></div><div class="planilha" style="width:100%;border-radius:0;box-shadow:none">
+<!-- #pergunta — duas turmas servem: o professor escolhe (passo 23) -->
+<section class="estado" id="pergunta"><div class="palco"><div class="janela">
+  <div class="cromo"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="endereco">willianrupert.github.io</span></div>
+  <div class="corpo" style="padding-bottom:26px">
+    <h1 style="font-size:24px">Qual é a turma desta planilha?</h1>
+    <p class="apoio">Mais de uma turma do Adsum tem as matrículas desta planilha.</p>
+    <div class="lista">
+      <div class="cartao"><div class="forte" style="flex:1">2026.2 - ENG0101 - T01</div><span class="seta">›</span></div>
+      <div class="cartao"><div class="forte" style="flex:1">2026.2 - ENG0101 - T01 (cópia)</div><span class="seta">›</span></div>
+    </div>
+  </div>
+</div></div></section>
+
+<!-- #semlugar — a aula dada em outra data: em qual aula do SIGAA ela entra (passo 30) -->
+<section class="estado" id="semlugar"><div class="palco"><div class="janela">
+  <div class="cromo"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="endereco">willianrupert.github.io</span></div>
+  <div class="corpo">
+    <h1>1 aula para lançar</h1>
+    <p class="apoio">ENG0101 · T01. Planilha lida agora, 48 alunos, todos pela matrícula.</p>
+    <div class="cartao" style="flex-direction:column;align-items:flex-start;gap:2px;margin-bottom:8px">
+      <div class="forte">Sáb, 18/10</div>
+      <div class="fraco">45 presentes, 3 faltas</div>
+      <div style="font-size:14px;margin-top:6px">O SIGAA não tem aula neste dia. Em qual aula ela entra?</div>
+      <div class="opcoes"><button>Qui, 16/10</button><button>Ter, 14/10</button><button>Qui, 09/10</button></div>
+    </div>
+    <div class="lista">
+      <div class="cartao"><span class="marca">✓</span><div style="flex:1"><div class="forte">Ter, 21/10</div><div class="fraco">46 presentes, 2 faltas</div></div><span class="seta">⌄</span></div>
+    </div>
+    <button class="acao">Preencher 1 aula</button>
+    <button class="quieto">Agora não</button>
+    <div class="garantia">Ao preencher, o SIGAA salva sozinho em até 5 minutos.</div>
+  </div>
+</div></div></section>
+
+<!-- #barra — a janela fechou; a planilha do SIGAA com o que mudou (passo 25) -->
+<section class="estado" id="barra"><div class="palco"><div class="navegador" style="width:760px"><div class="abas"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="aba">SIGAA · Turma Virtual</span></div><div class="enderecos"><span>‹ ›</span><span class="caixa">sigaa.ufpe.br/sigaa/ava/index.jsf</span></div><div class="favoritos"><span>Favoritos</span><b>Adsum</b></div><div class="planilha" style="width:100%;border-radius:0;box-shadow:none;position:relative;padding-bottom:96px">
   <div style="padding:14px 16px;font-size:13px;color:var(--tf)">Planilha de Frequência da Turma (SIGAA)</div>
   <div class="grade">
     <span style="color:var(--tf)">Matrícula</span><span style="color:var(--tf)">07/10</span><span style="color:var(--tf)">09/10</span><span style="color:var(--tf)">14/10</span><span style="color:var(--tf)">16/10</span><span style="color:var(--tf)">21/10</span><span style="color:var(--tf)">23/10</span>
     <span>2026000041</span><span>0</span><span>0</span><span class="az">0</span><span>&nbsp;</span><span class="az">0</span><span>&nbsp;</span>
-    <span>2026000118</span><span class="la">0</span><span>2</span><span class="az">2</span><span>&nbsp;</span><span class="az">0</span><span>&nbsp;</span>
-    <span>2026000207</span><span>0</span><span>0</span><span class="az">0</span><span>&nbsp;</span><span class="az">2</span><span>&nbsp;</span>
+    <span>2026000118</span><span>0</span><span>2</span><span class="azf">2</span><span>&nbsp;</span><span class="az">0</span><span>&nbsp;</span>
+    <span>2026000207</span><span>0</span><span>0</span><span class="az">0</span><span>&nbsp;</span><span class="azf">2</span><span>&nbsp;</span>
     <span>2026000330</span><span style="color:var(--tf)">T</span><span style="color:var(--tf)">T</span><span style="color:var(--tf)">T</span><span style="color:var(--tf)">T</span><span style="color:var(--tf)">T</span><span style="color:var(--tf)">T</span>
   </div>
   <div class="botoes-sigaa"><span>Gravar Frequências</span><span>Cancelar</span></div>
-  <div class="barra">
-    <div class="icone" style="background:var(--acf);color:var(--ac)">✓</div>
-    <div style="flex:1"><div style="font-size:15px;font-weight:600">Adsum preencheu 2 aulas</div><div class="fraco">Azul é o que mudou. Confira e clique em Gravar Frequências.</div></div>
-    <button class="pilula" style="background:var(--f)">Desfazer</button>
-    <button style="color:var(--tf);padding:6px">⌄</button>
+  <div class="flutua">
+    <span style="flex:1">Adsum preencheu 2 aulas. Azul é o que mudou, e as 2 faltas estão em azul forte. O SIGAA salva sozinho em até 5 minutos, ou agora, em Gravar Frequências.</span>
+    <button>Desfazer</button><button>Fechar</button>
   </div>
 </div></div></div></section>
 
-<!-- #instalar — o cartão nos Ajustes do Adsum -->
+<!-- #instalar — o painel nos Ajustes do Adsum (passos 26 e 27) -->
 <section class="estado" id="instalar"><div class="palco"><div class="navegador" style="width:600px"><div class="abas"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="aba">Adsum</span></div><div class="enderecos"><span>‹ ›</span><span class="caixa">willianrupert.github.io/adsum/</span></div><div class="favoritos"><span>Favoritos</span><span style="color:var(--tf)">arraste para cá</span></div><div class="ajustes" style="width:100%;border-radius:0">
   <div class="fraco" style="font-size:14px">Ajustes</div>
   <h1 style="font-size:24px">Lançar no SIGAA</h1>
-  <p class="apoio" style="font-size:15px;line-height:1.47">Arraste o botão abaixo para a barra de favoritos do Chrome. Depois, na planilha de frequência do SIGAA, é só clicar nele.</p>
-  <span class="favorito">Adsum → SIGAA</span>
-  <div class="passos">
-    <div class="passo"><b>1. Mostre a barra</b>Cmd+Shift+B no Mac, Ctrl+Shift+B no Windows.</div>
-    <div class="passo"><b>2. Arraste</b>O botão azul até a barra. Clicar nele aqui não faz nada.</div>
-    <div class="passo"><b>3. Use no SIGAA</b>Turma Virtual, Alunos, Lançar Freq. em Planilha.</div>
+  <p class="apoio" style="font-size:14px">Um clique na planilha de frequência preenche as aulas.</p>
+  <div class="centro">
+    <p style="font-size:15px;line-height:1.47;margin:0 auto 12px;max-width:34ch">Arraste o botão para a barra de favoritos. Na planilha de frequência do SIGAA, clique nele.</p>
+    <div class="mini-barra"><i></i><i></i><b>Adsum</b></div>
+    <div style="margin:22px 0 10px"><span class="favorito" style="font-weight:600">Adsum</span></div>
+    <div class="fraco">Sem a barra de favoritos à vista? No Chrome, ⇧⌘B no Mac, Ctrl+Shift+B no Windows.</div>
   </div>
-  <div class="fraco" style="margin-top:14px">O favorito nunca vê sua senha e nunca grava. Quem grava é você.</div>
+  <div class="forte" style="margin-top:20px">Últimos preenchimentos</div>
+  <ul style="margin:6px 0 0;padding-left:18px;font-size:14px;line-height:1.6">
+    <li>ENG0101 · T01, 21/10 às 10:12: 2 aulas, 5 faltas</li>
+    <li>ENG0101 · T01, 14/10 às 10:05: 1 aula, 4 faltas</li>
+  </ul>
 </div></div></div></section>
 
 <script>

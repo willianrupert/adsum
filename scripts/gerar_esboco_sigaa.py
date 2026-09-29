@@ -33,6 +33,8 @@ ESTADOS = {
     'barra': 840,
     'confere': 500,
     'recusa': 500,
+    'pergunta': 500,
+    'semlugar': 500,
 }
 
 CHROME_CANDIDATOS = [

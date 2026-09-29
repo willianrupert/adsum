@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 100% da fase 2, 75% da fase 3
+## Andamento: 100% da fase 1, 100% da fase 2, 83% da fase 3
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -461,7 +461,7 @@ tela pensada para o tamanho, e ao Preencher fecha e devolve a planilha.
 | 26 | O favorito chega ao professor: gerado no build e oferecido em Ajustes, com o gesto de arrastar | 20 | feito, 29/09 |
 | 27 | Histórico em Ajustes: o que foi lançado, quando, em cada turma | 10 | feito, 29/09 |
 | 28 | Ensaio no Chrome, em janela e em tela cheia | 20 |  |
-| 29 | Esboço (`docs/09`), vitrine e documentos | 10 |  |
+| 29 | Esboço (`docs/09`), vitrine e documentos | 10 | feito, 29/09 |
 | 30 | A aula dada em outra data: o professor diz em qual aula do SIGAA a chamada entra | 20 | feito, 29/09 |
 
 ### 23 · Escolha da turma
@@ -548,6 +548,19 @@ derrubadas (uma revelou uma cláusula redundante, que saiu).
 
 A planilha de presenças do Adsum continua com a data real da chamada: o
 remanejo é só sobre onde ela entra no SIGAA.
+
+### 29 · Esboço, vitrine e documentos
+
+A vitrine ganhou duas cenas, com a folha de verdade e gente inventada: "qual
+turma?" e "chamada sem lugar". O esboço (`docs/esboco_sigaa/esboco.html`)
+foi redesenhado onde a fase 3 mudou a tela: o painel dos Ajustes, a barra
+flutuante com as faltas em azul forte, a recusa sem a lista à mão, e dois
+estados novos (`pergunta`, `semlugar`). As imagens saíram de novo pelo
+script. O `docs/09` descreve as oito telas como estão.
+
+**Sabido e aceito:** o favorito arrastado aparece na barra com o globo
+genérico, sem o ícone do Adsum. O Chrome não busca ícone para favorito
+`javascript:`, e a página não tem como dar um.
 
 **De passagem:** a lei 7 das leis reais levava 4,8 s, colada no limite de
 5 s, e caía sob a suíte inteira. Medido antes da mudança (4,77 s): não era
