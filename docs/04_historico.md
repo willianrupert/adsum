@@ -739,3 +739,39 @@ antes do conserto:
 - **Desistir de um "Apagar tudo" mostrava "cancelado"** como se fosse erro.
 
 Estão na branch, sem publicar.
+
+## 29/09/2026 — segunda aula limpa, e um dia que não existiu
+
+Aula real de CIN0144, ainda com `39830c2` (carimbo 13:30), lida pelo zip da
+pasta do professor. O diário está limpo: nenhuma recusa, nenhum erro e nenhum
+`evento_id` repetido. A numeração vai de 0228 a 0268 sem buraco, e a
+conferência continua nas linhas de base (`repetidos=19` e `repetidos=8`).
+
+- 39 presentes: 38 pelo crachá e 1 pela busca, um aluno que ainda não tinha
+  crachá e ficou cadastrado ali. Dos 55 da turma, 53 já têm crachá.
+- A chamada durou 4 min 27 s, e as 39 leituras couberam em 2 min 20 s.
+  A mediana entre crachás foi 2,9 s e a menor distância 1,6 s: a regra dos
+  400 ms não disparou. Por crachá, no pior caso: 19 ms para identificar, 5
+  para gravar e 25 para a tela.
+- O professor abre a chamada no fim do bloco da grade, e não no começo: 09:48
+  para o bloco das 08:00 às 09:50. Em 22/09 e em 24/09 foi igual.
+
+**O defeito: uma coluna 25/09 na planilha de faltas, com uma falta para cada
+um dos 55.** Em 25/09 o professor escolheu outro dia e abriu uma chamada
+retroativa para 24/09. Encerrou 20 s depois, sem ler crachá. A abertura
+recebe a hora de agora no dia escolhido (`momentoDaChamada`), e o
+encerramento recebe a hora de agora sem ajuste (`new Date()` em `TelaAula`).
+O evento de encerrar caiu em 25/09, e `planilhaDeFaltas` fez desse dia uma
+aula em que ninguém veio. O registro está certo e nada se perdeu; o erro
+está só na planilha derivada, que é recalculada e portanto mantém a coluna.
+Enquanto não houver conserto, a coluna 25/09 deve ser ignorada.
+
+O defeito continua na branch v2. Pelo código, os crachás lidos numa chamada
+retroativa também caem no dia real, e não no escolhido; aqui não fez dano
+porque nenhum crachá foi lido. O conserto provável tem duas partes. A primeira:
+tudo o que acontece numa sessão herda o dia de `abertaEm`. A segunda: dia
+com só eventos do professor não vira coluna. O conserto segue a regra de
+sempre: cofre anonimizado, teste que falha e só então o código. Não entra
+antes da aula de quinta. O diário da aula não teve recusa, divergência nem
+erro; se isso conta como semana limpa, apesar do defeito na planilha, fica
+para o autor decidir.
