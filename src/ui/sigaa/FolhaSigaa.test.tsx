@@ -5,6 +5,8 @@ import { RepositorioDexie } from '../../adaptadores/repositorio/RepositorioDexie
 import { PonteSimulada } from '../../adaptadores/sigaa/PonteSimulada.ts'
 import { VERSAO_DO_FAVORITO, mensagemDeLeitura, receberLeitura, ORIGEM_SIGAA } from '../../nucleo/lancar/protocolo.ts'
 import type { BrutoPlanilha } from '../../nucleo/lancar/leitura.ts'
+import { comoDia, type Celula, type LeituraPlanilha } from '../../nucleo/lancar/tipos.ts'
+import { brutoDaLeitura } from '../../testes/planilhaSigaa.ts'
 import type { Evento } from '../../nucleo/tipos.ts'
 import { FolhaSigaa } from './FolhaSigaa.tsx'
 
@@ -24,19 +26,32 @@ const ev = (dia: string, parcial: Partial<Evento> & Pick<Evento, 'origem' | 'res
   ...parcial,
 })
 
-/** Terça vazia no SIGAA (o Caio faltou); quinta lançada, com o Breno diferente do Adsum. */
-function bruto(mudar: (b: BrutoPlanilha) => void = () => {}): BrutoPlanilha {
-  const b: BrutoPlanilha = {
-    rodape: 'SIGAA | STI - v4.15.0.206',
+const MATRICULAS = ['20260000001', '20260000002', '20260000003']
+const TER = comoDia('2026-10-13')!
+const QUI = comoDia('2026-10-15')!
+/** Depois das duas aulas: nada delas é futuro para a página. */
+const AGORA = () => new Date('2026-10-20T12:00:00')
+
+/**
+ * A planilha como o SIGAA a guarda (`docs/12`), a partir de uma grade de valores:
+ * terça vazia no SIGAA (o Caio faltou); quinta lançada, com o Breno diferente do Adsum.
+ */
+function bruto(valores: string[][] = [['', '0'], ['', '2'], ['', '0']], mudar: (b: BrutoPlanilha) => void = () => {}): BrutoPlanilha {
+  const leitura: LeituraPlanilha = {
+    id: 'modelo',
+    versaoSigaa: '4.15.0.206',
     cabecalhoTurma: 'CIN0144 - PROGRAMAÇÃO INVENTADA - Turma: 01 (2026.2)',
-    meses: [{ texto: 'Outubro', colunas: 2 }],
-    dias: [{ texto: '13', maximoTexto: '2' }, { texto: '15', maximoTexto: '2', marcaTexto: 'Lançado' }],
-    linhas: [
-      { matriculaTexto: '20260000001', celulas: [{ valor: '', desabilitada: false }, { valor: '0', desabilitada: false }] },
-      { matriculaTexto: '20260000002', celulas: [{ valor: '', desabilitada: false }, { valor: '2', desabilitada: false }] },
-      { matriculaTexto: '20260000003', celulas: [{ valor: '', desabilitada: false }, { valor: '0', desabilitada: false }] },
+    colunas: [
+      { indice: 0, dia: TER, maximo: 2 },
+      { indice: 1, dia: QUI, maximo: 2, marca: 'lancado' },
     ],
+    linhas: valores.map((linha, indice) => ({
+      indice,
+      matricula: MATRICULAS[indice],
+      celulas: linha.map((v): Celula => (v === '' ? { tipo: 'vazia' } : { tipo: 'lancada', faltas: Number(v) })),
+    })),
   }
+  const b = brutoDaLeitura(leitura)
   mudar(b)
   return b
 }
@@ -74,7 +89,7 @@ afterEach(async () => {
 })
 
 const abrir = (props: Partial<Parameters<typeof FolhaSigaa>[0]> = {}) =>
-  render(<FolhaSigaa repositorio={repositorio} ponte={ponte} fechar={fechar} {...props} />)
+  render(<FolhaSigaa repositorio={repositorio} ponte={ponte} fechar={fechar} agora={AGORA} {...props} />)
 
 describe('a folha, com o que lançar', () => {
   it('o título é o estado, a diferença vem primeiro, e a aula mostra números', async () => {
@@ -174,10 +189,7 @@ describe('a folha, quando tudo confere', () => {
   it('diz em quantas aulas, e avisa a planilha que não há nada a preencher', async () => {
     const usuario = userEvent.setup()
     abrir()
-    ponte.ler(bruto((b) => {
-      for (const [i, l] of b.linhas.entries()) l.celulas[0].valor = i === 2 ? '2' : '0'
-      b.linhas[1].celulas[1].valor = '0'
-    }), 'l-2')
+    ponte.ler(bruto([['0', '0'], ['0', '0'], ['2', '0']]), 'l-2')
     expect(await screen.findByRole('heading', { name: 'Tudo confere' })).toBeInTheDocument()
     expect(screen.getByText('SIGAA e Adsum iguais em 2 aulas.')).toBeInTheDocument()
     await waitFor(() => expect(ponte.entregues).toEqual([{ id: 'l-2', instrucoes: [] }]))
@@ -190,12 +202,21 @@ describe('a folha, quando o aceite deixa tudo igual', () => {
   it('avisa a planilha que não há nada a preencher, também depois do aceite', async () => {
     const usuario = userEvent.setup()
     abrir()
-    ponte.ler(bruto((b) => {
-      for (const [i, l] of b.linhas.entries()) l.celulas[0].valor = i === 2 ? '2' : '0'
-    }), 'l-3')
+    ponte.ler(bruto([['0', '0'], ['0', '2'], ['2', '0']]), 'l-3')
     await usuario.click(await screen.findByRole('button', { name: 'Aceitar o SIGAA' }))
     expect(await screen.findByRole('heading', { name: 'Tudo confere' })).toBeInTheDocument()
     await waitFor(() => expect(ponte.entregues).toEqual([{ id: 'l-3', instrucoes: [] }]))
+  })
+})
+
+describe('a folha e a ponte', () => {
+  it('se liga à planilha uma vez só, mesmo redesenhando: sem o relógio do teste também', async () => {
+    const iniciar = vi.spyOn(ponte, 'iniciar')
+    render(<FolhaSigaa repositorio={repositorio} ponte={ponte} fechar={fechar} />)
+    ponte.ler(bruto(), 'l-9')
+    await screen.findByRole('heading')
+    await new Promise((r) => setTimeout(r, 50))
+    expect(iniciar).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -217,14 +238,14 @@ describe('a folha recusa, e diz o que fazer', () => {
 
   it('página que não dá para ler: diz o motivo', async () => {
     abrir()
-    ponte.ler(bruto((b) => (b.dias[0].texto = 'ter')), 'l-1')
+    ponte.ler(bruto(undefined, (b) => (b.auxAulas = b.auxAulas.replace('13,10,', '31,9,'))), 'l-1')
     expect(await screen.findByRole('heading', { name: 'Não deu para ler a planilha' })).toBeInTheDocument()
-    expect(screen.getByText(/coluna 1: data ilegível/)).toBeInTheDocument()
+    expect(screen.getByText(/aula 1: data ilegível/)).toBeInTheDocument()
   })
 
   it('turma que o Adsum não tem', async () => {
     abrir()
-    ponte.ler(bruto((b) => (b.cabecalhoTurma = 'CIN9999 - OUTRA - Turma: 01 (2026.2)')), 'l-1')
+    ponte.ler(bruto(undefined, (b) => (b.legenda = 'CIN9999 - OUTRA - Turma: 01 (2026.2)')), 'l-1')
     expect(await screen.findByRole('heading', { name: 'Esta turma não está no Adsum' })).toBeInTheDocument()
   })
 

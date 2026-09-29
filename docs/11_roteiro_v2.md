@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 6% da fase 2
+## Andamento: 100% da fase 1, 18% da fase 2
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -247,7 +247,7 @@ passo, passo pela metade conta zero.
 | # | Passo | Peso | Estado |
 |---|---|---|---|
 | 13 | Anonimizador da planilha: o modelo de dados vira fixture, sem nome, matrícula nem id real | 6 | feito, 29/09 |
-| 14 | Leitura real: o bruto passa a ser `auxAulas` e `auxAlunos` | 12 |  |
+| 14 | Leitura real: o bruto passa a ser `auxAulas` e `auxAlunos` | 12 | feito, 29/09 |
 | 15 | Localizador: escrever o texto da célula, como a coleta do SIGAA lê | 10 |  |
 | 16 | Regras da página: data futura, período letivo, bloqueios, dia parcial, máximo fora do comum | 10 |  |
 | 17 | Salvamento automático (opção A, 29/09): a folha avisa, o Desfazer vale até a primeira coleta | 12 |  |
@@ -256,6 +256,25 @@ passo, passo pela metade conta zero.
 | 20 | Portão B: as leis sobre a fixture real | 8 |  |
 | 21 | Segunda turma e planilha depois do Gravar (captura e mensagem de sucesso) | 8 |  |
 | 22 | Ensaio na bancada | 8 |  |
+
+### 14 · Leitura real
+
+O bruto é o que a página guarda: a legenda, o período letivo, `auxAulas`,
+`auxAlunos` e o texto atual de cada célula (o professor pode ter clicado
+antes do favorito). Os bloqueios seguem a precedência da própria página
+(marca da aula, depois do aluno, depois a data), e ganharam quatro motivos
+que a planilha real trouxe: suspensa, bloqueado, futura e fora do período.
+Testada sobre a fixture de CIN0114, com os números do `docs/12`, e na ida e
+volta dos 300 cenários.
+
+Decidido aqui: **o favorito confere o plano com a mesma leitura e o mesmo
+validador do Adsum** (`conferirContraBruto` = `lerPlanilha` + `validarPlano`).
+Com a leitura pequena, a validação duplicada do passo 11 deixa de valer o
+risco de as duas divergirem. A data de "agora" é parâmetro da leitura, da
+folha e do favorito: sem ela, testes com datas de outubro quebrariam hoje e
+voltariam a passar em novembro. E a folha usa um relógio fora do componente:
+uma função nova a cada desenho refazia a ligação com a planilha, em laço
+(achado aqui, com teste).
 
 ## Fora das duas fases
 

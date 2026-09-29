@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { criarPaginaSigaa, LOCALIZADOR_SEM_HTML, type Localizador } from './paginaSigaa.ts'
 
 const inventado: Localizador = {
-  extrair: () => ({ rodape: '', cabecalhoTurma: '', meses: [], dias: [], linhas: [] }),
+  extrair: () => ({ legenda: '', periodo: { inicio: '', fim: '' }, auxAulas: '', auxAlunos: '' }),
   celula: (doc, linha, coluna) => doc.querySelector<HTMLInputElement>(`#c-${linha}-${coluna}`) ?? undefined,
 }
 

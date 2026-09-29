@@ -261,17 +261,23 @@ function FolhaDaTurma({
   )
 }
 
+/** Fora do componente: uma função nova a cada desenho refaria a ligação com a planilha. */
+const relogio = () => new Date()
+
 export function FolhaSigaa({
   repositorio,
   ponte,
   fechar,
   esperaMs = 8000,
+  agora = relogio,
 }: {
   repositorio: Repositorio
   ponte: PonteSigaa
   fechar: () => void
   /** Sem leitura até lá, a planilha não respondeu. */
   esperaMs?: number
+  /** A leitura bloqueia o dia futuro, como a página; o teste fixa o relógio. */
+  agora?: () => Date
 }) {
   const [estado, setEstado] = useState<Estado>(() => (ponte.ligada() ? { tipo: 'esperando' } : { tipo: 'recusa', recusa: RECUSAS.semFavorito }))
 
@@ -279,7 +285,7 @@ export function FolhaSigaa({
     async (recebida: LeituraRecebida) => {
       const recusar = (recusa: Recusa) => setEstado({ tipo: 'recusa', recusa })
       if (!recebida.ok) return recusar(recebida.motivo === 'versaoDoFavorito' ? RECUSAS.favoritoAntigo : RECUSAS.formato)
-      const { leitura, problemas } = lerPlanilha(recebida.bruto, recebida.id)
+      const { leitura, problemas } = lerPlanilha(recebida.bruto, recebida.id, agora())
       const detalhes = problemas.map((p) => `${p.onde}: ${p.motivo}${p.conteudo ? ` ("${p.conteudo}")` : ''}`)
       if (!leitura) return recusar({ titulo: 'Não deu para ler a planilha', texto: 'O Adsum não preencheu nada. O motivo:', detalhes, aMao: true })
       const matriculados = await repositorio.listarMatriculados()
@@ -294,7 +300,7 @@ export function FolhaSigaa({
       }
       setEstado({ tipo: 'pronta', leitura, turma: escolha.turma, avisos: detalhes })
     },
-    [repositorio],
+    [repositorio, agora],
   )
 
   useEffect(() => {

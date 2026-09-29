@@ -26,6 +26,8 @@ export interface Dependencias {
   abrir: (url: string, nome: string, recursos: string) => JanelaQueRecebe | null | undefined
   destino: Destino
   gerarId: () => string
+  /** A leitura bloqueia o dia futuro, como a página; o teste fixa o relógio. */
+  agora?: () => Date
 }
 
 /** Encostada à direita, do tamanho de uma folha: o esboço do `docs/09`. */
@@ -41,7 +43,7 @@ export const TEXTOS = {
   desfeito: 'Desfeito. A planilha voltou ao que estava.',
 }
 
-export function lancarPeloFavorito({ pagina, janela, abrir, destino, gerarId }: Dependencias): void {
+export function lancarPeloFavorito({ pagina, janela, abrir, destino, gerarId, agora = () => new Date() }: Dependencias): void {
   const bruto = pagina.extrair()
   if (!bruto) return pagina.mostrarBarra({ texto: TEXTOS.naoEhAPlanilha })
 
@@ -57,7 +59,7 @@ export function lancarPeloFavorito({ pagina, janela, abrir, destino, gerarId }: 
       aberta.postMessage(mensagemDeLeitura(id, bruto), destino.origem)
       return
     }
-    const plano = receberPlano(recebido, { origemAdsum: destino.origem, aberta, id, validar: (p) => conferirContraBruto(p, bruto) })
+    const plano = receberPlano(recebido, { origemAdsum: destino.origem, aberta, id, validar: (p) => conferirContraBruto(p, bruto, agora()) })
     if (!plano.ok && (plano.motivo === 'origem' || plano.motivo === 'janela' || plano.motivo === 'outraLeitura')) return
 
     janela.removeEventListener('message', ouvir)

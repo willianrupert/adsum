@@ -4,40 +4,20 @@
 // Nunca clica, navega, envia formulário nem executa o que recebe: só escreve
 // valores em células vazias. Lei: desfazer devolve cada célula ao valor lido.
 
-import type { Validacao } from '../nucleo/lancar/plano.ts'
-import type { BrutoPlanilha } from '../nucleo/lancar/leitura.ts'
+import { validarPlano, type Validacao } from '../nucleo/lancar/plano.ts'
+import { lerPlanilha, type BrutoPlanilha } from '../nucleo/lancar/leitura.ts'
 import type { Instrucao } from '../nucleo/lancar/tipos.ts'
 import type { PaginaDePlanilha } from './pagina.ts'
 
-const CAMPOS = ['antes', 'coluna', 'linha', 'valor'].join()
-const inteiro = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v)
-
-function problemaDa(bruta: unknown, bruto: BrutoPlanilha, vistas: Set<string>): string | undefined {
-  if (typeof bruta !== 'object' || bruta === null || Object.keys(bruta).sort().join() !== CAMPOS) return 'formato desconhecido'
-  const { linha, coluna, antes, valor } = bruta as Record<string, unknown>
-  if (!inteiro(linha) || !inteiro(coluna) || antes !== 'vazia' || !inteiro(valor)) return 'formato desconhecido'
-  const celula = bruto.linhas[linha]?.celulas[coluna]
-  const dia = bruto.dias[coluna]
-  const onde = `célula ${linha}×${coluna}`
-  if (!celula || !dia) return `${onde} não existe`
-  if (vistas.has(onde)) return `${onde} repetida`
-  vistas.add(onde)
-  if (celula.desabilitada || celula.valor.trim() !== '') return `${onde} não estava vazia`
-  const maximo = /^\d+$/.test(dia.maximoTexto?.trim() ?? '') ? Number(dia.maximoTexto) : 0
-  if (maximo <= 0) return `${onde}: dia sem máximo`
-  if (valor < 0 || valor > maximo) return `${onde}: ${valor} fora de 0…${maximo}`
-  return undefined
-}
-
-/** As leis 2 e 4 contra o bruto: célula vazia na leitura, valor dentro do máximo lido. */
-export function conferirContraBruto(plano: unknown, bruto: BrutoPlanilha): Validacao {
-  if (!Array.isArray(plano)) return { ok: false, problemas: ['o plano não é uma lista'] }
-  const vistas = new Set<string>()
-  const problemas = plano.flatMap((i: unknown, n) => {
-    const p = problemaDa(i, bruto, vistas)
-    return p ? [`instrução ${n + 1}: ${p}`] : []
-  })
-  return problemas.length > 0 ? { ok: false, problemas } : { ok: true, instrucoes: plano as Instrucao[] }
+/**
+ * As leis 2 e 4 contra a página que o favorito mesmo leu: a mesma leitura e o
+ * mesmo validador do Adsum, rodando aqui. Célula que não estava vazia, que a
+ * página bloqueia ou valor fora do máximo derruba o plano inteiro.
+ */
+export function conferirContraBruto(plano: unknown, bruto: BrutoPlanilha, agora: Date): Validacao {
+  const { leitura, problemas } = lerPlanilha(bruto, 'favorito', agora)
+  if (!leitura) return { ok: false, problemas: problemas.map((p) => `${p.onde}: ${p.motivo}`) }
+  return validarPlano(plano, leitura)
 }
 
 export interface Escrita {

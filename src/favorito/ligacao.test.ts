@@ -7,27 +7,30 @@ import { lancarPeloFavorito } from './ligacao.ts'
 const ADSUM = 'https://willianrupert.github.io'
 const DESTINO = { origem: ADSUM, url: `${ADSUM}/adsum/#/sigaa` }
 
-function montar(bruto = brutoDaLeitura(gerarCenario(3).leitura), abrirFalha = false) {
-  const pagina = new PaginaSigaaFalsa(bruto)
+/** Depois de todas as aulas dos cenários: nada é futuro. */
+const AGORA = () => new Date('2026-12-20T12:00:00')
+const LEITURA = gerarCenario(3).leitura
+
+function montar(abrirFalha = false) {
+  const pagina = new PaginaSigaaFalsa(brutoDaLeitura(LEITURA))
   const janela = new EventTarget()
   const popup = { postMessage: vi.fn() }
   const abrir = vi.fn(() => (abrirFalha ? null : popup))
   const chegar = (data: unknown, origin = ADSUM, source: unknown = popup) =>
     janela.dispatchEvent(Object.assign(new Event('message'), { data, origin, source }))
-  lancarPeloFavorito({ pagina, janela, abrir, destino: DESTINO, gerarId: () => 'l-1' })
+  lancarPeloFavorito({ pagina, janela, abrir, destino: DESTINO, gerarId: () => 'l-1', agora: AGORA })
   return { pagina, popup, abrir, chegar }
 }
 
 /** As células vazias com máximo, para planos pequenos. */
-function celulasLivres(pagina: PaginaSigaaFalsa) {
-  const b = pagina.bruto!
-  const livres = b.linhas.flatMap((l, i) =>
-    l.celulas.flatMap((c, j) => (c.valor === '' && !c.desabilitada && b.dias[j].maximoTexto ? [{ linha: i, coluna: j }] : [])),
+function celulasLivres() {
+  const livres = LEITURA.linhas.flatMap((l) =>
+    l.celulas.flatMap((c, j) => (c.tipo === 'vazia' && LEITURA.colunas[j].maximo !== undefined ? [{ linha: l.indice, coluna: j }] : [])),
   )
   if (livres.length < 2) throw new Error('cenário sem células livres')
   return livres
 }
-const celulaLivre = (pagina: PaginaSigaaFalsa) => celulasLivres(pagina)[0]
+const celulaLivre = () => celulasLivres()[0]
 
 describe('o favorito na planilha', () => {
   it('abre a janela do Adsum encostada, e só manda a leitura quando ela avisa que está pronta', () => {
@@ -35,7 +38,7 @@ describe('o favorito na planilha', () => {
     expect(abrir).toHaveBeenCalledWith(DESTINO.url, 'adsum-sigaa', expect.stringContaining('popup'))
     expect(popup.postMessage).not.toHaveBeenCalled()
     chegar(mensagemDePronto())
-    expect(popup.postMessage).toHaveBeenCalledWith(mensagemDeLeitura('l-1', pagina.bruto), ADSUM)
+    expect(popup.postMessage).toHaveBeenCalledWith(mensagemDeLeitura('l-1', pagina.extrair()), ADSUM)
   })
 
   it('um segundo "pronto" (a janela recarregou) manda a leitura de novo', () => {
@@ -47,7 +50,7 @@ describe('o favorito na planilha', () => {
 
   it('preenche o plano, pinta, e a barra diz quantas aulas e oferece Desfazer', () => {
     const { chegar, pagina } = montar()
-    const { linha, coluna } = celulaLivre(pagina)
+    const { linha, coluna } = celulaLivre()
     chegar(mensagemDePronto())
     chegar(mensagemDePlano('l-1', [{ linha, coluna, antes: 'vazia', valor: 0 }]))
     expect(pagina.valor(linha, coluna)).toBe('0')
@@ -59,7 +62,7 @@ describe('o favorito na planilha', () => {
 
   it('diz quantas células o professor mexeu no meio tempo e ficaram como ele deixou', () => {
     const { chegar, pagina } = montar()
-    const { linha, coluna } = celulaLivre(pagina)
+    const { linha, coluna } = celulaLivre()
     chegar(mensagemDePronto())
     pagina.digitar(linha, coluna, '1')
     chegar(mensagemDePlano('l-1', [{ linha, coluna, antes: 'vazia', valor: 0 }]))
@@ -85,7 +88,7 @@ describe('o favorito na planilha', () => {
 
   it('ignora o que não veio da janela que ele abriu, e plano de outra leitura', () => {
     const { chegar, pagina, popup } = montar()
-    const { linha, coluna } = celulaLivre(pagina)
+    const { linha, coluna } = celulaLivre()
     chegar(mensagemDePronto(), 'https://exemplo.com')
     chegar(mensagemDePronto(), ADSUM, { outra: true })
     expect(popup.postMessage).not.toHaveBeenCalled()
@@ -96,7 +99,7 @@ describe('o favorito na planilha', () => {
 
   it('depois de preencher, para de ouvir: um segundo plano não escreve nada', () => {
     const { chegar, pagina } = montar()
-    const [primeira, segunda] = celulasLivres(pagina)
+    const [primeira, segunda] = celulasLivres()
     chegar(mensagemDePronto())
     chegar(mensagemDePlano('l-1', [{ ...primeira, antes: 'vazia', valor: 0 }]))
     chegar(mensagemDePlano('l-1', [{ ...segunda, antes: 'vazia', valor: 0 }]))
@@ -113,7 +116,7 @@ describe('o favorito na planilha', () => {
   })
 
   it('janela bloqueada pelo navegador: diz como liberar', () => {
-    const { pagina } = montar(undefined, true)
+    const { pagina } = montar(true)
     expect(pagina.barra?.texto).toBe('O navegador bloqueou a janela do Adsum. Permita janelas para o SIGAA e clique no favorito de novo.')
   })
 })

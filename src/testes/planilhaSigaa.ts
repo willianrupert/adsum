@@ -118,9 +118,10 @@ export function gerarCenario(semente: number): Cenario {
     const trancado = s.chance(0.04)
     const entrouDepois = !trancado && s.chance(0.05) ? s.entre(1, Math.max(1, colunas.length - 1)) : 0
     const celulas: Celula[] = colunas.map((coluna, j) => {
+      // A precedência da página: as marcas da aula antes das do aluno.
+      if (coluna.marca === 'feriado' || coluna.marca === 'cancelada') return { tipo: 'bloqueada', motivo: coluna.marca }
       if (trancado) return { tipo: 'bloqueada', motivo: 'trancado' }
       if (j < entrouDepois) return { tipo: 'bloqueada', motivo: 'matriculadoDepois' }
-      if (coluna.marca === 'feriado' || coluna.marca === 'cancelada') return { tipo: 'bloqueada', motivo: coluna.marca }
       const lancada = coluna.marca === 'lancado' ? !s.chance(0.1) : s.chance(0.08)
       if (!lancada) return { tipo: 'vazia' }
       const maximo = coluna.maximo ?? 2
@@ -155,34 +156,61 @@ export function gerarCenario(semente: number): Cenario {
   }
 }
 
-const NOMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-const MOTIVOS = { trancado: 'Trancado', matriculadoDepois: 'Matriculado posteriormente', feriado: 'Feriado', cancelada: 'Aula cancelada' }
-const MARCAS = { lancado: 'Lançado', feriado: 'Feriado', cancelada: 'Cancelada' }
+const SEMANA = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MESES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-/** O bruto que o favorito extrairia da página que esta leitura descreve. */
+/** A data como o SIGAA a escreve, no formato do Java: `Tue Aug 11 00:00:00 BRT 2026`. */
+function dataDoJava(dia: string): string {
+  const d = new Date(`${dia}T12:00:00Z`)
+  return `${SEMANA[d.getUTCDay()]} ${MESES[d.getUTCMonth()]} ${String(d.getUTCDate()).padStart(2, '0')} 00:00:00 BRT ${d.getUTCFullYear()}`
+}
+
+/** O bruto que o favorito extrairia da página que esta leitura descreve (`docs/12`). */
 export function brutoDaLeitura(l: LeituraPlanilha): BrutoPlanilha {
-  const meses: BrutoPlanilha['meses'] = []
-  for (const c of l.colunas) {
-    const nome = NOMES[Number(c.dia.slice(5, 7)) - 1]
-    if (meses.at(-1)?.texto === nome) meses.at(-1)!.colunas += 1
-    else meses.push({ texto: nome, colunas: 1 })
-  }
+  const dm = (dia: string) => [String(Number(dia.slice(8))), String(Number(dia.slice(5, 7)))]
+  const auxAulas = l.colunas.map((c) =>
+    [
+      ...dm(c.dia),
+      String(c.maximo ?? 0),
+      dataDoJava(c.dia),
+      String(c.marca === 'lancado'),
+      String(c.marca === 'feriado'),
+      String(c.marca === 'cancelada'),
+      'false',
+      c.dia.slice(0, 4),
+      String(c.marca === 'suspensa'),
+    ].join(','),
+  )
+  const auxAlunos = l.linhas.flatMap((linha) =>
+    linha.celulas.map((celula, j) => {
+      const coluna = l.colunas[j]
+      const motivo = celula.tipo === 'bloqueada' ? celula.motivo : undefined
+      if (motivo === 'futura' || motivo === 'foraDoPeriodo') throw new Error('bloqueio de data vem das datas, não do registro')
+      return [
+        String(100001 + linha.indice),
+        linha.matricula,
+        `ALUNO ${linha.indice + 1} INVENTADO`,
+        ...dm(coluna.dia),
+        celula.tipo === 'lancada' ? String(celula.faltas) : 'null',
+        '0',
+        'false',
+        String(coluna.maximo ?? 0),
+        String(200001 + linha.indice),
+        dataDoJava(coluna.dia),
+        String(motivo === 'trancado'),
+        String(motivo === 'matriculadoDepois'),
+        'true',
+        String(motivo === 'bloqueado'),
+        'false',
+      ].join(',')
+    }),
+  )
+  const dias = l.colunas.map((c) => c.dia).sort()
   return {
-    rodape: `SIGAA | STI - v${l.versaoSigaa}`,
-    cabecalhoTurma: l.cabecalhoTurma,
-    meses,
-    dias: l.colunas.map((c) => ({
-      texto: String(Number(c.dia.slice(8))),
-      ...(c.maximo !== undefined && { maximoTexto: String(c.maximo) }),
-      ...(c.marca && { marcaTexto: MARCAS[c.marca] }),
-    })),
-    linhas: l.linhas.map((linha) => ({
-      matriculaTexto: linha.matricula,
-      celulas: linha.celulas.map((c) =>
-        c.tipo === 'bloqueada'
-          ? { valor: '', desabilitada: true, motivoTexto: MOTIVOS[c.motivo] }
-          : { valor: c.tipo === 'lancada' ? String(c.faltas) : '', desabilitada: false },
-      ),
-    })),
+    legenda: l.cabecalhoTurma,
+    periodo: { inicio: `${dias[0]} 00:00:00.0`, fim: `${dias.at(-1)} 00:00:00.0` },
+    auxAulas: auxAulas.join(';'),
+    auxAlunos: auxAlunos.join(';'),
+    versao: l.versaoSigaa,
   }
 }

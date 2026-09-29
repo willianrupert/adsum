@@ -7,42 +7,39 @@ import type { Instrucao } from '../nucleo/lancar/tipos.ts'
 import { aplicar, conferirContraBruto, desfazer, dicaDaCelula } from './aplicar.ts'
 
 const SEMENTES = Array.from({ length: 300 }, (_, i) => i + 1)
+/** Depois de todas as aulas dos cenários: nada é futuro. */
+const AGORA = new Date('2026-12-20T12:00:00')
 
 function preparado(semente: number) {
   const c = gerarCenario(semente)
   const bruto = brutoDaLeitura(c.leitura)
   const r = conciliar({ leitura: c.leitura, turma: c.turma, matriculados: c.matriculados, eventos: c.eventos, ajustes: c.ajustes })
-  return { bruto, plano: planejar(r, []), pagina: new PaginaSigaaFalsa(bruto) }
+  return { bruto, leitura: c.leitura, plano: planejar(r, []), pagina: new PaginaSigaaFalsa(bruto) }
 }
 
 describe('o favorito confere o plano contra o que ele mesmo leu', () => {
   it('aceita todo plano que o Adsum faz de uma conciliação', () => {
     for (const s of SEMENTES) {
       const { bruto, plano } = preparado(s)
-      expect(conferirContraBruto(plano, bruto), `semente ${s}`).toMatchObject({ ok: true })
+      expect(conferirContraBruto(plano, bruto, AGORA), `semente ${s}`).toMatchObject({ ok: true })
     }
   })
 
   it('recusa o plano inteiro se uma instrução aponta para célula lançada, bloqueada, fora da faixa ou sem máximo', () => {
     for (const s of SEMENTES) {
-      const { bruto, plano } = preparado(s)
+      const { bruto, plano, leitura } = preparado(s)
       const sorte = sorteador(s)
       const ruins: Instrucao[] = []
-      bruto.linhas.forEach((l, i) =>
+      for (const l of leitura.linhas) {
         l.celulas.forEach((c, j) => {
-          if (c.valor.trim() !== '' || c.desabilitada) ruins.push({ linha: i, coluna: j, antes: 'vazia', valor: 0 })
-        }),
-      )
-      bruto.dias.forEach((d, j) => {
-        const maximo = Number(d.maximoTexto)
-        const vazia = bruto.linhas.findIndex((l) => l.celulas[j].valor === '' && !l.celulas[j].desabilitada)
-        if (vazia < 0) return
-        if (d.maximoTexto === undefined) ruins.push({ linha: vazia, coluna: j, antes: 'vazia', valor: 0 })
-        else ruins.push({ linha: vazia, coluna: j, antes: 'vazia', valor: maximo + 1 })
-      })
+          if (c.tipo !== 'vazia') ruins.push({ linha: l.indice, coluna: j, antes: 'vazia', valor: 0 })
+          else if (leitura.colunas[j].maximo === undefined) ruins.push({ linha: l.indice, coluna: j, antes: 'vazia', valor: 0 })
+          else ruins.push({ linha: l.indice, coluna: j, antes: 'vazia', valor: leitura.colunas[j].maximo! + 1 })
+        })
+      }
       if (ruins.length === 0) continue
       const ruim = ruins[sorte.entre(0, ruins.length - 1)]
-      expect(conferirContraBruto([...plano, ruim], bruto), `semente ${s}`).toMatchObject({ ok: false })
+      expect(conferirContraBruto([...plano, ruim], bruto, AGORA), `semente ${s}`).toMatchObject({ ok: false })
     }
   })
 })

@@ -44,7 +44,19 @@ function planilhaVazia(): BrutoPlanilha {
 /** A planilha depois do Gravar: o que está nas células vira o lançado. */
 function depoisDoGravar(pagina: PaginaSigaaFalsa): BrutoPlanilha {
   const b = structuredClone(pagina.bruto!)
-  b.linhas.forEach((l, i) => l.celulas.forEach((c, j) => (c.valor = pagina.valores[i][j])))
+  const coluna = new Map<string, number>()
+  b.auxAlunos = b.auxAlunos
+    .split(';')
+    .map((r) => {
+      const campos = r.split(',')
+      const i = pagina.ids.indexOf(campos[0])
+      const j = coluna.get(campos[0]) ?? 0
+      coluna.set(campos[0], j + 1)
+      const texto = pagina.valores[i][j]
+      if (texto !== 'T') campos[5] = texto === '' ? 'null' : texto
+      return campos.join(',')
+    })
+    .join(';')
   return b
 }
 
@@ -104,8 +116,9 @@ describe('lançar no SIGAA, de ponta a ponta, sobre o cofre de 22/09', () => {
       repositorio.listarAulas(),
     ])
     const v1 = planilhaDeFaltas(eventos, matriculados, aulas, TURMA)
-    pagina.bruto!.linhas.forEach((l, i) => {
-      const porDia = v1.linhas.find((x) => x.matriculado.matricula === l.matriculaTexto)!.porDia
+    const matriculaDe = new Map(pagina.bruto!.auxAlunos.split(';').map((r) => [r.split(',')[0], r.split(',')[1]]))
+    pagina.ids.forEach((id, i) => {
+      const porDia = v1.linhas.find((x) => x.matriculado.matricula === matriculaDe.get(id))!.porDia
       expect(pagina.valores[i][0]).toBe(String(porDia.get(DIAS[0])!.faltas))
       expect(pagina.valores[i][1]).toBe(String(porDia.get(DIAS[1])!.faltas))
       expect(pagina.valores[i][2]).toBe('')
@@ -113,9 +126,8 @@ describe('lançar no SIGAA, de ponta a ponta, sobre o cofre de 22/09', () => {
 
     // 2. O professor grava, e muda uma célula à mão antes: a conferência mostra a diferença.
     const gravada = new PaginaSigaaFalsa(depoisDoGravar(pagina))
-    const alguem = gravada.bruto!.linhas.findIndex((_, i) => gravada.valores[i][0] === '0')
-    gravada.bruto!.linhas[alguem].celulas[0].valor = '2'
-    gravada.valores[alguem][0] = '2'
+    const alguem = gravada.valores.findIndex((v) => v[0] === '0')
+    gravada.digitar(alguem, 0, '2')
     clicarNoFavorito(repositorio, gravada)
     expect(await screen.findByRole('heading', { name: '1 diferença para olhar' })).toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: 'Aceitar o SIGAA' }))
@@ -128,7 +140,7 @@ describe('lançar no SIGAA, de ponta a ponta, sobre o cofre de 22/09', () => {
     await conferirAuditoriaSigaa(repositorio, pasta.handle)
     await repositorio.esvaziarCache()
     await restaurar(repositorio, pasta.handle)
-    clicarNoFavorito(repositorio, new PaginaSigaaFalsa(structuredClone(gravada.bruto!)))
+    clicarNoFavorito(repositorio, new PaginaSigaaFalsa(depoisDoGravar(gravada)))
     expect(await screen.findByRole('heading', { name: 'Tudo confere' })).toBeInTheDocument()
 
     const auditoria = await repositorio.listarAuditoriaSigaa(TURMA)

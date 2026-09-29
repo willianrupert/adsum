@@ -20,7 +20,20 @@ export function comoDia(texto: string): Dia | undefined {
     : undefined
 }
 
-export type MotivoDeBloqueio = 'trancado' | 'matriculadoDepois' | 'feriado' | 'cancelada'
+/**
+ * Por que a página não aceita valor na célula. Os quatro últimos vieram da
+ * planilha real (`docs/12`): aula suspensa, aluno bloqueado, e as travas da
+ * própria página contra data futura e fora do período letivo.
+ */
+export type MotivoDeBloqueio =
+  | 'trancado'
+  | 'matriculadoDepois'
+  | 'feriado'
+  | 'cancelada'
+  | 'suspensa'
+  | 'bloqueado'
+  | 'futura'
+  | 'foraDoPeriodo'
 
 export type Celula =
   | { tipo: 'vazia' }
@@ -32,7 +45,7 @@ export interface ColunaDia {
   dia: Dia
   /** Faltas de quem não veio. Sem ele, o dia não é preenchido: nunca se adivinha. */
   maximo?: number
-  marca?: 'lancado' | 'feriado' | 'cancelada'
+  marca?: 'lancado' | 'feriado' | 'cancelada' | 'suspensa'
 }
 
 export interface LinhaAluno {
@@ -111,7 +124,7 @@ export type Categoria = Conciliada['categoria']
 /** Chamada do Adsum que não tem onde entrar na página. */
 export interface SemOndeLancar {
   dia: Dia
-  motivo: 'semColuna' | 'feriado' | 'cancelada'
+  motivo: 'semColuna' | 'feriado' | 'cancelada' | 'suspensa' | 'foraDoPeriodo'
 }
 
 export interface Relatorio {

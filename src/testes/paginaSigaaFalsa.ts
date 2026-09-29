@@ -1,12 +1,15 @@
-// A planilha do SIGAA em memória, para testar o favorito sem o HTML real.
-// Guarda o que foi escrito, pintado e mostrado, e deixa o teste mexer numa
-// célula "à mão" entre a leitura e o preenchimento.
+// A planilha do SIGAA em memória, para testar o favorito sem a página real.
+// Parte do mesmo bruto que o favorito extrai (`docs/12`): uma grade de textos
+// por aluno e aula, com `T` no trancado, como a página desenha. Guarda o que
+// foi escrito, pintado e mostrado, e deixa o teste mexer numa célula "à mão".
 
 import type { PaginaDePlanilha } from '../favorito/pagina.ts'
 import type { BrutoPlanilha } from '../nucleo/lancar/leitura.ts'
 
 export class PaginaSigaaFalsa implements PaginaDePlanilha {
   readonly bruto: BrutoPlanilha | undefined
+  /** `ID_MAT` de cada linha, na ordem da página. */
+  readonly ids: string[]
   readonly valores: string[][]
   readonly pinturas = new Map<string, { marca?: 'mudou'; dica?: string }>()
   barra?: { texto: string; aoDesfazer?: () => void }
@@ -14,11 +17,19 @@ export class PaginaSigaaFalsa implements PaginaDePlanilha {
 
   constructor(bruto: BrutoPlanilha | undefined) {
     this.bruto = bruto
-    this.valores = bruto?.linhas.map((l) => l.celulas.map((c) => c.valor)) ?? []
+    const porAluno = new Map<string, string[]>()
+    for (const r of bruto?.auxAlunos.split(';').map((x) => x.split(',')) ?? []) {
+      const texto = r[11] === 'true' ? 'T' : r[5] === 'null' ? '' : r[5]
+      porAluno.set(r[0], [...(porAluno.get(r[0]) ?? []), texto])
+    }
+    this.ids = [...porAluno.keys()]
+    this.valores = [...porAluno.values()]
   }
 
+  /** O bruto com o texto atual das células, como o favorito de verdade extrai. */
   extrair(): BrutoPlanilha | undefined {
-    return this.bruto && structuredClone(this.bruto)
+    if (!this.bruto) return undefined
+    return { ...structuredClone(this.bruto), textos: Object.fromEntries(this.ids.map((id, i) => [id, [...this.valores[i]]])) }
   }
 
   valor(linha: number, coluna: number): string | undefined {

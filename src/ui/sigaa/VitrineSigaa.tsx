@@ -18,22 +18,32 @@ const ALUNOS = [
   ['20269000004', 'Enzo Barreto'],
 ] as const
 
-/** Terça sem nada lançado (Débora faltou); quinta lançada, com o Caio diferente do Adsum. */
+/** Depois das duas aulas inventadas: nada delas é futuro para a planilha. */
+const AGORA = () => new Date('2026-10-20T12:00:00')
+const DIAS = [
+  { dia: 13, data: 'Tue Oct 13 00:00:00 BRT 2026' },
+  { dia: 15, data: 'Thu Oct 15 00:00:00 BRT 2026' },
+]
+
+/**
+ * A planilha como o SIGAA a guarda (`docs/12`): terça sem nada lançado (Débora
+ * faltou); quinta lançada, com o Caio diferente do Adsum.
+ */
 function planilha(tudoIgual: boolean): BrutoPlanilha {
   const terca = ['0', '0', '2', '0']
   const quinta = ['0', tudoIgual ? '0' : '2', '0', '0']
+  const auxAulas = DIAS.map(({ dia, data }, j) => [dia, 10, 2, data, j === 1 || tudoIgual, false, false, false, 2026, false].join(','))
+  const auxAlunos = ALUNOS.flatMap(([matricula], i) =>
+    DIAS.map(({ dia, data }, j) => {
+      const faltas = j === 0 ? (tudoIgual ? terca[i] : 'null') : quinta[i]
+      return [900001 + i, matricula, 'ALUNO INVENTADO', dia, 10, faltas, 0, false, 2, 800001 + i, data, false, false, true, false, false].join(',')
+    }),
+  )
   return {
-    rodape: 'SIGAA | STI - v4.15.0.206',
-    cabecalhoTurma: 'IF685 - DISCIPLINA INVENTADA - Turma: 01 (2026.2)',
-    meses: [{ texto: 'Outubro', colunas: 2 }],
-    dias: [{ texto: '13', maximoTexto: '2' }, { texto: '15', maximoTexto: '2', marcaTexto: 'Lançado' }],
-    linhas: ALUNOS.map(([matricula], i) => ({
-      matriculaTexto: matricula,
-      celulas: [
-        { valor: tudoIgual ? terca[i] : '', desabilitada: false },
-        { valor: quinta[i], desabilitada: false },
-      ],
-    })),
+    legenda: 'IF685 - DISCIPLINA INVENTADA (60h) - Turma: 01 (2026.2)',
+    periodo: { inicio: '2026-08-10 00:00:00.0', fim: '2026-12-12 00:00:00.0' },
+    auxAulas: auxAulas.join(';'),
+    auxAlunos: auxAlunos.join(';'),
   }
 }
 
@@ -82,7 +92,7 @@ function Cena({ base, bruto, ligada = true }: { base: string; bruto?: BrutoPlani
   }, [pronta, bruto, base])
 
   if (!pronta || pronta.vez !== vez) return null
-  return <FolhaSigaa key={pronta.vez} repositorio={pronta.repositorio} ponte={pronta.ponte} fechar={() => setVez((v) => v + 1)} />
+  return <FolhaSigaa key={pronta.vez} repositorio={pronta.repositorio} ponte={pronta.ponte} fechar={() => setVez((v) => v + 1)} agora={AGORA} />
 }
 
 export function CenasDoSigaa({ embrulho: Embrulho }: { embrulho: (props: { titulo: string; quando: string; children: ReactNode }) => ReactNode }) {

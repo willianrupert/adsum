@@ -1,23 +1,28 @@
 // A leitura da planilha do SIGAA (`docs/08`, camada 1): bruto → `LeituraPlanilha`.
 //
-// O favorito só extrai textos da página; quem interpreta é o Adsum, para que
-// uma mudança do SIGAA se conserte com deploy, e não com favorito novo.
-// **O formato do bruto é provisório** até o portão A (o HTML real): o que
-// muda com ele é a extração, e a interpretação continua aqui.
+// O bruto é o modelo que a própria página guarda (`auxAulas`, `auxAlunos`, o
+// período letivo; ver `docs/12`), mais o texto atual de cada célula, porque o
+// professor pode ter clicado antes do favorito. As regras de bloqueio são as
+// da página: o que ela não deixa lançar, a leitura marca como bloqueado.
 //
-// Nunca lança, nunca descarta linha calada. Coluna que não resolve para uma
-// data única recusa a leitura inteira: data errada é falta no dia errado.
+// Nunca lança, nunca descarta linha calada. Registro fora do formato, aula
+// sem data única ou aluno com aulas faltando recusam a leitura inteira: data
+// errada é falta no dia errado.
 
 import { comoDia, type Celula, type ColunaDia, type Dia, type LeituraPlanilha, type LinhaAluno, type MotivoDeBloqueio } from './tipos.ts'
 
-/** Os textos da página, como o favorito os encontra. Provisório: ver o topo. */
+/** O que o favorito tira da página. Ver `docs/12_planilha_sigaa.md`. */
 export interface BrutoPlanilha {
-  rodape: string
-  cabecalhoTurma: string
-  /** O cabeçalho agrupado: cada mês cobre `colunas` dias, da esquerda para a direita. */
-  meses: { texto: string; colunas: number }[]
-  dias: { texto: string; maximoTexto?: string; marcaTexto?: string }[]
-  linhas: { matriculaTexto: string; celulas: { valor: string; desabilitada: boolean; motivoTexto?: string }[] }[]
+  /** O `<legend>` da turma: `CIN0114 - NOME (60h) - Turma: 01 (2026.2)`. */
+  legenda: string
+  /** `dataInicioPeriodoLetivo` e `dataFimPeriodoLetivo`, como a página escreve. */
+  periodo: { inicio: string; fim: string }
+  auxAulas: string
+  auxAlunos: string
+  /** Texto atual das células, por `ID_MAT` e posição da aula. Sem ele, vale o registro. */
+  textos?: Record<string, string[]>
+  /** A versão do SIGAA, se o favorito achar; a planilha não a mostra. */
+  versao?: string
 }
 
 export interface ProblemaDeLeitura {
@@ -31,38 +36,10 @@ export interface ResultadoDaLeitura {
   problemas: ProblemaDeLeitura[]
 }
 
-const MESES = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+// Posições dos campos, com os nomes que o próprio SIGAA dá (`docs/12`).
+const AULA = { DIA: 0, MES: 1, NUM_AULAS: 2, LANCADA: 4, FERIADO: 5, CANCELADA: 6, ANO: 8, SUSPENSA: 9, CAMPOS: 10 }
+const ALUNO = { ID_MAT: 0, MAT: 1, DIA: 3, MES: 4, NUM_FALTAS: 5, TRANCADO: 11, IMPOSSIBILITADO: 12, BLOQUEADO: 14, CAMPOS: 16 }
 
-const normalizar = (texto: string) =>
-  texto.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\./g, '').trim().toLowerCase()
-
-/** `Março`, `MAR`, `mar.` → 3. */
-function numeroDoMes(texto: string): number | undefined {
-  const t = normalizar(texto)
-  const i = MESES.findIndex((m) => m === t || m.slice(0, 3) === t)
-  return i >= 0 ? i + 1 : undefined
-}
-
-const inteiroNaoNegativo = (texto: string): number | undefined => (/^\d+$/.test(texto.trim()) ? Number(texto.trim()) : undefined)
-
-function motivoDoBloqueio(texto: string | undefined): MotivoDeBloqueio | undefined {
-  const t = normalizar(texto ?? '')
-  if (t.includes('tranc')) return 'trancado'
-  if (t.includes('posterior') || t.includes('depois')) return 'matriculadoDepois'
-  if (t.includes('feriado')) return 'feriado'
-  if (t.includes('cancel')) return 'cancelada'
-  return undefined
-}
-
-function marcaDaColuna(texto: string | undefined): ColunaDia['marca'] {
-  const t = normalizar(texto ?? '')
-  if (t.includes('feriado')) return 'feriado'
-  if (t.includes('cancel')) return 'cancelada'
-  if (t.includes('lancad')) return 'lancado'
-  return undefined
-}
-
-/** Recusa: a leitura inteira não serve. */
 class Recusa extends Error {
   readonly problema: ProblemaDeLeitura
   constructor(problema: ProblemaDeLeitura) {
@@ -76,92 +53,118 @@ const recusar = (onde: string, motivo: string, conteudo?: string): never => {
 }
 
 const texto = (v: unknown, onde: string): string => (typeof v === 'string' ? v : recusar(onde, 'formato desconhecido'))
-const lista = (v: unknown, onde: string): unknown[] => (Array.isArray(v) ? v : recusar(onde, 'formato desconhecido'))
-const registro = (v: unknown, onde: string): Record<string, unknown> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : recusar(onde, 'formato desconhecido')
+const registros = (v: unknown, onde: string, campos: number): string[][] => {
+  const itens = texto(v, onde).split(';').filter((r) => r !== '').map((r) => r.split(','))
+  if (itens.length === 0) recusar(onde, 'vazio')
+  itens.forEach((r, i) => r.length !== campos && recusar(`${onde}, item ${i + 1}`, `formato desconhecido: ${r.length} campos, esperado ${campos}`))
+  return itens
+}
 
-function colunasDe(b: Record<string, unknown>, avisos: ProblemaDeLeitura[]): ColunaDia[] {
-  const cabecalho = texto(b.cabecalhoTurma, 'cabeçalho')
-  const ano = /\((\d{4})\.[12]\)/.exec(cabecalho)?.[1] ?? recusar('cabeçalho', 'semestre ilegível', cabecalho)
+const inteiro = (t: string): number | undefined => (/^\d+$/.test(t.trim()) ? Number(t.trim()) : undefined)
+const doDia = (ano: string, mes: string, dia: string) => comoDia(`${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`)
 
-  const dias = lista(b.dias, 'dias').map((d, i) => registro(d, `coluna ${i + 1}`))
-  const mesDaColuna: number[] = []
-  for (const [i, bruto] of lista(b.meses, 'meses').entries()) {
-    const m = registro(bruto, `mês ${i + 1}`)
-    const nome = texto(m.texto, `mês ${i + 1}`)
-    const mes = numeroDoMes(nome) ?? recusar(`mês ${i + 1}`, 'mês desconhecido', nome)
-    const quantas = typeof m.colunas === 'number' && Number.isInteger(m.colunas) && m.colunas > 0 ? m.colunas : recusar(`mês ${i + 1}`, 'formato desconhecido')
-    for (let k = 0; k < quantas; k++) mesDaColuna.push(mes)
-  }
-  if (mesDaColuna.length !== dias.length) {
-    recusar('cabeçalho', `os meses cobrem ${mesDaColuna.length} colunas, e há ${dias.length} dias`)
-  }
+/** `2026-08-10 00:00:00.0` → o dia. */
+function diaDoPeriodo(v: unknown, onde: string): Dia {
+  const t = texto(v, onde)
+  return comoDia(t.slice(0, 10)) ?? recusar(onde, 'período letivo ilegível', t)
+}
 
+/** O dia de hoje no fuso de quem está na frente da página, como a trava da página compara. */
+const hojeLocal = (agora: Date): Dia =>
+  comoDia(`${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`)!
+
+function colunasDe(b: Record<string, unknown>, avisos: ProblemaDeLeitura[]) {
   const vistos = new Set<Dia>()
-  return dias.map((d, indice) => {
-    const onde = `coluna ${indice + 1}`
-    const diaTexto = texto(d.texto, onde)
-    const diaDoMes = inteiroNaoNegativo(diaTexto)
-    const dia =
-      (diaDoMes !== undefined && comoDia(`${ano}-${String(mesDaColuna[indice]).padStart(2, '0')}-${String(diaDoMes).padStart(2, '0')}`)) ||
-      recusar(onde, 'data ilegível', diaTexto)
+  return registros(b.auxAulas, 'aulas', AULA.CAMPOS).map((a, indice) => {
+    const onde = `aula ${indice + 1}`
+    const dia = doDia(a[AULA.ANO], a[AULA.MES], a[AULA.DIA]) ?? recusar(onde, 'data ilegível', `${a[AULA.DIA]}/${a[AULA.MES]}/${a[AULA.ANO]}`)
     if (vistos.has(dia)) recusar(onde, `data repetida: ${dia}`)
     vistos.add(dia)
-
     const coluna: ColunaDia = { indice, dia }
-    if (typeof d.maximoTexto === 'string' && d.maximoTexto.trim() !== '') {
-      const maximo = inteiroNaoNegativo(d.maximoTexto)
-      if (maximo !== undefined && maximo > 0) coluna.maximo = maximo
-      else avisos.push({ onde, conteudo: d.maximoTexto, motivo: 'máximo ilegível' })
-    }
-    const marca = marcaDaColuna(typeof d.marcaTexto === 'string' ? d.marcaTexto : undefined)
-    if (marca) coluna.marca = marca
+    const maximo = inteiro(a[AULA.NUM_AULAS])
+    if (maximo !== undefined && maximo > 0) coluna.maximo = maximo
+    else avisos.push({ onde, conteudo: a[AULA.NUM_AULAS], motivo: 'máximo ilegível' })
+    // A mesma ordem de precedência da página ao desenhar.
+    if (a[AULA.FERIADO] === 'true') coluna.marca = 'feriado'
+    else if (a[AULA.CANCELADA] === 'true') coluna.marca = 'cancelada'
+    else if (a[AULA.SUSPENSA] === 'true') coluna.marca = 'suspensa'
+    else if (a[AULA.LANCADA] === 'true') coluna.marca = 'lancado'
     return coluna
   })
 }
 
-function celulaDe(bruta: unknown, coluna: ColunaDia, onde: string): Celula {
-  const c = registro(bruta, onde)
-  if (c.desabilitada === true) {
-    const doTexto = motivoDoBloqueio(typeof c.motivoTexto === 'string' ? c.motivoTexto : undefined)
-    const daColuna = coluna.marca === 'feriado' || coluna.marca === 'cancelada' ? coluna.marca : undefined
-    const motivo = doTexto ?? daColuna ?? recusar(onde, 'bloqueada por motivo desconhecido', String(c.motivoTexto ?? ''))
-    return { tipo: 'bloqueada', motivo }
-  }
-  const valor = texto(c.valor, onde)
-  if (valor.trim() === '') return { tipo: 'vazia' }
-  const faltas = inteiroNaoNegativo(valor) ?? recusar(onde, 'valor ilegível', valor)
-  return { tipo: 'lancada', faltas }
-}
-
-export function lerPlanilha(bruto: unknown, id: string): ResultadoDaLeitura {
+export function lerPlanilha(bruto: unknown, id: string, agora: Date = new Date()): ResultadoDaLeitura {
   const avisos: ProblemaDeLeitura[] = []
   try {
-    const b = registro(bruto, 'página')
+    if (typeof bruto !== 'object' || bruto === null || Array.isArray(bruto)) recusar('página', 'formato desconhecido')
+    const b = bruto as Record<string, unknown>
+    const legenda = texto(b.legenda, 'cabeçalho')
+    const periodo = (typeof b.periodo === 'object' && b.periodo !== null ? b.periodo : recusar('período', 'formato desconhecido')) as Record<string, unknown>
+    const inicio = diaDoPeriodo(periodo.inicio, 'período')
+    const fim = diaDoPeriodo(periodo.fim, 'período')
+    const hoje = hojeLocal(agora)
+    const textos = (typeof b.textos === 'object' && b.textos !== null ? b.textos : {}) as Record<string, unknown>
+
     const colunas = colunasDe(b, avisos)
+    const todos = registros(b.auxAlunos, 'alunos', ALUNO.CAMPOS)
+
+    // Os registros de um aluno vêm juntos e na ordem das aulas: é o que a coleta da página supõe.
+    const porAluno: string[][][] = []
+    for (const r of todos) {
+      const ultimo = porAluno.at(-1)
+      if (ultimo && ultimo[0][ALUNO.ID_MAT] === r[ALUNO.ID_MAT]) ultimo.push(r)
+      else porAluno.push([r])
+    }
+
     const vistas = new Set<string>()
     const linhas: LinhaAluno[] = []
-    for (const [indice, brutaLinha] of lista(b.linhas, 'linhas').entries()) {
-      const onde = `linha ${indice + 1}`
-      const l = registro(brutaLinha, onde)
-      const matriculaTexto = texto(l.matriculaTexto, onde)
-      const matricula = matriculaTexto.trim()
+    for (const [indice, regs] of porAluno.entries()) {
+      const onde = `aluno ${indice + 1}`
+      if (regs.length !== colunas.length) recusar(onde, `${regs.length} aulas, e a planilha tem ${colunas.length}`)
+      regs.forEach((r, j) => {
+        if (doDia(colunas[j].dia.slice(0, 4), r[ALUNO.MES], r[ALUNO.DIA]) !== colunas[j].dia) recusar(onde, 'registros fora da ordem das aulas')
+      })
+      const matricula = regs[0][ALUNO.MAT].trim()
       if (!/^\d{6,14}$/.test(matricula)) {
-        avisos.push({ onde, conteudo: matriculaTexto, motivo: 'matrícula ilegível' })
+        avisos.push({ onde, conteudo: regs[0][ALUNO.MAT], motivo: 'matrícula ilegível' })
         continue
       }
       if (vistas.has(matricula)) recusar(onde, 'matrícula repetida', matricula)
       vistas.add(matricula)
-      const celulas = lista(l.celulas, onde)
-      if (celulas.length !== colunas.length) recusar(onde, `${celulas.length} células para ${colunas.length} dias`)
-      linhas.push({ indice, matricula, celulas: celulas.map((c, j) => celulaDe(c, colunas[j], `${onde}, coluna ${j + 1}`)) })
+
+      const idNaPagina = regs[0][ALUNO.ID_MAT]
+      const textosDoAluno = Array.isArray(textos[idNaPagina]) ? (textos[idNaPagina] as unknown[]) : []
+      const celulas = regs.map((r, j): Celula => {
+        const coluna = colunas[j]
+        const bloqueio: MotivoDeBloqueio | undefined =
+          coluna.marca === 'feriado' || coluna.marca === 'cancelada' || coluna.marca === 'suspensa'
+            ? coluna.marca
+            : r[ALUNO.TRANCADO] === 'true'
+              ? 'trancado'
+              : r[ALUNO.IMPOSSIBILITADO] === 'true'
+                ? 'matriculadoDepois'
+                : r[ALUNO.BLOQUEADO] === 'true'
+                  ? 'bloqueado'
+                  : coluna.dia < inicio || coluna.dia > fim
+                    ? 'foraDoPeriodo'
+                    : coluna.dia > hoje
+                      ? 'futura'
+                      : undefined
+        if (bloqueio) return { tipo: 'bloqueada', motivo: bloqueio }
+        const atual = textosDoAluno[j]
+        const valor = typeof atual === 'string' ? atual : r[ALUNO.NUM_FALTAS] === 'null' ? '' : r[ALUNO.NUM_FALTAS]
+        if (valor.trim() === '') return { tipo: 'vazia' }
+        const faltas = inteiro(valor) ?? recusar(`${onde}, aula ${j + 1}`, 'valor ilegível', valor)
+        return { tipo: 'lancada', faltas }
+      })
+      linhas.push({ indice, matricula, celulas })
     }
-    const rodape = typeof b.rodape === 'string' ? b.rodape : ''
+
     return {
       leitura: {
         id,
-        versaoSigaa: /v?(\d+\.\d+\.\d+(?:\.\d+)?)/.exec(rodape)?.[1] ?? 'desconhecida',
-        cabecalhoTurma: texto(b.cabecalhoTurma, 'cabeçalho'),
+        versaoSigaa: typeof b.versao === 'string' && b.versao ? b.versao : 'desconhecida',
+        cabecalhoTurma: legenda,
         colunas,
         linhas,
       },
