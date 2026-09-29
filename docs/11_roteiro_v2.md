@@ -6,7 +6,7 @@ docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
 que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
 aos portões do `08`, §6.
 
-## Andamento: 100% da fase 1, 91% da fase 2
+## Andamento: 100% da fase 1, 100% da fase 2
 
 100% é tudo o que dá para construir e provar sem a página real. O que depende
 dela está no fim, fora da conta.
@@ -255,7 +255,7 @@ passo, passo pela metade conta zero.
 | 19 | Jornada sobre a fixture real | 10 | feito, 29/09 |
 | 20 | Portão B: as leis sobre a fixture real | 8 | feito, 29/09 |
 | 21 | Segunda turma e planilha depois do Gravar (captura e mensagem de sucesso) | — | fora, 29/09: sem captura |
-| 22 | Ensaio na bancada | 8 |  |
+| 22 | Ensaio na bancada | 8 | feito, 29/09 |
 
 ### 14 · Leitura real
 
@@ -388,6 +388,39 @@ nova: nada "a lançar" em aula já lançada. O plano passa no validador do Adsum
 no do favorito sobre o mesmo bruto. Uma mutação sobreviveu na primeira versão
 (ausência valendo sempre 2): a lei da faixa passou a exigir o máximo daquele
 dia, e a conferir que os dias de 4 e de 12 aulas aparecem.
+
+### 22 · Ensaio na bancada
+
+**Primeiro achado, 29/09:** no Chrome, o favorito disse "O plano do Adsum não
+confere com esta página". A planilha carrega Prototype 1.6 e Ext, que trocam
+`entries`, `Array.from`, `reduce` e dezenas de outros nativos (`docs/12`); a
+leitura usava `entries()` e desmontava cada aluno. O jsdom não carrega essas
+bibliotecas, e nenhum dos testes via isso. Conserto: o favorito roda num
+iframe vazio, com os nativos do navegador, e só toca a página pelo DOM; a
+mensagem do Adsum é copiada para dentro dele. Teste:
+`favorito/ambienteLimpo.test.ts`, o favorito montado numa página com as
+trocas medidas; sem o iframe, ele falha.
+
+**Segundo achado, no mesmo ensaio:** com o favorito no iframe, a janela do
+Adsum dizia "A planilha não respondeu". O navegador dá como remetente de um
+`postMessage` a janela de quem o chama, que passou a ser o iframe, e o Adsum
+só aceita a janela que o abriu. O carregador agora deixa no iframe uma função
+de envio criada na página, e a leitura sai por ela. O jsdom não preenche o
+remetente das mensagens; o teste confere que a função é da página, e o
+Chrome conferiu o resto.
+
+**O ensaio, 29/09, no Chrome, sobre a planilha real com os scripts do SIGAA:**
+a janela disse "3 aulas para lançar" (01/09, 03/09, 29/09) e "60 vazias em
+aulas já lançadas ficam de fora"; Preencher escreveu 135 células (107
+presentes, 28 faltas, os números da janela); Desfazer esvaziou as 135;
+preenchido de novo, o Gravar enviou exatamente 135 mudanças, de vazio para 0
+ou 2, só nessas três aulas; o favorito de novo disse "Tudo confere, SIGAA e
+Adsum iguais em 15 aulas". Não se esperou os 5 minutos do salvamento
+automático: ele chama a mesma coleta do Gravar (`docs/12`).
+
+Também do ensaio: com o Chrome em tela cheia no Mac, a janela do Adsum abre
+como aba. Funciona igual, sem a vista lado a lado; a página não tem como
+mudar isso.
 
 ### 21 · Fora da conta
 
