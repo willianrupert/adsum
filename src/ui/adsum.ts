@@ -17,7 +17,7 @@ import type { LeitorDeCracha } from '../portas/LeitorDeCracha.ts'
 import type { Repositorio } from '../portas/Repositorio.ts'
 import { modoDev } from '../ambiente/preferencias.ts'
 import { registrar } from '../ambiente/diario.ts'
-import { chamadaViva } from '../ambiente/chamadaViva.ts'
+import { chamadaViva, chamadaVivaEmOutraJanela } from '../ambiente/chamadaViva.ts'
 
 export interface OpcaoDeLeitor {
   id: string
@@ -125,6 +125,11 @@ export async function fecharChamadaDeAntes(repositorio: Repositorio): Promise<vo
   // Recarregar a mesma janela não é fechar o app. Ver `chamadaViva`.
   if (chamadaViva()) {
     registrar('chamada_mantida_ao_recarregar', { aberta_em: aberta.abertaEm })
+    return
+  }
+  // Outra janela do Adsum no meio da aula: a chamada é dela, não de antes.
+  if (await chamadaVivaEmOutraJanela()) {
+    registrar('chamada_mantida_em_outra_janela', { aberta_em: aberta.abertaEm })
     return
   }
   await repositorio.encerrarSessao()

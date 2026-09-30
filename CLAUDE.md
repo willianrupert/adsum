@@ -113,8 +113,9 @@ Específicas do app:
   inteiro de `abertaEm`: encerrar e reabrir continua de onde parou. Por isso
   **fechar o app fecha a chamada** (`fecharChamadaDeAntes`), e o repouso
   escolhe só a data, sem hora. **Recarregar a mesma janela não é fechar**
-  (`chamadaViva`, no `sessionStorage`), e a versão nova do app espera a
-  chamada terminar para entrar.
+  (`chamadaViva`, no `sessionStorage`), **nem abrir outra janela** (a trava
+  do navegador que a janela da chamada segura), e a versão nova do app
+  espera a chamada terminar para entrar.
 - **Evento novo só por `gravarEventoNovo`**, e o número vem de
   `reservarSequencia` (`Config.proximaSequencia`), que só anda para frente e
   é reservado em transação. Contar eventos para numerar foi o que fez dois

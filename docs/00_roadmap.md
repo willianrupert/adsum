@@ -228,9 +228,18 @@ e só depois de uma semana limpa ser lida:
   chamada que acabou de abrir.~~ Consertado em 30/09:** preparar marca a
   janela como a da chamada (`chamadaViva`) antes de recarregar
   (`ambiente/turmaDeTeste.test.ts`).
-- **Casos em aberto do ensaio:** segunda janela do Adsum com a chamada aberta,
-  e aluno de outra turma encostando o crachá. O comportamento de hoje ainda
-  não foi anotado.
+- **Casos em aberto do ensaio, anotados em 30/09** (`ui/CasosDoEnsaio.test.tsx`):
+  - *Segunda janela do Adsum com a chamada aberta:* fechava a chamada da
+    primeira na base, e a fila parava de contar no crachá seguinte.
+    **Consertado:** a janela com a chamada segura uma trava do navegador (Web
+    Locks), solta sozinha quando ela fecha; a janela nova vê a trava e não
+    fecha nada. Conferido no Chromium: outra aba vê a trava, e fechar ou
+    recarregar a solta. Sem Web Locks, vale o de antes.
+  - *Aluno de outra turma encostando o crachá:* conta presença na chamada
+    aberta, sem aviso, e aparece na lista pelo nome; o contador da tela conta
+    com ele. Não chega à planilha de faltas nem ao SIGAA, que saem da lista
+    de matriculados. Na turma dele, não conta. **Não decidido** se deve
+    avisar.
 - **~~Comentários que contavam história ou já não eram verdade.~~ Feito na
   branch (25/09)** no domínio, na sincronia e nas duas telas grandes. Onde
   "aparelho" e "firmware" sobram, falam do leitor ESP32, que existe. A
