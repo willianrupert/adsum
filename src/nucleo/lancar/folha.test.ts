@@ -185,3 +185,100 @@ describe('a chamada sem lugar no SIGAA', () => {
     expect(r.aulas[0].de).toEqual({ dia: SAB, rotulo: 'Sáb, 17/10' })
   })
 })
+
+// Achados pela mutação (`npm run test:mutacao`, 30/09/2026).
+describe('a folha: o que a mutação achou sem teste', () => {
+  const SEX = comoDia('2026-10-16')!
+  const SEG = comoDia('2026-10-19')!
+  const aLancar = (coluna: number, dia: typeof TER): Conciliada => ({ linha: 0, coluna, matricula: '1', dia, categoria: 'aLancar', esperado: 0 })
+  const comMaximos = (maximos: (number | undefined)[]) => {
+    const dias = [TER, QUI, SEX, SEG]
+    const colunas = maximos.map((maximo, indice) => ({ indice, dia: dias[indice], maximo }))
+    return resumoDaFolha({
+      relatorio: relatorio(colunas.map((c) => aLancar(c.indice, c.dia))),
+      leitura: { ...leitura(1), colunas, linhas: [{ indice: 0, matricula: '1', celulas: colunas.map(() => ({ tipo: 'vazia' as const })) }] },
+      matriculados: MATRICULADOS,
+      desmarcadas: [],
+    }).aulas.map((a) => a.aviso)
+  }
+  const aviso = (m: number) => `Dia de ${m} aulas: quem faltou leva ${m} faltas.`
+
+  it('o aviso vem do máximo mais comum, onde quer que ele apareça', () => {
+    expect(comMaximos([4, 2, 2])).toEqual([aviso(4), undefined, undefined])
+    expect(comMaximos([2, 4, 4])).toEqual([undefined, undefined, undefined])
+  })
+
+  it('no empate, o comum é o menor, mesmo vindo depois', () => {
+    expect(comMaximos([12, 2])).toEqual([aviso(12), undefined])
+  })
+
+  it('dia sem máximo não entra na conta do comum', () => {
+    expect(comMaximos([undefined, undefined, 2, 4])).toEqual([undefined, undefined, undefined, aviso(4)])
+  })
+
+  it('as aulas saem em ordem de data, não na ordem das células', () => {
+    const r = resumoDaFolha({
+      relatorio: relatorio([{ ...pos(0, QUI), categoria: 'aLancar', esperado: 0 }, { ...pos(0), categoria: 'aLancar', esperado: 0 }]),
+      leitura: leitura(1), matriculados: MATRICULADOS, desmarcadas: [],
+    })
+    expect(r.aulas.map((a) => a.dia)).toEqual([TER, QUI])
+  })
+
+  it('nada do Adsum na planilha: tudo confere, e a linha de apoio diz isso', () => {
+    const r = resumoDaFolha({ relatorio: relatorio([]), leitura: leitura(1), matriculados: MATRICULADOS, desmarcadas: [] })
+    expect(r.estado).toBe('tudoConfere')
+    expect(r.apoio).toBe('Nada do Adsum para lançar nesta planilha.')
+  })
+
+  it('os plurais dos títulos e das linhas de apoio', () => {
+    const confere = (linha: number, dia: typeof TER, ajustada: boolean): Conciliada => ({ ...pos(linha, dia), categoria: 'confere', valor: 0, ajustada })
+    expect(resumoDaFolha({ relatorio: relatorio([confere(0, TER, true), confere(1, TER, true)]), leitura: leitura(2), matriculados: MATRICULADOS, desmarcadas: [] }).apoio)
+      .toBe('SIGAA e Adsum iguais em 1 aula. 2 diferenças aceitas por você.')
+    const diverge = (linha: number): Conciliada => ({ ...pos(linha), categoria: 'diverge', sigaa: 2, esperado: 0 })
+    const duas = resumoDaFolha({ relatorio: relatorio([diverge(0), diverge(1)]), leitura: leitura(1), matriculados: MATRICULADOS, desmarcadas: [] })
+    expect(duas.titulo).toBe('2 diferenças para olhar')
+    expect(duas.apoio).toBe('CIN0144 · T01. Planilha lida agora, 1 aluno, todos pela matrícula.')
+    const SAB = comoDia('2026-10-17')!
+    const DOM = comoDia('2026-10-18')!
+    const semLugar = relatorio([], {
+      semOndeLancar: [{ dia: SAB, motivo: 'semColuna', presentes: 1, faltas: 0 }, { dia: DOM, motivo: 'semColuna', presentes: 1, faltas: 0 }],
+      aulasSemChamada: [TER],
+    })
+    expect(resumoDaFolha({ relatorio: semLugar, leitura: leitura(1), matriculados: MATRICULADOS, desmarcadas: [] }).titulo).toBe('2 chamadas sem lugar no SIGAA')
+  })
+
+  const deFora = (extra: Partial<Relatorio>, linhas: LeituraPlanilha['linhas'] = leitura(1).linhas) =>
+    resumoDaFolha({
+      relatorio: relatorio([{ ...pos(0), categoria: 'aLancar', esperado: 0 }], extra),
+      leitura: { ...leitura(1), linhas },
+      matriculados: MATRICULADOS,
+      desmarcadas: [],
+    }).informativos
+  const bloqueada = (indice: number, motivo: 'trancado' | 'matriculadoDepois' | 'bloqueado') => ({
+    indice, matricula: `b${indice}`, celulas: [{ tipo: 'bloqueada' as const, motivo }, { tipo: 'vazia' as const }],
+  })
+
+  it('cada motivo da linha do que fica de fora, no singular e no plural', () => {
+    expect(deFora({}, [bloqueada(0, 'trancado'), bloqueada(1, 'trancado'), bloqueada(2, 'bloqueado'), bloqueada(3, 'bloqueado')])).toBe('2 trancados e 2 bloqueados ficam de fora.')
+    expect(deFora({}, [bloqueada(0, 'matriculadoDepois')])).toBe('1 matriculado depois fica de fora.')
+    expect(deFora({}, [bloqueada(0, 'matriculadoDepois'), bloqueada(1, 'matriculadoDepois')])).toBe('2 matriculados depois ficam de fora.')
+    expect(deFora({ semParSigaa: ['8', '9'], semParAdsum: ['2', '3'] })).toBe('2 matrículas que não estão na turma e 2 alunos do Adsum que não estão na planilha ficam de fora.')
+    expect(deFora({ vaziasEmAulaLancada: [{ dia: TER, quantas: 1 }] })).toBe('1 vazia em aula já lançada fica de fora.')
+    expect(deFora({ semOndeLancar: [{ dia: comoDia('2026-10-08')!, motivo: 'cancelada', presentes: 0, faltas: 0 }] })).toBe('a aula cancelada de 08/10 fica de fora.')
+  })
+
+  it('"fica" só para um item no singular, mesmo quando o plural tem "a " no meio', () => {
+    expect(deFora({ semParSigaa: ['8', '9'] })).toBe('2 matrículas que não estão na turma ficam de fora.')
+  })
+
+  it('o aposto "fora do período letivo" perde a vírgula quando não é o último', () => {
+    expect(
+      deFora({
+        semOndeLancar: [
+          { dia: comoDia('2026-12-15')!, motivo: 'foraDoPeriodo', presentes: 0, faltas: 0 },
+          { dia: comoDia('2026-10-12')!, motivo: 'feriado', presentes: 0, faltas: 0 },
+        ],
+      }),
+    ).toBe('a chamada de 15/12, fora do período letivo e o feriado de 12/10 ficam de fora.')
+  })
+})

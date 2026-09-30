@@ -94,3 +94,39 @@ describe('a aula que mudou de data, na auditoria', () => {
     expect(problemas).toMatchObject([{ linha: 2, motivo: 'remanejo sem o dia da chamada' }])
   })
 })
+
+// Achados pela mutação (30/09/2026).
+describe('sigaa/<turma>.csv: o que a mutação achou sem teste', () => {
+  it('o campo sujo vira um espaço só, sem sobra nas pontas', () => {
+    expect(linhaDaAuditoria(linha({ versaoSigaa: ' 4;;15\r\n0 ' })).split(';')[2]).toBe('4 15 0')
+  })
+
+  it('espaços em volta dos campos, linha em branco e cabeçalho com espaço não viram problema', () => {
+    const texto = `${CABECALHO_DA_AUDITORIA} \n   \n${linhaDaAuditoria(linha()).split(';').map((c) => ` ${c} `).join(';')}\r\n`
+    expect(deCsvDaAuditoria(texto, TURMA)).toEqual({ itens: [linha()], problemas: [] })
+  })
+
+  it('aceite de dia com 12 aulas vale 12; valor com letra não é aceite', () => {
+    const aceite = (aplicado: string) => linhaDaAuditoria(linha({ acao: 'aceite', lido: '0', proposto: '0', aplicado }))
+    const { itens, problemas } = deCsvDaAuditoria(arquivo(aceite('12'), aceite('2a'), aceite('a2')), TURMA)
+    expect(itens.map((l) => l.aplicado)).toEqual(['12'])
+    expect(problemas.map((p) => [p.linha, p.motivo])).toEqual([[3, 'aceite sem o valor aceito'], [4, 'aceite sem o valor aceito']])
+    const soltas = ['12', '2a', 'a2'].map((aplicado) => linha({ acao: 'aceite', aplicado }))
+    expect(ajustesDaAuditoria(soltas).map((a) => a.valor)).toEqual([12])
+  })
+
+  it.each([
+    ['colunas a menos', '2026-10-20T13:00:00.000Z;preenchimento;4.15;2026-10-13;20260000001;;2', '7 colunas, esperado 8'],
+    ['data da ação ilegível', 'ontem;preenchimento;4.15;2026-10-13;20260000001;;2;2', '"ontem" não é uma data'],
+    ['dia da aula ilegível', '2026-10-20T13:00:00.000Z;preenchimento;4.15;13/10/2026;20260000001;;2;2', '"13/10/2026" não é um dia de aula'],
+    ['ação desconhecida', '2026-10-20T13:00:00.000Z;gravado;4.15;2026-10-13;20260000001;;2;2', 'ação desconhecida: "gravado"'],
+  ])('o motivo diz o que estava errado: %s', (_, ruim, motivo) => {
+    expect(deCsvDaAuditoria(arquivo(ruim), TURMA).problemas).toEqual([{ linha: 2, texto: ruim, motivo }])
+  })
+
+  it('só remanejo vira remanejo, entre linhas de outras ações', () => {
+    const remanejo = linha({ acao: 'remanejo', matricula: '', lido: '2026-10-15', proposto: '2026-10-13', aplicado: '2026-10-13' })
+    const outras = [linha(), linha({ acao: 'aceite', lido: '1', aplicado: '1' }), linha({ acao: 'conferencia', lido: '2026-10-15' })]
+    expect(remanejosDaAuditoria([...outras, remanejo])).toEqual([{ turma: TURMA, de: '2026-10-15', para: '2026-10-13', em: remanejo.quando }])
+  })
+})

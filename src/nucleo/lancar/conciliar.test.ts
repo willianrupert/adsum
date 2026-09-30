@@ -437,3 +437,58 @@ describe('conciliar: a aula que mudou de data', () => {
     expect(r.remanejadas).toEqual([])
   })
 })
+
+// Achados pela mutação (`npm run test:mutacao`, 30/09/2026): regras que os
+// testes acima atravessavam sem conferir.
+describe('conciliar e escolher a turma: o que a mutação achou sem teste', () => {
+  const QUI_REAL = '2026-10-15'
+  const remanejo = (de: string, para: string, em: string, turma = TURMA): RemanejoSigaa => ({ turma, de: comoDia(de)!, para: comoDia(para)!, em })
+  const comRemanejos = (remanejos: RemanejoSigaa[]) =>
+    conciliar({ leitura: leitura({ [ANA]: [V], [BRENO]: [V] }), turma: TURMA, matriculados: TURMA_TODA, eventos: log(abriu(QUI_REAL), cracha(QUI_REAL, ANA)), ajustes: [], remanejos })
+
+  it('o remanejo de outra turma não mexe nesta', () => {
+    expect(comRemanejos([remanejo(QUI_REAL, TER, '2026-10-16T10:00:00.000Z', 'CIN0144 · T02')]).remanejadas).toEqual([])
+  })
+
+  it('vale o remanejo mais novo pela hora, não pela ordem em que chegou', () => {
+    const novo = remanejo(QUI_REAL, QUI_REAL, '2026-10-17T10:00:00.000Z')
+    const velho = remanejo(QUI_REAL, TER, '2026-10-16T10:00:00.000Z')
+    expect(comRemanejos([novo, velho]).remanejadas).toEqual([])
+    expect(comRemanejos([velho, novo]).remanejadas).toEqual([])
+  })
+
+  it('duas chamadas para a mesma aula: a mais nova pela hora, mesmo chegando antes', () => {
+    const SAB = '2026-10-17'
+    const eventos = log(abriu(QUI_REAL), cracha(QUI_REAL, ANA), abriu(SAB), cracha(SAB, BRENO))
+    const r = conciliar({
+      leitura: leitura({ [ANA]: [V], [BRENO]: [V] }), turma: TURMA, matriculados: TURMA_TODA, eventos, ajustes: [],
+      remanejos: [remanejo(SAB, TER, '2026-10-18T10:00:00.000Z'), remanejo(QUI_REAL, TER, '2026-10-16T10:00:00.000Z')],
+    })
+    expect(r.remanejadas).toEqual([{ de: SAB, para: TER }])
+  })
+
+  it('coluna bloqueada por outro motivo não é "fora do período"', () => {
+    const trancados: Celula = { tipo: 'bloqueada', motivo: 'trancado' }
+    const r = conciliar({
+      leitura: leitura({ [ANA]: [trancados], [BRENO]: [trancados] }), turma: TURMA, matriculados: TURMA_TODA,
+      eventos: log(abriu(TER), cracha(TER, ANA)), ajustes: [],
+    })
+    expect(r.semOndeLancar.filter((s) => s.motivo === 'foraDoPeriodo')).toEqual([])
+  })
+
+  const CAB = 'CIN0144 - PROGRAMAÇÃO INVENTADA - Turma: 01 (2026.2)'
+  const pagina = (cabecalho: string, matriculas: string[]) => ({ ...leitura(Object.fromEntries(matriculas.map((m) => [m, [V]]))), cabecalhoTurma: cabecalho })
+
+  it('planilha sem aluno não escolhe turma nenhuma', () => {
+    expect(escolherTurma(pagina(CAB, []), TURMA_TODA)).toEqual({ recusa: 'nenhuma', candidatas: [] })
+  })
+
+  it('o código é o do começo do cabeçalho, não um que apareça no meio', () => {
+    expect(escolherTurma(pagina('Turma de CIN0144 - Turma: 01', [ANA, BRENO]), TURMA_TODA)).toEqual({ recusa: 'nenhuma', candidatas: [] })
+  })
+
+  it('o professor não conta para a turma cobrir a planilha', () => {
+    const soProfessor = [{ ...aluno(ANA, 'Ana Clara'), papel: 'professor' as const }, { ...aluno(BRENO, 'Breno Lima'), papel: 'professor' as const }]
+    expect(escolherTurma(pagina(CAB, [ANA, BRENO]), soProfessor)).toMatchObject({ recusa: 'nenhuma' })
+  })
+})

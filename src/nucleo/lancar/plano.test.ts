@@ -127,3 +127,13 @@ describe('as leis, agora sobre o plano, em 500 cenários', () => {
     }
   })
 })
+
+// Achado pela mutação (30/09/2026): o problema diz qual instrução, contando de 1.
+describe('o validador diz onde está o problema', () => {
+  it('o que não é lista, e a instrução pelo número', () => {
+    expect(validarPlano({ linha: 0 }, leitura)).toEqual({ ok: false, problemas: ['o plano não é uma lista'] })
+    const r = validarPlano([ok(1, 0, 2), null], leitura)
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.problemas).toEqual([expect.stringMatching(/^instrução 2: /)])
+  })
+})

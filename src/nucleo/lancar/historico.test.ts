@@ -42,3 +42,12 @@ describe('o histórico dos lançamentos', () => {
     expect(historicoDeLancamentos([])).toEqual([])
   })
 })
+
+// Achado pela mutação (30/09/2026): as aulas de um lançamento, em ordem de data.
+describe('o histórico: ordem das aulas', () => {
+  it('as aulas de um Preencher saem em ordem de data, não na do arquivo', () => {
+    const q = '2026-09-29T21:40:00.000Z'
+    const h = historicoDeLancamentos([linha('A', q, 'preenchimento', '2026-09-03', '1', '0'), linha('A', q, 'preenchimento', '2026-09-01', '1', '0')])
+    expect(h[0].dias).toEqual(['2026-09-01', '2026-09-03'])
+  })
+})

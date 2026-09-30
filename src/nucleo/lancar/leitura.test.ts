@@ -173,3 +173,23 @@ describe('ida e volta', () => {
     }
   })
 })
+
+// Achado pela mutação (30/09/2026): a tela mostra onde, conteúdo e motivo
+// (`CLAUDE.md`, "Leitura de CSV nunca descarta linha em silêncio"), e os
+// testes acima só conferiam um pedaço do texto. "Item 6" errado por um manda
+// o professor procurar no lugar errado.
+describe('lerPlanilha: o problema diz onde, o quê e por quê, exatamente', () => {
+  it.each<[string, (b: BrutoPlanilha) => BrutoPlanilha, object]>([
+    ['registro com campos a menos', (b) => ({ ...b, auxAlunos: b.auxAlunos.replace(/,false$/, '') }), { onde: 'alunos, item 6', motivo: 'formato desconhecido: 15 campos, esperado 16' }],
+    ['aula com campos a mais', (b) => ({ ...b, auxAulas: b.auxAulas.replace('20,10,2,', '20,10,2,x,') }), { onde: 'aulas, item 3', motivo: 'formato desconhecido: 11 campos, esperado 10' }],
+    ['dia que não existe', (b) => ({ ...b, auxAulas: b.auxAulas.replace('15,10,', '31,9,') }), { onde: 'aula 2', conteudo: '31/9/2026', motivo: 'data ilegível' }],
+    ['aluno com aulas a menos', (b) => ({ ...b, auxAlunos: b.auxAlunos.split(';').slice(0, 5).join(';') }), { onde: 'aluno 2', motivo: '2 aulas, e a planilha tem 3' }],
+    ['faltas que não são número', (b) => ({ ...b, auxAlunos: b.auxAlunos.replace(',15,10,null,', ',15,10,F,') }), { onde: 'aluno 1, aula 2', conteudo: 'F', motivo: 'valor ilegível' }],
+    ['período letivo ilegível', (b) => ({ ...b, periodo: { ...b.periodo, inicio: 'agosto' } }), { onde: 'período', conteudo: 'agosto', motivo: 'período letivo ilegível' }],
+    ['sem aula nenhuma', (b) => ({ ...b, auxAulas: '' }), { onde: 'aulas', motivo: 'vazio' }],
+    ['aulas que não são texto', (b) => ({ ...b, auxAulas: 3 as unknown as string }), { onde: 'aulas', motivo: 'formato desconhecido' }],
+    ['a página inteira que não é objeto', () => [] as unknown as BrutoPlanilha, { onde: 'página', motivo: 'formato desconhecido' }],
+  ])('%s', (_, estragar, problema) => {
+    expect(lerPlanilha(estragar(pequena()), 'l', FIM_DO_SEMESTRE)).toEqual({ problemas: [problema] })
+  })
+})

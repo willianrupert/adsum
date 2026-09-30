@@ -132,3 +132,22 @@ describe('as mensagens', () => {
     expect(structuredClone(lida)).toEqual(lida)
   })
 })
+
+// Achado pela mutação (30/09/2026): nenhuma destas formas chegava a ser testada.
+describe('Adsum → favorito: o que não tem forma de mensagem', () => {
+  const evento = (data: unknown) => ({ data, origin: ADSUM, source: adsum })
+  const esperado = { origemAdsum: ADSUM, aberta: adsum, id: 'l-1', validar: (p: unknown) => ({ ok: true as const, instrucoes: p as never[] }) }
+  const plano = mensagemDePlano('l-1', [])
+
+  it.each<[string, unknown]>([
+    ['nulo', null],
+    ['lista', [plano]],
+    ['texto', JSON.stringify(plano)],
+    ['outra versão', { ...plano, v: 99 }],
+    ['sem versão', { ...plano, v: undefined }],
+    ['id inválido', { ...plano, id: '' }],
+    ['"nada" de outra versão', { v: 99, tipo: 'nada', id: 'l-1' }],
+  ])('%s', (_, data) => {
+    expect(receberPlano(evento(data), esperado)).toEqual({ ok: false, motivo: 'formato' })
+  })
+})
