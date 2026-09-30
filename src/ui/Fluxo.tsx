@@ -186,6 +186,21 @@ export function Fluxo() {
     marcarVersaoDeNovidadeVista(atual.versao)
   }, [setNovidade])
 
+  // Recontar e regravar a pasta, uma execução por vez e coalescida: numa
+  // fila rápida, uma por crachá rodava em paralelo sobre os mesmos arquivos.
+  const aoMudar = useRef({ recontar, gravarNaPasta })
+  useEffect(() => {
+    aoMudar.current = { recontar, gravarNaPasta }
+  }, [recontar, gravarNaPasta])
+  const mudou = useMemo(
+    () =>
+      criarAgendador(async (turma) => {
+        await aoMudar.current.recontar()
+        await aoMudar.current.gravarNaPasta(turma)
+      }),
+    [],
+  )
+
   // Ligar a pasta: base vazia se restaura dela; base com dados recebe o que
   // só a pasta tem (`mesclarDaPasta`). A config é relida se o chaveiro de
   // sais mudou: a tela calcula o hash com ela (17/09/2026).
@@ -207,9 +222,11 @@ export function Fluxo() {
       // Só se mudou: reler troca a identidade de `recarregarConfig`, que
       // reroda este efeito, e reler sempre seria laço.
       if (saisConhecidos(await repositorio.lerConfig()).join() !== antes) await recarregarConfig()
-      await recontar()
+      // Regrava a pasta inteira uma vez: a versão nova muda a forma de um
+      // arquivo (a coluna `matricula` das faltas) sem pedir gesto ao professor.
+      await mudou()
     })
-  }, [pasta, repositorio, recontar, recarregarConfig, conferir])
+  }, [pasta, repositorio, mudou, recarregarConfig, conferir])
 
   /** Uma cópia do log da turma. Devolve como salvou: o Safari baixa sem diálogo. */
   const salvarCopia = useCallback(
@@ -226,21 +243,6 @@ export function Fluxo() {
       return como
     },
     [repositorio, recontar],
-  )
-
-  // Recontar e regravar a pasta, uma execução por vez e coalescida: numa
-  // fila rápida, uma por crachá rodava em paralelo sobre os mesmos arquivos.
-  const aoMudar = useRef({ recontar, gravarNaPasta })
-  useEffect(() => {
-    aoMudar.current = { recontar, gravarNaPasta }
-  }, [recontar, gravarNaPasta])
-  const mudou = useMemo(
-    () =>
-      criarAgendador(async (turma) => {
-        await aoMudar.current.recontar()
-        await aoMudar.current.gravarNaPasta(turma)
-      }),
-    [],
   )
 
   const avisar = useCallback((texto: string) => setAvisoLeitura(texto), [setAvisoLeitura])

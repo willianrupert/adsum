@@ -247,7 +247,10 @@ dongle, e nunca a menos de dois dias de uma aula. Em especial:
   rajada, menos linhas `pasta` que crachás (o recálculo coalesce), nenhum
   `erro_`, e os tempos por crachá.
 - **A planilha de faltas com a coluna `matricula`.** Muda o arquivo que o
-  Prof. Paulo entrega: combinar com ele antes.
+  Prof. Paulo entrega. Decidido pelo autor em 30/09: pode, desde que não peça
+  nada a ele além de abrir o Adsum. Ao ligar a pasta, o app regrava a pasta
+  inteira uma vez, e a planilha sai no formato novo sem crachá nem toque
+  (`ui/FaltasNaVersaoNova.test.tsx`, sobre o cofre de 22/09).
 - **O manual** (`docs/Adsum-manual-e-LGPD.docx`) chega ao professor pela
   `main`; a correção feita na branch só vale depois do merge.
 
