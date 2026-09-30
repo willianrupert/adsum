@@ -638,9 +638,10 @@ favorito não depende das telas).
    (`ADSUM_BANCADA`, padrão `../Adsum_bancada_sigaa`); sem ela, os testes se
    pulam, e por isso não rodam no CI. Mudança no favorito pede esse comando
    antes do commit, no lugar do ensaio à mão.
-6. **O esboço inteiro no estado atual.** Três telas do `docs/esboco_sigaa`
-   (`lancar`, `escolher`, `confere`) ainda têm textos anteriores ao código
-   (o topo com "Fechar", o cartão da diferença). Redesenhar e gerar de novo.
+6. **~~O esboço inteiro no estado atual.~~ Feito em 30/09:** as telas da
+   folha (`lancar`, `escolher`, `confere`, `recusa`, `pergunta`, `semlugar`)
+   com os textos e a forma do código. O script passou a fixar o tema claro:
+   antes, a imagem saía escura se rodasse com o sistema no escuro.
 
 Também anotado: o commit do passo 26 (`3eac19b`) saiu sem o estilo do
 cartão e sem a ligação no painel, que foram no do passo 27. O código final

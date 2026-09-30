@@ -2,7 +2,8 @@
 
 As telas da v2 (`docs/08_lancar_no_sigaa.md`). Esboço de 24/09/2026, feito
 antes do código; as telas da fase 3 (`docs/11`, passos 23 a 30) foram
-redesenhadas em 29/09 conforme implementadas. As telas de verdade, com gente
+redesenhadas em 29/09 conforme implementadas, e as da folha inteira em 30/09,
+com os textos do código (`ui/sigaa/FolhaDaTurma.tsx`). As telas de verdade, com gente
 inventada, estão na vitrine (`#/vitrine`, em desenvolvimento). É desenho, não captura: o desenho é
 [`esboco_sigaa/esboco.html`](esboco_sigaa/esboco.html), com os tokens do
 `estilo.css` e gente inventada, e as imagens saem dele por
@@ -10,7 +11,7 @@ inventada, estão na vitrine (`#/vitrine`, em desenvolvimento). É desenho, não
 script de novo.
 
 A regra que todas seguem: **a janela é o Adsum, não uma tela nova.** Mesma
-cor, mesma pílula, mesmo cartão com ícone à esquerda, nenhuma sombra nem
+cor, mesma pílula, mesmo cartão, nenhuma sombra nem
 borda separando conteúdo. O professor reconhece a janela antes de ler uma
 palavra.
 
@@ -31,16 +32,16 @@ O que o professor vê ao clicar no favorito na planilha do SIGAA.
 - **O título é o estado, numa frase.** A linha de apoio diz de onde veio a
   informação: planilha lida agora, todos pela matrícula.
 - **A diferença vem primeiro**, em laranja, porque é a única coisa que pede
-  julgamento. "O SIGAA fica como está." tira o medo antes de ele aparecer, e
+  julgamento: o nome, o dia e os dois valores, "No SIGAA, presente. No
+  Adsum, 2 faltas." "O SIGAA fica como está." tira o medo antes de ele aparecer, e
   "Aceitar o SIGAA" fica onde a decisão acontece.
-- **Cada aula é um cartão** com o círculo azul de incluir.
+- **Cada aula é um cartão** com a caixa azul de incluir.
 - **Uma ação só, que diz o que vai fazer**: "Preencher 3 aulas". Abaixo,
   quieto, "Agora não".
-- **A garantia sempre visível.** No esboço, "Nada é gravado aqui. Você
-  confere e grava no SIGAA." A planilha real salva sozinha a cada 5 minutos
-  (`docs/12`), e a frase passou a ser "Ao preencher, o SIGAA salva sozinho em
-  até 5 minutos." (29/09). O `esboco.html` já tem a frase nova; as imagens
-  saem de novo pelo `scripts/gerar_esboco_sigaa.py`.
+- **A garantia sempre visível.** No primeiro esboço, "Nada é gravado aqui.
+  Você confere e grava no SIGAA." A planilha real salva sozinha a cada 5
+  minutos (`docs/12`), e a frase passou a ser "Ao preencher, o SIGAA salva
+  sozinho em até 5 minutos." (29/09).
 - O que não pede atenção (trancados, feriado) cabe numa linha.
 
 ## 3. O professor escolhe
@@ -49,7 +50,8 @@ O que o professor vê ao clicar no favorito na planilha do SIGAA.
 
 A mesma janela depois de três gestos: a diferença foi aceita e virou uma
 linha quieta; a quinta-feira foi desmarcada e fica de fora; a terça foi
-aberta e mostra **quem faltou, pelo nome** — a prova por trás do número. O
+aberta e mostra **quem faltou, pelo nome**, um por linha: a prova por trás
+do número. O
 título e o botão acompanham: "2 aulas".
 
 ## 4. De volta à planilha
@@ -69,11 +71,10 @@ planilha volta.
 
 ## 5. Tudo confere
 
-![Janela com um visto grande e "Tudo confere"](esboco_sigaa/confere.png)
+![Janela dizendo "Tudo confere"](esboco_sigaa/confere.png)
 
-O favorito de novo, depois do Gravar. Seria esta tela a atualizar
-"Conferido até" no cartão da turma, que ainda não existe. O ajuste feito pelo professor aparece como fato,
-não como erro.
+O favorito de novo, depois do Gravar. Uma frase e um botão. A diferença que
+o professor aceitou aparece como fato na linha de apoio, não como erro.
 
 ## 6. Recusa
 

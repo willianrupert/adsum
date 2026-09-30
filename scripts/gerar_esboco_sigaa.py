@@ -75,6 +75,9 @@ def fotografar(exe: str, estado: str, largura: int, destino: Path) -> None:
                 exe, '--headless=new', '--disable-gpu', '--hide-scrollbars',
                 '--no-first-run', f'--user-data-dir={perfil}',
                 '--force-device-scale-factor=2', '--force-color-profile=srgb',
+                # Claro sempre: sem isto, o Chrome segue o tema do sistema, e a
+                # imagem muda conforme a hora em que o script roda.
+                '--blink-settings=preferredColorScheme=1',
                 f'--window-size={largura},1100',
                 f'--screenshot={destino}',
                 f'{DESENHO.as_uri()}#{estado}',

@@ -23,24 +23,23 @@ button{font:inherit;border:none;background:transparent;color:var(--ac);border-ra
 .luzes{display:flex;gap:7px}.luzes i{width:12px;height:12px;border-radius:50%;display:block}
 .endereco{flex:1;text-align:center;margin-right:40px}
 .corpo{padding:22px 22px 20px}
-.topo{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:var(--tf)}
-.topo button{color:var(--tf);padding:0;font-size:14px}
 h1{font-size:28px;font-weight:600;letter-spacing:-.6px;margin:4px 0 2px}
 .apoio{font-size:14px;color:var(--tf);margin:0 0 18px}
 .cartao{display:flex;align-items:center;gap:12px;background:var(--fa);border-radius:18px;padding:13px 15px}
-.icone{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;font-size:16px;font-weight:600}
 .lista{display:flex;flex-direction:column;gap:8px}
 .forte{font-size:16px;font-weight:600}
 .fraco{font-size:13px;color:var(--tf)}
-.marca{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;background:var(--ac);color:#fff;font-size:14px}
-.marca.fora{background:transparent;box-shadow:inset 0 0 0 1.5px var(--sep);color:transparent}
-.seta{color:var(--tf);font-size:14px}
 .acao{width:100%;background:var(--ac);color:#fff;padding:15px;font-size:17px;margin-top:18px}
 .quieto{width:100%;color:var(--tf);margin-top:4px;font-size:15px}
 .garantia{font-size:12px;color:var(--tf);text-align:center;margin-top:6px}
-.difer{background:var(--alf);flex-direction:column;align-items:stretch;gap:10px;margin-bottom:10px}
-.linha-dif{display:flex;align-items:center;gap:10px;background:var(--f);border-radius:12px;padding:10px 12px}
-.pilula{background:var(--fa);font-size:13px;padding:7px 12px;white-space:nowrap}
+.difer{display:flex;flex-direction:column;align-items:flex-start;gap:4px;background:var(--alf);border-radius:18px;padding:14px 16px;margin-bottom:10px}
+.aceitar{color:var(--al);padding:6px 0 0;font-size:15px}
+.aceita{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:14px;color:var(--tf)}
+.aceita button{color:var(--tf);padding:4px 10px}
+.caixa-marca{width:22px;height:22px;border-radius:5px;display:grid;place-items:center;flex-shrink:0;background:var(--ac);color:#fff;font-size:14px}
+.caixa-marca.fora{background:var(--f);box-shadow:inset 0 0 0 1.5px var(--sep)}
+.aula{flex-wrap:wrap}
+.ausentes{flex-basis:100%;margin:6px 0 0 34px;padding:0;list-style:none;font-size:14px;line-height:1.6}
 .centro{text-align:center}
 .planilha{width:720px;background:var(--f);border-radius:12px;overflow:hidden;box-shadow:0 0 0 .5px var(--sep)}
 .grade{display:grid;grid-template-columns:130px repeat(6,1fr);gap:4px;font-size:13px;text-align:center;padding:0 16px 12px}
@@ -80,17 +79,13 @@ h1{font-size:28px;font-weight:600;letter-spacing:-.6px;margin:4px 0 2px}
 <section class="estado" id="lancar"><div class="palco"><div class="janela">
   <div class="cromo"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="endereco">willianrupert.github.io</span></div>
   <div class="corpo">
-    <div class="topo"><span>ENG0101 · T01</span><button>Fechar</button></div>
     <h1>3 aulas para lançar</h1>
-    <p class="apoio">Planilha lida agora. 48 alunos, todos pela matrícula.</p>
-    <div class="cartao difer">
-      <div style="display:flex;gap:12px;align-items:center"><div class="icone" style="background:var(--f);color:var(--al)">!</div><div><div class="forte">1 diferença</div><div style="font-size:14px;color:var(--al)">O SIGAA fica como está.</div></div></div>
-      <div class="linha-dif"><div style="flex:1"><div style="font-size:15px">Clara Menezes · ter 07/10</div><div class="fraco">SIGAA: presente. Adsum: ausente.</div></div><button class="pilula">Aceitar o SIGAA</button></div>
-    </div>
+    <p class="apoio">ENG0101 · T01. Planilha lida agora, 48 alunos, todos pela matrícula.</p>
+    <div class="difer"><div class="forte">Clara Menezes</div><div style="font-size:15px">Ter, 07/10. No SIGAA, presente. No Adsum, 2 faltas.</div><div class="fraco">O SIGAA fica como está.</div><button class="aceitar">Aceitar o SIGAA</button></div>
     <div class="lista">
-      <div class="cartao"><span class="marca">✓</span><div style="flex:1"><div class="forte">Terça, 14 de outubro</div><div class="fraco">44 presentes, 4 faltas</div></div><span class="seta">⌄</span></div>
-      <div class="cartao"><span class="marca">✓</span><div style="flex:1"><div class="forte">Quinta, 16 de outubro</div><div class="fraco">46 presentes, 2 faltas</div></div><span class="seta">⌄</span></div>
-      <div class="cartao"><span class="marca">✓</span><div style="flex:1"><div class="forte">Terça, 21 de outubro</div><div class="fraco">45 presentes, 3 faltas</div></div><span class="seta">⌄</span></div>
+      <div class="cartao aula"><span class="caixa-marca">✓</span><div style="flex:1"><div class="forte">Ter, 14/10</div><div class="fraco">44 presentes, 4 faltas</div></div></div>
+      <div class="cartao aula"><span class="caixa-marca">✓</span><div style="flex:1"><div class="forte">Qui, 16/10</div><div class="fraco">46 presentes, 2 faltas</div></div></div>
+      <div class="cartao aula"><span class="caixa-marca">✓</span><div style="flex:1"><div class="forte">Ter, 21/10</div><div class="fraco">45 presentes, 3 faltas</div></div></div>
     </div>
     <div class="fraco" style="margin:12px 4px 0">2 trancados e o feriado de 12/10 ficam de fora.</div>
     <button class="acao">Preencher 3 aulas</button>
@@ -103,17 +98,13 @@ h1{font-size:28px;font-weight:600;letter-spacing:-.6px;margin:4px 0 2px}
 <section class="estado" id="escolher"><div class="palco"><div class="janela">
   <div class="cromo"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="endereco">willianrupert.github.io</span></div>
   <div class="corpo">
-    <div class="topo"><span>ENG0101 · T01</span><button>Fechar</button></div>
     <h1>2 aulas para lançar</h1>
-    <p class="apoio">Planilha lida agora. 48 alunos, todos pela matrícula.</p>
-    <div class="cartao" style="margin-bottom:10px"><div class="icone" style="background:var(--f);color:var(--tf)">✓</div><div><div style="font-size:15px">Diferença aceita</div><div class="fraco">Clara Menezes, 07/10, fica como no SIGAA.</div></div></div>
+    <p class="apoio">ENG0101 · T01. Planilha lida agora, 48 alunos, todos pela matrícula.</p>
+    <p class="aceita"><span>Clara Menezes, Ter, 07/10: fica como está no SIGAA.</span><button>Desfazer</button></p>
     <div class="lista">
-      <div class="cartao" style="flex-direction:column;align-items:stretch;gap:0">
-        <div style="display:flex;align-items:center;gap:12px"><span class="marca">✓</span><div style="flex:1"><div class="forte">Terça, 14 de outubro</div><div class="fraco">44 presentes, 4 faltas</div></div><span class="seta">⌃</span></div>
-        <div style="margin:10px 0 0 38px;font-size:14px;color:var(--tf);line-height:1.6">Faltaram: Rafael Tavares, Lívia Andrade, Otávio Lins e Bruna Castelo.</div>
-      </div>
-      <div class="cartao" style="opacity:.55"><span class="marca fora">✓</span><div style="flex:1"><div class="forte">Quinta, 16 de outubro</div><div class="fraco">46 presentes, 2 faltas</div></div><span class="seta">⌄</span></div>
-      <div class="cartao"><span class="marca">✓</span><div style="flex:1"><div class="forte">Terça, 21 de outubro</div><div class="fraco">45 presentes, 3 faltas</div></div><span class="seta">⌄</span></div>
+      <div class="cartao aula"><span class="caixa-marca">✓</span><div style="flex:1"><div class="forte">Ter, 14/10</div><div class="fraco">44 presentes, 4 faltas</div></div><ul class="ausentes"><li>Rafael Tavares, 2 faltas</li><li>Lívia Andrade, 2 faltas</li><li>Otávio Lins, 2 faltas</li><li>Bruna Castelo, 2 faltas</li></ul></div>
+      <div class="cartao aula"><span class="caixa-marca fora"></span><div style="flex:1"><div class="forte">Qui, 16/10</div><div class="fraco">46 presentes, 2 faltas</div></div></div>
+      <div class="cartao aula"><span class="caixa-marca">✓</span><div style="flex:1"><div class="forte">Ter, 21/10</div><div class="fraco">45 presentes, 3 faltas</div></div></div>
     </div>
     <div class="fraco" style="margin:12px 4px 0">2 trancados e o feriado de 12/10 ficam de fora.</div>
     <button class="acao">Preencher 2 aulas</button>
@@ -125,14 +116,10 @@ h1{font-size:28px;font-weight:600;letter-spacing:-.6px;margin:4px 0 2px}
 <!-- #confere — depois de gravar, o favorito de novo -->
 <section class="estado" id="confere"><div class="palco"><div class="janela">
   <div class="cromo"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="endereco">willianrupert.github.io</span></div>
-  <div class="corpo centro" style="padding-bottom:26px">
-    <div style="text-align:right"><button style="color:var(--tf);padding:0;font-size:14px">Fechar</button></div>
-    <div class="icone" style="width:64px;height:64px;font-size:30px;background:var(--acf);color:var(--ac);margin:18px auto 14px">✓</div>
+  <div class="corpo" style="padding-bottom:26px">
     <h1>Tudo confere</h1>
-    <p class="apoio" style="font-size:15px;margin:6px 0 22px">SIGAA e Adsum iguais em 12 aulas, até ter 21/10.</p>
-    <div class="cartao" style="text-align:left"><div class="icone" style="background:var(--f);color:var(--tf)">≈</div><div><div style="font-size:15px">1 célula ajustada por você</div><div class="fraco">Clara Menezes, 07/10, como no SIGAA.</div></div></div>
-    <button class="acao" style="margin-top:22px">Fechar</button>
-    <div class="garantia" style="margin-top:8px">Conferência registrada na pasta do Adsum.</div>
+    <p class="apoio">SIGAA e Adsum iguais em 12 aulas. 1 diferença aceita por você.</p>
+    <button class="acao" style="margin-top:6px">Fechar</button>
   </div>
 </div></div></section>
 
@@ -140,9 +127,8 @@ h1{font-size:28px;font-weight:600;letter-spacing:-.6px;margin:4px 0 2px}
 <section class="estado" id="recusa"><div class="palco"><div class="janela">
   <div class="cromo"><span class="luzes"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="endereco">willianrupert.github.io</span></div>
   <div class="corpo" style="padding-bottom:26px">
-    <div class="icone" style="width:56px;height:56px;font-size:26px;background:var(--alf);color:var(--al);margin:10px 0 14px">!</div>
     <h1 style="font-size:24px">Esta turma não está no Adsum</h1>
-    <p class="apoio" style="font-size:15px;line-height:1.47;margin:10px 0 0">Nenhuma turma do Adsum tem o código e as matrículas desta planilha.</p>
+    <p style="font-size:15px;line-height:1.47;margin:10px 0 0">Nenhuma turma do Adsum tem o código e as matrículas desta planilha.</p>
   </div>
 </div></div></section>
 
@@ -153,8 +139,8 @@ h1{font-size:28px;font-weight:600;letter-spacing:-.6px;margin:4px 0 2px}
     <h1 style="font-size:24px">Qual é a turma desta planilha?</h1>
     <p class="apoio">Mais de uma turma do Adsum tem as matrículas desta planilha.</p>
     <div class="lista">
-      <div class="cartao"><div class="forte" style="flex:1">2026.2 - ENG0101 - T01</div><span class="seta">›</span></div>
-      <div class="cartao"><div class="forte" style="flex:1">2026.2 - ENG0101 - T01 (cópia)</div><span class="seta">›</span></div>
+      <div class="cartao"><div class="forte" style="flex:1">2026.2 - ENG0101 - T01</div></div>
+      <div class="cartao"><div class="forte" style="flex:1">2026.2 - ENG0101 - T01 (cópia)</div></div>
     </div>
   </div>
 </div></div></section>
@@ -172,7 +158,7 @@ h1{font-size:28px;font-weight:600;letter-spacing:-.6px;margin:4px 0 2px}
       <div class="opcoes"><button>Qui, 16/10</button><button>Ter, 14/10</button><button>Qui, 09/10</button></div>
     </div>
     <div class="lista">
-      <div class="cartao"><span class="marca">✓</span><div style="flex:1"><div class="forte">Ter, 21/10</div><div class="fraco">46 presentes, 2 faltas</div></div><span class="seta">⌄</span></div>
+      <div class="cartao aula"><span class="caixa-marca">✓</span><div style="flex:1"><div class="forte">Ter, 21/10</div><div class="fraco">46 presentes, 2 faltas</div></div></div>
     </div>
     <button class="acao">Preencher 1 aula</button>
     <button class="quieto">Agora não</button>
