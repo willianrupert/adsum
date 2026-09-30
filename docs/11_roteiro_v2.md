@@ -614,15 +614,14 @@ favorito não depende das telas).
    autor: cadastro e faltas (`sincronia.ts`), log (`logDaPasta.ts`),
    auditoria do SIGAA (`auditoriaSigaaNaPasta.ts`) e a volta
    (`restauracao.ts`). Nenhuma função mudou.
-3. **Paralelizar a suíte.** Hoje roda em série (`fileParallelism: false`,
-   `vitest.config.ts`), uns 4 minutos. O motivo registrado ali: o
-   `vi.useFakeTimers` de um arquivo vazava para o relógio de outro rodando
-   junto. Caminho a investigar: isolamento por processo (`pool: 'forks'`),
-   ou só os arquivos que mexem no relógio em série, e os outros em paralelo.
-   Critério de pronto: a suíte cai bem de tempo e roda 20 vezes seguidas sem
-   um falso negativo. As leis sobre a planilha real (`leisReais.test.ts`)
-   sozinhas levam ~28 s; reduzir as 200 variações não é opção sem medir o
-   que cada uma pega.
+3. **~~Paralelizar a suíte.~~ Feito em 30/09:** um processo por arquivo
+   (`pool: 'forks'`) e os arquivos em paralelo, de ~270 s para ~65 s. O
+   critério foi cumprido na terceira tentativa: as duas primeiras acharam
+   três corridas que a série escondia, cada uma consertada antes de
+   recomeçar a contagem. Uma era do app (encerrar logo depois de abrir
+   perdia o nome de quem encerrou); duas eram de teste (a vitrine do SIGAA
+   e o painel de testes físicos conferiam cedo demais). Depois disso, 20
+   rodadas seguidas sem falha.
 4. **Automatizar as mutações.** Hoje a prova de que os testes pegam defeito é
    feita à mão, regra por regra (passos 23 e 30). Uma ferramenta de mutação
    (Stryker) sobre `nucleo/lancar/` rodando de vez em quando, não a cada

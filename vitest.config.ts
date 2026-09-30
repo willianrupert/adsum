@@ -13,11 +13,11 @@ export default defineConfig({
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'scripts/**/*.test.mjs'],
     setupFiles: ['./src/testes/preparo.ts'],
     restoreMocks: true,
-    // `vi.useFakeTimers` de um arquivo vazava pro relógio de outro rodando em
-    // paralelo — achado batendo cinquenta crachás em sequência, onde o
-    // primeiro toque falhava sempre que este arquivo corria junto com outro
-    // que também mexe no relógio. Suíte pequena: rodar em série não pesa —
-    // mediu mais rápido que em paralelo, e sem falso negativo.
-    fileParallelism: false,
+    // Um processo por arquivo (`forks`, o padrão), e os arquivos em paralelo:
+    // o relógio falso de um não alcança o de outro. Em 30/09/2026 a suíte
+    // caiu de ~270 s para ~65 s e rodou 20 vezes seguidas sem falso negativo.
+    // Antes rodava em série, por um vazamento de `vi.useFakeTimers` visto
+    // quando os arquivos dividiam processo (`docs/04_historico.md`).
+    pool: 'forks',
   },
 })
