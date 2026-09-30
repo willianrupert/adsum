@@ -141,11 +141,12 @@ describe('PainelDeTestesFisicos: turma de teste', () => {
 
     fireEvent.click(botao)
 
+    // A sessão abre por último, depois dos 12 vínculos: esperar só a turma
+    // conferia a sessão cedo demais (visto com a suíte em paralelo).
     await waitFor(async () => {
       expect(await b.repositorio.listarMatriculados(TURMA_DE_TESTE)).toHaveLength(12)
+      expect((await b.repositorio.sessaoAberta())?.turma).toBe(TURMA_DE_TESTE)
     })
-    const sessao = await b.repositorio.sessaoAberta()
-    expect(sessao?.turma).toBe(TURMA_DE_TESTE)
   })
 
   it('com uma chamada de verdade aberta, avisa e não oferece preparar', async () => {
