@@ -374,7 +374,10 @@ export function TelaAula({
     encerrando.current = true
     semDono('encerrar pelo botão', async () => {
       const agora = new Date()
-      const vinculo = vinculos.find((v) => v.uidHash === sessao.uidHashProfessor)
+      // Encerrar logo depois de abrir chega antes da lista da tela: a base
+      // responde, senão a linha do log sai sem o nome de quem encerrou.
+      const ehDoProfessor = (v: Vinculo) => v.uidHash === sessao.uidHashProfessor
+      const vinculo = vinculos.find(ehDoProfessor) ?? (await repositorio.listarVinculos()).find(ehDoProfessor)
       const evento = await gravarDecisao(repositorio, config.instalacaoId, { tipo: 'encerrar', vinculo }, {
         quando: agora,
         turma: sessao.turma,

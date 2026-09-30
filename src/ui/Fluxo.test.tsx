@@ -372,6 +372,28 @@ describe('abrir e encerrar sem crachá', () => {
     // precisar cruzar com vinculos.json pra ler o CSV bruto.
     expect(doProfessor.every((e) => e.nome === 'Ana Paula')).toBe(true)
   })
+
+  // A suíte em paralelo pegou isto: encerrar antes de a tela ter carregado os
+  // vínculos gravava a linha sem o nome. A base lenta aqui é a de verdade,
+  // atrasada, para o clique cair sempre nessa janela.
+  it('encerrar logo depois de abrir ainda diz quem foi', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+    await screen.findByText(/Começar a chamada/)
+
+    const listar = bancada.repositorio.listarVinculos.bind(bancada.repositorio)
+    bancada.repositorio.listarVinculos = async () => {
+      await new Promise((r) => setTimeout(r, 300))
+      return listar()
+    }
+    await usuario.click(screen.getByRole('button', { name: /Começar a chamada/ }))
+    await usuario.click(await screen.findByRole('button', { name: 'Encerrar a chamada' }, { timeout: 3000 }))
+
+    await waitFor(async () => expect(await bancada.repositorio.sessaoAberta()).toBeUndefined(), { timeout: 3000 })
+    const doProfessor = (await bancada.repositorio.listarEventos()).filter((e) => e.origem === 'professor')
+    expect(doProfessor.map((e) => e.nome)).toEqual(['Ana Paula', 'Ana Paula'])
+  })
 })
 
 // O fim da linha do "menos decisões": com o horário cadastrado, o professor
