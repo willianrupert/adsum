@@ -115,6 +115,14 @@ async function iniciar(pasta, porta) {
       res.writeHead(200, { 'Content-Type': 'text/javascript' })
       return res.end(favorito)
     }
+    // O teste em navegador (`e2e/`) volta a página ao que era a cada caso: o
+    // Gravar de um não pode virar o ponto de partida do outro.
+    if (req.method === 'POST' && url.pathname === '/bancada/reiniciar') {
+      estado.auxAlunos = dados('auxAlunos')
+      estado.registros = []
+      res.writeHead(204)
+      return res.end()
+    }
     if (url.pathname === '/bancada/registros') {
       res.writeHead(200, { 'Content-Type': 'application/json', ...cors })
       return res.end(JSON.stringify(estado.registros, null, 1))

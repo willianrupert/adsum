@@ -358,6 +358,8 @@ npm run dev
 ```
 
 e abrir http://localhost:8080 no Chrome e clicar em "Favorito (ensaio)".
+O mesmo ensaio, automático: `npm run test:navegador` (item 5 de "O que falta
+melhorar", abaixo).
 
 ### 19 · Jornada sobre a planilha real
 
@@ -623,11 +625,17 @@ favorito não depende das telas).
    feita à mão, regra por regra (passos 23 e 30). Uma ferramenta de mutação
    (Stryker) sobre `nucleo/lancar/` rodando de vez em quando, não a cada
    commit.
-5. **O que só o Chrome prova.** O Prototype do SIGAA trocando os nativos e o
-   remetente do `postMessage` escapam do jsdom (`favorito/ambienteLimpo.test.ts`
-   cobre o primeiro em parte). Enquanto não houver teste em navegador de
-   verdade (Playwright contra a bancada), mudança no favorito pede o ensaio
-   na bancada antes do commit.
+5. **~~O que só o Chrome prova.~~ Feito em 30/09:** `npm run
+   test:navegador` (Playwright, `e2e/bancada.spec.ts`) sobe a bancada e o
+   Adsum e faz no Chromium o que o ensaio fazia à mão: Preencher, Desfazer,
+   Preencher, Gravar, e o que chegou ao `form:frequencias` bate com o que a
+   folha prometeu; o salvamento automático (relógio adiantado 5 minutos); a
+   janela deixada aberta; e o Prototype trocando os nativos. Reintroduzidos
+   um por vez, os três defeitos de 29/09 (sem iframe, envio pelo iframe, sem
+   `?leitura=`) derrubam o teste. A página fica fora do repositório
+   (`ADSUM_BANCADA`, padrão `../Adsum_bancada_sigaa`); sem ela, os testes se
+   pulam, e por isso não rodam no CI. Mudança no favorito pede esse comando
+   antes do commit, no lugar do ensaio à mão.
 6. **O esboço inteiro no estado atual.** Três telas do `docs/esboco_sigaa`
    (`lancar`, `escolher`, `confere`) ainda têm textos anteriores ao código
    (o topo com "Fechar", o cartão da diferença). Redesenhar e gerar de novo.

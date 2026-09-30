@@ -30,3 +30,7 @@ dev-dist
 .venv-icone/
 __pycache__/
 prova-*.png
+
+# Playwright (`e2e/`)
+test-results/
+playwright-report/
