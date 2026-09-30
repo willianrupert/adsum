@@ -6,6 +6,7 @@ import { montarBancada, type Bancada } from '../testes/montar.tsx'
 import { prepararTurmaDeTeste, situacaoDaTurmaDeTeste } from './turmaDeTeste.ts'
 import { horariosAdiados } from './preferencias.ts'
 import { TURMA_DE_TESTE } from '../nucleo/suiteDeTestes.ts'
+import { fecharChamadaDeAntes } from '../ui/adsum.ts'
 
 let bancada: Bancada
 afterEach(async () => {
@@ -53,6 +54,17 @@ describe('prepararTurmaDeTeste', () => {
 
     const sessao = await bancada.repositorio.sessaoAberta()
     expect(sessao?.turma).toBe(TURMA_DE_TESTE)
+  })
+
+  // O painel recarrega a página depois de preparar, e abrir o app fecha a
+  // chamada de antes. Recarregar a mesma janela não é fechar (`chamadaViva`):
+  // sem a marca, a chamada recém-aberta fechava no mesmo instante.
+  it('a chamada aberta sobrevive ao recarregar que vem logo depois', async () => {
+    bancada = await montarBancada()
+    window.sessionStorage.clear()
+    await prepararTurmaDeTeste(bancada.repositorio, bancada.config)
+    await fecharChamadaDeAntes(bancada.repositorio)
+    expect((await bancada.repositorio.sessaoAberta())?.turma).toBe(TURMA_DE_TESTE)
   })
 
   // Achado ao vivo em 22/09/2026: sem isto, `decidirRota` pede o

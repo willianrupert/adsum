@@ -7,6 +7,7 @@
 // gravar o mesmo vínculo duas vezes é o mesmo vínculo.
 
 import { adiarHorario } from './preferencias.ts'
+import { marcarChamadaViva } from './chamadaViva.ts'
 import { calcularUidHash, idDoSal, uidHashSintetico } from '../nucleo/hash.ts'
 import { decimalParaBytes } from '../nucleo/digitacao.ts'
 import { matriculadosDeTeste, TURMA_DE_TESTE, uidCurtoDeTeste } from '../nucleo/suiteDeTestes.ts'
@@ -96,5 +97,8 @@ export async function prepararTurmaDeTeste(
       abertaEm: new Date().toISOString(),
       uidHashProfessor,
     })
+    // O painel recarrega a página em seguida, e abrir o app fecha a chamada
+    // de antes: esta janela precisa ser reconhecida como a que a abriu.
+    marcarChamadaViva(true)
   }
 }

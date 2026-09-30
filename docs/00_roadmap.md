@@ -224,8 +224,10 @@ e só depois de uma semana limpa ser lida:
   falta ensaio.** A causa era a lista da turma, cúbica por render, e o
   recálculo refeito por crachá. O teste de carga (`ui/Carga.test.tsx`) passou
   de não terminar em 180 s para 300 crachás em ~18 s. Ver `docs/10_codigo.md`.
-- **"Preparar turma de teste"** (Diagnóstico) reabre o app, e o app fecha a
-  chamada que acabou de abrir.
+- **~~"Preparar turma de teste" (Diagnóstico) reabre o app, e o app fecha a
+  chamada que acabou de abrir.~~ Consertado em 30/09:** preparar marca a
+  janela como a da chamada (`chamadaViva`) antes de recarregar
+  (`ambiente/turmaDeTeste.test.ts`).
 - **Casos em aberto do ensaio:** segunda janela do Adsum com a chamada aberta,
   e aluno de outra turma encostando o crachá. O comportamento de hoje ainda
   não foi anotado.
