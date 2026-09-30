@@ -31,7 +31,8 @@ import {
   registrarChamadaEncerrada,
   versaoDeNovidadeVista,
 } from '../ambiente/preferencias.ts'
-import { caminhoDosRegistros, mesclarDaPasta, restaurar } from '../ambiente/sincronia.ts'
+import { caminhoDosRegistros } from '../ambiente/sincronia.ts'
+import { mesclarDaPasta, restaurar } from '../ambiente/restauracao.ts'
 import { tocar } from '../ambiente/som.ts'
 import { nomeDoArquivo, paraCsv, porTurma } from '../nucleo/csv.ts'
 import { saisConhecidos } from '../nucleo/hash.ts'

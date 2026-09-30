@@ -5,7 +5,9 @@ import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts
 import { comoDia, type LinhaDeAuditoria } from '../nucleo/lancar/tipos.ts'
 import { criarPastaFalsa } from '../testes/pastaFalsa.ts'
 import { escrever, ler } from './pasta.ts'
-import { caminhoDaAuditoriaSigaa, conferirAuditoriaSigaa, restaurar, restaurarDeArquivos, sincronizar } from './sincronia.ts'
+import { caminhoDaAuditoriaSigaa, sincronizar } from './sincronia.ts'
+import { conferirAuditoriaSigaa } from './auditoriaSigaaNaPasta.ts'
+import { restaurar, restaurarDeArquivos } from './restauracao.ts'
 
 const TURMA = 'CIN0144 · T01'
 const TER = comoDia('2026-10-13')!

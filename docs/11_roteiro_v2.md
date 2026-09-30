@@ -606,12 +606,14 @@ arquivos, ~16.800 linhas de código e ~14.600 de teste; camadas conferidas
 (nenhuma tela importa adaptador, o núcleo não importa React nem Dexie, o
 favorito não depende das telas).
 
-1. **Separar `ui/sigaa/FolhaSigaa.tsx`** (406 linhas, quatro telas num
-   arquivo: recusa, pergunta da turma, folha da turma e a que escolhe entre
-   elas). Um arquivo por tela, sem mudar comportamento; os testes cobrem
+1. **~~Separar `ui/sigaa/FolhaSigaa.tsx`~~ Feito em 30/09** (406 linhas,
+   quatro telas num arquivo: recusa, pergunta da turma, folha da turma e a
+   que escolhe entre elas). Um arquivo por tela, sem mudar comportamento; os testes cobrem
    tudo. O único item que convém fazer antes de publicar.
-2. **Separar `ambiente/sincronia.ts`** (616 linhas). Já decidido: na próxima
-   mudança que tocar nele, não antes.
+2. **~~Separar `ambiente/sincronia.ts`~~ Feito em 30/09**, a pedido do
+   autor: cadastro e faltas (`sincronia.ts`), log (`logDaPasta.ts`),
+   auditoria do SIGAA (`auditoriaSigaaNaPasta.ts`) e a volta
+   (`restauracao.ts`). Nenhuma função mudou.
 3. **Paralelizar a suíte.** Hoje roda em série (`fileParallelism: false`,
    `vitest.config.ts`), uns 4 minutos. O motivo registrado ali: o
    `vi.useFakeTimers` de um arquivo vazava para o relógio de outro rodando

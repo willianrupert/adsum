@@ -189,6 +189,10 @@ grade (depois da turma, antes do leitor), leitor, chamada, repouso.
 
 - A pasta é a dona; a base é cache. Os caminhos de ida e volta, e por que cada
   um existe, estão em `docs/01_cofre.md`.
+- Quatro arquivos, um por sentido e por forma de gravar: `sincronia.ts`
+  escreve o que é reescrito inteiro (cadastro, faltas); `logDaPasta.ts` e
+  `auditoriaSigaaNaPasta.ts`, o que só cresce e é conferido nos dois
+  sentidos; `restauracao.ts`, a volta da pasta para a base.
 - O log só cresce (`acrescentar`); os JSON são reescritos inteiros. As duas
   operações andam em fila por arquivo.
 - `repararLog` reescreve o log e é só para conserto: no caminho normal, com a

@@ -3,7 +3,7 @@
 // arquivos já estão no disco.
 
 import { abrirTexto, salvarTexto } from '../../ambiente/arquivos.ts'
-import { importarEventos } from '../../ambiente/sincronia.ts'
+import { importarEventos } from '../../ambiente/logDaPasta.ts'
 import { deCsv, nomeDoArquivo, paraCsv, porTurma } from '../../nucleo/csv.ts'
 import { nomeDoArquivoDeFaltas, paraCsvDeFaltas, planilhaDeFaltas } from '../../nucleo/faltas.ts'
 import type { Aula, Matriculado } from '../../nucleo/tipos.ts'

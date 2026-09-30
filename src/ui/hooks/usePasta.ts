@@ -14,7 +14,9 @@ import {
   esquecerDispensaDaPasta,
   pastaDispensada,
 } from '../../ambiente/preferencias.ts'
-import { acrescentarNoLog, conferirAuditoriaSigaa, conferirLog, gravarFaltas, repararLog, sincronizar } from '../../ambiente/sincronia.ts'
+import { acrescentarNoLog, conferirLog, repararLog } from '../../ambiente/logDaPasta.ts'
+import { conferirAuditoriaSigaa } from '../../ambiente/auditoriaSigaaNaPasta.ts'
+import { gravarFaltas, sincronizar } from '../../ambiente/sincronia.ts'
 import type { EstadoDaPasta } from '../../nucleo/rota.ts'
 import type { Evento } from '../../nucleo/tipos.ts'
 import type { LeitorDeCracha } from '../../portas/LeitorDeCracha.ts'

@@ -6,7 +6,8 @@ import { describe, expect, it } from 'vitest'
 import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts'
 import { AULA_2209, pastaDoCofre } from '../testes/cofreDeTeste.ts'
 import { escrever } from './pasta.ts'
-import { gravarFaltas, restaurar, restaurarDeArquivos } from './sincronia.ts'
+import { gravarFaltas } from './sincronia.ts'
+import { restaurar, restaurarDeArquivos } from './restauracao.ts'
 
 interface No {
   arquivos: Map<string, string>

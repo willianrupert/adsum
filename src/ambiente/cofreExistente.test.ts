@@ -10,7 +10,9 @@ import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts
 import { planilhaDeFaltas } from '../nucleo/faltas.ts'
 import { AULA_2209, pastaDoCofre } from '../testes/cofreDeTeste.ts'
 import { escrever, ler } from './pasta.ts'
-import { caminhoDasFaltas, caminhoDosRegistros, conferirLog, gravarFaltas, restaurar } from './sincronia.ts'
+import { caminhoDasFaltas, caminhoDosRegistros, gravarFaltas } from './sincronia.ts'
+import { conferirLog } from './logDaPasta.ts'
+import { restaurar } from './restauracao.ts'
 
 const TURMAS = Object.keys(AULA_2209.turmas).sort()
 

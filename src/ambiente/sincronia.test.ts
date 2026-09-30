@@ -1,16 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { RepositorioDexie } from '../adaptadores/repositorio/RepositorioDexie.ts'
 import { criarPastaFalsa } from '../testes/pastaFalsa.ts'
-import {
-  acrescentarNoLog,
-  conferirLog,
-  mesclarDaPasta,
-  gravarFaltas,
-  repararLog,
-  restaurar,
-  restaurarDeArquivos,
-  sincronizar,
-} from './sincronia.ts'
+import { acrescentarNoLog, conferirLog, repararLog } from './logDaPasta.ts'
+import { mesclarDaPasta, restaurar, restaurarDeArquivos } from './restauracao.ts'
+import { gravarFaltas, sincronizar } from './sincronia.ts'
 import { calcularUidHash } from '../nucleo/hash.ts'
 import { hexParaUid } from '../nucleo/uid.ts'
 
