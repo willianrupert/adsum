@@ -151,7 +151,7 @@ test('do zero ao SIGAA: cadastro, três aulas com cada tipo de presença, e o la
   await test.step('outra turma, com um aluno que não é desta', async () => {
     await page.getByRole('button', { name: 'Cadastrar nova turma' }).click()
     await page.getByLabel('turma', { exact: true }).fill('2026.2 - CIN9999 - TURMA B')
-    await page.getByLabel('lista da turma').fill(paginaDeParticipantes(PROFESSORA, [{ matricula: '20269990001', nomeCompleto: 'XAVIER DE OUTRA TURMA' }]))
+    await page.getByLabel('lista da turma').fill(paginaDeParticipantes(PROFESSORA, [{ matricula: '20269990001', nomeCompleto: 'DAVI SOUZA COSTA' }]))
     await page.getByRole('button', { name: 'Continuar' }).click()
     await page.getByRole('button', { name: 'Depois' }).click()
     await abrirChamada(page, '2026.2 - CIN9999 - TURMA B')
@@ -160,7 +160,7 @@ test('do zero ao SIGAA: cadastro, três aulas com cada tipo de presença, e o la
     await page.getByRole('button', { name: 'Cadastrar', exact: true }).click()
     await encostar(page, UID.professora)
     await expect(page.getByText('1 de 1 com crachá')).toBeVisible()
-    await crachaNovoPelaBusca(page, UID.x, { matricula: '20269990001', nomeCompleto: 'XAVIER DE OUTRA TURMA' })
+    await crachaNovoPelaBusca(page, UID.x, { matricula: '20269990001', nomeCompleto: 'DAVI SOUZA COSTA' })
     await encerrar(page, 1)
   })
 
@@ -174,8 +174,8 @@ test('do zero ao SIGAA: cadastro, três aulas com cada tipo de presença, e o la
     await expect(page.getByText('Dois crachás quase juntos. O segundo não foi contado. Passe um de cada vez.')).toBeVisible()
     await page.waitForTimeout(600)
     await encostar(page, UID.x)
-    await expect(page.getByText('Xavier de Outra é da turma 2026.2 - CIN9999 - TURMA B, não desta. A presença não foi contada.')).toBeVisible()
-    await expect(page.getByText('Xavier de Outra, de outra turma')).toBeVisible()
+    await expect(page.getByText('Davi Souza é da turma 2026.2 - CIN9999 - TURMA B, não desta. A presença não foi contada.')).toBeVisible()
+    await expect(page.getByText('Davi Souza, de outra turma')).toBeVisible()
     await expect(page.getByText('Dois crachás de uma vez')).toBeVisible()
     await encerrar(page, 2)
   })
