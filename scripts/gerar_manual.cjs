@@ -155,7 +155,7 @@ const capa = [
     t('Centro de Informática — UFPE', { size: 22, color: FRACA }),
   ]}),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 700 }, children: [
-    t('Willian Neves Rupert Jones', { size: 20, color: FRACA }),
+    t('Criado por Prof. Paulo Freitas e Willian Rupert', { size: 20, color: FRACA }),
   ]}),
   destaque([
     p([t('Este documento serve a dois leitores. ', { bold: true }),
@@ -179,7 +179,7 @@ const corpo = [
   p('O nome vem do latim: adsum é o que se responde na chamada.'),
 
   h2('O que o Adsum não é'),
-  p('Não é um sistema institucional de frequência, não substitui o SIGAA e não conversa com ele. É uma ferramenta de sala de aula que produz uma planilha, e o que se faz com essa planilha continua sendo o processo de sempre.'),
+  p('Não é um sistema institucional de frequência e não substitui o SIGAA. É uma ferramenta de sala de aula que produz uma planilha. Há um caminho para levar essa planilha à frequência do SIGAA (seção 2.7), ainda em teste e desligado por padrão; nele, quem grava no SIGAA é sempre o professor.'),
 
   // ── 2 ─────────────────────────────────────────────────────────────
   h1('2. Como se usa', { pageBreakBefore: true }),
@@ -195,6 +195,7 @@ const corpo = [
   p(''),
 
   h2('2.1 Antes do primeiro dia'),
+  p([t('O leitor de crachá. ', { bold: true }), t('O Adsum precisa de um leitor de crachá USB de 13,56 MHz na mesa, ligado ao computador. Ele funciona como um teclado: liga na USB e lê, sem driver e sem instalação, no Mac, no Windows e no Linux. A primeira tela do Adsum mostra o leitor testado e recomendado, desenhado, e os Ajustes repetem a orientação em "O leitor de crachá". Durante a chamada, a janela do Adsum precisa estar na frente: o leitor digita onde estiver o cursor.')]),
   p([t('Escolher onde guardar. ', { bold: true }), t('Na primeira abertura, o programa pede uma pasta do computador. É onde tudo vai viver. Se essa pasta estiver dentro do iCloud Drive ou do Google Drive que o professor já usa, a cópia fora da máquina passa a existir sozinha, sem que o Adsum fale com servidor nenhum.')]),
   p([t('Colar a turma. ', { bold: true }), t('No SIGAA, abrir '), mono('Turma › Participantes'), t(' e copiar a página inteira (Ctrl+A, Ctrl+C). No Adsum, colar. Ele lê os nomes e as matrículas, separa docentes de discentes pelas seções da própria página, e confere o total contra os números que a página declara — se a página diz '), mono('Discentes (47)'), t(' e ele encontrou 46, ele avisa qual linha não entendeu, em vez de seguir calado.')]),
   p([t('Cadastrar a grade. ', { bold: true }), t('Dia da semana e horário de cada turma. É opcional, mas é o que faz o Adsum já mostrar a turma certa quando chega a hora da aula.')]),
@@ -210,6 +211,7 @@ const corpo = [
   p('A tela inicial já mostra a turma e a hora da chamada. Com a grade cadastrada, a turma sugerida é a que tem aula agora, marcada com um ponto azul; as setas trocam de turma. A chamada abre com um gesto do professor: Enter, o botão ou o crachá dele. Ela não abre sozinha, de propósito: a hora em que a aula de fato começa quase nunca é a da grade.'),
   p('Há uma chamada por turma por dia, como no SIGAA. Encerrar e reabrir continua de onde parou, com os mesmos presentes. Fechar o Adsum fecha a chamada; recarregar a página, não.'),
   p('Cada crachá encostado conta presença e mostra o nome. Encostar duas vezes não conta duas — a tela diz que já estava registrado. Um crachá que o programa não conhece abre uma busca por nome ali na hora, sobre a turma inteira: quem faltou no primeiro dia se cadastra no dia em que aparece, com a pessoa na frente, e quem perdeu o crachá e trouxe outro também. A busca atende um crachá por vez; um segundo crachá desconhecido espera, com aviso, e os crachás já conhecidos continuam contando. Quem está reconhecidamente faltando pode também ser chamado de propósito, do mesmo jeito do primeiro dia — inclusive semanas depois.'),
+  p([t('Aluno de outra turma. ', { bold: true }), t('Um crachá de aluno cadastrado em outra turma, encostado nesta chamada, não conta presença. A tela diz de qual turma ele é ("… é da turma X, não desta. A presença não foi contada."), e a linha fica no registro, com o motivo. Quem está matriculado nas duas turmas conta normalmente. O crachá de um professor não passa por essa regra: em qualquer turma ele é professor, e serve para abrir e encerrar a chamada, nunca para contar presença.')]),
   p('Dois crachás encostados quase juntos — menos de 400 milissegundos um do outro — não contam dois: o segundo é recusado, e a tela avisa "Dois crachás quase juntos". O limite existe contra passar dois cartões de uma vez, na pressa; ele não distingue fila apressada de má-fé, e não tenta — quem julga o que aconteceu é o professor, que está na sala. É um alarme, não uma trava: com os dois cartões encostados juntos por um ou dois segundos, o leitor alterna entre eles, e o segundo acaba contando numa das alternâncias (medido em 23/09/2026). O aviso é o que chega ao professor.'),
   p('A tela responde na hora, e o bipe vem depois de o registro estar salvo. Os dois sinais significam coisas diferentes de propósito: o olho precisa de resposta imediata para a fila não parecer travada, e o som significa está gravado — não eu ouvi.'),
 
@@ -222,6 +224,18 @@ const corpo = [
 
   h2('2.6 Mais de uma turma'),
   p('Uma segunda turma se cadastra pelo mesmo caminho do primeiro dia: "Cadastrar nova turma", na tela inicial. As setas da tela inicial passam por todas as turmas cadastradas, e a grade só sugere qual mostrar primeiro: se ela apontar duas turmas no mesmo horário, nenhuma ganha o ponto azul, e o professor escolhe.'),
+
+  h2('2.7 Lançar no SIGAA (em teste)'),
+  destaque([
+    p([t('Em teste, desligado por padrão. ', { bold: true }),
+       t('Este caminho está pronto e testado, mas ainda passa por semanas de uso só para conferência antes de preencher qualquer coisa na frequência de uma turma real. Ele nunca toca em senha: o professor entra no SIGAA como sempre.')],
+      { spacing: { after: 0 } }),
+  ]),
+  p(''),
+  p([t('O favorito. ', { bold: true }), t('Nos Ajustes há um botão "Adsum" para arrastar até a barra de favoritos do navegador. No SIGAA, na tela '), mono('Lançar Freq. em Planilha'), t(' da turma, um clique nesse favorito lê a planilha que está na tela e abre a janela do Adsum ao lado.')]),
+  p([t('A conferência. ', { bold: true }), t('A janela compara a planilha com as chamadas do Adsum, aluno por aluno, pela matrícula, e diz o estado numa frase: "Tudo confere", ou quantas aulas há para lançar, com presentes e faltas de cada uma. O que o SIGAA já tem nunca é alterado: aula já lançada é do professor. Onde o SIGAA e o Adsum discordam, um cartão fechado diz quantas diferenças são, de quantos alunos, em quantas aulas; aberto, mostra cada uma, e o professor pode aceitar o valor do SIGAA.')]),
+  p([t('Preencher. ', { bold: true }), t('Escolhidas as aulas, "Preencher" escreve as células vazias na planilha: presença vale 0, falta vale o número de aulas daquele dia (2, 4, 12). O que foi preenchido fica em azul, e as faltas em azul forte, para conferir de olho. Até a planilha salvar, dá para desfazer. Depois, quem grava é o SIGAA: sozinho, em até 5 minutos, ou no botão Gravar Frequências, que é do professor.')]),
+  p([t('Clicar no favorito de novo ', { bold: true }), t('depois de gravar é a conferência final: a janela deve dizer "Tudo confere". Cada preenchimento e cada diferença aceita ficam registrados na pasta, em '), mono('sigaa/<turma>.csv'), t('.')]),
 
   // ── 3 ─────────────────────────────────────────────────────────────
   h1('3. Onde os dados ficam', { pageBreakBefore: true }),
@@ -236,7 +250,8 @@ const corpo = [
       [[mono('grade.json')], 'Os horários de aula.'],
       [[mono('turmas/')], 'A lista de cada turma, como veio do SIGAA.'],
       [[mono('registros/')], 'A chamada, uma linha por presença, em CSV. Estes arquivos só crescem: nada é reescrito nem apagado.'],
-      [[mono('faltas/')], 'A planilha para entregar: aluno por linha, nome completo e matrícula, um dia de aula por coluna, faltas contadas. Recalculada a cada mudança a partir de registros/.'],
+      [[mono('faltas/')], 'A planilha para entregar: aluno por linha, nome completo e matrícula, um dia de aula por coluna, faltas contadas. Recalculada a cada mudança a partir de registros/. A coluna de matrícula aparece sozinha na primeira vez que a versão nova abre a pasta.'],
+      [[mono('sigaa/')], 'O registro do lançamento no SIGAA (seção 2.7): cada célula preenchida e cada diferença aceita, com data e hora. Só cresce.'],
       [[mono('diagnostico/')], 'O diário técnico, um arquivo por dia. Sem nome e sem número de crachá (seção 4.5).'],
       [[mono('auditoria/uids.csv')], 'O número de cada crachá já lido, enquanto a auditoria estiver ligada. É o arquivo mais sensível da pasta (seção 4.5).'],
     ],
@@ -284,14 +299,14 @@ const corpo = [
       [[mono('matricula')], 'Matrícula do aluno', 'É por ela que a chamada fecha na planilha.'],
       [[mono('nome')], 'Nome curto', 'Só para quem abrir o arquivo entender o que vê. Nenhum cálculo depende dele.'],
       [[mono('origem')], [mono('cracha, professor, manual')], 'Distingue presença lida de ação do professor.'],
-      [[mono('resultado')], [mono('ok, duplicado, desconhecido, rapido_demais, removido')], 'O que não foi aceito também é registrado, e por quê.'],
+      [[mono('resultado')], [mono('ok, duplicado, desconhecido, rapido_demais, removido, outra_turma')], 'O que não foi aceito também é registrado, e por quê.'],
       [[mono('uid_hash')], 'O resumo do crachá', 'Único jeito de resolver depois um crachá desconhecido.'],
     ],
     [1900, 2900, 4226],
   ),
   p(''),
   p('O arquivo nunca é reescrito: cada presença acrescenta uma linha. Corrigir um nome ou uma matrícula na base corrige as exportações seguintes sem alterar uma linha do que já foi registrado.'),
-  p([t('Dois valores de '), mono('resultado'), t(' são recentes, e os dois são a mesma disciplina: até o crachá sendo recusado, ou uma marcação sendo desfeita, vira linha — nunca silêncio. '), mono('rapido_demais'), t(' é o segundo de dois crachás quase juntos, recusado pela regra dos 400 milissegundos (seção 2.3). '), mono('removido'), t(' é o professor tirando à mão, na planilha, uma presença que não devia ter sido contada — a leitura original do crachá continua no arquivo, só deixa de valer como presença.')]),
+  p([t('Três valores de '), mono('resultado'), t(' são recentes, e os três são a mesma disciplina: até o crachá sendo recusado, ou uma marcação sendo desfeita, vira linha — nunca silêncio. '), mono('rapido_demais'), t(' é o segundo de dois crachás quase juntos, recusado pela regra dos 400 milissegundos (seção 2.3). '), mono('removido'), t(' é o professor tirando à mão, na planilha, uma presença que não devia ter sido contada — a leitura original do crachá continua no arquivo, só deixa de valer como presença. '), mono('outra_turma'), t(' é o crachá de um aluno de outra turma encostado nesta chamada (seção 2.3): fica com nome e matrícula, e não conta presença.')]),
 
   h2('4.4 O que o programa deliberadamente não faz'),
   item('Não envia dado nenhum pela rede. Não há telemetria, não há analytics, não há fonte remota e não há CDN. O programa funciona offline, do começo ao fim.'),
@@ -340,7 +355,7 @@ const corpo = [
   p('Do ponto de vista prático, e sem prejuízo da qualificação que a instituição fizer:'),
   item([t('A instituição ', { bold: true }), t('define a finalidade — registrar frequência é obrigação acadêmica dela — e é quem determina o tratamento.')]),
   item([t('O professor ', { bold: true }), t('opera: escolhe onde os dados ficam, faz o cadastro, conduz a chamada e é quem tem acesso físico aos arquivos.')]),
-  item([t('O Adsum ', { bold: true }), t('é a ferramenta. Não é um serviço, não tem operador remoto, não recebe nem transmite dado, e seu autor não tem acesso a base nenhuma.')]),
+  item([t('O Adsum ', { bold: true }), t('é a ferramenta. Não é um serviço, não tem operador remoto, não recebe nem transmite dado, e seu autor não tem acesso a base nenhuma, a não ser a cópia que um professor lhe envie para investigar um problema (seção 8.3).')]),
   p('Uma consequência que precisa estar dita: como os dados ficam no computador do professor, a segurança deles é a segurança daquele computador. Senha de tela, disco criptografado e cuidado com quem tem acesso à máquina valem aqui como valeriam para um diário de classe em papel guardado na gaveta.'),
 
   h2('5.4 Retenção e eliminação'),
@@ -349,7 +364,7 @@ const corpo = [
 
   h2('5.5 Compartilhamento'),
   p('Não há compartilhamento automático com ninguém — nem com o autor do programa, nem com a instituição, nem com terceiros. Não há transferência internacional, porque não há transferência.'),
-  p('Todo compartilhamento é gesto explícito do professor: exportar a planilha e entregá-la a quem de direito. Há também uma função de passar os crachás vinculados a outro professor; ela leva o sal junto, necessariamente, e a tela avisa que o arquivo liga crachás a pessoas e merece o mesmo cuidado que a lista da turma.'),
+  p('Todo compartilhamento é gesto explícito do professor: exportar a planilha e entregá-la a quem de direito, ou enviar ao autor uma cópia da pasta para investigar um problema (o que acontece com ela está na seção 8.3). Há também uma função de passar os crachás vinculados a outro professor; ela leva o sal junto, necessariamente, e a tela avisa que o arquivo liga crachás a pessoas e merece o mesmo cuidado que a lista da turma.'),
 
   h2('5.6 Segurança'),
   item([t('O número do crachá não é armazenado — apenas seu resumo com sal, do qual não se volta. '), t('A exceção é a auditoria da seção 4.5, que o professor liga e desliga, e cujo arquivo fica na pasta dele.')]),
@@ -383,6 +398,8 @@ const corpo = [
       ['Há aula por salvar', 'A tela de espera cobra, com turma e quantidade, e o navegador avisa se a aba for fechada.'],
       ['O leitor não está lendo', 'A tela diz, em vez de esperar um crachá que não vai chegar — mesmo no meio de uma chamada aberta, que continua esperando no fundo e reaparece sozinha assim que o leitor volta. Nada se perde.'],
       ['Dois crachás quase juntos', 'A leitura rápida demais não conta, e a tela avisa na hora. O programa não distingue fila apressada de má-fé — quem julga é o professor, que está na sala.'],
+      ['Um aluno de outra turma encostou o crachá', 'A tela diz de qual turma ele é, e a presença não conta. A linha fica no registro, com o motivo.'],
+      ['Outra janela do Adsum foi aberta no meio da aula', 'A chamada continua na primeira janela e a fila segue contando. Fechar o Adsum ainda fecha a chamada; abrir outra janela, não.'],
       ['Uma presença foi marcada errada', 'Corrige-se na planilha (Ajustes › Presenças), no modo Editar: a presença vira falta com um toque, sem apagar a leitura original do crachá.'],
       ['Trocou de navegador ou limpou os dados', 'Reescolher a pasta reconstrói tudo, inclusive o sal — sem ele, os nomes voltariam e as pessoas não.'],
     ],
@@ -400,6 +417,29 @@ const corpo = [
   item([t('Não há cópia fora da máquina por padrão. ', { bold: true }), t('Ela existe se — e só se — a pasta escolhida estiver dentro de um serviço de sincronização que o professor já use.')]),
   item([t('A regra dos dois crachás é um alarme. ', { bold: true }), t('Ela recusa a leitura rápida demais e avisa, mas dois cartões mantidos juntos no leitor acabam contando os dois. E nenhuma regra de tempo pega alguém que encoste sozinho, com calma, o crachá de um colega ausente. Quem vê isso é o professor.')]),
   item([t('Fora do Chrome e do Edge, guardar depende de disciplina. ', { bold: true }), t('Nesses navegadores o programa não consegue gravar sozinho, e o professor precisa exportar. O programa cobra, mas não obriga.')]),
+
+  // ── 8 ─────────────────────────────────────────────────────────────
+  h1('8. Como o Adsum é testado', { pageBreakBefore: true }),
+  p('Três semanas de falhas em sala, em setembro de 2026, mostraram que o difícil não era escrever o programa: era provar que ele funciona antes de encontrar uma turma. Desde então, nenhuma versão vai ao ar sem passar pelo que este capítulo descreve.'),
+
+  h2('8.1 O comando único'),
+  p([t('Tudo o que é automático roda num comando só, '), mono('npm run verificar'), t(', no computador do autor. Ele para na primeira falha e, no fim, abre um relatório com o vídeo de cada teste feito no navegador. Um teste que não rodou por falta de dados aparece como pulado, nunca como aprovado. As etapas, em ordem:')]),
+  item([t('Testes de unidade. ', { bold: true }), t('Cada regra do programa, isolada: o resumo do crachá, a leitura da lista do SIGAA, a chamada, a planilha de faltas, a conciliação com o SIGAA. As telas são testadas com o mesmo código de banco de dados que o programa usa, e não com uma imitação que concorda com tudo.')]),
+  item([t('Testes de mutação. ', { bold: true }), t('Para saber se os testes pegam defeito, uma ferramenta altera o código de propósito, uma pequena mudança por vez, e confere se algum teste falha. A parte que lança no SIGAA passou por isso, e cada alteração que nenhum teste percebia ganhou um teste.')]),
+  item([t('A planilha do SIGAA, de verdade. ', { bold: true }), t('O favorito roda no Google Chrome sobre uma cópia anonimizada da planilha de frequência, com os scripts do próprio SIGAA. O teste preenche, desfaz, grava e confere que o SIGAA receberia exatamente as células prometidas, e nenhuma outra. Também adianta o relógio em 5 minutos, para ver o salvamento automático do SIGAA levar o preenchimento sozinho.')]),
+  item([t('A jornada inteira. ', { bold: true }), t('No Chrome, só pela tela e pelo crachá, como um professor usaria: chegar, escolher a pasta, colar a turma, três aulas com cada tipo de presença (busca, chamar nomes, repetido, presente e não presente à mão, dois crachás juntos, aluno de outra turma, crachá da professora), e por fim lançar no SIGAA. Cada célula enviada é conferida: presença vale 0, falta vale o número de aulas do dia.')]),
+  item([t('A máquina do professor atualizando. ', { bold: true }), t('A versão que está no ar abre a pasta de um professor real, faz uma chamada com os crachás daquela turma, e a versão nova é publicada no meio da aula. O teste confere que a nova espera a chamada terminar, entra sozinha, e que nada sumiu: a base, o registro e cada crachá continuando a ser a mesma pessoa.')]),
+
+  h2('8.2 O dongle, de verdade'),
+  p([t('Nos testes no navegador, o crachá pode ser digitado pelo próprio teste ou por um aparelho: '), mono('npm run verificar:rig'), t(' usa uma placa ESP32-S3 que se apresenta ao computador como teclado USB e digita os números dos crachás no mesmo ritmo, medido, do leitor de verdade. Do conector USB para cima, o caminho é o mesmo do leitor: sistema operacional, janela, navegador e programa.')]),
+  p('O que nenhum teste automático cobre fica num ensaio à mão, com o leitor de verdade: a leitura de rádio do próprio leitor e a permissão da pasta que o navegador pede ao reabrir.'),
+
+  h2('8.3 Os dados dos testes'),
+  p('Os testes usam gente inventada, na forma exata das páginas reais. Quando um professor envia uma cópia da própria pasta para que um problema seja investigado — gesto dele, como qualquer compartilhamento (seção 5.5) —, essa cópia fica só no computador do autor, é usada para reproduzir o problema e para o teste de atualização, e só entra no repositório público depois de passar por um script de anonimização, que se recusa a gravar se sobrar um nome, matrícula, resumo ou sal original.'),
+  p('Durante os testes, nada sai do computador: o navegador do teste não chega à internet, e os endereços do Adsum e do SIGAA são atendidos pelo próprio teste.'),
+
+  h2('8.4 Quando uma versão vai ao ar'),
+  p([t('Uma versão nova só é publicada depois de uma semana de funcionamento estável: sem mudança, com '), mono('npm run verificar'), t(' aprovado sobre ela, sem teste pulado, e com a cópia da pasta enviada pelo professor na sexta-feira sem nenhum erro no diário. A exceção é o conserto de uma falha observada em sala, que pode ir antes, com o ensaio completo logo depois. Toda falha em sala vira, antes do conserto, um teste que a reproduz.')]),
 
   new Paragraph({ spacing: { before: 500 }, children: [
     t('Código-fonte e histórico de decisões: ', { color: FRACA, size: 20 }),
