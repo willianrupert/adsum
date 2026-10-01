@@ -31,9 +31,12 @@ O que o professor vê ao clicar no favorito na planilha do SIGAA.
 
 - **O título é o estado, numa frase.** A linha de apoio diz de onde veio a
   informação: planilha lida agora, todos pela matrícula.
-- **A diferença vem primeiro**, em laranja, porque é a única coisa que pede
-  julgamento: o nome, o dia e os dois valores, "No SIGAA, presente. No
-  Adsum, 2 faltas." "O SIGAA fica como está." tira o medo antes de ele aparecer, e
+- **A diferença vem primeiro**, num cartão só e fechado, porque é a única
+  coisa que pede julgamento: quantas, de quantos alunos, em quantas aulas.
+  Nenhum nome aparece sem o professor pedir (decidido pelo autor em
+  01/10/2026: com vários alunos, um cartão por diferença virava uma pilha).
+  Aberto, por aula, um aluno por linha, com os dois valores e "Aceitar o
+  SIGAA". "O SIGAA fica como está." tira o medo antes de ele aparecer, e
   "Aceitar o SIGAA" fica onde a decisão acontece.
 - **Cada aula é um cartão** com a caixa azul de incluir.
 - **Uma ação só, que diz o que vai fazer**: "Preencher 3 aulas". Abaixo,

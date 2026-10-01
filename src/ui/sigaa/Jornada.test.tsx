@@ -98,6 +98,7 @@ describe('lançar no SIGAA, de ponta a ponta, sobre o cofre de 22/09', () => {
     gravada.digitar(alguem, 0, '2')
     clicarNoFavorito(repositorio, gravada)
     expect(await screen.findByRole('heading', { name: '1 diferença para olhar' }, ESPERA)).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: /diferenças? com o SIGAA/ }))
     await usuario.click(screen.getByRole('button', { name: 'Aceitar o SIGAA' }))
     expect(await screen.findByRole('heading', { name: 'Tudo confere' }, ESPERA)).toBeInTheDocument()
     expect(screen.getByText('SIGAA e Adsum iguais em 2 aulas. 1 diferença aceita por você.')).toBeInTheDocument()

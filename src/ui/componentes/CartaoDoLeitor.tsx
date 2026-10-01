@@ -12,7 +12,7 @@ export function CartaoDoLeitor({ chegando = false }: { chegando?: boolean }) {
         <strong>{chegando ? 'Você vai precisar de um leitor de crachá USB' : 'Leitor USB de 13,56 MHz'}</strong>
         <small>
           {chegando ? 'De 13,56 MHz, como o do desenho. ' : 'O testado com o Adsum, como o do desenho. '}
-          Funciona como um teclado: liga na USB e lê, sem driver, no Mac e no Windows.
+          Funciona como um teclado: liga na USB e lê, sem driver, no Mac, no Windows e no Linux.
         </small>
       </span>
     </div>

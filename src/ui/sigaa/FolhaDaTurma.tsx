@@ -14,6 +14,58 @@ import type { Repositorio } from '../../portas/Repositorio.ts'
 const valorLegivel = (n: number) => (n === 0 ? 'presente' : n === 1 ? '1 falta' : `${n} faltas`)
 const contar = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
 
+/**
+ * As diferenças num cartão só, fechado: quantas, de quantos alunos, em
+ * quantas aulas. Aberto, por aula, um aluno por linha. Dez alunos diferentes
+ * continuam sendo um cartão, e nenhum nome aparece sem o professor pedir.
+ */
+function ResumoDasDiferencas({
+  diferencas,
+  aberto,
+  alternar,
+  aceitar,
+}: {
+  diferencas: DiferencaDaFolha[]
+  aberto: boolean
+  alternar: () => void
+  aceitar: (d: DiferencaDaFolha) => void
+}) {
+  const porAula = new Map<string, DiferencaDaFolha[]>()
+  for (const d of [...diferencas].sort((a, b) => a.dia.localeCompare(b.dia) || a.nome.localeCompare(b.nome))) {
+    porAula.set(d.rotulo, [...(porAula.get(d.rotulo) ?? []), d])
+  }
+  const alunos = new Set(diferencas.map((d) => d.matricula)).size
+  const titulo = `${contar(diferencas.length, 'diferença', 'diferenças')} com o SIGAA`
+  return (
+    <section role="group" aria-label="Diferenças" className="folha-sigaa__diferencas">
+      <button className="cartao cartao--botao" aria-expanded={aberto} aria-label={titulo} onClick={alternar}>
+        <span className="cartao__icone cartao__icone--alerta" aria-hidden="true">
+          !
+        </span>
+        <span className="cartao__texto">
+          <strong>{titulo}</strong>
+          <small>{`${contar(alunos, 'aluno', 'alunos')} em ${contar(porAula.size, 'aula', 'aulas')}. O SIGAA fica como está.${aberto ? '' : ' Toque para conferir.'}`}</small>
+        </span>
+      </button>
+      {aberto &&
+        [...porAula].map(([rotulo, itens]) => (
+          <div key={rotulo} className="folha-sigaa__dif-aula">
+            <p className="folha-sigaa__dif-dia">{rotulo}</p>
+            {itens.map((d) => (
+              <div key={`${d.matricula}|${d.dia}`} className="folha-sigaa__diferenca">
+                <span className="folha-sigaa__dif-texto">
+                  <strong>{d.nome}</strong>
+                  <small>{`No SIGAA, ${valorLegivel(d.sigaa)}. No Adsum, ${valorLegivel(d.esperado)}.`}</small>
+                </span>
+                <button onClick={() => aceitar(d)}>Aceitar o SIGAA</button>
+              </div>
+            ))}
+          </div>
+        ))}
+    </section>
+  )
+}
+
 /** A planilha lida e a turma escolhida: conciliação, escolhas e Preencher. */
 export function FolhaDaTurma({
   repositorio,
@@ -33,6 +85,8 @@ export function FolhaDaTurma({
   const [dados, setDados] = useState<{ eventos: Evento[]; matriculados: Matriculado[]; ajustes: AjusteSigaa[]; remanejos: RemanejoSigaa[] }>()
   const [desmarcadas, setDesmarcadas] = useState<Dia[]>([])
   const [aberta, setAberta] = useState<Dia>()
+  // Fechadas por padrão: nome de aluno só aparece quando o professor pede.
+  const [verDiferencas, setVerDiferencas] = useState(false)
   const [aceitas, setAceitas] = useState<DiferencaDaFolha[]>([])
   const [recado, setRecado] = useState<string>()
   const conferida = useRef(false)
@@ -143,16 +197,7 @@ export function FolhaDaTurma({
       <p className="folha-sigaa__apoio">{resumo.apoio}</p>
 
       {resumo.diferencas.length > 0 && (
-        <section role="group" aria-label="Diferenças" className="folha-sigaa__diferencas">
-          {resumo.diferencas.map((d) => (
-            <div key={`${d.matricula}|${d.dia}`} className="folha-sigaa__diferenca">
-              <strong>{d.nome}</strong>
-              <span>{`${d.rotulo}. No SIGAA, ${valorLegivel(d.sigaa)}. No Adsum, ${valorLegivel(d.esperado)}.`}</span>
-              <small>O SIGAA fica como está.</small>
-              <button onClick={() => void aceitar(d)}>Aceitar o SIGAA</button>
-            </div>
-          ))}
-        </section>
+        <ResumoDasDiferencas diferencas={resumo.diferencas} aberto={verDiferencas} alternar={() => setVerDiferencas((v) => !v)} aceitar={(d) => void aceitar(d)} />
       )}
 
       {aceitas.map((d) => (
