@@ -22,6 +22,15 @@ export async function acharRig(): Promise<string | undefined> {
   return portas.find((p) => /espressif/i.test(p.manufacturer ?? ''))?.path
 }
 
+/**
+ * A placa em modo de gravação aparece como a porta de fábrica do chip, e não
+ * responde. Acontece ao ligar com o BOOT apertado, ou depois de um reinício
+ * pela USB; reiniciar pelo watchdog volta ao firmware do rig.
+ */
+const EM_GRAVACAO =
+  'o rig não respondeu. Se o Mac o mostra como "USB JTAG/serial debug unit", a placa está em modo de gravação: ' +
+  'esptool --port <porta> --after watchdog-reset read-mac (ou desconecte e reconecte sem apertar BOOT)'
+
 export async function abrirRig(caminho: string): Promise<Rig> {
   const porta = new SerialPort({ path: caminho, baudRate: 115200 })
   await new Promise<void>((pronto, falhou) => porta.once('open', pronto).once('error', falhou))
@@ -39,7 +48,9 @@ export async function abrirRig(caminho: string): Promise<Rig> {
       porta.write(`${texto}\n`)
     })
 
-  const resposta = await comando('PING')
+  const resposta = await comando('PING').catch(() => {
+    throw new Error(EM_GRAVACAO)
+  })
   if (resposta !== 'PONG') throw new Error(`o rig respondeu "${resposta}" ao PING`)
 
   return {
