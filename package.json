@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:navegador": "playwright test",
-    "test:mutacao": "stryker run"
+    "test:mutacao": "stryker run",
+    "test:atualizacao": "playwright test e2e/atualizacao.spec.ts"
   },
   "dependencies": {
     "dexie": "^4.4.5",

@@ -71,15 +71,43 @@ Os que não têm teste automático, ou que dependem do mundo real:
 ## 3. A máquina do professor atualiza
 
 O caminho que só ele percorre: uma base feita pela versão que ele tem,
-aberta pela versão nova. Com a pasta descompactada de novo:
+aberta pela versão nova.
 
-1. Servir a versão antiga (a mais antiga que ele pode ter) num endereço
-   local novo — endereço novo é base vazia.
-2. Ligar a pasta nela e fazer uma chamada curta.
-3. Trocar o servidor para a versão nova, **no mesmo endereço**, fechar e
-   reabrir.
-4. Continua tudo lá: turmas, vínculos, presenças, numeração. Nada pergunta
-   de sal. O crachá encostado é reconhecido.
+**Automático desde 30/09/2026:** `npm run test:atualizacao` (Playwright,
+`e2e/atualizacao.spec.ts`), com o zip da pasta dele em `ADSUM_COFRE` (padrão
+`~/Downloads/Chamadas 3.zip`). Monta a versão do ar (`origin/main`) e a nova
+(o commit, `HEAD`) como o deploy monta, serve as duas no mesmo endereço, e
+no Google Chrome instalado:
+
+1. a versão do ar abre o cofre e chega ao repouso, com o service worker dela
+   no controle;
+2. abre a chamada e encosta, como o dongle, cada crachá do
+   `auditoria/uids.csv` do cofre;
+3. publica a nova e recarrega no meio da chamada: a nova espera, a chamada
+   continua, a fila conta;
+4. encerra: a nova entra sozinha, sem gesto;
+5. confere: nada sumiu da base, o log só cresceu, a planilha de faltas de
+   cada turma tem a coluna `matricula`, o diário de hoje não tem erro;
+6. a mesma chamada na nova: cada crachá é a mesma pessoa que era na do ar;
+7. e o caso de fora de aula: abrir o app no dia seguinte já traz a nova.
+
+Com `-- --headed`, dá para assistir. Leva uns 2 minutos; a primeira vez
+monta as duas versões (`node_modules/.cache/adsum-versoes`, por commit).
+Provado que pega: com a versão nova sem o conserto de 30/09 (a pasta
+regravada ao abrir), falha apontando a planilha sem a matrícula.
+
+O que ele **não** prova, e continua à mão com o dongle:
+
+- **A permissão da pasta de disco.** O teste usa a pasta interna do navegador
+  (OPFS), que tem a mesma interface e não pede permissão. Na máquina dele, o
+  Chrome pode pedir "Liberar" depois de fechar e abrir: é o comportamento de
+  hoje, e a versão nova não muda isso.
+- **O endereço `github.io` em si**, e o dongle de verdade (o teclado do teste
+  digita no mesmo ritmo, mas não é ele).
+
+Na mão, quando preciso: servir a versão antiga num endereço local novo,
+ligar a cópia da pasta descompactada de novo, fazer uma chamada curta, trocar
+o servidor para a nova no mesmo endereço, fechar e reabrir.
 
 ## 4. O professor
 
