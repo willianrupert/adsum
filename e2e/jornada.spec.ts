@@ -18,7 +18,7 @@ import { PASTA_DA_BANCADA } from '../playwright.config.ts'
 import { versao, type Versao } from './apoio/versoes.ts'
 import { lerPasta, trocarSeletor } from './apoio/cofre.ts'
 import { atenderEnderecos, SIGAA, SITE } from './apoio/enderecos.ts'
-import { COM_RIG, desligarDongle, encostar, ligarDongle } from './apoio/dongle.ts'
+import { COM_RIG, desligarDongle, encostar, encostarJuntos, ligarDongle } from './apoio/dongle.ts'
 import { alunosDaBancada, codigoDaBancada, paginaDeParticipantes, type AlunoDaBancada } from './apoio/turmaDaBancada.ts'
 
 test.skip(!existsSync(join(PASTA_DA_BANCADA, 'planilha.html')), `sem a página da bancada em ${PASTA_DA_BANCADA} (ADSUM_BANCADA)`)
@@ -169,8 +169,7 @@ test('do zero ao SIGAA: cadastro, três aulas com cada tipo de presença, e o la
     await abrirChamada(page, turma)
     await encostar(page, UID.a)
     // Dois cartões na mesma mão: o segundo chega antes do intervalo mínimo e não conta.
-    await encostar(page, UID.e, { esperar: false })
-    await encostar(page, UID.f, { esperar: false })
+    await encostarJuntos(page, [UID.e, UID.f])
     await expect(page.getByText('Dois crachás quase juntos. O segundo não foi contado. Passe um de cada vez.')).toBeVisible()
     await page.waitForTimeout(600)
     await encostar(page, UID.x)

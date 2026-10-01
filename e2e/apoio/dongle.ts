@@ -63,18 +63,29 @@ async function focar(page: Page) {
   if (naFrente() !== chrome) throw new Error('outra janela está na frente: o rig não digita, para não escrever nela')
 }
 
+async function digitar(page: Page, uidHex: string) {
+  const texto = comoODongleImprime(uidHex)
+  if (rig) await rig.digitar(texto)
+  else {
+    await page.keyboard.type(texto, { delay: 8 })
+    await page.keyboard.press('Enter')
+  }
+}
+
 /**
  * Encosta um crachá, e espera o intervalo mínimo antes do próximo. Sem a
  * espera, é o segundo cartão na mesma mão.
  */
-export async function encostar(page: Page, uidHex: string, { esperar = true } = {}) {
-  const texto = comoODongleImprime(uidHex)
-  if (rig) {
-    await focar(page)
-    await rig.digitar(texto)
-  } else {
-    await page.keyboard.type(texto, { delay: 8 })
-    await page.keyboard.press('Enter')
-  }
-  if (esperar) await page.waitForTimeout(ENTRE_CRACHAS_MS)
+export async function encostar(page: Page, uidHex: string) {
+  await encostarJuntos(page, [uidHex])
+}
+
+/**
+ * Os cartões na mesma mão, um logo depois do outro: o foco é conferido uma
+ * vez só, porque a conferência leva mais que o intervalo mínimo entre eles.
+ */
+export async function encostarJuntos(page: Page, uids: string[]) {
+  if (rig) await focar(page)
+  for (const uid of uids) await digitar(page, uid)
+  await page.waitForTimeout(ENTRE_CRACHAS_MS)
 }
