@@ -24,6 +24,43 @@ por decisão do autor (01/10/2026): os dados reais e o rig estão aqui.
 O que continua à mão está abaixo: o dongle físico lendo crachá de verdade,
 a permissão da pasta de disco e o zip da sexta.
 
+## O deploy, e voltar atrás
+
+**Antes:** `npm run verificar` verde sobre a versão candidata, sem nada
+pulado. Ele inclui a volta: a versão do ar, republicada, abre a base que a
+nova atualizou e faz a chamada, e a pasta pode ter qualquer coisa além do
+Adsum (cópias da planilha, Numbers, Excel, anotações, o lixo do macOS), que
+sai intacta e não vira erro.
+
+**Publicar** é levar a versão para a `main`: o GitHub roda os testes de
+unidade, monta e publica. A máquina do professor pega a versão nova na
+próxima recarga, e espera a chamada terminar se houver uma aberta.
+
+**Depois**, assim que o GitHub terminar: `npm run conferir-no-ar`. Num
+Chrome de perfil limpo, só lendo o site público: o último deploy é o commit
+da `main` e terminou bem, o app abre e o service worker assume (a página
+recarrega sem internet), a vitrine mostra todas as telas, a janela do SIGAA
+abre, e o manual do botão "Manual e LGPD" está no lugar. Antes do deploy ele
+falha de propósito nos pontos que só a versão nova tem.
+
+**Voltar atrás**, se algo der errado no ar: republicar a versão anterior.
+A base que a versão nova atualizou abre na anterior (provado a cada
+`verificar`), e a pasta não perde nada.
+
+```bash
+git switch main
+git restore --source=<commit anterior> --staged --worktree -- .
+git commit -m "Volta para <commit anterior>"
+git push
+```
+
+O commit anterior é o que `npm run conferir-no-ar` confirmou da última vez
+(ou o primeiro de `git log origin/main`, antes do deploy). Sem
+reescrever história: a volta é um commit novo. Na máquina do professor, como
+na ida, a versão anterior entra na próxima recarga, esperando a chamada
+terminar. Depois, `npm run conferir-no-ar` de novo, sabendo que os pontos da
+versão nova vão falhar.
+
 ## Antes de começar
 
 - **A cópia do cofre.** Uma pasta de um professor real, descompactada numa

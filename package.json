@@ -19,7 +19,8 @@
     "test:jornada:rig": "ADSUM_RIG=auto playwright test e2e/jornada.spec.ts",
     "verificar": "node scripts/verificar.mjs",
     "verificar:rig": "node scripts/verificar.mjs --rig",
-    "relatorio": "playwright show-report"
+    "relatorio": "playwright show-report",
+    "conferir-no-ar": "playwright test -c playwright.no-ar.config.ts"
   },
   "dependencies": {
     "dexie": "^4.4.5",

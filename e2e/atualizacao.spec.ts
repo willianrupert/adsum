@@ -17,7 +17,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 import { hospedar, versao, PAGINA_VAZIA, type Hospedagem, type Versao } from './apoio/versoes.ts'
-import { contarBase, eventosDaBase, lerCofre, lerPasta, semear, trocarSeletor, type ArquivosDoCofre } from './apoio/cofre.ts'
+import { comArquivosDeFora, contarBase, eventosDaBase, lerCofre, lerPasta, semear, trocarSeletor, type ArquivosDoCofre } from './apoio/cofre.ts'
 import { COM_RIG, desligarDongle, encostar, ligarDongle } from './apoio/dongle.ts'
 
 const COFRE = process.env.ADSUM_COFRE ?? join(homedir(), 'Downloads/Chamadas 3.zip')
@@ -35,13 +35,18 @@ test.beforeEach(() => test.setTimeout(10 * 60_000))
 let noAr: Versao
 let nova: Versao
 let cofre: ArquivosDoCofre
+/** Os arquivos que não são do Adsum: têm de sair da atualização como entraram. */
+let deFora: string[] = []
 let site: Hospedagem
 
 test.beforeAll(async () => {
   noAr = versao(process.env.ADSUM_NO_AR ?? 'origin/main')
   nova = versao(process.env.ADSUM_NOVA ?? 'HEAD')
   expect(nova.entrada, 'as duas versões são o mesmo build').not.toBe(noAr.entrada)
-  cofre = lerCofre(COFRE)
+  // A pasta como a do professor: o Adsum e o que mais ele guardar ali.
+  const doProfessor = lerCofre(COFRE)
+  cofre = comArquivosDeFora(doProfessor)
+  deFora = Object.keys(cofre).filter((c) => !(c in doProfessor))
   site = await hospedar(PORTA)
   await ligarDongle()
 })
@@ -115,6 +120,8 @@ async function conferirDepois(page: Page, antes: { base: Record<string, number>;
     .filter((c) => c in pasta)
   expect(faltas.length).toBeGreaterThan(0)
   for (const c of faltas) expect(/^nome;matricula;/.test(pasta[c].replace(/^\uFEFF/, '')), `${c} com a coluna matricula`).toBe(true)
+  // O que não é do Adsum continua lá, igual: nem apagado, nem reescrito.
+  for (const c of deFora) expect(pasta[c] === antes.pasta[c], `${c} intacto`).toBe(true)
   // O diário de hoje sem erro nenhum.
   const hoje = Object.keys(pasta).filter((c) => /^diagnostico\/.*\.log$/.test(c)).sort().at(-1)!
   expect(pasta[hoje].split('\n').filter((l) => /erro_/.test(l)).length, `${hoje} sem erro`).toBe(0)
@@ -179,5 +186,39 @@ test('no dia seguinte, fora de aula: abrir o app já traz a versão nova, com tu
   await page.reload()
   await expect(page.getByRole('button', { name: /Começar a chamada/ })).toBeVisible({ timeout: 20_000 })
   expect(await versaoRodando(page)).toContain(nova.entrada)
+  expect(erros).toEqual([])
+})
+
+test('voltar atrás: a versão do ar, republicada, abre a base que a nova atualizou e faz a chamada', async ({ page }) => {
+  const erros: string[] = []
+  page.on('pageerror', (e) => erros.push(e.message))
+  // A ida: a nova abre o cofre (a base ganha as tabelas dela, versão 9 do esquema).
+  site.publicar(nova)
+  await trocarSeletor(page)
+  await page.goto(site.url + PAGINA_VAZIA)
+  await semear(page, cofre)
+  await page.goto(site.url + '/adsum/')
+  await page.getByRole('button', { name: 'Escolher pasta' }).click()
+  await expect(page.getByRole('button', { name: /Começar a chamada/ })).toBeVisible({ timeout: 20_000 })
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null, undefined, { timeout: 20_000 })
+  await page.waitForTimeout(3000)
+  const antes = { base: await contarBase(page), pasta: await lerPasta(page) }
+
+  // A volta: a do ar é republicada, e o professor só recarrega.
+  site.publicar(noAr)
+  await page.reload()
+  await expect.poll(() => versaoRodando(page), { timeout: 60_000, intervals: [1000] }).toContain(noAr.entrada)
+  await expect(page.getByRole('button', { name: /Começar a chamada/ })).toBeVisible({ timeout: 20_000 })
+
+  // Nada some na volta, e a chamada conta.
+  const base = await contarBase(page)
+  for (const t of ['vinculos', 'participantes', 'aulas']) expect(base[t], t).toBe(antes.base[t])
+  expect(base.eventos).toBeGreaterThanOrEqual(antes.base.eventos)
+  const crachas = crachasDoCofre().slice(0, 5)
+  const antesDaAula = new Set((await eventosDaBase(page)).map((e) => e.id))
+  await chamada(page, crachas)
+  await expect.poll(async () => (await quemECada(page, antesDaAula)).size, { timeout: 15_000 }).toBe(crachas.length)
+  const pasta = await lerPasta(page)
+  for (const c of deFora) expect(pasta[c] === antes.pasta[c], `${c} intacto`).toBe(true)
   expect(erros).toEqual([])
 })

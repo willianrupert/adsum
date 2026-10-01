@@ -38,6 +38,33 @@ export function lerCofre(zip: string): ArquivosDoCofre {
   }
 }
 
+/**
+ * O que um professor de verdade deixa na pasta além do Adsum: a cópia da
+ * planilha que ele abriu, o arquivo do Numbers ou do Excel, anotações, e o
+ * lixo que o macOS espalha. Nada disso pode quebrar o Adsum, e nada disso
+ * pode ser apagado ou mudado por ele.
+ */
+export function comArquivosDeFora(arquivos: ArquivosDoCofre): ArquivosDoCofre {
+  const texto = (t: string) => Buffer.from(t, 'utf-8').toString('base64')
+  const binario = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00, 0xff, 0xfe]).toString('base64')
+  const umLog = Object.keys(arquivos).find((c) => c.startsWith('registros/'))
+  const umaTurma = Object.keys(arquivos).find((c) => c.startsWith('turmas/'))
+  return {
+    ...arquivos,
+    ...(umLog ? { [umLog.replace(/\.csv$/, ' copy.csv')]: arquivos[umLog] } : {}),
+    ...(umaTurma ? { [umaTurma.replace(/\.json$/, ' (1).json')]: arquivos[umaTurma] } : {}),
+    'registros/anotacoes.txt': texto('lembrar de conferir a terça\n'),
+    'registros/.DS_Store': binario,
+    'turmas/lista antiga.xlsx': binario,
+    'sigaa/o que lancei.txt': texto('lancei até 15/10\n'),
+    'sigaa/._planilha.csv': binario,
+    'frequencia final.xlsx': binario,
+    'Icon\r': '',
+    '.DS_Store': binario,
+    'faltas/planilha.numbers': binario,
+  }
+}
+
 /** O nome da pasta na OPFS, e o seletor de pasta do app passa a devolvê-la. */
 export const PASTA = 'cofre-do-professor'
 

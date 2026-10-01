@@ -14,6 +14,8 @@ const temPagina = existsSync(join(PASTA_DA_BANCADA, 'planilha.html'))
 
 export default defineConfig({
   testDir: 'e2e',
+  // O site no ar tem config própria (`playwright.no-ar.config.ts`): é o único que usa a internet.
+  testIgnore: 'no-ar/**',
   // Uma bancada só, com estado: os casos correm um de cada vez.
   workers: 1,
   fullyParallel: false,
