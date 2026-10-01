@@ -386,7 +386,7 @@ sem conversa antes.
 - **Lançar no SIGAA (a "v2" pedida pelo Prof. Paulo em 24/09/2026).**
   Desenho em `docs/08_lancar_no_sigaa.md`: favorito na planilha de
   frequência do SIGAA, conciliação por matrícula no Adsum, o Gravar é sempre
-  do professor, nunca toca em senha. Fases 1 a 3 feitas na branch `v2/lancar-no-sigaa`; o que falta é uso real (`docs/08`, §6).
+  do professor, nunca toca em senha. Fases 1 a 3 feitas na branch `v2/lancar-no-sigaa`, ligada para todos com o Preencher desde 01/10/2026 (decisão do autor; `docs/08`, §6). O que falta é uso real.
   A aula na UFPE é de 50 min (Portaria Normativa 07/2022, citada pelo
   próprio SIGAA): `periodosDoBloco` está certo; o "60" do manual é antigo.
 

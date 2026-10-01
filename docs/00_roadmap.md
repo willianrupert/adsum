@@ -271,10 +271,10 @@ e com o dongle. Em especial:
 
 ### Depois de publicar
 
-- **v2: lançar no SIGAA.** Fases 1 a 3 feitas na branch (`docs/11`). O que
-  falta é uso real, nos portões C a E do `docs/08`, §6: semanas só de
-  conferência, o primeiro Preencher com o professor ao lado, outros
-  professores com a STI de acordo.
+- **v2: lançar no SIGAA.** Fases 1 a 3 feitas na branch (`docs/11`), e
+  ligada para todos, com o Preencher (decisão do autor em 01/10/2026: os
+  portões C e D do `docs/08` andam juntos). Falta o uso real, e o portão E:
+  outros professores com a STI de acordo.
 - **Dois crachás juntos por alternância.** A medida de 23/09 mostrou que o
   sinal que separa cartões empilhados de uma fila é a alternância (A, B, A, B
   em poucos segundos), e não o intervalo. Ideia registrada, não decidida.

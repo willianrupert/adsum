@@ -203,10 +203,6 @@ test('do zero ao SIGAA: cadastro, três aulas com cada tipo de presença, e o la
   let gravado: Mudanca[] = []
   await test.step('o SIGAA: o favorito lê a planilha, a folha mostra as três aulas, Preencher e Gravar', async () => {
     await context.clock.setSystemTime(new Date('2026-11-19T08:00:00-03:00'))
-    // A v2 ainda vem travada atrás do modo de ensaio (`lancarNoSigaaLigado`).
-    // Ligado só agora, depois das chamadas, que ele mudaria (o leitor padrão).
-    // Sai daqui quando a trava sair do app.
-    await page.evaluate(() => localStorage.setItem('adsum.modoDev', 'sim'))
     await page.goto(SIGAA)
     // O professor clica com a planilha na tela: os scripts do SIGAA a desenham depois do carregamento.
     await expect(page.locator('#planilha')).toBeVisible()

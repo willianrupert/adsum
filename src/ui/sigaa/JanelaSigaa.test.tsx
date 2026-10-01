@@ -5,12 +5,10 @@ import App from '../../App.tsx'
 
 afterEach(() => {
   window.location.hash = ''
-  window.localStorage.removeItem('adsum.modoDev')
 })
 
 describe('#/sigaa, a janela do favorito', () => {
   it('abrir durante a aula não fecha a chamada da janela principal', async () => {
-    window.localStorage.setItem('adsum.modoDev', 'sim')
     const principal = new RepositorioDexie()
     await principal.abrir()
     await principal.abrirSessao({ turma: 'CIN0144 · T01', abertaEm: new Date().toISOString(), uidHashProfessor: 'prof' })
@@ -25,9 +23,10 @@ describe('#/sigaa, a janela do favorito', () => {
     await principal.fechar()
   })
 
-  it('enquanto a v2 não sai, diz que ainda não está disponível e não abre a base', async () => {
+  // Ligada para todos desde 01/10/2026, por decisão do autor: sem modo de ensaio.
+  it('abre sem o modo de ensaio', async () => {
     window.location.hash = '#/sigaa'
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Ainda não disponível' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Abra pela planilha do SIGAA' })).toBeInTheDocument()
   })
 })

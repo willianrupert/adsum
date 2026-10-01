@@ -52,14 +52,6 @@ export function modoDev(): boolean {
 }
 
 /**
- * Lançar no SIGAA (a v2) só aparece com o modo de desenvolvimento, até passar
- * pelos portões do `docs/08`. Um lugar só para ligar de vez.
- */
-export function lancarNoSigaaLigado(): boolean {
-  return modoDev()
-}
-
-/**
  * Código da disciplina → turma do Adsum sem o código no nome, confirmada pelo
  * professor na janela do SIGAA (`escolherTurma`). Perder isto custa uma
  * pergunta a mais, e só.

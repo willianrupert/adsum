@@ -179,7 +179,7 @@ const corpo = [
   p('O nome vem do latim: adsum é o que se responde na chamada.'),
 
   h2('O que o Adsum não é'),
-  p('Não é um sistema institucional de frequência e não substitui o SIGAA. É uma ferramenta de sala de aula que produz uma planilha. Há um caminho para levar essa planilha à frequência do SIGAA (seção 2.7), ainda em teste e desligado por padrão; nele, quem grava no SIGAA é sempre o professor.'),
+  p('Não é um sistema institucional de frequência e não substitui o SIGAA. É uma ferramenta de sala de aula que produz uma planilha, e tem um caminho para levar essa planilha à frequência do SIGAA (seção 2.7), ainda em teste. Nele, o Adsum preenche a planilha que o professor abriu, na sessão dele, e nunca toca em senha.'),
 
   // ── 2 ─────────────────────────────────────────────────────────────
   h1('2. Como se usa', { pageBreakBefore: true }),
@@ -227,8 +227,8 @@ const corpo = [
 
   h2('2.7 Lançar no SIGAA (em teste)'),
   destaque([
-    p([t('Em teste, desligado por padrão. ', { bold: true }),
-       t('Este caminho está pronto e testado, mas ainda passa por semanas de uso só para conferência antes de preencher qualquer coisa na frequência de uma turma real. Ele nunca toca em senha: o professor entra no SIGAA como sempre.')],
+    p([t('Em teste, e ligado. ', { bold: true }),
+       t('Este caminho está pronto e testado, e ligado para que seja posto à prova em turmas reais. Ele nunca toca em senha: o professor entra no SIGAA como sempre. O que o Adsum preenche, a própria planilha do SIGAA salva sozinha em até 5 minutos. Para voltar atrás antes disso: "Desfazer", na barra que aparece no pé da planilha, ou fechar a aba do SIGAA sem gravar.')],
       { spacing: { after: 0 } }),
   ]),
   p(''),

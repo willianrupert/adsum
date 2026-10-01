@@ -7,7 +7,6 @@ import { CartaoDoLeitor } from './componentes/CartaoDoLeitor.tsx'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { abrirTexto, salvarTexto } from '../ambiente/arquivos.ts'
 import { semDono } from '../ambiente/diario.ts'
-import { lancarNoSigaaLigado } from '../ambiente/preferencias.ts'
 import { deJsonGrade, NOMES, paraJsonGrade } from '../nucleo/cofre.ts'
 import { quemFalta } from '../nucleo/sessao.ts'
 import type { Aula, Matriculado, Vinculo } from '../nucleo/tipos.ts'
@@ -142,7 +141,7 @@ export function TelaRepositorio({
         <Painel titulo="Ver presenças" legenda="A planilha do curso, por turma." aoAbrir={aoVerPresencas} />
       )}
 
-      {lancarNoSigaaLigado() && <PainelLancarNoSigaa turmas={turmas} />}
+      <PainelLancarNoSigaa turmas={turmas} />
 
       <Painel
         titulo="Grade horária"

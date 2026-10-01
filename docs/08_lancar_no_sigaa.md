@@ -576,6 +576,13 @@ anonimizadas (`scripts/anonimizar_sigaa.py`, irmão do `anonimizar_cofre.py`:
 troca nomes e matrículas, remove `jsessionid` e `ViewState`, e recusa gravar
 se sobrar dado original). Passa se: todas as leis, e a jornada completa (8).
 
+**Decidido pelo autor em 01/10/2026: C e D juntos.** A v2 sai ligada para
+todos, com o Preencher: testar inteiro, em turmas reais, pede todas as
+funções disponíveis. O que segura um preenchimento errado é o mesmo de
+sempre: Desfazer, enquanto a página não salvou, ou fechar a aba do SIGAA sem
+gravar, dentro dos 5 minutos do salvamento automático (`docs/12`). Os
+critérios de C e D abaixo continuam sendo os de passar.
+
 **C · Só conferência, em uso real.** Favorito e folha no ar **sem**
 Preencher. O professor continua lançando à mão. Várias semanas de páginas
 reais passando pelo leitor. Passa se: nenhuma leitura recusada sem motivo

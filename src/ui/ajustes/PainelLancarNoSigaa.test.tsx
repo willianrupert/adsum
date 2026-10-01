@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { montarBancada, renderizarCom, type Bancada } from '../../testes/montar.tsx'
@@ -29,8 +29,6 @@ beforeEach(async () => {
   }
 })
 
-afterEach(() => window.localStorage.removeItem('adsum.modoDev'))
-
 describe('Lançar no SIGAA, nos Ajustes', () => {
   it('oferece o favorito e o histórico, e não a lista à mão', async () => {
     const usuario = userEvent.setup()
@@ -41,13 +39,8 @@ describe('Lançar no SIGAA, nos Ajustes', () => {
     expect(screen.queryByRole('button', { name: 'Copiar a lista' })).not.toBeInTheDocument()
   })
 
-  it('só aparece nos Ajustes com o modo de desenvolvimento ligado, enquanto a v2 não sai', async () => {
-    const { unmount } = renderizarCom(bancada, <TelaRepositorio />)
-    await screen.findByText('Seus dados')
-    expect(screen.queryByRole('button', { name: /Lançar no SIGAA/ })).not.toBeInTheDocument()
-    unmount()
-
-    window.localStorage.setItem('adsum.modoDev', 'sim')
+  // Ligada para todos desde 01/10/2026, por decisão do autor: sem modo de ensaio.
+  it('aparece nos Ajustes sem o modo de ensaio', async () => {
     renderizarCom(bancada, <TelaRepositorio />)
     expect(await screen.findByRole('button', { name: /Lançar no SIGAA/ })).toBeInTheDocument()
   })
