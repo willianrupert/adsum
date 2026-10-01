@@ -147,6 +147,9 @@ if __name__ == '__main__':
     # Sem canto arredondado: o iOS e o macOS aplicam a máscara deles. Arredondar
     # aqui daria o canto duas vezes, e o ícone ficaria com sobra branca em volta.
     desenhar(180, CHEIA, None).save(RAIZ / 'apple-touch-icon.png')
+    # Avatar da organização `adsumhq` no GitHub. Sem canto, pelo mesmo motivo
+    # do apple-touch: o GitHub arredonda. Fica em docs/ porque o app não o serve.
+    desenhar(1024, CHEIA, None).save(RAIZ.parent / 'docs' / 'avatar-adsumhq.png')
     print('ícones gerados em', RAIZ)
 
     # `--provas` amplia os tamanhos de aba para olhar de perto. Medido em
