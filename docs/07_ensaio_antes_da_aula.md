@@ -91,7 +91,14 @@ no Google Chrome instalado:
 6. a mesma chamada na nova: cada crachá é a mesma pessoa que era na do ar;
 7. e o caso de fora de aula: abrir o app no dia seguinte já traz a nova.
 
-Com `-- --headed`, dá para assistir. Leva uns 2 minutos; a primeira vez
+Com `-- --headed`, dá para assistir. **Com o rig S3** (`ferramentas/rig-de-cracha`,
+um cabo só, na porta USB nativa): `npm run test:atualizacao:rig`. Os
+crachás deixam de ser digitados pelo Playwright e passam pela placa, como
+teclado USB de verdade, no ritmo medido do dongle: do conector para cima, o
+caminho é o do dongle. O teclado do rig digita onde estiver o foco, então o
+teste traz a janela dele para a frente e confere o foco antes de cada
+crachá, e para se não estiver nela. Não mexer no computador enquanto roda
+(uns 3 minutos). Primeira vez, 01/10/2026: passou, 84 crachás do cofre real. Leva uns 2 minutos; a primeira vez
 monta as duas versões (`node_modules/.cache/adsum-versoes`, por commit).
 Provado que pega: com a versão nova sem o conserto de 30/09 (a pasta
 regravada ao abrir), falha apontando a planilha sem a matrícula.
@@ -102,8 +109,9 @@ O que ele **não** prova, e continua à mão com o dongle:
   (OPFS), que tem a mesma interface e não pede permissão. Na máquina dele, o
   Chrome pode pedir "Liberar" depois de fechar e abrir: é o comportamento de
   hoje, e a versão nova não muda isso.
-- **O endereço `github.io` em si**, e o dongle de verdade (o teclado do teste
-  digita no mesmo ritmo, mas não é ele).
+- **O endereço `github.io` em si**, e a leitura de rádio do dongle (o rig
+  entra depois dela, no USB; o emulador C3 cobre o rádio, mas não reproduz o
+  primeiro byte do UID).
 
 Na mão, quando preciso: servir a versão antiga num endereço local novo,
 ligar a cópia da pasta descompactada de novo, fazer uma chamada curta, trocar

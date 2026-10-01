@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "test:navegador": "playwright test",
     "test:mutacao": "stryker run",
-    "test:atualizacao": "playwright test e2e/atualizacao.spec.ts"
+    "test:atualizacao": "playwright test e2e/atualizacao.spec.ts",
+    "test:atualizacao:rig": "ADSUM_RIG=auto playwright test e2e/atualizacao.spec.ts"
   },
   "dependencies": {
     "dexie": "^4.4.5",
@@ -35,6 +36,7 @@
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.1.1",
     "oxlint": "^1.75.0",
+    "serialport": "^13.0.0",
     "typescript": "~6.0.2",
     "vite": "^8.2.0",
     "vite-plugin-pwa": "^1.3.0",

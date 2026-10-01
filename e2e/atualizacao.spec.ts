@@ -8,6 +8,8 @@
 //   ADSUM_COFRE        o zip da pasta do professor (padrão: ~/Downloads/Chamadas 3.zip)
 //   ADSUM_NO_AR        a versão no ar (padrão: origin/main)
 //   ADSUM_NOVA         a que vai ao ar (padrão: HEAD, o commit, não a pasta de trabalho)
+//   ADSUM_RIG          os crachás pelo rig S3, como teclado USB de verdade:
+//                      o caminho da porta, ou "auto" (a primeira da Espressif)
 // Sem o cofre, os testes se pulam: é dado real de turma, fora do repositório.
 
 import { existsSync } from 'node:fs'
@@ -16,6 +18,8 @@ import { join } from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 import { hospedar, versao, PAGINA_VAZIA, type Hospedagem, type Versao } from './apoio/versoes.ts'
 import { contarBase, eventosDaBase, lerCofre, lerPasta, semear, trocarSeletor, type ArquivosDoCofre } from './apoio/cofre.ts'
+import { abrirRig, acharRig, type Rig } from './apoio/rig.ts'
+import { execFileSync } from 'node:child_process'
 
 const COFRE = process.env.ADSUM_COFRE ?? join(homedir(), 'Downloads/Chamadas 3.zip')
 const PORTA = 4317
@@ -26,7 +30,7 @@ test.skip(!existsSync(COFRE), `sem o cofre em ${COFRE} (ADSUM_COFRE)`)
 // O Google Chrome instalado, que é o navegador do professor. O Chromium que
 // vem com o Playwright cai (SIGTRAP) quando o service worker assume a página
 // com a pasta da OPFS em uso; o Chrome, não.
-test.use({ channel: 'chrome' })
+test.use({ channel: 'chrome', headless: !process.env.ADSUM_RIG })
 test.describe.configure({ mode: 'serial' })
 // Uma chamada inteira com os crachás da turma, e a espera da versão nova.
 test.beforeEach(() => test.setTimeout(10 * 60_000))
@@ -35,6 +39,7 @@ let noAr: Versao
 let nova: Versao
 let cofre: ArquivosDoCofre
 let site: Hospedagem
+let rig: Rig | undefined
 
 test.beforeAll(async () => {
   noAr = versao(process.env.ADSUM_NO_AR ?? 'origin/main')
@@ -42,8 +47,30 @@ test.beforeAll(async () => {
   expect(nova.entrada, 'as duas versões são o mesmo build').not.toBe(noAr.entrada)
   cofre = lerCofre(COFRE)
   site = await hospedar(PORTA)
+  if (process.env.ADSUM_RIG) {
+    const caminho = process.env.ADSUM_RIG === 'auto' ? await acharRig() : process.env.ADSUM_RIG
+    if (!caminho) throw new Error('ADSUM_RIG pedido, e nenhum rig da Espressif conectado')
+    rig = await abrirRig(caminho)
+  }
 })
-test.afterAll(async () => site?.fechar())
+test.afterAll(async () => {
+  await rig?.fechar()
+  await site?.fechar()
+})
+
+/**
+ * A janela do teste na frente, e confirmada: o teclado do rig digita onde
+ * estiver o foco do sistema. Sem foco, para aqui, antes de qualquer tecla.
+ */
+async function focar(page: Page) {
+  await page.bringToFront()
+  if (await page.evaluate(() => document.hasFocus())) return
+  // O Chrome do teste é outro processo do mesmo app do professor: traz o dele, pelo pid.
+  const pid = execFileSync('pgrep', ['-f', '-o', 'playwright_chromiumdev_profile'], { encoding: 'utf-8' }).trim().split('\n')[0]
+  execFileSync('osascript', ['-e', `tell application "System Events" to set frontmost of (first process whose unix id is ${pid}) to true`])
+  await page.waitForTimeout(400)
+  if (!(await page.evaluate(() => document.hasFocus()))) throw new Error('a janela do teste não está em foco: o rig não digita, para não escrever em outra janela')
+}
 
 /** Os crachás que o dongle leu nesta turma, do `auditoria/uids.csv` do cofre. */
 function crachasDoCofre(): { uid: string; uidHash: string }[] {
@@ -58,8 +85,14 @@ function crachasDoCofre(): { uid: string; uidHash: string }[] {
 
 /** Como o dongle: o UID em decimal de 10 dígitos, digitado numa rajada, e Enter. */
 async function encostar(page: Page, uidHex: string) {
-  await page.keyboard.type(String(Number.parseInt(uidHex, 16)).padStart(10, '0'), { delay: 8 })
-  await page.keyboard.press('Enter')
+  const comoODongleImprime = String(Number.parseInt(uidHex, 16)).padStart(10, '0')
+  if (rig) {
+    await focar(page)
+    await rig.digitar(comoODongleImprime)
+  } else {
+    await page.keyboard.type(comoODongleImprime, { delay: 8 })
+    await page.keyboard.press('Enter')
+  }
   await page.waitForTimeout(ENTRE_CRACHAS_MS)
 }
 
