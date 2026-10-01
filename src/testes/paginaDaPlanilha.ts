@@ -51,11 +51,20 @@ export function montarPaginaDaPlanilha(documento: Document, p: PlanilhaCapturada
 export function coletarComoOSigaa(documento: Document): string {
   const campo = documento.getElementById('form:frequencias') as HTMLInputElement
   const registros = campo.value.split(';').map((r) => r.split(','))
+  // Uma passada pelas células em vez de uma busca por registro: são 1.710, e
+  // no jsdom de um runner do GitHub a busca uma a uma passava do tempo do teste.
+  const celulas = new Map<string, Element>()
+  for (const td of documento.querySelectorAll('td')) {
+    const aluno = [...td.classList].find((c) => c.startsWith('aluno_'))
+    const aula = [...td.classList].find((c) => c.startsWith('aula_'))
+    const chave = `${aluno} ${aula}`
+    if (aluno && aula && !celulas.has(chave)) celulas.set(chave, td)
+  }
   const contagem = new Map<string, number>()
   for (const r of registros) {
     const n = contagem.get(r[ID_MAT]) ?? 0
     contagem.set(r[ID_MAT], n + 1)
-    const td = documento.querySelector(`td.aluno_${r[ID_MAT]}.aula_${n}`)
+    const td = celulas.get(`aluno_${r[ID_MAT]} aula_${n}`)
     const entrada = td?.querySelector('input')
     const texto = entrada ? entrada.value : (td?.textContent ?? '')
     if (texto !== '') r[NUM_FALTAS] = texto
