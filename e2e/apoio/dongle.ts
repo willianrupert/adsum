@@ -32,13 +32,22 @@ export async function desligarDongle() {
   rig = undefined
 }
 
+/**
+ * Logo depois de trocar de janela, o macOS ainda entrega as teclas com
+ * atraso: a rajada chega devagar e o app a recusa, com razão (01/10/2026,
+ * sempre no primeiro crachá). Em sala o Chrome já está na frente.
+ */
+const DEPOIS_DE_TROCAR_A_JANELA_MS = 1500
+
 async function focar(page: Page) {
-  await page.bringToFront()
   if (await page.evaluate(() => document.hasFocus())) return
-  // O Chrome do teste é outro processo do mesmo app do professor: traz o dele, pelo pid.
-  const pid = execFileSync('pgrep', ['-f', '-o', 'playwright_chromiumdev_profile'], { encoding: 'utf-8' }).trim().split('\n')[0]
-  execFileSync('osascript', ['-e', `tell application "System Events" to set frontmost of (first process whose unix id is ${pid}) to true`])
-  await page.waitForTimeout(400)
+  await page.bringToFront()
+  if (!(await page.evaluate(() => document.hasFocus()))) {
+    // O Chrome do teste é outro processo do mesmo app do professor: traz o dele, pelo pid.
+    const pid = execFileSync('pgrep', ['-f', '-o', 'playwright_chromiumdev_profile'], { encoding: 'utf-8' }).trim().split('\n')[0]
+    execFileSync('osascript', ['-e', `tell application "System Events" to set frontmost of (first process whose unix id is ${pid}) to true`])
+  }
+  await page.waitForTimeout(DEPOIS_DE_TROCAR_A_JANELA_MS)
   if (!(await page.evaluate(() => document.hasFocus()))) throw new Error('a janela do teste não está em foco: o rig não digita, para não escrever em outra janela')
 }
 
