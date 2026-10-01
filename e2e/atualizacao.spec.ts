@@ -30,7 +30,12 @@ test.skip(!existsSync(COFRE), `sem o cofre em ${COFRE} (ADSUM_COFRE)`)
 test.use({ channel: 'chrome', headless: !COM_RIG })
 test.describe.configure({ mode: 'serial' })
 // Uma chamada inteira com os crachás da turma, e a espera da versão nova.
-test.beforeEach(() => test.setTimeout(10 * 60_000))
+// E nada sai da máquina: o crachá que o rig digitasse fora da página, na
+// barra de endereço, seria uma busca na internet (01/10/2026).
+test.beforeEach(async ({ context }) => {
+  test.setTimeout(10 * 60_000)
+  await context.route((url) => url.hostname !== 'localhost', (rota) => rota.abort())
+})
 
 let noAr: Versao
 let nova: Versao

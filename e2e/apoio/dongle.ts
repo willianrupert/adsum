@@ -43,14 +43,20 @@ const DEPOIS_DE_TROCAR_A_JANELA_MS = 1500
 // foco mesmo com outra janela na frente, e em 01/10/2026 o rig digitou três
 // crachás na janela de outro programa. Quem responde é o macOS: o processo da
 // frente tem de ser o Chrome do teste, conferido logo antes de cada crachá.
+// Dentro do Chrome, quem põe o foco na página é o `bringToFront`; o teste que
+// usa o rig bloqueia a rede, para um crachá fora do lugar não sair da máquina.
 const osascript = (script: string) => execFileSync('osascript', ['-e', script], { encoding: 'utf-8' }).trim()
 const pidDoChrome = () => execFileSync('pgrep', ['-f', '-o', 'playwright_chromiumdev_profile'], { encoding: 'utf-8' }).trim().split('\n')[0]
 const naFrente = () => osascript('tell application "System Events" to unix id of first process whose frontmost is true')
 
 async function focar(page: Page) {
+  // Sempre: é o que tira o cursor da barra de endereço e o põe na página. O
+  // Chrome recém-aberto começa nela, e lá o crachá vira busca na internet
+  // (01/10/2026).
   const chrome = pidDoChrome()
-  if (naFrente() !== chrome) {
-    await page.bringToFront()
+  const jaNaFrente = naFrente() === chrome
+  await page.bringToFront()
+  if (!jaNaFrente) {
     if (naFrente() !== chrome) osascript(`tell application "System Events" to set frontmost of (first process whose unix id is ${chrome}) to true`)
     await page.waitForTimeout(DEPOIS_DE_TROCAR_A_JANELA_MS)
   }
