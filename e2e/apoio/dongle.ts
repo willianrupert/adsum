@@ -39,19 +39,22 @@ export async function desligarDongle() {
  */
 const DEPOIS_DE_TROCAR_A_JANELA_MS = 1500
 
-/** Página no meio de uma navegação (a versão nova entrando) ainda não tem foco para dar. */
-const temFoco = (page: Page) => page.evaluate(() => document.hasFocus()).catch(() => false)
+// `document.hasFocus()` não serve de trava: com o Playwright ele diz que tem
+// foco mesmo com outra janela na frente, e em 01/10/2026 o rig digitou três
+// crachás na janela de outro programa. Quem responde é o macOS: o processo da
+// frente tem de ser o Chrome do teste, conferido logo antes de cada crachá.
+const osascript = (script: string) => execFileSync('osascript', ['-e', script], { encoding: 'utf-8' }).trim()
+const pidDoChrome = () => execFileSync('pgrep', ['-f', '-o', 'playwright_chromiumdev_profile'], { encoding: 'utf-8' }).trim().split('\n')[0]
+const naFrente = () => osascript('tell application "System Events" to unix id of first process whose frontmost is true')
 
 async function focar(page: Page) {
-  if (await temFoco(page)) return
-  await page.bringToFront()
-  if (!(await temFoco(page))) {
-    // O Chrome do teste é outro processo do mesmo app do professor: traz o dele, pelo pid.
-    const pid = execFileSync('pgrep', ['-f', '-o', 'playwright_chromiumdev_profile'], { encoding: 'utf-8' }).trim().split('\n')[0]
-    execFileSync('osascript', ['-e', `tell application "System Events" to set frontmost of (first process whose unix id is ${pid}) to true`])
+  const chrome = pidDoChrome()
+  if (naFrente() !== chrome) {
+    await page.bringToFront()
+    if (naFrente() !== chrome) osascript(`tell application "System Events" to set frontmost of (first process whose unix id is ${chrome}) to true`)
+    await page.waitForTimeout(DEPOIS_DE_TROCAR_A_JANELA_MS)
   }
-  await page.waitForTimeout(DEPOIS_DE_TROCAR_A_JANELA_MS)
-  if (!(await temFoco(page))) throw new Error('a janela do teste não está em foco: o rig não digita, para não escrever em outra janela')
+  if (naFrente() !== chrome) throw new Error('outra janela está na frente: o rig não digita, para não escrever nela')
 }
 
 /**
