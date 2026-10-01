@@ -68,6 +68,37 @@ Os que não têm teste automático, ou que dependem do mundo real:
 | Aluno de outra turma encosta | **Em aberto** — anotar tela e planilha |
 | "Remover crachá" e encostar outro cartão | Busca com a turma inteira, e conta |
 
+## 2b. A jornada inteira, automática
+
+`npm run test:jornada` (ou `test:jornada:rig`, com o rig S3 no papel do
+dongle; `-- --headed` para assistir). Desde 01/10/2026,
+`e2e/jornada.spec.ts`. No Google Chrome, só pela tela e pelo crachá, sobre o
+build do commit:
+
+1. **A chegada:** o cartão do leitor e o "Criado por", escolher a pasta,
+   colar a turma do SIGAA (a página de participantes, com as matrículas da
+   planilha da bancada), a grade adiada.
+2. **Terça, 13/10 (2 aulas):** crachá novo pela busca, cadastro por
+   "Chamar", crachá repetido, "Presente" à mão, "Não presente" depois do
+   crachá. O resumo diz 5 presenças e que já está na pasta.
+3. **Outra turma:** o crachá da professora cadastrado pelo painel de
+   professores, e um aluno que só existe nela.
+4. **Quarta, 14/10 (4 aulas):** dois crachás juntos (o segundo não conta,
+   e o aviso aparece), e o aluno da outra turma (avisa, não conta).
+5. **Quarta, 18/11 (12 aulas):** o crachá da professora da outra turma pede
+   para encostar de novo, como professora, sem aviso de outra turma.
+6. **A pasta:** a planilha de faltas com a matrícula, e o log da turma.
+7. **O SIGAA:** o favorito do build, na planilha (a bancada, atendida como
+   `sigaa.ufpe.br`), abre a folha (atendida como o site publicado): 3 aulas,
+   com os números de cada uma e o aviso do dia de 12 aulas. Preencher e
+   Gravar. **Cada uma das 135 células enviadas** é conferida: presente vale 0,
+   falta vale o máximo do dia (2, 4 e 12), e nada mais muda.
+8. O favorito de novo: tudo confere.
+
+Leva uns 15 segundos (20 com o rig). Nenhuma requisição sai da máquina: o
+teste atende os dois endereços e bloqueia o resto. A v2 ainda vem travada
+atrás do modo de ensaio, e a jornada o liga só antes do passo do SIGAA.
+
 ## 3. A máquina do professor atualiza
 
 O caminho que só ele percorre: uma base feita pela versão que ele tem,

@@ -14,7 +14,9 @@
     "test:navegador": "playwright test",
     "test:mutacao": "stryker run",
     "test:atualizacao": "playwright test e2e/atualizacao.spec.ts",
-    "test:atualizacao:rig": "ADSUM_RIG=auto playwright test e2e/atualizacao.spec.ts"
+    "test:atualizacao:rig": "ADSUM_RIG=auto playwright test e2e/atualizacao.spec.ts",
+    "test:jornada": "playwright test e2e/jornada.spec.ts",
+    "test:jornada:rig": "ADSUM_RIG=auto playwright test e2e/jornada.spec.ts"
   },
   "dependencies": {
     "dexie": "^4.4.5",
