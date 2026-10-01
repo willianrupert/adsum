@@ -68,7 +68,7 @@ if (pulados.length > 0) {
 console.log(falhou ? `\n  Falhou em: ${falhou}.` : pulados.length > 0 ? '\n  Passou, com testes pulados (acima).' : '\n  Tudo passou.')
 
 // Aprovado de verdade (nada falhou, nada pulado, o app num commit): fica
-// anotado, para o `npm run pode-publicar` contar a semana estável.
+// anotado, para o `npm run pode-publicar`.
 if (!falhou && pulados.length === 0) {
   if (appSujo()) {
     console.log('\n  Não anotado para a publicação: há mudança no app fora de commit.')

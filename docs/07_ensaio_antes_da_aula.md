@@ -212,9 +212,10 @@ o servidor para a nova no mesmo endereço, fechar e reabrir.
 
 ## 5. O zip de sexta
 
-O professor manda o zip da pasta toda sexta. É a régua da semana estável que
-antecede cada publicação (`CLAUDE.md`, desde 01/10/2026): uma semana só conta
-como limpa depois de lida.
+O professor manda o zip da pasta toda sexta. Depois de cada publicação, é a
+régua da primeira semana de uso real, a semana estável (`CLAUDE.md`, desde
+01/10/2026): uma semana só conta como limpa depois de lida, e problema nela
+é voltar atrás, não consertar às pressas.
 
 No `diagnostico/*.log` da semana:
 

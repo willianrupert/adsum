@@ -1,6 +1,6 @@
 // A impressão digital do código que vai ao ar: o que entra no build, e nada
-// mais. Teste e documento mudam sem mudar o app, e sem recomeçar a semana
-// estável (`CLAUDE.md`, "Como uma mudança chega à sala").
+// mais. Teste e documento mudam sem mudar o app, e sem invalidar a aprovação
+// do `npm run verificar` (`CLAUDE.md`, "Como uma mudança chega à sala").
 
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'

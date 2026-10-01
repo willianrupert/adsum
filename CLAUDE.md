@@ -166,16 +166,19 @@ mudanças publicadas na véspera, testadas sobre base limpa. **Estas regras
 valem para qualquer sessão, inclusive as do Claude**, que é a parte mais
 apressada do processo — escrever código ficou barato, validar não.
 
-- **Uma semana de funcionamento estável até a publicação** (decidido pelo
-  autor em 01/10/2026, no lugar dos "dois dias antes de uma aula" e das
-  "quatro semanas limpas" de 23/09). A versão que vai ao ar passa uma semana
-  sem mudança e sem falha: `npm run verificar` verde sobre ela (lint, tipos,
-  unidade, e no navegador a bancada, a jornada inteira e a atualização sobre
-  o cofre real; `verificar:rig` com o rig S3 como dongle), sem teste pulado,
-  e o zip da sexta limpo. Mudança no meio recomeça a semana. A exceção é
-  conserto de uma falha **observada** (em sala, no ensaio ou na bancada), com
-  o ensaio completo depois do deploy. Roteiro do ensaio:
-  `docs/07_ensaio_antes_da_aula.md`.
+- **Publicar logo depois de uma aula, com a volta pronta; a primeira semana
+  de uso real é a semana estável** (decidido pelo autor em 01/10/2026, no
+  lugar dos "dois dias antes de uma aula", das "quatro semanas limpas" de
+  23/09 e de uma semana de espera antes do deploy: esperar com a versão
+  nova parada nesta máquina não a expõe a nada). Antes de publicar:
+  `npm run verificar` verde nas últimas 24 horas, sem teste pulado e uma vez
+  com o rig (`verificar:rig`), o ensaio com o dongle de verdade, e o zip
+  mais recente lido (`npm run pode-publicar` confere o que a máquina vê).
+  Publicar depois de uma aula, nunca na véspera, para haver dias até a
+  próxima. Depois: `npm run conferir-no-ar`, estar disponível na primeira
+  aula, e ler os zips da primeira semana; problema neles é voltar atrás
+  (`docs/07`, "O deploy, e voltar atrás"), não consertar às pressas.
+  Roteiro do ensaio: `docs/07_ensaio_antes_da_aula.md`.
 - **Pronto é ter rodado na cópia do cofre com o dongle, não os testes
   passarem.** Depois de todo deploy: os sete passos sobre uma cópia do cofre
   de um professor real (descompactada de novo quando o caso for "máquina que

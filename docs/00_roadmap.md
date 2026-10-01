@@ -16,9 +16,9 @@ está em "Daqui para frente", no fim.
 - **Versão no ar: `39830c2`**, carimbo `2026-09-23 13:30`.
 - **24/09 foi a primeira aula limpa**: nenhuma recusa, nenhum erro, nenhum
   `evento_id` repetido. 29/09 também.
-- **Publicar pede uma semana estável** (desde 01/10/2026, no lugar do
-  congelamento de quatro semanas): ver "Como uma mudança chega à sala", no
-  `CLAUDE.md`. A v2 (lançar no SIGAA) está feita na branch.
+- **Publicar logo depois de uma aula, com a volta pronta** (desde 01/10/2026,
+  no lugar do congelamento de quatro semanas): a primeira semana de uso real
+  é a semana estável. Ver "Como uma mudança chega à sala", no `CLAUDE.md`. A v2 (lançar no SIGAA) está feita na branch.
 - **Na branch `v2/lancar-no-sigaa`, esperando ensaio (25/09):** o trabalho de
   carga e pontos de falha (`docs/10_codigo.md`), a separação de `Fluxo` e
   `TelaAula` em peças, o diário consertado, os comentários curtos e a coluna
@@ -204,13 +204,13 @@ As decorrências que o zero impunha continuam valendo:
 
 ## Daqui para frente
 
-### Agora: uma semana estável até publicar
+### Agora: publicar depois de uma aula, e a primeira semana de uso real
 
 Desde 01/10/2026 (antes: quatro semanas limpas de congelamento, contadas de
-24/09). A versão candidata passa uma semana sem mudança, com os testes
-automáticos verdes, inclusive o da atualização sobre o cofre real
-(`npm run test:atualizacao`), e o zip da sexta limpo. A régua do zip, lido
-toda sexta: `diagnostico/*.log`
+24/09; e, por algumas horas, uma semana de espera antes do deploy, trocada
+porque a versão parada nesta máquina não é exposta a nada). Antes de
+publicar, `npm run pode-publicar`; depois, `npm run conferir-no-ar`, e os
+zips da primeira semana. A régua do zip, lido toda sexta: `diagnostico/*.log`
 sem recusa, sem `erro_`, sem `desconhecido_durante_busca` inesperado, e a
 conferência nas linhas de base (`repetidos=19` em CIN0144, `repetidos=8` em
 CIN0114: são os repetidos históricos de 22/09; outro número é problema novo).
@@ -254,9 +254,9 @@ e só depois de uma semana limpa ser lida:
 ### Antes de publicar a branch
 
 A branch mexe no caminho de cada crachá. Pelas regras de "Como uma mudança
-chega à sala", ela só sai depois de uma semana estável, com o ensaio sobre a
-cópia do cofre (`npm run test:atualizacao` faz a parte da atualização sozinho)
-e com o dongle. Em especial:
+chega à sala", ela sai logo depois de uma aula, com `npm run pode-publicar`
+dizendo sim, o ensaio com o dongle feito e a volta pronta; a primeira semana
+de uso real é a semana estável. Em especial:
 
 - **A fila rápida com o emulador C3 e o dongle**, olhando o diário: numa
   rajada, menos linhas `pasta` que crachás (o recálculo coalesce), nenhum
