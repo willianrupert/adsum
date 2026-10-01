@@ -9,17 +9,20 @@
 // é a tela de quem está chegando.
 
 import { CartaoDoLeitor } from './componentes/CartaoDoLeitor.tsx'
+import { Creditos } from './componentes/Creditos.tsx'
 
 export function TelaPasta({
   precisaDePermissao,
   aoEscolher,
   aoLiberar,
   aoDispensar,
+  aoAbrirSobre,
 }: {
   precisaDePermissao: boolean
   aoEscolher: () => void
   aoLiberar: () => void
   aoDispensar: () => void
+  aoAbrirSobre?: () => void
 }) {
   return (
     <section className="repouso">
@@ -54,6 +57,8 @@ export function TelaPasta({
           <CartaoDoLeitor chegando />
         </div>
       )}
+
+      <Creditos aoAbrir={aoAbrirSobre} />
     </section>
   )
 }

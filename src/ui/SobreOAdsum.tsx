@@ -21,7 +21,7 @@ type Pessoa = {
 // construiu: é a ordem em que o Adsum aconteceu.
 export const PESSOAS: Pessoa[] = [
   {
-    nome: 'Paulo Freitas',
+    nome: 'Prof. Paulo Freitas',
     iniciais: 'PF',
     cor: 'amarelo',
     papel: 'Professor do CIn/UFPE',

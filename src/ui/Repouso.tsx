@@ -4,6 +4,7 @@
 // o Enter ou o crachá do professor abrem exatamente o que está na tela. É
 // também onde uma aula ainda não salva (sem pasta) é cobrada.
 
+import { Creditos } from './componentes/Creditos.tsx'
 import { saudacao } from '../nucleo/horarios.ts'
 import type { Pendencia } from '../nucleo/pendencias.ts'
 import { Ondas } from './componentes/Simbolos.tsx'
@@ -125,14 +126,7 @@ export function Repouso({
         Cadastrar nova turma
       </button>
 
-      {/* O chevron é o sinal de "abre mais", como nos Ajustes do iOS. */}
-      <button className="repouso__creditos" onClick={aoAbrirSobre} disabled={!aoAbrirSobre}>
-        <span className="repouso__creditos-rotulo">Criado por</span>
-        <span>
-          Prof. Paulo Freitas <span className="repouso__creditos-e">e</span> Willian Rupert
-          <span className="repouso__creditos-seta" aria-hidden="true"> ›</span>
-        </span>
-      </button>
+      <Creditos aoAbrir={aoAbrirSobre} />
     </section>
   )
 }

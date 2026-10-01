@@ -27,7 +27,7 @@ tudo volta.
 ---
 
 Feito para o Centro de Informática da UFPE, em parceria com o
-**Prof. Paulo Freitas de Araújo Filho**, e em uso em sala de aula.
+**Prof. Paulo Freitas**, e em uso em sala de aula.
 
 O problema interessante não é ler um crachá. São duas tensões, e boa parte das
 decisões abaixo nasce delas:
@@ -221,7 +221,7 @@ próxima é o lançamento das presenças no SIGAA, desenhada e à espera
 
 ## Créditos
 
-Idealizado pelo **Prof. Paulo Freitas de Araújo Filho** (CIn/UFPE), que
+Idealizado pelo **Prof. Paulo Freitas** (CIn/UFPE), que
 validou a chamada por crachá em suas turmas. Arquitetado e desenvolvido por
 **Willian Rupert** ([LinkedIn](https://www.linkedin.com/in/willianrupert)), do
 leitor de crachá à planilha. O desenho do lançamento no SIGAA parte do trabalho do Prof. Filipe

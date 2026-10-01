@@ -348,6 +348,7 @@ export function Fluxo() {
           aoEscolher={() => semDono('escolher pasta', () => ligarPasta(true))}
           aoLiberar={() => semDono('liberar pasta', () => ligarPasta(false))}
           aoDispensar={dispensarPastaAgora}
+          aoAbrirSobre={() => setFolha('sobre')}
         />
       )}
       {rota === 'navegador' && conselhoDoNavegador && (
@@ -357,6 +358,7 @@ export function Fluxo() {
             dispensarConselho()
             setConselho(undefined)
           }}
+          aoAbrirSobre={() => setFolha('sobre')}
         />
       )}
       {rota === 'cronograma' && semHorario && (
@@ -395,6 +397,7 @@ export function Fluxo() {
               ? undefined
               : () => setColandoNova(false)
           }
+          aoAbrirSobre={() => setFolha('sobre')}
         />
       )}
       {rota === 'chamada' && sessao && (

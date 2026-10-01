@@ -21,14 +21,17 @@
 // gasta um dia sequer, e exagerar um risco verdadeiro é a forma mais rápida de
 // o aviso deixar de ser levado a sério.
 
+import { Creditos } from './componentes/Creditos.tsx'
 import type { Conselho } from '../ambiente/instalacao.ts'
 
 export function TelaNavegador({
   conselho,
   aoDispensar,
+  aoAbrirSobre,
 }: {
   conselho: Conselho
   aoDispensar: () => void
+  aoAbrirSobre?: () => void
 }) {
   const instalavel = conselho.tipo === 'instalar'
 
@@ -79,6 +82,8 @@ export function TelaNavegador({
       <button className="repouso__link botao--quieto" onClick={aoDispensar}>
         {instalavel ? 'Continuar sem instalar' : 'Continuar assim'}
       </button>
+
+      <Creditos aoAbrir={aoAbrirSobre} />
     </section>
   )
 }

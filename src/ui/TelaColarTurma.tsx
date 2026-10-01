@@ -5,6 +5,7 @@
 // uma frase. Depois de salvar, a rota decide sozinha o que vem a seguir
 // (cronograma, ou a sessão abrindo com a turma inteira pendente).
 
+import { Creditos } from './componentes/Creditos.tsx'
 import { useCallback, useState } from 'react'
 import { prepararLista } from '../nucleo/nomes.ts'
 import { interpretarParticipantes } from '../nucleo/sigaa.ts'
@@ -29,6 +30,7 @@ function comoMatriculado(turma: string, p: { completo: string; matricula: string
 export function TelaColarTurma({
   aoMudarBase,
   aoSair,
+  aoAbrirSobre,
 }: {
   /** Chamado depois de salvar a turma — quem conta pendências e horário
       precisa saber que ela existe. */
@@ -39,6 +41,8 @@ export function TelaColarTurma({
    * única que existe, e cancelar não levaria a lugar nenhum.
    */
   aoSair?: () => void
+  /** "Sobre o Adsum", pelo crédito que a primeira turma mostra. */
+  aoAbrirSobre?: () => void
 } = {}) {
   const { repositorio } = useAdsum()
 
@@ -158,6 +162,13 @@ export function TelaColarTurma({
 
         <ComoCopiar />
       </section>
+
+      {/* Na primeira turma, quem chega está conhecendo o Adsum. */}
+      {!aoSair && (
+        <div className="colagem__creditos">
+          <Creditos aoAbrir={aoAbrirSobre} />
+        </div>
+      )}
     </div>
   )
 }

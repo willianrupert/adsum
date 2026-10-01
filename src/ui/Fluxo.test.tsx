@@ -113,7 +113,9 @@ describe('a rota decide a tela', () => {
     await turmaInteiraComCracha()
     renderizarCom(bancada, <Fluxo />)
 
-    await usuario.click(await screen.findByRole('button', { name: /Criado por/ }))
+    // A primeira turma também tem o crédito, e passa num relance enquanto a base carrega.
+    await screen.findByText(/Começar a chamada/)
+    await usuario.click(screen.getByRole('button', { name: /Criado por/ }))
     const folha = await screen.findByRole('dialog', { name: 'Sobre o Adsum' })
     expect(folha).toHaveTextContent('Willian Rupert')
     expect(folha).toHaveTextContent('Professor do CIn/UFPE')
