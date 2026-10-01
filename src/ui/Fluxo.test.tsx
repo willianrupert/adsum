@@ -108,6 +108,17 @@ describe('a rota decide a tela', () => {
     expect(await screen.findByRole('dialog', { name: 'Presenças' })).toBeInTheDocument()
   })
 
+  it('os créditos da tela inicial abrem "Sobre o Adsum"', async () => {
+    const usuario = userEvent.setup()
+    await turmaInteiraComCracha()
+    renderizarCom(bancada, <Fluxo />)
+
+    await usuario.click(await screen.findByRole('button', { name: /Criado por/ }))
+    const folha = await screen.findByRole('dialog', { name: 'Sobre o Adsum' })
+    expect(folha).toHaveTextContent('Willian Rupert')
+    expect(folha).toHaveTextContent('Professor do CIn/UFPE')
+  })
+
   // Regressão: este botão existia e não fazia nada — a rota decide pelo estado,
   // e "quero cadastrar mais um" é intenção que nenhum dado expressa.
   // A cerimônia deixou de ser uma tela à parte: `'cerimonia'` é só o sinal

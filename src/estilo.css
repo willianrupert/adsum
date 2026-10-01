@@ -795,6 +795,159 @@ button:focus-visible {
   margin-top: 28px;
 }
 
+/* Créditos: abaixo de tudo o que se faz na tela, mas legíveis e clicáveis.
+   O chevron na cor de ação é o sinal de "abre mais", como no iOS; sem
+   pílula nem borda, para não disputar com "Começar a chamada". */
+.repouso__creditos {
+  margin-top: 56px;
+  padding: 10px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border-radius: 14px;
+  font-size: var(--t-menor);
+  line-height: 1.35;
+  color: var(--tinta);
+  transition: background var(--rapido) var(--curva);
+}
+
+.repouso__creditos:hover:not(:disabled) {
+  background: var(--fundo-alt);
+}
+
+.repouso__creditos:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.repouso__creditos-rotulo {
+  font-size: var(--t-nota);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+}
+
+.repouso__creditos-e {
+  color: var(--tinta-fraca);
+}
+
+.repouso__creditos-seta {
+  color: var(--acao);
+  font-weight: 600;
+}
+
+/* "Sobre o Adsum": a marca no alto e uma linha por pessoa, no desenho dos
+   Mushroom cards — círculo colorido à esquerda, nome, papel e apoio. */
+.sobre {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sobre__marca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.sobre__nome {
+  margin: 8px 0 0;
+  font-size: var(--t-secao);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.sobre__lema {
+  margin: 2px 0 0;
+  color: var(--tinta-fraca);
+  font-style: italic;
+}
+
+.sobre__pessoas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sobre__pessoa {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--fundo-alt);
+}
+
+.sobre__avatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: var(--t-menor);
+  font-weight: 600;
+  color: #fff;
+}
+
+.sobre__avatar--azul { background: var(--acao); }
+.sobre__avatar--amarelo { background: var(--alerta); }
+
+.sobre__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sobre__texto strong {
+  font-size: var(--t-corpo);
+}
+
+.sobre__papel {
+  font-size: var(--t-menor);
+  color: var(--tinta-fraca);
+}
+
+.sobre__apoio {
+  margin-top: 4px;
+  font-size: var(--t-menor);
+  text-wrap: pretty;
+}
+
+.sobre__links {
+  display: flex;
+  gap: 16px;
+  margin-top: 6px;
+  font-size: var(--t-menor);
+}
+
+.sobre__links a,
+.sobre__rodape a {
+  color: var(--acao);
+  text-decoration: none;
+}
+
+.sobre__links a:hover,
+.sobre__rodape a:hover {
+  text-decoration: underline;
+}
+
+.sobre__rodape {
+  margin: 0;
+  font-size: var(--t-menor);
+  color: var(--tinta-fraca);
+  text-align: center;
+  text-wrap: balance;
+}
+
 /* `balance` e não `pretty` nas linhas de apoio: são parágrafos de até três
    linhas, e ali o que incomoda é a última linha curta sozinha. `pretty` cuida do
    fim de parágrafos longos; `balance` distribui as linhas por igual, que é o que

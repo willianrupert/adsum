@@ -21,6 +21,7 @@ export function Repouso({
   aoSalvar,
   aoVerPresencas,
   aoNovaTurma,
+  aoAbrirSobre,
 }: {
   /** Aulas que existem só no navegador (sem pasta). */
   pendencias: Pendencia[]
@@ -40,6 +41,8 @@ export function Repouso({
   aoSalvar: (turma: string) => void
   aoVerPresencas: () => void
   aoNovaTurma: () => void
+  /** Abre "Sobre o Adsum". Ausente (vitrine): o crédito aparece, sem abrir. */
+  aoAbrirSobre?: () => void
 }) {
   const dia = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })
   const indice = turmaSelecionada ? listaDeTurmas.indexOf(turmaSelecionada) : -1
@@ -120,6 +123,15 @@ export function Repouso({
       </button>
       <button className="repouso__link botao--quieto" onClick={aoNovaTurma}>
         Cadastrar nova turma
+      </button>
+
+      {/* O chevron é o sinal de "abre mais", como nos Ajustes do iOS. */}
+      <button className="repouso__creditos" onClick={aoAbrirSobre} disabled={!aoAbrirSobre}>
+        <span className="repouso__creditos-rotulo">Criado por</span>
+        <span>
+          Prof. Paulo Freitas <span className="repouso__creditos-e">e</span> Willian Rupert
+          <span className="repouso__creditos-seta" aria-hidden="true"> ›</span>
+        </span>
       </button>
     </section>
   )

@@ -7,6 +7,7 @@
 
 import { useState } from 'react'
 import { Repouso } from './Repouso.tsx'
+import { SobreOAdsum } from './SobreOAdsum.tsx'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaPasta } from './TelaPasta.tsx'
 import { TelaNavegador } from './TelaNavegador.tsx'
@@ -267,6 +268,10 @@ export function Vitrine() {
           aoVerPresencas={() => {}}
           aoNovaTurma={() => {}}
         />
+      </Cena>
+
+      <Cena titulo="Sobre o Adsum" quando="tocando nos créditos da tela inicial">
+        <SobreOAdsum />
       </Cena>
 
       <Cena titulo="Convite de instalar" quando="Chrome, uma vez só, em qualquer tela">

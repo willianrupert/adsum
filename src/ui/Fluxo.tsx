@@ -57,6 +57,7 @@ import { useRecadoPassageiro } from './hooks/useRecadoPassageiro.ts'
 import { useTeclasDeEnsaio } from './hooks/useTeclasDeEnsaio.ts'
 import { IndicadorDoLeitor } from './IndicadorDoLeitor.tsx'
 import { Repouso } from './Repouso.tsx'
+import { SobreOAdsum } from './SobreOAdsum.tsx'
 import { TelaAula } from './TelaAula.tsx'
 import { TelaColarTurma } from './TelaColarTurma.tsx'
 import { TelaCronograma } from './TelaCronograma.tsx'
@@ -67,7 +68,7 @@ import { ConteudoDePresencas } from './TelaPresencas.tsx'
 import { TelaProblema } from './TelaProblema.tsx'
 import { TelaResumo } from './TelaResumo.tsx'
 
-type Folha = 'ajustes' | 'presencas' | 'diagnostico'
+type Folha = 'ajustes' | 'presencas' | 'diagnostico' | 'sobre'
 
 /** Duas frases curtas e sem travessão, que é a voz de tela deste app. */
 function mensagemDeRecusa(recusa: Recusa): string {
@@ -463,6 +464,7 @@ export function Fluxo() {
             setTurmasAntesDaNova(turmas)
             setColandoNova(true)
           }}
+          aoAbrirSobre={() => setFolha('sobre')}
         />
       )}
 
@@ -553,7 +555,15 @@ export function Fluxo() {
       {/* Uma folha só: trocar o conteúdo, e não a folha, não refaz a animação do fundo. */}
       {folha && (
         <Sheet
-          titulo={folha === 'ajustes' ? 'Ajustes' : folha === 'presencas' ? 'Presenças' : 'Diagnóstico'}
+          titulo={
+            folha === 'ajustes'
+              ? 'Ajustes'
+              : folha === 'presencas'
+                ? 'Presenças'
+                : folha === 'sobre'
+                  ? 'Sobre o Adsum'
+                  : 'Diagnóstico'
+          }
           aoFechar={() => setFolha(undefined)}
           cheia={folha === 'presencas'}
         >
@@ -601,6 +611,7 @@ export function Fluxo() {
             />
           )}
           {folha === 'diagnostico' && <TelaDiagnostico />}
+          {folha === 'sobre' && <SobreOAdsum />}
         </Sheet>
       )}
     </>

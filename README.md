@@ -221,9 +221,10 @@ próxima é o lançamento das presenças no SIGAA, desenhada e à espera
 
 ## Créditos
 
-Criado por **Willian Rupert**, com o **Prof. Paulo Freitas de Araújo Filho**
-(CIn/UFPE), que levou o Adsum para a sala de aula e pediu boa parte do que ele
-faz. O desenho do lançamento no SIGAA parte do trabalho do Prof. Filipe
+Idealizado pelo **Prof. Paulo Freitas de Araújo Filho** (CIn/UFPE), que
+validou a chamada por crachá em suas turmas. Arquitetado e desenvolvido por
+**Willian Rupert** ([LinkedIn](https://www.linkedin.com/in/willianrupert)), do
+leitor de crachá à planilha. O desenho do lançamento no SIGAA parte do trabalho do Prof. Filipe
 Calegario ([auto-sigaa](https://github.com/filipecalegario/auto-sigaa)).
 
 ## Licença
