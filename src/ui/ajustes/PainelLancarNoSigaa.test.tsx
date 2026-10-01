@@ -43,7 +43,7 @@ describe('Lançar no SIGAA, nos Ajustes', () => {
 
   it('só aparece nos Ajustes com o modo de desenvolvimento ligado, enquanto a v2 não sai', async () => {
     const { unmount } = renderizarCom(bancada, <TelaRepositorio />)
-    await screen.findByText('Sua turma')
+    await screen.findByText('Seus dados')
     expect(screen.queryByRole('button', { name: /Lançar no SIGAA/ })).not.toBeInTheDocument()
     unmount()
 

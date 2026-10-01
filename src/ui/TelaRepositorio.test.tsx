@@ -74,7 +74,7 @@ describe('quem falta cadastrar, por turma', () => {
     // docs/05_plano_execucao.md); "Vínculos" continua em Ajustes e serve de
     // âncora pra esperar a tela terminar de montar.
     await screen.findByText('Vínculos')
-    expect(screen.queryByText('Quem falta cadastrar, por turma')).not.toBeInTheDocument()
+    expect(screen.queryByText('Suas turmas')).not.toBeInTheDocument()
   })
 })
 
@@ -105,7 +105,7 @@ describe('excluir turma', () => {
     await usuario.click(await screen.findByRole('button', { name: 'IF685 · T01' }))
 
     expect(await screen.findByText('Excluir IF685 · T01: feito.')).toBeInTheDocument()
-    expect(screen.queryByText('Quem falta cadastrar, por turma')).not.toBeInTheDocument()
+    expect(screen.queryByText('Suas turmas')).not.toBeInTheDocument()
     expect(await bancada.repositorio.listarAulas()).toHaveLength(0)
     // Vínculo e evento são de outra natureza — crachá continua sendo de quem
     // é, e presença já gravada não se apaga (regra de `CLAUDE.md`).
@@ -134,7 +134,7 @@ describe('nova turma, a partir de Ajustes', () => {
     await bancada.repositorio.salvarTurma('IF685 · T01', [pessoa('IF685 · T01', '1', 'Ana')])
     renderizarCom(bancada, <TelaRepositorio />)
 
-    await screen.findByText('Quem falta cadastrar, por turma')
+    await screen.findByText('Suas turmas')
     expect(screen.queryByRole('button', { name: 'Nova turma' })).not.toBeInTheDocument()
   })
 

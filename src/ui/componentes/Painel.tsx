@@ -133,7 +133,7 @@ export function Selo({
 }
 
 /**
- * Divisória entre grupos de painéis em Ajustes — "Sua turma", "Este
+ * Divisória entre grupos de painéis em Ajustes — "Seus dados", "Este
  * computador", "Diagnóstico". Não colapsa e não é um `Painel`: é só o
  * agrupamento visual que faltava numa folha de onze painéis empilhados sem
  * hierarquia nenhuma.

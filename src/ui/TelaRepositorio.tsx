@@ -3,6 +3,7 @@
 // dados que eles compartilham e a ordem em que aparecem. Os arquivos são os
 // mesmos do cofre em pasta (`docs/01_cofre.md`).
 
+import { CartaoDoLeitor } from './componentes/CartaoDoLeitor.tsx'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { abrirTexto, salvarTexto } from '../ambiente/arquivos.ts'
 import { semDono } from '../ambiente/diario.ts'
@@ -121,7 +122,7 @@ export function TelaRepositorio({
 
   return (
     <div className="diagnostico">
-      <Secao titulo="Sua turma" legenda="O que se mexe durante o semestre." />
+      <Secao titulo="Seus dados" />
 
       <ResumoDaBase
         comCracha={vinculos.length - sinteticos}
@@ -184,7 +185,15 @@ export function TelaRepositorio({
 
       {/* Sem pasta, os dados existem num navegador, não no computador: o mesmo
           Mac com Chrome e Safari tem duas bases. */}
-      <Secao titulo="Este computador" legenda="Mexido uma vez, ou raramente." />
+      <Secao titulo="Este computador" />
+
+      <Painel titulo="O leitor de crachá" legenda="USB, de 13,56 MHz, sem driver." recolhivel>
+        <CartaoDoLeitor />
+        <p className="ferramentas__nota">
+          Durante a chamada, deixe a janela do Adsum na frente: o leitor digita onde estiver
+          o cursor. Se um crachá não for lido, o Diagnóstico mostra o que chegou.
+        </p>
+      </Painel>
 
       <PainelDaPasta
         pasta={pasta}

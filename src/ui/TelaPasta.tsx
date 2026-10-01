@@ -4,6 +4,11 @@
 // limpar dados do site apaga o cadastro da turma inteira, e recadastrar
 // quarenta e nove alunos não é uma opção aceitável. Com a pasta, os arquivos
 // são arquivos — limpar dados do site apaga o handle, não a pasta.
+//
+// Na primeira vez, é também onde o professor fica sabendo do leitor de crachá:
+// é a tela de quem está chegando.
+
+import { CartaoDoLeitor } from './componentes/CartaoDoLeitor.tsx'
 
 export function TelaPasta({
   precisaDePermissao,
@@ -43,6 +48,12 @@ export function TelaPasta({
       <button className="repouso__link botao--quieto" onClick={aoDispensar}>
         Seguir sem pasta por enquanto
       </button>
+
+      {!precisaDePermissao && (
+        <div className="pasta__leitor">
+          <CartaoDoLeitor chegando />
+        </div>
+      )}
     </section>
   )
 }

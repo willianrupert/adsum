@@ -117,21 +117,13 @@ export function PainelDaPasta({
             <code>config.json · vinculos.json · turmas/ · registros/</code>
           </Linha>
           <p className="ferramentas__nota">
-            Gravado a cada mudança. O navegador não revela o caminho completo, então
-            procure a pasta pelo nome, onde você a escolheu. O <code>LEIA-ME.txt</code> lá dentro
-            explica cada arquivo e como recuperar tudo.
-          </p>
-          {/* Pasta vazia pode ser iCloud sem sincronizar: não apaga a base. */}
-          <p className="ferramentas__nota">
-            Esvaziar a pasta pela mão não apaga a base daqui, e a próxima
-            gravação a reenche. Para parar de gravar nela, use{' '}
-            <strong>Desconectar</strong>. Para apagar a base, os botões de zerar
-            abaixo.
+            O Adsum grava aqui a cada mudança. Procure a pasta pelo nome: o navegador não
+            mostra o caminho. O <code>LEIA-ME.txt</code> explica cada arquivo.
           </p>
           <p className="ferramentas__nota">
-            <strong>Reler a pasta</strong> traz de volta o que estiver lá e não estiver
-            aqui. Útil se a pasta fica no iCloud e outra máquina gravou nela, e não apaga
-            nada.
+            <strong>Desconectar</strong> para de gravar, sem apagar nada.{' '}
+            <strong>Reler a pasta</strong> traz o que estiver nela e faltar aqui, como o que
+            outra máquina gravou pelo iCloud.
           </p>
         </>
       ) : pastaDisponivel() ? (

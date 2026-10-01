@@ -154,3 +154,45 @@ export function Ondas({ tamanho = 64, animado = false }: { tamanho?: number; ani
     </svg>
   )
 }
+
+/**
+ * O leitor de crachá USB de 13,56 MHz que o Adsum usa, desenhado: a placa preta
+ * de mesa, o LED, o símbolo de aproximar e o cabo. Desenho, não foto: a foto é
+ * do anúncio de quem vende, e aqui se versiona o desenho (`CLAUDE.md`).
+ */
+export function Leitor({ tamanho = 64 }: { tamanho?: number }) {
+  return (
+    <svg viewBox="0 0 64 64" width={tamanho} height={tamanho} className="leitor" aria-hidden="true">
+      <defs>
+        <linearGradient id="leitor-tampa" x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stopColor="#4a4a4d" />
+          <stop offset="1" stopColor="#161618" />
+        </linearGradient>
+        <linearGradient id="leitor-lado" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#2a2a2c" />
+          <stop offset="1" stopColor="#0d0d0e" />
+        </linearGradient>
+      </defs>
+      {/* O cabo, e o plugue USB na ponta. */}
+      <path d="M23 16 C21 10 15 12 12.5 9.5" fill="none" stroke="#3a3a3c" strokeWidth="2.2" strokeLinecap="round" />
+      <g transform="rotate(-40 10 7.5)">
+        <rect x="6" y="4.6" width="8.5" height="5.6" rx="1.3" fill="#3a3a3c" />
+        <rect x="2.4" y="5.6" width="4.2" height="3.6" rx="0.5" fill="#c7c7cc" />
+      </g>
+      {/* A placa inclinada, como fica na mesa: a espessura, a tampa, o LED. */}
+      <g transform="rotate(-14 37 38)">
+        <rect x="21" y="16" width="32" height="44" rx="6.5" fill="url(#leitor-lado)" transform="translate(1.4 1.6)" />
+        <rect x="21" y="16" width="32" height="44" rx="6.5" fill="url(#leitor-tampa)" stroke="rgba(255,255,255,0.16)" strokeWidth="0.7" />
+        <rect x="44.5" y="20.5" width="4.2" height="1.9" rx="0.95" fill="#30d158" />
+        {/* O cartão encostado e as ondas, como gravado na tampa. */}
+        <g fill="none" stroke="#f5f5f7" strokeLinecap="round" strokeWidth="1.5" opacity="0.92">
+          <rect x="32" y="32.5" width="10" height="14.5" rx="1.8" />
+          <path d="M29 35.8 a5.5 5.5 0 0 0 0 8" />
+          <path d="M26.2 34 a8.3 8.3 0 0 0 0 11.6" />
+          <path d="M45 35.8 a5.5 5.5 0 0 1 0 8" />
+          <path d="M47.8 34 a8.3 8.3 0 0 1 0 11.6" />
+        </g>
+      </g>
+    </svg>
+  )
+}

@@ -45,7 +45,7 @@ export function ResumoDaBase({
 
       {turmas.length > 0 && (
         <>
-          <p className="ferramentas__nota">Quem falta cadastrar, por turma</p>
+          <p className="ferramentas__nota">Suas turmas</p>
           <div className="cartoes">
             {turmas.map((t) => (
               <Cartao

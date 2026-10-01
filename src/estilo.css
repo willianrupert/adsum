@@ -192,7 +192,7 @@ code {
   margin-top: 16px;
 }
 
-/* Divisória simples entre grupos de Ajustes — "Sua turma", "Este
+/* Divisória simples entre grupos de Ajustes — "Seus dados", "Este
    computador". Não é painel, não colapsa: os painéis empilhados sem
    agrupamento nenhum é a parede que fazia "eu me perco lá". Diagnóstico
    saiu daqui — é folha própria agora, ver `Fluxo.tsx`. */
@@ -3049,4 +3049,21 @@ button:focus-visible {
   padding-left: 18px;
   font-size: var(--t-menor);
   line-height: 1.6;
+}
+
+/* ── O leitor de crachá (`ui/componentes/CartaoDoLeitor.tsx`) ── */
+/* O cartão de sempre, com o desenho do leitor no lugar do círculo: a 36 px
+   ele vira uma mancha preta, e o que se quer é que a pessoa o reconheça. */
+.cartao--leitor {
+  align-items: center;
+  text-align: left;
+}
+
+.cartao--leitor .leitor {
+  flex: none;
+}
+
+.pasta__leitor {
+  margin: 44px auto 0;
+  max-width: 460px;
 }

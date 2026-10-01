@@ -115,14 +115,14 @@ describe('vínculos', () => {
   const paulo = {
     uidHash: '9bb18ff5da8824b2',
     papel: 'professor' as const,
-    nome: 'Paulo Araújo Filho',
+    nome: 'Helena Duarte Lima',
     criadoEm: '2026-08-18T10:00:00.000Z',
   }
 
   it('grava, busca e conta por papel', async () => {
     await repo.gravarVinculo(paulo)
     await repo.gravarVinculo({ ...paulo, uidHash: 'aaaa', papel: 'aluno', nome: 'Maria Vitória' })
-    expect((await repo.vinculoPorHash('9bb18ff5da8824b2'))?.nome).toBe('Paulo Araújo Filho')
+    expect((await repo.vinculoPorHash('9bb18ff5da8824b2'))?.nome).toBe('Helena Duarte Lima')
     const diag = await repo.diagnostico()
     expect(diag.vinculos).toBe(2)
     expect(diag.professores).toBe(1)

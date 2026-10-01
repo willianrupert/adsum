@@ -9,7 +9,7 @@ import { gravarEventoNovo, type Repositorio } from '../../portas/Repositorio.ts'
 import { hhmm } from './formatos.ts'
 
 const NOMES_SEMEADOS = [
-  { papel: 'professor' as const, nome: 'Paulo Araújo Filho' },
+  { papel: 'professor' as const, nome: 'Helena Duarte Lima' },
   { papel: 'aluno' as const, nome: 'Willian Neves' },
   { papel: 'aluno' as const, nome: 'Maria Vitória' },
   { papel: 'aluno' as const, nome: 'João Pedro' },
