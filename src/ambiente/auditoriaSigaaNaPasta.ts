@@ -39,6 +39,16 @@ export const problemaDeTurma = (nome: string, candidatas: string[] = []) =>
     : `${nome}: mais de uma turma da base com este nome de arquivo (${candidatas.join(', ')}), ficou de fora.`
 
 /**
+ * O arquivo é do Adsum pelo cabeçalho, como o log se reconhece pela linha. A
+ * anotação do professor e o `._` do macOS não são auditoria órfã: ficam onde
+ * estão, sem virar erro no diário.
+ */
+async function ehAuditoria(pasta: FileSystemDirectoryHandle, caminho: string): Promise<boolean> {
+  const sem = (t: string) => t.replace(/^\uFEFF/, '')
+  return sem((await ler(pasta, caminho)) ?? '').startsWith(sem(cabecalhoDaAuditoria()).trim())
+}
+
+/**
  * A auditoria do SIGAA contra a pasta, nos dois sentidos, sem reescrever
  * nada: linha só na pasta entra na base (e o aceite volta a ser ajuste);
  * linha só na base vai para o fim do arquivo. Turma sem auditoria não ganha
@@ -54,7 +64,7 @@ export async function conferirAuditoriaSigaa(
   for (const nome of await listarArquivos(pasta, ['sigaa'])) {
     const candidatas = porNome.get(nome)
     if (candidatas?.length === 1) turmas.add(candidatas[0])
-    else problemas.push(problemaDeTurma(`sigaa/${nome}`, candidatas))
+    else if (candidatas || (await ehAuditoria(pasta, `sigaa/${nome}`))) problemas.push(problemaDeTurma(`sigaa/${nome}`, candidatas))
   }
   for (const lista of porNome.values()) for (const t of lista) turmas.add(t)
 

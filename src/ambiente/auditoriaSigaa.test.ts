@@ -79,6 +79,16 @@ describe('a auditoria do SIGAA vai para a pasta', () => {
     const r = await conferirAuditoriaSigaa(repo, handle)
     expect(r.problemas).toEqual([expect.stringMatching(/CIN9999-T09\.csv.*turma/)])
   })
+
+  it('o que não é do Adsum na pasta sigaa fica onde está, sem virar problema', async () => {
+    const repo = await base()
+    const { handle } = criarPastaFalsa()
+    await escrever(handle, 'sigaa/o que lancei.txt', 'lancei até 15/10\n')
+    await escrever(handle, 'sigaa/._CIN0144-T01.csv', '\u0000\u0005\u0016\u0007')
+    const r = await conferirAuditoriaSigaa(repo, handle)
+    expect(r.problemas).toEqual([])
+    expect(await ler(handle, 'sigaa/o que lancei.txt')).toBe('lancei até 15/10\n')
+  })
 })
 
 describe('a pasta é a dona: esvaziar a base e restaurar traz tudo de volta', () => {
