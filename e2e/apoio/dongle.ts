@@ -39,16 +39,19 @@ export async function desligarDongle() {
  */
 const DEPOIS_DE_TROCAR_A_JANELA_MS = 1500
 
+/** Página no meio de uma navegação (a versão nova entrando) ainda não tem foco para dar. */
+const temFoco = (page: Page) => page.evaluate(() => document.hasFocus()).catch(() => false)
+
 async function focar(page: Page) {
-  if (await page.evaluate(() => document.hasFocus())) return
+  if (await temFoco(page)) return
   await page.bringToFront()
-  if (!(await page.evaluate(() => document.hasFocus()))) {
+  if (!(await temFoco(page))) {
     // O Chrome do teste é outro processo do mesmo app do professor: traz o dele, pelo pid.
     const pid = execFileSync('pgrep', ['-f', '-o', 'playwright_chromiumdev_profile'], { encoding: 'utf-8' }).trim().split('\n')[0]
     execFileSync('osascript', ['-e', `tell application "System Events" to set frontmost of (first process whose unix id is ${pid}) to true`])
   }
   await page.waitForTimeout(DEPOIS_DE_TROCAR_A_JANELA_MS)
-  if (!(await page.evaluate(() => document.hasFocus()))) throw new Error('a janela do teste não está em foco: o rig não digita, para não escrever em outra janela')
+  if (!(await temFoco(page))) throw new Error('a janela do teste não está em foco: o rig não digita, para não escrever em outra janela')
 }
 
 /**
