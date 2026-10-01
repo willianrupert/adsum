@@ -172,8 +172,10 @@ apressada do processo — escrever código ficou barato, validar não.
   23/09 e de uma semana de espera antes do deploy: esperar com a versão
   nova parada nesta máquina não a expõe a nada). Antes de publicar:
   `npm run verificar` verde nas últimas 24 horas, sem teste pulado e uma vez
-  com o rig (`verificar:rig`), o ensaio com o dongle de verdade, e o zip
-  mais recente lido (`npm run pode-publicar` confere o que a máquina vê).
+  com o rig (`verificar:rig`), o ensaio com o dongle de verdade quando o
+  caminho do crachá depois do dongle mudou (o rig cobre do USB para cima; o
+  rádio e a conversão do dongle são os da versão do ar), e o zip mais recente
+  lido (`npm run pode-publicar` confere o que a máquina vê).
   Publicar depois de uma aula, nunca na véspera, para haver dias até a
   próxima. Depois: `npm run conferir-no-ar`, estar disponível na primeira
   aula, e ler os zips da primeira semana; problema neles é voltar atrás

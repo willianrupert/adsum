@@ -8,14 +8,18 @@
 //   - pelo menos uma vez com o rig S3, como teclado USB de verdade;
 //   - nada do app fora de commit, e o commit já no GitHub.
 //
-// O que a máquina não sabe ver fica perguntado no fim: o ensaio com o dongle,
-// o zip mais recente, e o momento (logo depois de uma aula, nunca na
+// O ensaio com o dongle de verdade só é exigido quando o caminho do crachá
+// depois do dongle mudou em relação ao ar (`CAMINHO_DA_LEITURA`): sem isso, o
+// que o rig não cobre é o que já roda em sala.
+//
+// O que a máquina não sabe ver fica perguntado no fim: o ensaio, quando
+// exigido, o zip mais recente, e o momento (logo depois de uma aula, nunca na
 // véspera). A primeira semana de uso real, depois de publicar, é a semana
 // estável: os zips dela são lidos, e problema neles é voltar atrás.
 
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { appSujo, commitAtual, impressaoDoApp, REGISTRO } from './codigoDoApp.mjs'
+import { appSujo, commitAtual, impressaoDoApp, leituraMudou, REGISTRO } from './codigoDoApp.mjs'
 
 const DIA = 24 * 60 * 60 * 1000
 const git = (...args) => execFileSync('git', args, { encoding: 'utf-8' }).trim()
@@ -51,9 +55,15 @@ const criterios = [
 console.log(`\n  Pode publicar ${commitAtual()}? (o que muda no app em relação ao ar: ${mudancasDoApp})\n`)
 for (const [ok, sim, nao] of criterios) console.log(`  ${ok ? '✓' : '✗'} ${ok ? sim : nao}`)
 const pode = criterios.every(([ok]) => ok)
+const leitura = await leituraMudou('origin/main')
+console.log(
+  leitura.length === 0
+    ? '  ✓ o caminho do crachá depois do dongle não mudou em relação ao ar: o ensaio com o dongle não é exigido'
+    : `  ! o caminho do crachá mudou em relação ao ar (${leitura.map((c) => c.split('/').pop()).join(', ')}): o ensaio com o dongle é exigido`,
+)
 console.log('\n  E o que só você vê:')
-console.log('  ? o ensaio curto com o dongle de verdade (docs/07): rádio e o "Liberar" da pasta')
+if (leitura.length > 0) console.log('  ? o ensaio curto com o dongle de verdade (docs/07): o rádio e o que o dongle digita')
 console.log('  ? o zip mais recente do professor, lido: diário sem recusa, divergência ou erro sem dono')
 console.log('  ? logo depois de uma aula, com dias até a próxima, e você disponível nela')
-console.log(pode ? '\n  Sim, pelo que a máquina consegue ver. Com as três acima, publique (docs/07, "O deploy").\n  Depois: npm run conferir-no-ar, e os zips da primeira semana.\n' : '\n  Ainda não.\n')
+console.log(pode ? `\n  Sim, pelo que a máquina consegue ver. Com ${leitura.length > 0 ? 'as três' : 'as duas'} acima, publique (docs/07, "O deploy").\n  Depois: npm run conferir-no-ar, e os zips da primeira semana.\n` : '\n  Ainda não.\n')
 process.exit(pode ? 0 : 1)

@@ -31,3 +31,25 @@ export const commitAtual = () => git('rev-parse', '--short=7', 'HEAD')
 
 /** Onde ficam as verificações aprovadas, uma por linha (fora do repositório: `.gitignore`). */
 export const REGISTRO = '.verificacoes.jsonl'
+
+/**
+ * O caminho do crachá depois do dongle: o que ele digita vira UID e hash
+ * aqui. Se isto não muda, o que o rig não cobre (o rádio, a conversão do
+ * dongle) é o que já roda em sala na versão do ar; se muda, o ensaio com o
+ * dongle de verdade volta a ser exigido.
+ */
+export const CAMINHO_DA_LEITURA = ['src/adaptadores/leitor/LeitorTeclado.ts', 'src/nucleo/digitacao.ts', 'src/nucleo/uid.ts', 'src/nucleo/hash.ts']
+
+/** Os arquivos do caminho da leitura cuja lógica mudou entre dois commits; comentário não conta. */
+export async function leituraMudou(de, para = 'HEAD') {
+  const ts = (await import('typescript')).default
+  const semComentario = (codigo) => ts.transpileModule(codigo, { compilerOptions: { removeComments: true, target: ts.ScriptTarget.ESNext } }).outputText
+  const conteudo = (commit, caminho) => {
+    try {
+      return git('show', `${commit}:${caminho}`)
+    } catch {
+      return ''
+    }
+  }
+  return CAMINHO_DA_LEITURA.filter((c) => semComentario(conteudo(de, c)) !== semComentario(conteudo(para, c)))
+}

@@ -439,7 +439,7 @@ const corpo = [
   p('Durante os testes, nada sai do computador: o navegador do teste não chega à internet, e os endereços do Adsum e do SIGAA são atendidos pelo próprio teste.'),
 
   h2('8.4 Quando uma versão vai ao ar'),
-  p([t('Uma versão nova é publicada logo depois de uma aula, nunca na véspera de outra: com '), mono('npm run verificar'), t(' aprovado sobre ela nas últimas 24 horas, uma vez com a placa no lugar do leitor, sem teste pulado, e com o ensaio feito com o leitor de verdade. A primeira semana de uso real é a semana de observação: a cópia da pasta enviada pelo professor na sexta-feira é lida, e qualquer problema nela é resolvido voltando à versão anterior, que o '), mono('npm run verificar'), t(' prova que abre a base atualizada. Toda falha em sala vira, antes do conserto, um teste que a reproduz.')]),
+  p([t('Uma versão nova é publicada logo depois de uma aula, nunca na véspera de outra: com '), mono('npm run verificar'), t(' aprovado sobre ela nas últimas 24 horas, uma vez com a placa no lugar do leitor, sem teste pulado, e com o ensaio feito com o leitor de verdade quando a versão mexe no caminho da leitura do crachá. A primeira semana de uso real é a semana de observação: a cópia da pasta enviada pelo professor na sexta-feira é lida, e qualquer problema nela é resolvido voltando à versão anterior, que o '), mono('npm run verificar'), t(' prova que abre a base atualizada. Toda falha em sala vira, antes do conserto, um teste que a reproduz.')]),
 
   new Paragraph({ spacing: { before: 500 }, children: [
     t('Código-fonte e histórico de decisões: ', { color: FRACA, size: 20 }),
