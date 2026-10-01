@@ -169,9 +169,10 @@ apressada do processo — escrever código ficou barato, validar não.
 - **Uma semana de funcionamento estável até a publicação** (decidido pelo
   autor em 01/10/2026, no lugar dos "dois dias antes de uma aula" e das
   "quatro semanas limpas" de 23/09). A versão que vai ao ar passa uma semana
-  sem mudança e sem falha: testes automáticos verdes sobre ela (`npm test`,
-  `npm run test:navegador`, `npm run test:atualizacao` sobre o cofre real) e
-  o zip da sexta limpo. Mudança no meio recomeça a semana. A exceção é
+  sem mudança e sem falha: `npm run verificar` verde sobre ela (lint, tipos,
+  unidade, e no navegador a bancada, a jornada inteira e a atualização sobre
+  o cofre real; `verificar:rig` com o rig S3 como dongle), sem teste pulado,
+  e o zip da sexta limpo. Mudança no meio recomeça a semana. A exceção é
   conserto de uma falha **observada** (em sala, no ensaio ou na bancada), com
   o ensaio completo depois do deploy. Roteiro do ensaio:
   `docs/07_ensaio_antes_da_aula.md`.

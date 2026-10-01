@@ -9,6 +9,21 @@ Rodado inteiro pela primeira vez em 23/09, sobre `39830c2`. Achou dois
 defeitos que a suíte não achava (`docs/06_falhas_em_sala.md`, J e K), e a
 aula seguinte foi a primeira limpa.
 
+## O comando único
+
+`npm run verificar` roda tudo o que é automático, nesta máquina, e para na
+primeira falha: lint, tipos, os testes de unidade, e no Chrome a bancada do
+SIGAA (seção 2b), a jornada inteira e a atualização sobre o cofre real
+(seção 3). `npm run verificar:rig` faz o mesmo com o rig S3 no lugar do
+teclado. No fim, o resumo diz o tempo de cada etapa e **lista o que foi
+pulado** por falta de dados (a planilha da bancada, o cofre): pulado não é
+passou. E abre o relatório do Playwright, com o vídeo de cada teste e o
+trace do que falhou (`npm run relatorio` abre de novo). Não roda no GitHub,
+por decisão do autor (01/10/2026): os dados reais e o rig estão aqui.
+
+O que continua à mão está abaixo: o dongle físico lendo crachá de verdade,
+a permissão da pasta de disco e o zip da sexta.
+
 ## Antes de começar
 
 - **A cópia do cofre.** Uma pasta de um professor real, descompactada numa

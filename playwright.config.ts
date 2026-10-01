@@ -18,8 +18,15 @@ export default defineConfig({
   workers: 1,
   fullyParallel: false,
   timeout: 60_000,
-  reporter: 'list',
-  use: { ...devices['Desktop Chrome'], trace: 'retain-on-failure' },
+  // A lista no terminal; o relatório HTML para rever depois, com o vídeo de
+  // cada teste e o trace do que falhou; e o JSON que o `npm run verificar` lê
+  // para dizer o que foi pulado por falta de dados.
+  reporter: [
+    ['list'],
+    ['html', { open: 'never', outputFolder: 'playwright-report' }],
+    ['json', { outputFile: 'test-results/resultado.json' }],
+  ],
+  use: { ...devices['Desktop Chrome'], trace: 'retain-on-failure', video: 'on' },
   webServer: temPagina
     ? [
         { command: `node scripts/bancada_sigaa.mjs "${PASTA_DA_BANCADA}"`, url: 'http://localhost:8080/bancada/registros', reuseExistingServer: true },
