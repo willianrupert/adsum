@@ -775,3 +775,35 @@ sempre: cofre anonimizado, teste que falha e só então o código. Não entra
 antes da aula de quinta. O diário da aula não teve recusa, divergência nem
 erro; se isso conta como semana limpa, apesar do defeito na planilha, fica
 para o autor decidir.
+
+## 01/10/2026 — a v2 no ar, na segunda tentativa
+
+A regra de publicação mudou de manhã (`CLAUDE.md`, "Como uma mudança chega
+à sala"): publicar logo depois de uma aula, com a volta pronta, e a primeira
+semana de uso real é a semana estável. A aula do Prof. Paulo terminou às
+16:50, e o push foi agendado para as 18:00.
+
+**A primeira tentativa (`8a073b3`, 18:01) parou no CI.** Dois testes da
+coleta do SIGAA passaram do limite de 5 s no runner do GitHub. Nesta máquina
+cada um levava 2 s. O auxiliar que imita a coleta procurava as 1.710 células
+uma a uma no jsdom. Passou a indexá-las numa passada, e caiu para 0,1 s. O
+site ficou na v1 o tempo todo: o deploy só acontece depois do `npm test`.
+
+**O `npm run verificar` seguinte achou um defeito real.** Um arquivo que não
+é do Adsum em `sigaa/` virava `erro_conferencia` no diário a cada
+conferência. Os exemplos foram uma anotação e o `._` que o macOS deixa. No
+zip do professor isso é erro sem dono, a régua da semana estável. A pasta
+`sigaa/` passou a reconhecer o arquivo do Adsum pelo cabeçalho, como
+`registros/` já fazia. Quem pegou foi o teste de atualização sobre o cofre
+real com arquivos de fora (`comArquivosDeFora`), que entrou no mesmo dia.
+
+**Uma armadilha do teste de atualização.** Ele toma `origin/main` como a
+versão do ar. Com o deploy falho, a `main` estava à frente do site, e o
+teste exercitou uma atualização a partir de `8a073b3`, que nunca esteve no
+ar. A versão de verdade se passa à mão: `ADSUM_NO_AR=39830c2`.
+
+**A segunda tentativa (`2562c5e`) foi ao ar às 18:23**, e o
+`npm run conferir-no-ar` passou. O autor dispensou a aprovação com o rig
+sobre esse commit: a mudança estava fora do caminho do crachá, e o rig já
+tinha aprovado `8a073b3`. A volta é `39830c2`. A primeira aula na v2 é
+terça, 06/10.
