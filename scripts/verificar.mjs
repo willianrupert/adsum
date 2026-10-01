@@ -13,7 +13,8 @@
 // este comando existe para não contar.
 
 import { spawn } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { appendFileSync, existsSync, readFileSync } from 'node:fs'
+import { appSujo, commitAtual, impressaoDoApp, REGISTRO } from './codigoDoApp.mjs'
 
 const COM_RIG = process.argv.includes('--rig')
 const ETAPAS = [
@@ -65,6 +66,17 @@ if (pulados.length > 0) {
   for (const p of pulados) console.log(`    - ${p.arquivo} › ${p.titulo}${p.motivo ? `: ${p.motivo}` : ''}`)
 }
 console.log(falhou ? `\n  Falhou em: ${falhou}.` : pulados.length > 0 ? '\n  Passou, com testes pulados (acima).' : '\n  Tudo passou.')
+
+// Aprovado de verdade (nada falhou, nada pulado, o app num commit): fica
+// anotado, para o `npm run pode-publicar` contar a semana estável.
+if (!falhou && pulados.length === 0) {
+  if (appSujo()) {
+    console.log('\n  Não anotado para a publicação: há mudança no app fora de commit.')
+  } else {
+    appendFileSync(REGISTRO, JSON.stringify({ quando: new Date().toISOString(), commit: commitAtual(), app: impressaoDoApp(), rig: COM_RIG }) + '\n')
+    console.log(`\n  Anotado para a publicação: ${commitAtual()}${COM_RIG ? ', com o rig' : ''}.`)
+  }
+}
 
 if (resumo.some((r) => r.etapa === 'navegador') && existsSync('playwright-report/index.html')) {
   console.log('\n  Relatório com os vídeos: abrindo (npm run relatorio abre de novo).\n')

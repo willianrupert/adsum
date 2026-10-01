@@ -38,3 +38,6 @@ playwright-report/
 # Stryker (`stryker.config.mjs`)
 .stryker-tmp/
 reports/
+
+# As verificações aprovadas (`npm run verificar`), lidas por `npm run pode-publicar`
+.verificacoes.jsonl

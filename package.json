@@ -20,7 +20,8 @@
     "verificar": "node scripts/verificar.mjs",
     "verificar:rig": "node scripts/verificar.mjs --rig",
     "relatorio": "playwright show-report",
-    "conferir-no-ar": "playwright test -c playwright.no-ar.config.ts"
+    "conferir-no-ar": "playwright test -c playwright.no-ar.config.ts",
+    "pode-publicar": "node scripts/pode-publicar.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.5",
