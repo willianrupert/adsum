@@ -147,6 +147,7 @@ describe('Adsum → favorito: o que não tem forma de mensagem', () => {
     ['sem versão', { ...plano, v: undefined }],
     ['id inválido', { ...plano, id: '' }],
     ['"nada" de outra versão', { v: 99, tipo: 'nada', id: 'l-1' }],
+    ['outro tipo, com instruções', { ...plano, tipo: 'leitura' }],
   ])('%s', (_, data) => {
     expect(receberPlano(evento(data), esperado)).toEqual({ ok: false, motivo: 'formato' })
   })

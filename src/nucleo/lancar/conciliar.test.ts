@@ -487,6 +487,11 @@ describe('conciliar e escolher a turma: o que a mutação achou sem teste', () =
     expect(escolherTurma(pagina('Turma de CIN0144 - Turma: 01', [ANA, BRENO]), TURMA_TODA)).toEqual({ recusa: 'nenhuma', candidatas: [] })
   })
 
+  it('cabeçalho sem código não propõe turma, nem a que não tem código no nome', () => {
+    const semCodigo = TURMA_TODA.map((a) => ({ ...a, turma: 'Programação, turma da manhã' }))
+    expect(escolherTurma(pagina('PROGRAMAÇÃO INVENTADA - Turma: 01', [ANA, BRENO]), semCodigo)).toEqual({ recusa: 'nenhuma', candidatas: [] })
+  })
+
   it('o professor não conta para a turma cobrir a planilha', () => {
     const soProfessor = [{ ...aluno(ANA, 'Ana Clara'), papel: 'professor' as const }, { ...aluno(BRENO, 'Breno Lima'), papel: 'professor' as const }]
     expect(escolherTurma(pagina(CAB, [ANA, BRENO]), soProfessor)).toMatchObject({ recusa: 'nenhuma' })

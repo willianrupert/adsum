@@ -622,10 +622,15 @@ favorito não depende das telas).
    perdia o nome de quem encerrou); duas eram de teste (a vitrine do SIGAA
    e o painel de testes físicos conferiam cedo demais). Depois disso, 20
    rodadas seguidas sem falha.
-4. **Automatizar as mutações.** Hoje a prova de que os testes pegam defeito é
-   feita à mão, regra por regra (passos 23 e 30). Uma ferramenta de mutação
-   (Stryker) sobre `nucleo/lancar/` rodando de vez em quando, não a cada
-   commit.
+4. **~~Automatizar as mutações.~~ Feito em 30/09:** `npm run test:mutacao`
+   (Stryker sobre `nucleo/lancar/`, `stryker.config.mjs`). A primeira rodada
+   deu 91% (101 sobreviventes de 1.296); os que eram comportamento sem teste
+   ganharam teste, e a segunda deu 97,7%. Os que sobram são equivalentes
+   (`>` e `>=` depois de um `=== 1` já tratado, um erro que não é `Recusa`),
+   mais quatro casos cobertos depois dela. A rodada inteira leva de 30 a 45
+   min, quase tudo em mutantes que travam em laço e só morrem no tempo-limite;
+   com `incremental`, a seguinte só refaz o que mudou. Relatório em
+   `reports/mutacao/index.html`, fora do repositório.
 5. **~~O que só o Chrome prova.~~ Feito em 30/09:** `npm run
    test:navegador` (Playwright, `e2e/bancada.spec.ts`) sobe a bancada e o
    Adsum e faz no Chromium o que o ensaio fazia à mão: Preencher, Desfazer,

@@ -216,6 +216,18 @@ describe('a folha: o que a mutação achou sem teste', () => {
     expect(comMaximos([undefined, undefined, 2, 4])).toEqual([undefined, undefined, undefined, aviso(4)])
   })
 
+  it('planilha sem nenhum máximo legível não quebra a folha, e não avisa nada', () => {
+    expect(comMaximos([undefined, undefined])).toEqual([undefined, undefined])
+  })
+
+  it('quem faltou e não está na lista do Adsum aparece pela matrícula', () => {
+    const r = resumoDaFolha({
+      relatorio: relatorio([{ linha: 0, coluna: 0, matricula: '9', dia: TER, categoria: 'aLancar', esperado: 2 }]),
+      leitura: leitura(1), matriculados: MATRICULADOS, desmarcadas: [],
+    })
+    expect(r.aulas[0].ausentes).toEqual([{ matricula: '9', nome: 'matrícula 9', faltas: 2 }])
+  })
+
   it('as aulas saem em ordem de data, não na ordem das células', () => {
     const r = resumoDaFolha({
       relatorio: relatorio([{ ...pos(0, QUI), categoria: 'aLancar', esperado: 0 }, { ...pos(0), categoria: 'aLancar', esperado: 0 }]),

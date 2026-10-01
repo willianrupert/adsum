@@ -178,6 +178,21 @@ describe('ida e volta', () => {
 // (`CLAUDE.md`, "Leitura de CSV nunca descarta linha em silêncio"), e os
 // testes acima só conferiam um pedaço do texto. "Item 6" errado por um manda
 // o professor procurar no lugar errado.
+describe('lerPlanilha: aula suspensa e aluno bloqueado', () => {
+  it('a aula suspensa vem marcada, e o aluno bloqueado vem com o motivo', () => {
+    const b = pequena()
+    const aulas = b.auxAulas.split(';')
+    aulas[1] = aulas[1].replace(/,false$/, ',true')
+    b.auxAulas = aulas.join(';')
+    const registros = b.auxAlunos.split(';')
+    registros[3] = registros[3].replace(/,true,false,false$/, ',true,true,false')
+    b.auxAlunos = registros.join(';')
+    const l = lerPlanilha(b, 'l', FIM_DO_SEMESTRE).leitura!
+    expect(l.colunas[1].marca).toBe('suspensa')
+    expect(l.linhas[1].celulas[0]).toEqual({ tipo: 'bloqueada', motivo: 'bloqueado' })
+  })
+})
+
 describe('lerPlanilha: o problema diz onde, o quê e por quê, exatamente', () => {
   it.each<[string, (b: BrutoPlanilha) => BrutoPlanilha, object]>([
     ['registro com campos a menos', (b) => ({ ...b, auxAlunos: b.auxAlunos.replace(/,false$/, '') }), { onde: 'alunos, item 6', motivo: 'formato desconhecido: 15 campos, esperado 16' }],
