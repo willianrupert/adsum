@@ -417,3 +417,24 @@ describe('quemFalta', () => {
     expect(quemFalta([professor], [PROFESSOR])).toEqual([])
   })
 })
+
+// Decidido pelo autor em 01/10/2026: aluno cadastrado em outra turma avisa, e
+// a presença não conta nesta chamada. Antes, contava sem aviso.
+describe('aluno de outra turma', () => {
+  it('não conta presença, e diz de qual turma é', () => {
+    const decisao = decidir(ALUNA.uidHash, ctx({ sessao: SESSAO, vinculo: ALUNA, outraTurma: 'IF969 · T02' }))
+    expect(decisao).toEqual({ tipo: 'outra_turma', vinculo: ALUNA, turma: 'IF969 · T02' })
+    expect(contaPresenca(decisao)).toBe(false)
+  })
+
+  it('fica no log com o nome e o resultado próprio, que não é presença', () => {
+    const evento = eventoDe({ tipo: 'outra_turma', vinculo: ALUNA, turma: 'IF969 · T02' }, { eventoId: 'x', quando: AGORA, turma: SESSAO.turma, uidHash: ALUNA.uidHash })
+    expect(evento).toMatchObject({ turma: SESSAO.turma, nome: 'Bia Souza', matricula: '2025002', origem: 'cracha', resultado: 'outra_turma' })
+  })
+
+  it('o professor e os dois crachás juntos continuam decidindo antes', () => {
+    expect(decidir(PROFESSOR.uidHash, ctx({ sessao: SESSAO, vinculo: PROFESSOR, outraTurma: 'IF969 · T02' })).tipo).toBe('encerrar')
+    const ultima = { uidHash: 'cccc', em: new Date(AGORA.getTime() - 100) }
+    expect(decidir(ALUNA.uidHash, ctx({ sessao: SESSAO, vinculo: ALUNA, outraTurma: 'IF969 · T02', ultima })).tipo).toBe('rapido_demais')
+  })
+})

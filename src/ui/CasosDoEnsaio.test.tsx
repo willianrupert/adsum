@@ -1,5 +1,6 @@
 // Dois casos que o ensaio de 23/09/2026 deixou sem comportamento anotado
-// (`docs/00_roadmap.md`). Anotados em 30/09, e o primeiro consertado.
+// (`docs/00_roadmap.md`). Anotados em 30/09; o primeiro consertado no mesmo
+// dia, o segundo decidido pelo autor em 01/10.
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act, screen, waitFor } from '@testing-library/react'
@@ -94,21 +95,37 @@ describe('outra janela do Adsum aberta no meio da aula', () => {
 })
 
 describe('aluno de outra turma encosta o crachá', () => {
-  // Anotado, não decidido: conta presença na chamada aberta, como quem está
-  // na sala, e aparece na lista pelo nome. O log da turma ganha a linha; a
-  // planilha de faltas e o SIGAA saem da lista de matriculados, e ali ele não
-  // aparece. Na turma dele, não conta.
-  it('conta presença na turma da chamada, sem aviso', async () => {
+  // Decidido pelo autor em 01/10/2026. Antes contava presença, sem aviso.
+  it('avisa de qual turma é, e a presença não conta', async () => {
     await chamadaAberta()
     adiarHorario(OUTRA)
     await bancada.repositorio.salvarTurma(OUTRA, [pessoa(OUTRA, '9', 'Davi Souza')])
     await vincular('0a0b0c0d', 'Davi Souza', '9')
 
     await encostar('0a0b0c0d')
+    expect(await screen.findByText('Davi Souza é da turma IF969 · T02, não desta. A presença não foi contada.')).toBeInTheDocument()
     await waitFor(async () => {
       const dele = (await bancada.repositorio.listarEventos()).filter((e) => e.nome === 'Davi Souza')
-      expect(dele.map((e) => [e.turma, e.resultado])).toEqual([[TURMA, 'ok']])
+      expect(dele.map((e) => [e.turma, e.resultado])).toEqual([[TURMA, 'outra_turma']])
     })
-    expect(await screen.findByText('Davi Souza')).toBeInTheDocument()
+    expect(await screen.findByText('Davi Souza, de outra turma')).toBeInTheDocument()
+
+    // A fila segue: o aluno da turma, depois do aviso, conta.
+    await encostar('3770f213')
+    await waitFor(async () => {
+      const presentes = (await bancada.repositorio.listarEventos()).filter((e) => e.origem === 'cracha' && e.resultado === 'ok')
+      expect(presentes.map((e) => e.nome)).toEqual(['Bruno Lima'])
+    })
+  }, 20_000)
+
+  it('quem está nas duas turmas conta normalmente', async () => {
+    adiarHorario(OUTRA)
+    await bancada.repositorio.salvarTurma(OUTRA, [pessoa(OUTRA, '2', 'Bruno Lima')])
+    await chamadaAberta()
+    await encostar('3770f213')
+    await waitFor(async () => {
+      const dele = (await bancada.repositorio.listarEventos()).filter((e) => e.nome === 'Bruno Lima')
+      expect(dele.map((e) => e.resultado)).toEqual(['ok'])
+    })
   }, 20_000)
 })

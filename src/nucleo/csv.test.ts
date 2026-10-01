@@ -85,3 +85,10 @@ describe('um arquivo por turma', () => {
     expect(nomeDoArquivo('···')).toBe('turma.csv')
   })
 })
+
+describe('o resultado do aluno de outra turma', () => {
+  it('vai e volta pelo CSV', () => {
+    const evento: Evento = { ...EVENTO, resultado: 'outra_turma' }
+    expect(deCsv(paraCsv([evento])).itens).toEqual([evento])
+  })
+})

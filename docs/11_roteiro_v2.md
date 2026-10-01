@@ -3,8 +3,8 @@
 Documento vivo. É o passo a passo de execução da especificação
 `08_lancar_no_sigaa.md`, na parte que **não depende do HTML da planilha do
 docente** (portão A). Começou em 27/09/2026, na branch `v2/lancar-no-sigaa`,
-que não vai ao ar: publicar continua preso ao congelamento do `CLAUDE.md` e
-aos portões do `08`, §6.
+que não vai ao ar: publicar segue a regra do `CLAUDE.md` (uma semana
+estável, desde 01/10/2026) e os portões do `08`, §6.
 
 ## Andamento: 100% da fase 1, 100% da fase 2, 100% da fase 3
 

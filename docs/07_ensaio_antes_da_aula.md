@@ -121,9 +121,9 @@ o servidor para a nova no mesmo endereço, fechar e reabrir.
 
 ## 5. O zip de sexta
 
-Nas quatro semanas depois de cada mudança, o professor manda o zip da pasta
-toda sexta. É a régua do congelamento: uma semana só conta como limpa depois
-de lida.
+O professor manda o zip da pasta toda sexta. É a régua da semana estável que
+antecede cada publicação (`CLAUDE.md`, desde 01/10/2026): uma semana só conta
+como limpa depois de lida.
 
 No `diagnostico/*.log` da semana:
 

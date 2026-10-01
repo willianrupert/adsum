@@ -86,7 +86,7 @@ Cada coluna se justifica sozinha:
   Nenhum cálculo depende dele.
 - **`origem`** — `cracha`, `professor`, `manual`.
 - **`resultado`** — `ok`, `duplicado`, `desconhecido`, `rapido_demais`,
-  `removido`.
+  `removido`, `outra_turma`.
 
   `rapido_demais` entrou em 20/08/2026, com a regra de intervalo mínimo entre
   crachás diferentes: dois cartões numa mão dependem do ciclo de varredura do
@@ -100,6 +100,12 @@ Cada coluna se justifica sozinha:
   original continua no arquivo; só deixa de valer como presença. Crachá
   gravado depois de um `removido` devolve a presença (23/09/2026), e quem diz
   "depois" é o número do evento, não o `quando`.
+
+  `outra_turma` entrou em 01/10/2026, decidido pelo autor: crachá de aluno
+  cadastrado em outra turma, encostado na chamada desta. A tela avisa de qual
+  turma ele é, e a linha fica no log da chamada com nome e matrícula, mas não
+  conta presença aqui nem lá. Uma versão anterior do app que leia um log com
+  esse valor recusa a linha, com o motivo (nunca em silêncio).
 - **`uid_hash`** — o único identificador que sobra quando o crachá é
   desconhecido, e portanto o único jeito de resolver depois quem era.
 

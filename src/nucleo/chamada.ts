@@ -118,6 +118,7 @@ function nomeDaLinha(e: Evento): string {
   // A recusa por dois crachás não tem nome, e "Crachá não cadastrado" ali seria
   // mentira: mandaria o professor procurar numa lista onde a pessoa pode estar.
   if (e.resultado === 'rapido_demais') return 'Dois crachás de uma vez'
+  if (e.resultado === 'outra_turma') return `${e.nome}, de outra turma`
   return e.nome || 'Crachá não cadastrado'
 }
 
@@ -190,12 +191,13 @@ export class MemoriaDaFila {
    */
   decidir(
     uidHash: string,
-    ctx: { sessao: Sessao; vinculo?: Vinculo; chamado?: Matriculado; em: Date },
+    ctx: { sessao: Sessao; vinculo?: Vinculo; chamado?: Matriculado; outraTurma?: string; em: Date },
   ): Decisao {
     const decisao = decidir(uidHash, {
       sessao: ctx.sessao,
       vinculo: ctx.vinculo,
       chamado: ctx.chamado,
+      outraTurma: ctx.outraTurma,
       jaPresentes: this.jaPresentes,
       ultima: this.ultima,
       agora: ctx.em,
@@ -233,6 +235,9 @@ export function recadoAntesDeGravar(decisao: Decisao): string | undefined {
   if (decisao.tipo === 'rapido_demais') {
     return 'Dois crachás quase juntos. O segundo não foi contado. Passe um de cada vez.'
   }
+  if (decisao.tipo === 'outra_turma') {
+    return `${decisao.vinculo.nome} é da turma ${decisao.turma}, não desta. A presença não foi contada.`
+  }
   return undefined
 }
 
@@ -254,6 +259,7 @@ export function depoisDeGravar(
     case 'repetido':
       return { som: 'repetido', limpaRecado: true }
     case 'desconhecido':
+    case 'outra_turma':
     case 'rapido_demais':
     case 'cedo_demais':
       return { som: 'desconhecido', limpaRecado: false }

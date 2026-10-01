@@ -15,10 +15,10 @@ está em "Daqui para frente", no fim.
   dongle USB no computador dele.
 - **Versão no ar: `39830c2`**, carimbo `2026-09-23 13:30`.
 - **24/09 foi a primeira aula limpa**: nenhuma recusa, nenhum erro, nenhum
-  `evento_id` repetido. É a primeira das quatro semanas limpas que liberam
-  funcionalidade nova (ver "Como uma mudança chega à sala", no `CLAUDE.md`).
-- **Funcionalidade nova congelada.** Só consertos até a quarta semana limpa.
-  A v2 (lançar no SIGAA) está desenhada e espera.
+  `evento_id` repetido. 29/09 também.
+- **Publicar pede uma semana estável** (desde 01/10/2026, no lugar do
+  congelamento de quatro semanas): ver "Como uma mudança chega à sala", no
+  `CLAUDE.md`. A v2 (lançar no SIGAA) está feita na branch.
 - **Na branch `v2/lancar-no-sigaa`, esperando ensaio (25/09):** o trabalho de
   carga e pontos de falha (`docs/10_codigo.md`), a separação de `Fluxo` e
   `TelaAula` em peças, o diário consertado, os comentários curtos e a coluna
@@ -204,10 +204,13 @@ As decorrências que o zero impunha continuam valendo:
 
 ## Daqui para frente
 
-### Agora: congelamento
+### Agora: uma semana estável até publicar
 
-Até quatro semanas limpas de uso real, contadas a partir de 24/09/2026.
-A régua é o zip da pasta do professor, lido toda sexta: `diagnostico/*.log`
+Desde 01/10/2026 (antes: quatro semanas limpas de congelamento, contadas de
+24/09). A versão candidata passa uma semana sem mudança, com os testes
+automáticos verdes, inclusive o da atualização sobre o cofre real
+(`npm run test:atualizacao`), e o zip da sexta limpo. A régua do zip, lido
+toda sexta: `diagnostico/*.log`
 sem recusa, sem `erro_`, sem `desconhecido_durante_busca` inesperado, e a
 conferência nas linhas de base (`repetidos=19` em CIN0144, `repetidos=8` em
 CIN0114: são os repetidos históricos de 22/09; outro número é problema novo).
@@ -251,8 +254,9 @@ e só depois de uma semana limpa ser lida:
 ### Antes de publicar a branch
 
 A branch mexe no caminho de cada crachá. Pelas regras de "Como uma mudança
-chega à sala", ela só sai com o ensaio completo sobre a cópia do cofre, com o
-dongle, e nunca a menos de dois dias de uma aula. Em especial:
+chega à sala", ela só sai depois de uma semana estável, com o ensaio sobre a
+cópia do cofre (`npm run test:atualizacao` faz a parte da atualização sozinho)
+e com o dongle. Em especial:
 
 - **A fila rápida com o emulador C3 e o dongle**, olhando o diário: numa
   rajada, menos linhas `pasta` que crachás (o recálculo coalesce), nenhum
@@ -265,12 +269,12 @@ dongle, e nunca a menos de dois dias de uma aula. Em especial:
 - **O manual** (`docs/Adsum-manual-e-LGPD.docx`) chega ao professor pela
   `main`; a correção feita na branch só vale depois do merge.
 
-### Depois do congelamento
+### Depois de publicar
 
-- **v2: lançar no SIGAA.** Especificação em `docs/08_lancar_no_sigaa.md`,
-  telas em `docs/09_esboco_da_janela.md`. O primeiro passo não é código: é o
-  portão A, o HTML da planilha de frequência salvo pelo Prof. Paulo antes e
-  depois de um Gravar. Três perguntas de desenho esperam o autor (`docs/09`).
+- **v2: lançar no SIGAA.** Fases 1 a 3 feitas na branch (`docs/11`). O que
+  falta é uso real, nos portões C a E do `docs/08`, §6: semanas só de
+  conferência, o primeiro Preencher com o professor ao lado, outros
+  professores com a STI de acordo.
 - **Dois crachás juntos por alternância.** A medida de 23/09 mostrou que o
   sinal que separa cartões empilhados de uma fila é a alternância (A, B, A, B
   em poucos segundos), e não o intervalo. Ideia registrada, não decidida.

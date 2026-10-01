@@ -238,3 +238,19 @@ describe('indiceDeVinculos', () => {
   })
 })
 
+
+describe('aluno de outra turma', () => {
+  const decisao = { tipo: 'outra_turma' as const, vinculo: vinculo('e', { nome: 'Davi Souza' }), turma: 'IF969 · T02' }
+
+  it('o recado diz quem é, de qual turma, e que não contou', () => {
+    expect(recadoAntesDeGravar(decisao)).toBe('Davi Souza é da turma IF969 · T02, não desta. A presença não foi contada.')
+    expect(depoisDeGravar(decisao, true)).toEqual({ som: 'desconhecido', limpaRecado: false })
+  })
+
+  it('a linha aparece na lista, em vermelho, e não soma presença', () => {
+    const estado = estadoDaChamada([evento({ uidHash: 'e', nome: 'Davi Souza', matricula: '2025e', resultado: 'outra_turma' })], [vinculo('e')], TURMA, DIA)
+    expect(estado.presentes.size).toBe(0)
+    expect(estado.porCracha.size).toBe(0)
+    expect(estado.linhas).toMatchObject([{ nome: 'Davi Souza, de outra turma', tom: 'desconhecido' }])
+  })
+})

@@ -166,20 +166,25 @@ mudanças publicadas na véspera, testadas sobre base limpa. **Estas regras
 valem para qualquer sessão, inclusive as do Claude**, que é a parte mais
 apressada do processo — escrever código ficou barato, validar não.
 
-- **Nada vai ao ar a menos de dois dias de uma aula real.** A exceção é
-  conserto de uma falha **observada** (em sala, no ensaio ou na bancada), e
-  mesmo assim com o ensaio completo depois do deploy. "Seria bom ter" espera.
-  Roteiro do ensaio: `docs/07_ensaio_antes_da_aula.md`.
+- **Uma semana de funcionamento estável até a publicação** (decidido pelo
+  autor em 01/10/2026, no lugar dos "dois dias antes de uma aula" e das
+  "quatro semanas limpas" de 23/09). A versão que vai ao ar passa uma semana
+  sem mudança e sem falha: testes automáticos verdes sobre ela (`npm test`,
+  `npm run test:navegador`, `npm run test:atualizacao` sobre o cofre real) e
+  o zip da sexta limpo. Mudança no meio recomeça a semana. A exceção é
+  conserto de uma falha **observada** (em sala, no ensaio ou na bancada), com
+  o ensaio completo depois do deploy. Roteiro do ensaio:
+  `docs/07_ensaio_antes_da_aula.md`.
 - **Pronto é ter rodado na cópia do cofre com o dongle, não os testes
   passarem.** Depois de todo deploy: os sete passos sobre uma cópia do cofre
   de um professor real (descompactada de novo quando o caso for "máquina que
-  atualiza"), com o dongle de verdade. Base limpa esconde a classe de defeito
+  atualiza"), com o dongle de verdade. A atualização sobre o cofre real roda
+  sozinha (`npm run test:atualizacao`); o dongle físico, ainda não. Base limpa esconde a classe de defeito
   que chega à sala — em 23/09, o ensaio achou dois defeitos que 593 testes
   não achavam (32 alunos com um vínculo em cada sal).
-- **Funcionalidade nova congelada até quatro semanas limpas de uso real.**
-  Só consertos. A régua é o zip da pasta do professor, lido toda sexta:
+- **A régua do "estável" é o zip da pasta do professor**, lido toda sexta:
   diário sem recusa, divergência ou erro sem dono. A lista de "Ideias
-  levantadas" abaixo continua lista.
+  levantadas" abaixo continua lista: entra com conversa, não por estar livre.
 - **Toda falha em sala vira cofre anonimizado, teste que falha, e só então
   conserto** — ver "Teste de conserto roda sobre base com histórico", acima.
 
@@ -380,7 +385,7 @@ sem conversa antes.
 - **Lançar no SIGAA (a "v2" pedida pelo Prof. Paulo em 24/09/2026).**
   Desenho em `docs/08_lancar_no_sigaa.md`: favorito na planilha de
   frequência do SIGAA, conciliação por matrícula no Adsum, o Gravar é sempre
-  do professor, nunca toca em senha. Espera o HTML real e o congelamento.
+  do professor, nunca toca em senha. Fases 1 a 3 feitas na branch `v2/lancar-no-sigaa`; o que falta é uso real (`docs/08`, §6).
   A aula na UFPE é de 50 min (Portaria Normativa 07/2022, citada pelo
   próprio SIGAA): `periodosDoBloco` está certo; o "60" do manual é antigo.
 

@@ -65,9 +65,11 @@ export interface Aula {
 export type Origem = 'cracha' | 'professor' | 'manual'
 /**
  * `rapido_demais` (20/08/2026): dois crachás quase juntos. `removido`
- * (11/09/2026): "Não presente" à mão. Arquivos antigos não têm os dois.
+ * (11/09/2026): "Não presente" à mão. `outra_turma` (01/10/2026): aluno
+ * cadastrado em outra turma, que fica no log e não conta presença. Arquivos
+ * antigos não têm os três.
  */
-export type Resultado = 'ok' | 'duplicado' | 'desconhecido' | 'rapido_demais' | 'removido'
+export type Resultado = 'ok' | 'duplicado' | 'desconhecido' | 'rapido_demais' | 'removido' | 'outra_turma'
 
 /** Uma linha de `registros/<turma>.csv`. Nunca é reescrita — só acrescentada. */
 export interface Evento {

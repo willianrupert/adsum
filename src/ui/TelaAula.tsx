@@ -134,6 +134,11 @@ export function TelaAula({
   const pendentesAlunos = useMemo(() => pendentes.filter((p) => p.papel === 'aluno'), [pendentes])
   const alunosDaTurma = useMemo(() => daTurma.filter((p) => p.papel === 'aluno'), [daTurma])
   const professoresDaTurma = useMemo(() => daTurma.filter((p) => p.papel === 'professor'), [daTurma])
+  // Por referência, para o caminho do crachá ler a lista atual sem se reinscrever no leitor.
+  const matriculasDaTurma = useRef(new Set<string>())
+  useEffect(() => {
+    matriculasDaTurma.current = new Set(daTurma.map((p) => p.matricula))
+  }, [daTurma])
   // Uma vez por render, não por linha: por linha, a lista era cúbica.
   const chavesPendentes = useMemo(() => new Set(pendentesAlunos.map((p) => p.chave)), [pendentesAlunos])
   const vezesDoNome = useMemo(() => {
@@ -247,6 +252,17 @@ export function TelaAula({
 
   // O caminho de cada crachá.
   useEffect(() => {
+    /**
+     * A turma do aluno cujo crachá não é desta. Só consulta a base nesse caso,
+     * que é raro: o crachá de quem é da turma não paga nada a mais. Com a lista
+     * da turma ainda carregando, ninguém é tido como de fora.
+     */
+    const turmaDeOutroAluno = async (vinculo?: Vinculo): Promise<string | undefined> => {
+      const matriculas = matriculasDaTurma.current
+      if (vinculo?.papel !== 'aluno' || !vinculo.matricula || matriculas.size === 0 || matriculas.has(vinculo.matricula)) return undefined
+      const dele = (await repositorio.listarMatriculados()).find((m) => m.matricula === vinculo.matricula && m.turma !== sessao.turma)
+      return dele?.turma
+    }
     const aoLer = (leitura: Leitura) => {
       setUltimaAtividadeEm(leitura.em)
       if (procurandoRef.current) setLeiturasDuranteABusca((n) => n + 1)
@@ -258,11 +274,13 @@ export function TelaAula({
         // (23/09/2026). Gravar e redesenhar não esperam a fila.
         const passo = ordemDasLeituras.current.then(async () => {
           const identificado = await identificarCracha(repositorio, leitura.uid)
+          const outraTurma = await turmaDeOutroAluno(identificado.vinculo)
           // Decidir marca a memória da fila antes de qualquer `await`.
           const decisao = fila.current.decidir(identificado.uidHash, {
             sessao,
             vinculo: identificado.vinculo,
             chamado: aCadastrar,
+            outraTurma,
             em: leitura.em,
           })
           return { ...identificado, identificadoEm: performance.now(), decisao }

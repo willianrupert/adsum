@@ -2,9 +2,9 @@
 
 Especificação da v2, do micro ao macro. Em construção na branch, nada publicado. Pedida pelo Prof.
 Paulo em 24/09/2026, no dia da primeira aula limpa: levar as presenças do
-Adsum direto para o SIGAA. Funcionalidade nova: espera as quatro semanas
-limpas do `CLAUDE.md`, e cada camada abaixo só começa com a de baixo
-provada.
+Adsum direto para o SIGAA. Funcionalidade nova: vai ao ar pela regra do
+`CLAUDE.md` (desde 01/10/2026, uma semana estável; antes, quatro semanas
+limpas), e cada camada abaixo só começa com a de baixo provada.
 
 **Estado em 25/09/2026:** especificação e esboço das telas prontos
 (`docs/09_esboco_da_janela.md`). Nenhum portão começou. O próximo passo não é

@@ -67,6 +67,8 @@ export type Decisao =
   | { tipo: 'cedo_demais'; faltamMs: number }
   | { tipo: 'presenca'; vinculo: Vinculo }
   | { tipo: 'repetido'; vinculo: Vinculo }
+  /** Aluno cadastrado em outra turma, e não nesta: avisa e não conta. */
+  | { tipo: 'outra_turma'; vinculo: Vinculo; turma: string }
   | { tipo: 'desconhecido' }
   /** Dois crachás diferentes quase juntos. Ver `INTERVALO_MINIMO_MS`. */
   | { tipo: 'rapido_demais'; faltamMs: number }
@@ -86,6 +88,8 @@ export interface Contexto {
   /** A última leitura aceita, para separar dois crachás de um gesto só. */
   ultima?: { uidHash: string; em: Date }
   turmaSugerida?: string
+  /** A turma em que o dono do crachá está, quando não é a da chamada. */
+  outraTurma?: string
   agora: Date
 }
 
@@ -124,6 +128,7 @@ export function decidir(uidHash: string, ctx: Contexto): Decisao {
   // Desconhecido com alguém chamado é cadastro: o professor está olhando a
   // pessoa encostar. Sem ninguém chamado, é a busca.
   if (!vinculo) return ctx.chamado ? { tipo: 'cadastro', pessoa: ctx.chamado } : { tipo: 'desconhecido' }
+  if (ctx.outraTurma && vinculo.papel === 'aluno') return { tipo: 'outra_turma', vinculo, turma: ctx.outraTurma }
   if (jaPresentes.has(uidHash)) return { tipo: 'repetido', vinculo }
   return { tipo: 'presenca', vinculo }
 }
@@ -195,6 +200,14 @@ export function eventoDe(
         matricula: decisao.pessoa.matricula,
         origem: 'cracha',
         resultado: 'ok',
+      }
+    case 'outra_turma':
+      return {
+        ...base,
+        nome: decisao.vinculo.nome,
+        matricula: decisao.vinculo.matricula,
+        origem: 'cracha',
+        resultado: 'outra_turma',
       }
     case 'repetido':
       return {
