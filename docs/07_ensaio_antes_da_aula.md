@@ -158,9 +158,12 @@ aberta pela versão nova.
 
 **Automático desde 30/09/2026:** `npm run test:atualizacao` (Playwright,
 `e2e/atualizacao.spec.ts`), com o zip da pasta dele em `ADSUM_COFRE` (padrão
-`~/Downloads/Chamadas 3.zip`). Monta a versão do ar (`origin/main`) e a nova
-(o commit, `HEAD`) como o deploy monta, serve as duas no mesmo endereço, e
-no Google Chrome instalado:
+`~/Downloads/Chamadas 3.zip`). Monta a versão do ar e a nova (o commit,
+`HEAD`) como o deploy monta. A do ar é o commit do último deploy que terminou
+bem, e não a `origin/main`: com um deploy falho, a `main` fica à frente do
+site (01/10/2026). Logo depois de publicar, as duas são o mesmo app, e o
+teste pede `ADSUM_NO_AR` com a versão que o professor ainda tem. As duas
+são servidas no mesmo endereço, e no Google Chrome instalado:
 
 1. a versão do ar abre o cofre e chega ao repouso, com o service worker dela
    no controle;

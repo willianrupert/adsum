@@ -53,3 +53,20 @@ export async function leituraMudou(de, para = 'HEAD') {
   }
   return CAMINHO_DA_LEITURA.filter((c) => semComentario(conteudo(de, c)) !== semComentario(conteudo(para, c)))
 }
+
+/**
+ * O commit que está no site: o do último deploy que terminou bem, e não a
+ * `main`, que fica à frente dele quando um deploy falha. Sem o `gh`, a `main`.
+ */
+export function commitNoAr() {
+  try {
+    const [ultimo] = JSON.parse(
+      execFileSync('gh', ['run', 'list', '--workflow', 'publicar.yml', '--branch', 'main', '--status', 'success', '--limit', '1', '--json', 'headSha'], { encoding: 'utf-8' }),
+    )
+    if (ultimo) return ultimo.headSha
+  } catch {
+    // sem o gh, ou sem rede: abaixo
+  }
+  return 'origin/main'
+}
+

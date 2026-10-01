@@ -19,6 +19,25 @@ export interface Versao {
   entrada: string
 }
 
+/**
+ * O commit que está no site: o do último deploy que terminou bem. A `main`
+ * não serve: com o deploy falho, ela fica à frente do site, e a atualização
+ * testada sairia de uma versão que nunca esteve no ar (01/10/2026). Sem o
+ * `gh`, cai na `main`, e diz.
+ */
+export function commitNoAr(): string {
+  try {
+    const [ultimo] = JSON.parse(
+      execFileSync('gh', ['run', 'list', '--workflow', 'publicar.yml', '--branch', 'main', '--status', 'success', '--limit', '1', '--json', 'headSha'], { cwd: RAIZ, encoding: 'utf-8' }),
+    ) as { headSha: string }[]
+    if (ultimo) return ultimo.headSha
+  } catch {
+    // sem o gh, ou sem rede: abaixo
+  }
+  console.warn('  ⚠ não deu para saber o commit do último deploy (gh): usando origin/main como a versão do ar')
+  return 'origin/main'
+}
+
 /** Monta um commit como o deploy monta (`base` `/adsum/`), uma vez só por commit. */
 export function versao(referencia: string): Versao {
   const commit = git('rev-parse', referencia)

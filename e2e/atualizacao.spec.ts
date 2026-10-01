@@ -6,7 +6,7 @@
 //
 // Configurável pelo ambiente:
 //   ADSUM_COFRE        o zip da pasta do professor (padrão: ~/Downloads/Chamadas 3.zip)
-//   ADSUM_NO_AR        a versão no ar (padrão: origin/main)
+//   ADSUM_NO_AR        a versão no ar (padrão: o commit do último deploy que terminou bem)
 //   ADSUM_NOVA         a que vai ao ar (padrão: HEAD, o commit, não a pasta de trabalho)
 //   ADSUM_RIG          os crachás pelo rig S3, como teclado USB de verdade:
 //                      o caminho da porta, ou "auto" (a primeira da Espressif)
@@ -16,7 +16,7 @@ import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
-import { hospedar, versao, PAGINA_VAZIA, type Hospedagem, type Versao } from './apoio/versoes.ts'
+import { commitNoAr, hospedar, versao, PAGINA_VAZIA, type Hospedagem, type Versao } from './apoio/versoes.ts'
 import { comArquivosDeFora, contarBase, eventosDaBase, lerCofre, lerPasta, semear, trocarSeletor, type ArquivosDoCofre } from './apoio/cofre.ts'
 import { COM_RIG, desligarDongle, encostar, ligarDongle } from './apoio/dongle.ts'
 
@@ -40,9 +40,9 @@ let deFora: string[] = []
 let site: Hospedagem
 
 test.beforeAll(async () => {
-  noAr = versao(process.env.ADSUM_NO_AR ?? 'origin/main')
+  noAr = versao(process.env.ADSUM_NO_AR ?? commitNoAr())
   nova = versao(process.env.ADSUM_NOVA ?? 'HEAD')
-  expect(nova.entrada, 'as duas versões são o mesmo build').not.toBe(noAr.entrada)
+  expect(nova.entrada, `as duas versões são o mesmo build: o app de ${noAr.commit.slice(0, 7)} já está no ar (ADSUM_NO_AR escolhe outra)`).not.toBe(noAr.entrada)
   // A pasta como a do professor: o Adsum e o que mais ele guardar ali.
   const doProfessor = lerCofre(COFRE)
   cofre = comArquivosDeFora(doProfessor)

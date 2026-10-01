@@ -19,7 +19,7 @@
 
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { appSujo, commitAtual, impressaoDoApp, leituraMudou, REGISTRO } from './codigoDoApp.mjs'
+import { appSujo, commitAtual, commitNoAr, impressaoDoApp, leituraMudou, REGISTRO } from './codigoDoApp.mjs'
 
 const DIA = 24 * 60 * 60 * 1000
 const git = (...args) => execFileSync('git', args, { encoding: 'utf-8' }).trim()
@@ -43,7 +43,8 @@ const noGitHub = (() => {
     return false
   }
 })()
-const mudancasDoApp = git('diff', '--stat', 'origin/main', 'HEAD', '--', 'src', 'public', 'index.html').split('\n').at(-1) || 'nenhuma'
+const noAr = commitNoAr()
+const mudancasDoApp = git('diff', '--stat', noAr, 'HEAD', '--', 'src', 'public', 'index.html').split('\n').at(-1) || 'nenhuma'
 
 const criterios = [
   [!appSujo(), 'o app está todo em commit', 'há mudança no app fora de commit: comite, e o verificar recomeça a contar'],
@@ -55,7 +56,7 @@ const criterios = [
 console.log(`\n  Pode publicar ${commitAtual()}? (o que muda no app em relação ao ar: ${mudancasDoApp})\n`)
 for (const [ok, sim, nao] of criterios) console.log(`  ${ok ? '✓' : '✗'} ${ok ? sim : nao}`)
 const pode = criterios.every(([ok]) => ok)
-const leitura = await leituraMudou('origin/main')
+const leitura = await leituraMudou(noAr)
 console.log(
   leitura.length === 0
     ? '  ✓ o caminho do crachá depois do dongle não mudou em relação ao ar: o ensaio com o dongle não é exigido'
