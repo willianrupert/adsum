@@ -18,7 +18,7 @@ export function useDiarioDoApp(opcoes: {
   // Uma vez por abertura, com os valores do momento em que o app abriu.
   const [leitor, instalacao] = [opcoes.leitor, opcoes.instalacao]
   useEffect(() => {
-    registrar('app_aberto', { versao: __CARIMBO__, leitor, instalacao })
+    registrar('app_aberto', { versao: __CARIMBO__, commit: __COMMIT__, leitor, instalacao })
   }, [])
 
   useEffect(() => {

@@ -87,7 +87,7 @@ export function PainelEstadoDoApp({
         {formatarBytes(diagnostico?.usoEstimado)} de {formatarBytes(diagnostico?.cotaEstimada)}
       </Linha>
       <Linha rotulo="versão desta cópia">
-        <code>{__CARIMBO__}</code>
+        <code>{__CARIMBO__}</code> · <code>{__COMMIT__}</code>
       </Linha>
       <Linha rotulo="convite de instalar">
         <Selo tom={estadoDoConvite() === 'oferecido' ? 'ok' : 'neutro'}>{CONVITE[estadoDoConvite()]}</Selo>

@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -18,8 +19,23 @@ const base = process.env.BASE_ADSUM ?? '/adsum/'
  */
 const CARIMBO = new Date().toISOString().slice(0, 16).replace('T', ' ')
 
+/**
+ * O commit da build: o carimbo diz quando, o commit diz qual código. É o que
+ * liga o diário de uma aula ao commit que o `npm run verificar` aprovou. No
+ * GitHub vem de `GITHUB_SHA`; aqui, do git. Sem nenhum dos dois, fica dito.
+ */
+function commitDaBuild(): string {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7)
+  try {
+    return execFileSync('git', ['rev-parse', '--short=7', 'HEAD'], { encoding: 'utf-8' }).trim()
+  } catch {
+    return 'sem git'
+  }
+}
+const COMMIT = commitDaBuild()
+
 export default defineConfig(({ command, isPreview }) => ({
-  define: { __CARIMBO__: JSON.stringify(CARIMBO) },
+  define: { __CARIMBO__: JSON.stringify(CARIMBO), __COMMIT__: JSON.stringify(COMMIT) },
   // Em desenvolvimento o site é a raiz, que é o confortável. No `preview` o
   // `base` volta a valer — sem isso, o preview serve tudo em `/` e passa por
   // bom um build que o Pages serviria quebrado.

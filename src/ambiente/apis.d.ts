@@ -77,6 +77,8 @@ declare global {
 declare global {
   /** Carimbo da build, injetado pelo Vite. Ver `vite.config.ts`. */
   const __CARIMBO__: string
+  /** O commit da build (7 caracteres). Ver `vite.config.ts`. */
+  const __COMMIT__: string
 
   /**
    * `beforeinstallprompt` é do Chromium e não está na lib padrão do TypeScript.

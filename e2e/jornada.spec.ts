@@ -198,6 +198,10 @@ test('do zero ao SIGAA: cadastro, três aulas com cada tipo de presença, e o la
     expect(faltas, 'planilha de faltas da turma').toBeDefined()
     expect(faltas![1].replace(/^﻿/, '').startsWith('nome;matricula;')).toBe(true)
     expect(Object.keys(pasta).some((c) => c.startsWith('registros/') && c.includes(codigo))).toBe(true)
+    // O diário diz qual código rodou: o commit testado, para o zip de sexta ser ligado a ele.
+    const diario = Object.entries(pasta).filter(([c]) => c.startsWith('diagnostico/')).map(([, t]) => t).join('\n')
+    expect(diario).toContain(`| app_aberto | versao=`)
+    expect(diario).toContain(`| commit=${nova.commit.slice(0, 7)} |`)
   })
 
   let gravado: Mudanca[] = []
