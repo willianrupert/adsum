@@ -807,3 +807,15 @@ ar. A versão de verdade se passa à mão: `ADSUM_NO_AR=39830c2`.
 sobre esse commit: a mudança estava fora do caminho do crachá, e o rig já
 tinha aprovado `8a073b3`. A volta é `39830c2`. A primeira aula na v2 é
 terça, 06/10.
+
+**À noite, o rig digitou crachás fora do lugar, duas vezes.** Um ajuste no
+teste deixou de trazer a página para a frente antes de cada crachá e passou
+a confiar em `document.hasFocus()`. Com o Playwright, ele diz que há foco
+mesmo com outra janela na frente. Na primeira vez, três UIDs do cofre foram
+digitados na janela de outro programa. Na segunda, o cursor estava na barra
+de endereço do Chrome recém-aberto, e um UID virou uma busca no Google. O
+teste de atualização era o único com rig que não bloqueava a rede. A trava
+agora tem três camadas: o macOS diz qual processo está na frente, e o rig só
+digita se for o Chrome do teste; a página recebe o foco antes de cada
+crachá; e nenhum teste com rig sai da máquina. Com isso, o `verificar:rig`
+passou inteiro sobre o que está no ar.
