@@ -4,7 +4,8 @@
 // da planilha de faltas, para que o SIGAA e o arquivo da pasta nunca discordem.
 // Na dúvida, a célula fica fora e o motivo aparece: nunca se adivinha.
 
-import { chaveDeIdentidade, diaLocal, presencasDoDia } from '../faltas.ts'
+import { chaveDeIdentidade, diaLocal, periodosDoBloco, presencasDoDia } from '../faltas.ts'
+import type { Aula } from '../grade.ts'
 import type { Evento, Matriculado } from '../tipos.ts'
 import { comoDia, type AjusteSigaa, type Conciliada, type Dia, type LinhaDeAuditoria, type LeituraPlanilha, type Relatorio, type RemanejoSigaa, type SemOndeLancar } from './tipos.ts'
 
@@ -21,6 +22,8 @@ export interface EntradaDaConciliacao {
   auditoria?: LinhaDeAuditoria[]
   /** Quanto vale a falta em cada aula, escolhido pelo professor nesta folha. */
   escolhas?: Partial<Record<Dia, number>>
+  /** A grade do professor: o padrão de quanto vale a falta em cada dia da semana. */
+  aulas?: Aula[]
 }
 
 /** O ajuste mais recente de cada (dia, matrícula) da turma. No mesmo instante, o gravado depois. */
@@ -70,7 +73,20 @@ function fontesDasAulas(leitura: LeituraPlanilha, turma: string, diasDeChamada: 
   return { fonte, saiu, remanejadas }
 }
 
-export function conciliar({ leitura, turma, matriculados, eventos, ajustes, remanejos = [], auditoria = [], escolhas = {} }: EntradaDaConciliacao): Relatorio {
+/**
+ * O teto mais comum das aulas da planilha (no empate, o menor). O "número de
+ * aulas" do SIGAA é um teto, não o que aconteceu: ninguém dá 12 aulas de uma
+ * disciplina num dia, e a quinta de dois professores aceita 4. O comum é o
+ * que a turma costuma ter, e por isso é o valor da falta quando ninguém
+ * escolheu outro (`docs/13`).
+ */
+export function tetoComum(leitura: LeituraPlanilha): number | undefined {
+  const frequencia = new Map<number, number>()
+  for (const c of leitura.colunas) if (c.maximo !== undefined) frequencia.set(c.maximo, (frequencia.get(c.maximo) ?? 0) + 1)
+  return [...frequencia].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0]
+}
+
+export function conciliar({ leitura, turma, matriculados, eventos, ajustes, remanejos = [], auditoria = [], escolhas = {}, aulas = [] }: EntradaDaConciliacao): Relatorio {
   const alunos = matriculados.filter((m) => m.turma === turma && m.papel === 'aluno')
   const daTurma = new Set(alunos.map((a) => a.matricula))
   const naPagina = new Set(leitura.linhas.map((l) => l.matricula))
@@ -94,20 +110,26 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes, rema
   const diaSemMaximo = new Set(semMaximo)
 
   /**
-   * Quanto vale a falta em cada aula (`docs/13`). Só o professor sabe se a
-   * chamada foi da aula inteira ou só do bloco dele, quando o dia tem outro
-   * professor: vale a escolha dele nesta folha; sem ela, o que o Adsum lançou
-   * naquela aula ou, antes, na última do mesmo dia da semana; sem nenhuma, o
-   * máximo da coluna. Sempre entre 1 e o máximo.
+   * Quanto vale a falta em cada aula (`docs/13`). Só o professor sabe quantas
+   * aulas deu: vale a escolha dele nesta folha; sem ela, o que o Adsum já
+   * lançou naquela aula; sem isso, o que a grade dele marca para o dia da
+   * semana da chamada; sem grade, o teto comum da planilha. Sempre entre 1 e
+   * o teto da aula.
    */
+  const comum = tetoComum(leitura)
   const lancadas = auditoria
     .filter((a) => a.turma === turma && a.acao === 'preenchimento' && Number(a.aplicado) > 0)
     .sort((a, b) => b.quando.localeCompare(a.quando))
-  const semana = (dia: string) => new Date(`${dia}T12:00:00`).getDay()
+  const daGrade = (dia: Dia) => {
+    const semana = new Date(`${dia}T12:00:00`).getDay()
+    const total = aulas.filter((a) => a.turma === turma && a.dia === semana).reduce((soma, b) => soma + periodosDoBloco(b.inicio, b.fim), 0)
+    return total > 0 ? total : undefined
+  }
   const valorDaFalta = leitura.colunas.flatMap((c) => {
-    if (c.maximo === undefined || !fonte.has(c.dia)) return []
-    const anterior = lancadas.find((a) => a.dia === c.dia) ?? lancadas.find((a) => semana(a.dia) === semana(c.dia))
-    const valor = escolhas[c.dia] ?? (anterior ? Number(anterior.aplicado) : c.maximo)
+    const origem = fonte.get(c.dia)
+    if (c.maximo === undefined || !origem) return []
+    const anterior = lancadas.find((a) => a.dia === c.dia)
+    const valor = escolhas[c.dia] ?? (anterior ? Number(anterior.aplicado) : (daGrade(origem) ?? comum ?? c.maximo))
     return [{ dia: c.dia, valor: Math.min(c.maximo, Math.max(1, Math.round(valor))), maximo: c.maximo }]
   })
   const valorNo = new Map(valorDaFalta.map((v) => [v.dia as string, v.valor]))

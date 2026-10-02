@@ -68,17 +68,19 @@ describe('as leis da conciliação, em 500 cenários', () => {
     })
   })
 
-  it('4 · faixa: tudo em 0…máximo, inclusive ajuste; fora de ajuste, presente é 0 e ausente é o máximo', () => {
+  it('4 · faixa: tudo em 0…máximo, inclusive ajuste; fora de ajuste, presente é 0 e ausente é o valor da falta da aula', () => {
     paraCada((c) => {
       const ajustados = new Set(c.ajustes.map((a) => `${a.dia}|${a.matricula}`))
-      for (const x of conciliarCenario(c).celulas) {
+      const r = conciliarCenario(c)
+      const valor = new Map(r.valorDaFalta.map((v) => [v.dia as string, v.valor]))
+      for (const x of r.celulas) {
         if (x.categoria !== 'aLancar' && x.categoria !== 'diverge') continue
         const maximo = c.leitura.colunas[x.coluna].maximo
         expect(maximo).toBeDefined()
         expect(x.esperado).toBeGreaterThanOrEqual(0)
         expect(x.esperado).toBeLessThanOrEqual(maximo!)
         if (ajustados.has(`${x.dia}|${x.matricula}`)) continue
-        expect([0, maximo]).toContain(x.esperado)
+        expect([0, valor.get(x.dia)]).toContain(x.esperado)
       }
     })
   })

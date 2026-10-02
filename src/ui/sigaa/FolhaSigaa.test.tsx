@@ -185,25 +185,37 @@ describe('a folha, com o que lançar', () => {
     expect((await repositorio.listarAuditoriaSigaa(TURMA)).filter((l) => l.acao === 'aceite').map((l) => l.aplicado)).toEqual(['2', '0'])
   })
 
-  it('aula com mais aulas que o comum: o professor escolhe quanto vale a falta, e o Preencher leva a escolha', async () => {
-    // Terça com 4 aulas no SIGAA, e só 2 delas deste professor (`docs/13`). O Caio faltou.
+  it('aula cujo teto no SIGAA passa do comum: vem com o comum, o professor muda, e o Preencher leva a escolha', async () => {
+    // Terça que o SIGAA aceita até 4; a turma costuma ter 2 (`docs/13`). O Caio faltou.
     const usuario = userEvent.setup()
     abrir()
     ponte.ler(bruto([['', '0'], ['', '0'], ['', '0']], undefined, [4, 2]), 'l-4')
     const cartao = (await screen.findByText('Quem faltou leva')).parentElement!
-    expect(within(cartao).getByText('4')).toBeInTheDocument()
-    expect(within(cartao).getByText('de 4.')).toBeInTheDocument()
-    expect(within(cartao).getByRole('button', { name: 'Uma falta a mais em Ter, 13/10' })).toBeDisabled()
-    await usuario.click(within(cartao).getByRole('button', { name: 'Uma falta a menos em Ter, 13/10' }))
-    await usuario.click(within(cartao).getByRole('button', { name: 'Uma falta a menos em Ter, 13/10' }))
     expect(within(cartao).getByText('2')).toBeInTheDocument()
+    expect(within(cartao).getByText('O SIGAA aceita até 4 nesta aula.')).toBeInTheDocument()
+    await usuario.click(within(cartao).getByRole('button', { name: 'Uma falta a mais em Ter, 13/10' }))
+    expect(within(cartao).getByText('3')).toBeInTheDocument()
+    await usuario.click(within(cartao).getByRole('button', { name: 'Uma falta a menos em Ter, 13/10' }))
+    await usuario.click(within(cartao).getByRole('button', { name: 'Uma falta a menos em Ter, 13/10' }))
+    expect(within(cartao).getByText('1')).toBeInTheDocument()
+    expect(within(cartao).getByText('falta.')).toBeInTheDocument()
+    expect(within(cartao).getByRole('button', { name: 'Uma falta a menos em Ter, 13/10' })).toBeDisabled()
     await usuario.click(screen.getByRole('button', { name: /^Ter, 13\/10/ }))
-    expect(screen.getByText('Caio Dias, 2 faltas')).toBeInTheDocument()
+    expect(screen.getByText('Caio Dias, 1 falta')).toBeInTheDocument()
 
     await usuario.click(screen.getByRole('button', { name: 'Preencher 1 aula' }))
     await waitFor(() => expect(fechar).toHaveBeenCalled())
-    expect(ponte.entregues[0].instrucoes.find((i) => i.linha === 2)).toEqual({ linha: 2, coluna: 0, antes: 'vazia', valor: 2 })
-    expect((await repositorio.listarAuditoriaSigaa(TURMA)).find((l) => l.matricula === '20260000003')?.aplicado).toBe('2')
+    expect(ponte.entregues[0].instrucoes.find((i) => i.linha === 2)).toEqual({ linha: 2, coluna: 0, antes: 'vazia', valor: 1 })
+    expect((await repositorio.listarAuditoriaSigaa(TURMA)).find((l) => l.matricula === '20260000003')?.aplicado).toBe('1')
+  })
+
+  it('o padrão é o que a grade do professor marca para o dia: quatro aulas na terça, 4 faltas', async () => {
+    await repositorio.gravarAula({ uidHashProfessor: 'p', dia: 2, inicio: '08:00', fim: '11:40', turma: TURMA })
+    abrir()
+    ponte.ler(bruto([['', '0'], ['', '0'], ['', '0']], undefined, [4, 2]), 'l-grade')
+    const cartao = (await screen.findByText('Quem faltou leva')).parentElement!
+    expect(within(cartao).getByText('4')).toBeInTheDocument()
+    expect(within(cartao).getByRole('button', { name: 'Uma falta a mais em Ter, 13/10' })).toBeDisabled()
   })
 
   it('Agora não só fecha', async () => {

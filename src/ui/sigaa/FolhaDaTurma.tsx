@@ -7,6 +7,7 @@ import { resumoDaFolha, type DiferencaDaFolha } from '../../nucleo/lancar/folha.
 import { planejar, validarPlano } from '../../nucleo/lancar/plano.ts'
 import { remanejosDaAuditoria } from '../../nucleo/lancar/auditoria.ts'
 import type { AjusteSigaa, Dia, LeituraPlanilha, LinhaDeAuditoria, RemanejoSigaa } from '../../nucleo/lancar/tipos.ts'
+import type { Aula } from '../../nucleo/grade.ts'
 import type { Evento, Matriculado } from '../../nucleo/tipos.ts'
 import type { PonteSigaa } from '../../portas/PonteSigaa.ts'
 import type { Repositorio } from '../../portas/Repositorio.ts'
@@ -88,6 +89,7 @@ export function FolhaDaTurma({
     ajustes: AjusteSigaa[]
     remanejos: RemanejoSigaa[]
     auditoria: LinhaDeAuditoria[]
+    aulas: Aula[]
   }>()
   const [desmarcadas, setDesmarcadas] = useState<Dia[]>([])
   // Quanto vale a falta, quando o professor muda nesta folha (`docs/13`).
@@ -101,13 +103,14 @@ export function FolhaDaTurma({
   const avisada = useRef(false)
 
   const carregar = useCallback(async () => {
-    const [eventos, matriculados, ajustes, auditoria] = await Promise.all([
+    const [eventos, matriculados, ajustes, auditoria, aulas] = await Promise.all([
       repositorio.listarEventos({ turma }),
       repositorio.listarMatriculados(turma),
       repositorio.lerAjustesSigaa(turma),
       repositorio.listarAuditoriaSigaa(turma),
+      repositorio.listarAulas(),
     ])
-    setDados({ eventos, matriculados, ajustes, remanejos: remanejosDaAuditoria(auditoria), auditoria })
+    setDados({ eventos, matriculados, ajustes, remanejos: remanejosDaAuditoria(auditoria), auditoria, aulas })
   }, [repositorio, turma])
 
   useEffect(() => {
@@ -126,6 +129,7 @@ export function FolhaDaTurma({
         remanejos: dados.remanejos,
         auditoria: dados.auditoria,
         escolhas,
+        aulas: dados.aulas,
       }),
     [dados, leitura, turma, escolhas],
   )
@@ -272,7 +276,8 @@ export function FolhaDaTurma({
               >
                 +
               </button>
-              <span>{`de ${a.falta.maximo}.`}</span>
+              <span>{a.falta.valor === 1 ? 'falta.' : 'faltas.'}</span>
+              <small>{`O SIGAA aceita até ${a.falta.maximo} nesta aula.`}</small>
             </div>
           )}
           {a.de && (

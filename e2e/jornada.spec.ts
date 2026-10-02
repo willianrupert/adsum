@@ -1,8 +1,10 @@
 // A jornada de um professor, do zero ao SIGAA, no Google Chrome, como uma
 // pessoa usaria: só pela tela e pelo crachá. Cada tipo de presença que existe
-// acontece aqui, em três aulas de tamanhos diferentes (2, 4 e 12 aulas no
-// dia), e no fim o favorito lança tudo na planilha do SIGAA e cada célula
-// enviada no Gravar é conferida: presente vale 0, falta vale o máximo do dia.
+// acontece aqui, em três aulas que o SIGAA aceita até 2, 4 e 12 faltas no
+// dia, e no fim o favorito lança tudo na planilha do SIGAA e cada célula
+// enviada no Gravar é conferida: presente vale 0, e a falta vale o que o
+// professor deixou na folha. O teto do SIGAA não é o que aconteceu: a aula
+// de 14/10 teve 4 aulas e ele sobe para 4; a de 18/11 fica com 2.
 //
 // Tudo local: o Chrome pede `willianrupert.github.io` e `sigaa.ufpe.br`, e
 // quem responde é o teste (`apoio/enderecos.ts`), com o build do commit e a
@@ -217,9 +219,12 @@ test('do zero ao SIGAA: cadastro, três aulas com cada tipo de presença, e o la
     await expect(janela.getByText('2 presentes, 43 faltas')).toBeVisible()
     await expect(janela.getByText('Qua, 18/11')).toBeVisible()
     await expect(janela.getByText('1 presente, 44 faltas')).toBeVisible()
-    // Os dias fora do comum (o de 12 aulas, aqui) mostram quanto vale a falta, para o professor
-    // escolher; a jornada fica com o máximo.
-    await expect(janela.getByText('de 12.')).toBeVisible()
+    // O teto do SIGAA não é o que aconteceu: a aula que aceita até 12 vem com o comum
+    // da turma, e mostra o teto para o professor escolher (`docs/13`).
+    await expect(janela.getByText('O SIGAA aceita até 12 nesta aula.')).toBeVisible()
+    // A de 14/10 teve mesmo 4 aulas: dois toques.
+    await janela.getByRole('button', { name: 'Uma falta a mais em Qua, 14/10' }).click()
+    await janela.getByRole('button', { name: 'Uma falta a mais em Qua, 14/10' }).click()
     await Promise.all([janela.waitForEvent('close'), janela.getByRole('button', { name: 'Preencher 3 aulas' }).click()])
     await expect(page.locator('[data-adsum="barra"]')).toContainText('Adsum preencheu 3 aulas')
     await page.getByRole('button', { name: 'Gravar Frequências' }).click()
@@ -230,17 +235,17 @@ test('do zero ao SIGAA: cadastro, três aulas com cada tipo de presença, e o la
     gravado = await doGravar()
   })
 
-  await test.step('cada célula enviada: presente vale 0, falta vale o máximo do dia', async () => {
+  await test.step('cada célula enviada: presente vale 0, falta vale o que ficou na folha', async () => {
     const presentesNoDia: Record<string, string[]> = {
       '13/10': [A, B, C, E, F].map((a) => a.matricula),
       '14/10': [A, E].map((a) => a.matricula),
       '18/11': [B].map((a) => a.matricula),
     }
-    const maximo: Record<string, string> = { '13/10': '2', '14/10': '4', '18/11': '12' }
+    const falta: Record<string, string> = { '13/10': '2', '14/10': '4', '18/11': '2' }
     expect(gravado).toHaveLength(alunos.length * 3)
     for (const m of gravado) {
       expect(m.antes, `${m.matricula} ${m.dia}`).toBe('null')
-      const esperado = presentesNoDia[m.dia]?.includes(m.matricula) ? '0' : maximo[m.dia]
+      const esperado = presentesNoDia[m.dia]?.includes(m.matricula) ? '0' : falta[m.dia]
       expect(m.depois, `${m.matricula} ${m.dia}`).toBe(esperado)
     }
   })

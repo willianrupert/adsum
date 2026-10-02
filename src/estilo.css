@@ -2962,6 +2962,14 @@ button:focus-visible {
   color: var(--tinta-fraca);
 }
 
+.folha-sigaa__falta {
+  flex-wrap: wrap;
+}
+
+.folha-sigaa__falta small {
+  flex-basis: 100%;
+}
+
 .folha-sigaa__falta strong {
   min-width: 1.5em;
   color: var(--tinta);

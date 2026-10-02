@@ -4,6 +4,7 @@
 // de tela (`CLAUDE.md`, voz da interface).
 
 import type { Matriculado } from '../tipos.ts'
+import { tetoComum } from './conciliar.ts'
 import type { Dia, LeituraPlanilha, Relatorio } from './tipos.ts'
 
 export interface AulaDaFolha {
@@ -136,10 +137,8 @@ export function resumoDaFolha({
   const nomeDe = (matricula: string) => nomes.get(matricula) ?? `matrícula ${matricula}`
   const fora = new Set<string>(desmarcadas)
 
-  // O máximo mais comum da planilha (no empate, o menor): a aula fora dele mostra quanto a falta vale.
-  const frequencia = new Map<number, number>()
-  for (const c of leitura.colunas) if (c.maximo !== undefined) frequencia.set(c.maximo, (frequencia.get(c.maximo) ?? 0) + 1)
-  const comum = [...frequencia].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0]
+  // A aula com teto fora do comum mostra quanto a falta vale, para o professor escolher.
+  const comum = tetoComum(leitura)
   const valorNo = new Map(relatorio.valorDaFalta.map((v) => [v.dia as string, v]))
   const faltaDo = (dia: Dia) => {
     const v = valorNo.get(dia)

@@ -1,10 +1,11 @@
-// Quanto vale a falta em cada aula (`docs/13`): o professor escolhe, na
-// folha, porque só ele sabe se a chamada foi da aula inteira ou só do bloco
-// dele. A quinta de CIN0144 tem 4 aulas no SIGAA e dois professores; quem
-// faltou ao bloco do Paulo leva 2. Sem escolha, vem a da última aula do mesmo
-// dia da semana, e sem nenhuma, o máximo da coluna, como sempre foi.
+// Quanto vale a falta em cada aula (`docs/13`). O "número de aulas" do SIGAA
+// é um teto, não o que aconteceu: a quinta de CIN0144 aceita até 4, e quem
+// faltou ao bloco do Paulo leva 2. O padrão é o que a grade do professor marca
+// para aquele dia da semana; sem grade, o teto mais comum da planilha. O
+// professor muda na folha, aula por aula.
 
 import { describe, expect, it } from 'vitest'
+import type { Aula } from '../grade.ts'
 import type { Evento, Matriculado } from '../tipos.ts'
 import { conciliar } from './conciliar.ts'
 import { comoDia, type Celula, type Conciliada, type Dia, type LeituraPlanilha, type LinhaDeAuditoria } from './tipos.ts'
@@ -74,16 +75,39 @@ const preencheu = (dia: Dia, valor: number, quando = `${dia}T13:10:00.000Z`): Li
   aplicado: String(valor),
 })
 
-const conciliarCom = (leitura: LeituraPlanilha, dias: string[], { auditoria = [] as LinhaDeAuditoria[], escolhas = {} as Partial<Record<Dia, number>> } = {}) =>
-  conciliar({ leitura, turma: TURMA, matriculados: TURMA_TODA, eventos: chamadas(...dias), ajustes: [], auditoria, escolhas })
+/** A grade do professor: um bloco na quinta. Das 10h às 11h40 são duas aulas de 50 min. */
+const naQuinta = (inicio: string, fim: string): Aula[] => [{ uidHashProfessor: 'p', dia: 4, inicio, fim, turma: TURMA }]
+const DUAS = naQuinta('10:00', '11:40')
+const QUATRO = naQuinta('08:00', '11:40')
+
+const conciliarCom = (
+  leitura: LeituraPlanilha,
+  dias: string[],
+  { auditoria = [] as LinhaDeAuditoria[], escolhas = {} as Partial<Record<Dia, number>>, aulas = [] as Aula[] } = {},
+) => conciliar({ leitura, turma: TURMA, matriculados: TURMA_TODA, eventos: chamadas(...dias), ajustes: [], auditoria, escolhas, aulas })
 
 const celula = (r: ReturnType<typeof conciliar>, matricula: string, dia: Dia) => r.celulas.find((c) => c.matricula === matricula && c.dia === dia) as Conciliada
 
 describe('quanto vale a falta: o professor escolhe', () => {
-  it('sem escolha e sem aula anterior, o máximo da coluna, como sempre foi', () => {
+  it('sem escolha e sem aula anterior, o teto mais comum da planilha: a quinta que aceita até 4 vem com 2', () => {
+    const r = conciliarCom(pagina([TER, 2, L(0), L(2)], [QUI_ANTES, 2, L(0), L(2)], [QUI, 4, V, V]), [QUI])
+    expect(celula(r, BRENO, QUI)).toMatchObject({ categoria: 'aLancar', esperado: 2 })
+    expect(r.valorDaFalta).toEqual([{ dia: QUI, valor: 2, maximo: 4 }])
+  })
+
+  it('a aula que o SIGAA aceita até 12 também vem com o comum, e não com o teto', () => {
+    const r = conciliarCom(pagina([TER, 2, L(0), L(2)], [QUI_ANTES, 2, L(0), L(2)], [QUI, 12, V, V]), [QUI])
+    expect(celula(r, BRENO, QUI)).toMatchObject({ esperado: 2 })
+  })
+
+  it('o comum nunca passa do teto da aula', () => {
+    const r = conciliarCom(pagina([TER, 2, L(0), L(2)], [QUI_ANTES, 2, L(0), L(2)], [QUI, 1, V, V]), [QUI])
+    expect(celula(r, BRENO, QUI)).toMatchObject({ esperado: 1 })
+  })
+
+  it('numa planilha de uma aula só, o comum é o teto dela', () => {
     const r = conciliarCom(pagina([QUI, 4, V, V]), [QUI])
-    expect(celula(r, BRENO, QUI)).toMatchObject({ categoria: 'aLancar', esperado: 4 })
-    expect(r.valorDaFalta).toEqual([{ dia: QUI, valor: 4, maximo: 4 }])
+    expect(celula(r, BRENO, QUI)).toMatchObject({ esperado: 4 })
   })
 
   it('com a escolha, quem faltou leva o número escolhido, e quem veio continua 0', () => {
@@ -99,44 +123,53 @@ describe('quanto vale a falta: o professor escolhe', () => {
   })
 })
 
-describe('sem escolha nesta folha, vem a da última aula do mesmo dia da semana', () => {
-  it('a quinta passada foi lançada com 2: a quinta de agora já vem com 2', () => {
-    const r = conciliarCom(pagina([QUI_ANTES, 4, L(0), L(2)], [QUI, 4, V, V]), [QUI_ANTES, QUI], { auditoria: [preencheu(QUI_ANTES, 2)] })
+describe('o padrão é o que a grade marca', () => {
+  it('a grade marca duas aulas na quinta, e o SIGAA aceita até 4: quem faltou leva 2', () => {
+    const r = conciliarCom(pagina([QUI, 4, V, V]), [QUI], { aulas: DUAS })
     expect(celula(r, BRENO, QUI)).toMatchObject({ categoria: 'aLancar', esperado: 2 })
+    expect(r.valorDaFalta).toEqual([{ dia: QUI, valor: 2, maximo: 4 }])
   })
 
-  it('a terça não muda a quinta: cada dia da semana tem a sua', () => {
-    const r = conciliarCom(pagina([TER, 4, L(0), L(4)], [QUI, 4, V, V]), [TER, QUI], { auditoria: [preencheu(TER, 4)] })
-    expect(celula(r, BRENO, QUI)).toMatchObject({ esperado: 4 })
-    const s = conciliarCom(pagina([TER, 2, L(0), L(2)], [QUI, 4, V, V]), [TER, QUI], { auditoria: [preencheu(TER, 2)] })
-    expect(celula(s, BRENO, QUI)).toMatchObject({ esperado: 4 })
+  it('a grade marca quatro: o padrão é 4, e o professor pode mudar para 3', () => {
+    expect(celula(conciliarCom(pagina([QUI, 4, V, V]), [QUI], { aulas: QUATRO }), BRENO, QUI)).toMatchObject({ esperado: 4 })
+    expect(celula(conciliarCom(pagina([QUI, 4, V, V]), [QUI], { aulas: QUATRO, escolhas: { [QUI]: 3 } }), BRENO, QUI)).toMatchObject({ esperado: 3 })
   })
 
-  it('a mais recente vale', () => {
-    const auditoria = [preencheu(comoDia('2026-10-01')!, 4), preencheu(QUI_ANTES, 2)]
-    const r = conciliarCom(pagina([QUI, 4, V, V]), [QUI], { auditoria })
+  it('a grade nunca passa do teto da aula', () => {
+    expect(celula(conciliarCom(pagina([QUI, 2, V, V]), [QUI], { aulas: QUATRO }), BRENO, QUI)).toMatchObject({ esperado: 2 })
+  })
+
+  it('a grade de outro dia da semana não vale para a quinta', () => {
+    const naTerca: Aula[] = [{ uidHashProfessor: 'p', dia: 2, inicio: '08:00', fim: '11:40', turma: TURMA }]
+    const r = conciliarCom(pagina([TER, 2, L(0), L(2)], [QUI_ANTES, 2, L(0), L(2)], [QUI, 4, V, V]), [QUI], { aulas: naTerca })
     expect(celula(r, BRENO, QUI)).toMatchObject({ esperado: 2 })
   })
 
-  it('a da semana passada nunca passa do máximo desta coluna', () => {
-    const r = conciliarCom(pagina([QUI, 2, V, V]), [QUI], { auditoria: [preencheu(QUI_ANTES, 4)] })
+  it('a grade de outra turma não vale', () => {
+    const deOutra: Aula[] = [{ uidHashProfessor: 'p', dia: 4, inicio: '08:00', fim: '11:40', turma: 'OUTRA · T01' }]
+    const r = conciliarCom(pagina([TER, 2, L(0), L(2)], [QUI_ANTES, 2, L(0), L(2)], [QUI, 4, V, V]), [QUI], { aulas: deOutra })
+    expect(celula(r, BRENO, QUI)).toMatchObject({ esperado: 2 })
+  })
+
+  it('a escolha numa quinta não vira o padrão da seguinte: a grade é a configuração', () => {
+    const r = conciliarCom(pagina([QUI_ANTES, 4, L(0), L(1)], [QUI, 4, V, V]), [QUI_ANTES, QUI], { aulas: DUAS, auditoria: [preencheu(QUI_ANTES, 1)] })
     expect(celula(r, BRENO, QUI)).toMatchObject({ esperado: 2 })
   })
 })
 
 describe('na conferência depois, a aula lançada é comparada com o que foi escolhido', () => {
-  it('lançada pelo Adsum com 2: confere, sem escolha nenhuma nesta folha', () => {
-    const r = conciliarCom(pagina([QUI, 4, L(0), L(2)]), [QUI], { auditoria: [preencheu(QUI, 2)] })
+  it('lançada pelo Adsum com 1, contra uma grade de 2: confere, porque foi o que o professor escolheu', () => {
+    const r = conciliarCom(pagina([QUI, 4, L(0), L(1)]), [QUI], { aulas: DUAS, auditoria: [preencheu(QUI, 1)] })
+    expect(celula(r, BRENO, QUI)).toMatchObject({ categoria: 'confere', valor: 1 })
+  })
+
+  it('lançada à mão com 2, numa quinta em que a grade marca 2: confere', () => {
+    const r = conciliarCom(pagina([QUI, 4, L(0), L(2)]), [QUI], { aulas: DUAS })
     expect(celula(r, BRENO, QUI)).toMatchObject({ categoria: 'confere', valor: 2 })
   })
 
-  it('lançada à mão com 2, numa turma em que a quinta vale 2: confere', () => {
-    const r = conciliarCom(pagina([QUI, 4, L(0), L(2)]), [QUI], { auditoria: [preencheu(QUI_ANTES, 2)] })
-    expect(celula(r, BRENO, QUI)).toMatchObject({ categoria: 'confere', valor: 2 })
-  })
-
-  it('lançada à mão com 4, numa turma em que a quinta vale 2: diferença, como sempre', () => {
-    const r = conciliarCom(pagina([QUI, 4, L(0), L(4)]), [QUI], { auditoria: [preencheu(QUI_ANTES, 2)] })
+  it('lançada à mão com 4, numa quinta em que a grade marca 2: diferença, como sempre', () => {
+    const r = conciliarCom(pagina([QUI, 4, L(0), L(4)]), [QUI], { aulas: DUAS })
     expect(celula(r, BRENO, QUI)).toMatchObject({ categoria: 'diverge', sigaa: 4, esperado: 2 })
   })
 })

@@ -109,7 +109,7 @@ describe('portão B: as leis sobre a planilha real de CIN0114, em 200 variaçõe
     })
   })
 
-  it('4 · tudo dentro do máximo da aula, e fora de ajuste ausente leva o máximo daquele dia (que não é sempre 2)', () => {
+  it('4 · tudo dentro do máximo da aula, e fora de ajuste ausente leva o comum da turma (2), mesmo onde o SIGAA aceita até 4 ou 12', () => {
     let foraDoComum = 0
     paraCada(({ leitura, ajustes, relatorio }) => {
       const ajustados = new Set(ajustes.map((a) => `${a.dia}|${a.matricula}`))
@@ -119,8 +119,8 @@ describe('portão B: as leis sobre a planilha real de CIN0114, em 200 variaçõe
         expect(c.esperado).toBeGreaterThanOrEqual(0)
         expect(c.esperado).toBeLessThanOrEqual(maximo)
         if (ajustados.has(`${c.dia}|${c.matricula}`)) continue
-        expect([0, maximo]).toContain(c.esperado)
-        if (c.esperado > 2) foraDoComum += 1
+        expect([0, 2]).toContain(c.esperado)
+        if (maximo > 2 && c.esperado === 2) foraDoComum += 1
       }
     })
     // Os dias de 4 e de 12 aulas têm de aparecer, senão a lei passa no vazio.
