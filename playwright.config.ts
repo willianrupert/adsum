@@ -11,6 +11,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 export const PASTA_DA_BANCADA = resolve(process.env.ADSUM_BANCADA ?? '../Adsum_bancada_sigaa')
 const temPagina = existsSync(join(PASTA_DA_BANCADA, 'planilha.html'))
+export const VER = Number(process.env.ADSUM_VER) || 0
 
 export default defineConfig({
   testDir: 'e2e',
@@ -28,7 +29,10 @@ export default defineConfig({
     ['html', { open: 'never', outputFolder: 'playwright-report' }],
     ['json', { outputFile: 'test-results/resultado.json' }],
   ],
-  use: { ...devices['Desktop Chrome'], trace: 'retain-on-failure', video: 'on' },
+  // `ADSUM_VER=3000`: a janela aberta, e a jornada para 3 s nos momentos de
+  // ver. Câmera lenta em tudo não serve: o crachá digitado devagar deixa de
+  // ter o ritmo do dongle, e o Adsum o recusa, com razão.
+  use: { ...devices['Desktop Chrome'], trace: 'retain-on-failure', video: 'on', ...(VER ? { headless: false } : {}) },
   webServer: temPagina
     ? [
         { command: `node scripts/bancada_sigaa.mjs "${PASTA_DA_BANCADA}"`, url: 'http://localhost:8080/bancada/registros', reuseExistingServer: true },

@@ -9,14 +9,15 @@
 // Tudo local: o Chrome pede `willianrupert.github.io` e `sigaa.ufpe.br`, e
 // quem responde é o teste (`apoio/enderecos.ts`), com o build do commit e a
 // planilha anonimizada da bancada. Com `ADSUM_RIG`, os crachás passam pelo
-// rig S3, como teclado USB de verdade (`apoio/dongle.ts`).
+// rig S3, como teclado USB de verdade (`apoio/dongle.ts`). Com `ADSUM_VER=3000`,
+// a janela fica aberta e a jornada para 3 s em cada momento de ver.
 //
 // A planilha da bancada fica fora do repositório; sem ela, a jornada se pula.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
-import { PASTA_DA_BANCADA } from '../playwright.config.ts'
+import { PASTA_DA_BANCADA, VER } from '../playwright.config.ts'
 import { versao, type Versao } from './apoio/versoes.ts'
 import { lerPasta, trocarSeletor } from './apoio/cofre.ts'
 import { atenderEnderecos, SIGAA, SITE } from './apoio/enderecos.ts'
@@ -24,7 +25,10 @@ import { COM_RIG, desligarDongle, encostar, encostarJuntos, ligarDongle } from '
 import { alunosDaBancada, codigoDaBancada, paginaDeParticipantes, type AlunoDaBancada } from './apoio/turmaDaBancada.ts'
 
 test.skip(!existsSync(join(PASTA_DA_BANCADA, 'planilha.html')), `sem a página da bancada em ${PASTA_DA_BANCADA} (ADSUM_BANCADA)`)
-test.use({ channel: 'chrome', headless: !COM_RIG, serviceWorkers: 'block', actionTimeout: 15_000, screenshot: 'only-on-failure' })
+/** Com `ADSUM_VER`, um instante para quem assiste. */
+const pausa = (p: Page) => (VER ? p.waitForTimeout(VER) : Promise.resolve())
+
+test.use({ channel: 'chrome', headless: !COM_RIG && !VER, serviceWorkers: 'block', actionTimeout: 15_000, screenshot: 'only-on-failure' })
 
 const BANCADA = 'http://localhost:8080'
 const PROFESSORA = 'HELENA DUARTE LIMA'
@@ -223,10 +227,16 @@ test('do zero ao SIGAA: cadastro, três aulas com cada tipo de presença, e o la
     // da turma, e mostra o teto para o professor escolher (`docs/13`).
     await expect(janela.getByText('O SIGAA aceita até 12 nesta aula.')).toBeVisible()
     // A de 14/10 teve mesmo 4 aulas: dois toques.
-    await janela.getByRole('button', { name: 'Uma falta a mais em Qua, 14/10' }).click()
-    await janela.getByRole('button', { name: 'Uma falta a mais em Qua, 14/10' }).click()
+    const mais = janela.getByRole('button', { name: 'Uma falta a mais em Qua, 14/10' })
+    await mais.scrollIntoViewIfNeeded()
+    await pausa(janela)
+    await mais.click()
+    await pausa(janela)
+    await mais.click()
+    await pausa(janela)
     await Promise.all([janela.waitForEvent('close'), janela.getByRole('button', { name: 'Preencher 3 aulas' }).click()])
     await expect(page.locator('[data-adsum="barra"]')).toContainText('Adsum preencheu 3 aulas')
+    await pausa(page)
     await page.getByRole('button', { name: 'Gravar Frequências' }).click()
     type Registro = { tipo: string; mudaram?: Mudanca[] }
     const doGravar = async () =>
@@ -255,6 +265,7 @@ test('do zero ao SIGAA: cadastro, três aulas com cada tipo de presença, e o la
     await expect(page.locator('#planilha')).toBeVisible()
     const [janela] = await Promise.all([page.waitForEvent('popup'), page.evaluate(favoritoDoBuild(nova))])
     await expect(janela.getByRole('heading', { name: 'Tudo confere' })).toBeVisible({ timeout: 20_000 })
+    await pausa(janela)
   })
 
   expect(erros).toEqual([])
