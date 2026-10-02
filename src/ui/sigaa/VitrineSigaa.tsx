@@ -28,14 +28,15 @@ const DIAS = [
 
 /**
  * A planilha como o SIGAA a guarda (`docs/12`): terça sem nada lançado (Débora
- * faltou); quinta lançada, com o Caio diferente do Adsum; segunda (19/10)
+ * faltou), com 4 aulas no SIGAA, para a folha mostrar quanto vale a falta
+ * (`docs/13`); quinta lançada, com o Caio diferente do Adsum; segunda (19/10)
  * vazia, uma aula sem chamada no Adsum.
  */
 function planilha(tudoIgual: boolean): BrutoPlanilha {
   const terca = ['0', '0', '2', '0']
   const quinta = ['0', tudoIgual ? '0' : '2', '0', '0']
   const dias = tudoIgual ? DIAS.slice(0, 2) : DIAS
-  const auxAulas = dias.map(({ dia, data }, j) => [dia, 10, 2, data, j === 1 || (tudoIgual && j === 0), false, false, false, 2026, false].join(','))
+  const auxAulas = dias.map(({ dia, data }, j) => [dia, 10, j === 0 && !tudoIgual ? 4 : 2, data, j === 1 || (tudoIgual && j === 0), false, false, false, 2026, false].join(','))
   const auxAlunos = ALUNOS.flatMap(([matricula], i) =>
     dias.map(({ dia, data }, j) => {
       const faltas = j === 0 ? (tudoIgual ? terca[i] : 'null') : j === 1 ? quinta[i] : 'null'

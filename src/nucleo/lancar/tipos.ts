@@ -168,14 +168,6 @@ export interface Relatorio {
    * suspensa, com máximo e com alguma célula que aceita valor.
    */
   aulasSemChamada: Dia[]
-  /**
-   * Aulas em que a grade do professor cobre só parte das aulas da coluna: há
-   * outro professor no mesmo dia (`docs/13`). Quem faltou leva a `parte`.
-   */
-  compartilhados: { dia: Dia; parte: number; maximo: number }[]
-  /**
-   * Aulas compartilhadas que outra pessoa já lançou: o Adsum não escreve sobre
-   * elas, e o professor lança à mão a `parte` de quem faltou ao bloco dele.
-   */
-  lancadasPorOutro: { dia: Dia; parte: number; presentes: number; ausentes: string[] }[]
+  /** Quanto vale a falta em cada aula com chamada: 1 até o máximo da coluna (`docs/13`). */
+  valorDaFalta: { dia: Dia; valor: number; maximo: number }[]
 }

@@ -16,7 +16,7 @@ const leitura = (linhas: number): LeituraPlanilha => ({
 })
 const pos = (linha: number, dia = TER) => ({ linha, coluna: dia === TER ? 0 : 1, matricula: String(linha + 1), dia })
 const relatorio = (celulas: Conciliada[], extra: Partial<Relatorio> = {}): Relatorio => ({
-  turma: TURMA, celulas, semParSigaa: [], semParAdsum: [], semOndeLancar: [], semMaximo: [], vaziasEmAulaLancada: [], remanejadas: [], aulasSemChamada: [], compartilhados: [], lancadasPorOutro: [], ...extra,
+  turma: TURMA, celulas, semParSigaa: [], semParAdsum: [], semOndeLancar: [], semMaximo: [], vaziasEmAulaLancada: [], remanejadas: [], aulasSemChamada: [], valorDaFalta: [], ...extra,
 })
 
 describe('o resumo da folha', () => {
@@ -96,20 +96,31 @@ describe('o resumo da folha', () => {
     expect(r.informativos).toBe('30 vazias em aulas já lançadas ficam de fora.')
   })
 
-  it('dia com mais aulas que o comum avisa quanto a falta vale', () => {
+  it('aula com mais aulas que o comum mostra quanto a falta vale, para o professor escolher', () => {
     const colunas = [
       { indice: 0, dia: TER, maximo: 2 },
       { indice: 1, dia: QUI, maximo: 12 },
     ]
     const r = resumoDaFolha({
-      relatorio: relatorio([
-        { ...pos(0), categoria: 'aLancar', esperado: 2 },
-        { ...pos(0, QUI), categoria: 'aLancar', esperado: 12 },
-      ]),
+      relatorio: relatorio(
+        [
+          { ...pos(0), categoria: 'aLancar', esperado: 2 },
+          { ...pos(0, QUI), categoria: 'aLancar', esperado: 12 },
+        ],
+        { valorDaFalta: [{ dia: TER, valor: 2, maximo: 2 }, { dia: QUI, valor: 12, maximo: 12 }] },
+      ),
       leitura: { ...leitura(1), colunas },
       matriculados: MATRICULADOS, desmarcadas: [],
     })
-    expect(r.aulas.map((a) => a.aviso)).toEqual([undefined, 'Dia de 12 aulas: quem faltou leva 12 faltas.'])
+    expect(r.aulas.map((a) => a.falta)).toEqual([undefined, { valor: 12, maximo: 12 }])
+  })
+
+  it('aula comum em que o professor escolheu menos que o máximo também mostra a escolha', () => {
+    const r = resumoDaFolha({
+      relatorio: relatorio([{ ...pos(0), categoria: 'aLancar', esperado: 1 }], { valorDaFalta: [{ dia: TER, valor: 1, maximo: 2 }] }),
+      leitura: leitura(1), matriculados: MATRICULADOS, desmarcadas: [],
+    })
+    expect(r.aulas[0].falta).toEqual({ valor: 1, maximo: 2 })
   })
 
   it('o que fica de fora cabe numa linha, sem travessão', () => {
@@ -194,16 +205,17 @@ describe('a folha: o que a mutação achou sem teste', () => {
   const comMaximos = (maximos: (number | undefined)[]) => {
     const dias = [TER, QUI, SEX, SEG]
     const colunas = maximos.map((maximo, indice) => ({ indice, dia: dias[indice], maximo }))
+    const valorDaFalta = colunas.flatMap((c) => (c.maximo === undefined ? [] : [{ dia: c.dia, valor: c.maximo, maximo: c.maximo }]))
     return resumoDaFolha({
-      relatorio: relatorio(colunas.map((c) => aLancar(c.indice, c.dia))),
+      relatorio: relatorio(colunas.map((c) => aLancar(c.indice, c.dia)), { valorDaFalta }),
       leitura: { ...leitura(1), colunas, linhas: [{ indice: 0, matricula: '1', celulas: colunas.map(() => ({ tipo: 'vazia' as const })) }] },
       matriculados: MATRICULADOS,
       desmarcadas: [],
-    }).aulas.map((a) => a.aviso)
+    }).aulas.map((a) => a.falta)
   }
-  const aviso = (m: number) => `Dia de ${m} aulas: quem faltou leva ${m} faltas.`
+  const aviso = (m: number) => ({ valor: m, maximo: m })
 
-  it('o aviso vem do máximo mais comum, onde quer que ele apareça', () => {
+  it('a escolha aparece pelo máximo mais comum, onde quer que ele apareça', () => {
     expect(comMaximos([4, 2, 2])).toEqual([aviso(4), undefined, undefined])
     expect(comMaximos([2, 4, 4])).toEqual([undefined, undefined, undefined])
   })
@@ -292,38 +304,5 @@ describe('a folha: o que a mutação achou sem teste', () => {
         ],
       }),
     ).toBe('a chamada de 15/12, fora do período letivo e o feriado de 12/10 ficam de fora.')
-  })
-})
-
-describe('a aula com outro professor (docs/13)', () => {
-  it('no cartão da aula, quanto vale a falta de quem faltou ao bloco', () => {
-    const r = resumoDaFolha({
-      relatorio: relatorio([{ ...pos(1, QUI), categoria: 'aLancar', esperado: 2 }], { compartilhados: [{ dia: QUI, parte: 2, maximo: 4 }] }),
-      leitura: leitura(3), matriculados: MATRICULADOS, desmarcadas: [],
-    })
-    expect(r.aulas[0].aviso).toBe('Aula com outro professor no mesmo dia. Quem faltou ao seu bloco leva 2 de 4 faltas.')
-  })
-
-  it('lançada por outra pessoa: um cartão para lançar à mão, com os nomes, e nada para preencher', () => {
-    const r = resumoDaFolha({
-      relatorio: relatorio([], { lancadasPorOutro: [{ dia: QUI, parte: 2, presentes: 1, ausentes: ['1', '2'] }] }),
-      leitura: leitura(3), matriculados: MATRICULADOS, desmarcadas: [],
-    })
-    expect(r.estado).toBe('lancar')
-    expect(r.titulo).toBe('1 aula para lançar à mão')
-    expect(r.aMao).toEqual([
-      { dia: QUI, rotulo: 'Qui, 15/10', parte: 2, presentes: 1, ausentes: [{ matricula: '1', nome: 'Ana Clara' }, { matricula: '2', nome: 'Breno Lima' }] },
-    ])
-    expect(r.botao).toBeUndefined()
-  })
-
-  it('com outras aulas para preencher, o título conta as que o Adsum preenche, e o cartão à mão vem junto', () => {
-    const r = resumoDaFolha({
-      relatorio: relatorio([{ ...pos(0), categoria: 'aLancar', esperado: 0 }], { lancadasPorOutro: [{ dia: QUI, parte: 2, presentes: 0, ausentes: ['1'] }] }),
-      leitura: leitura(1), matriculados: MATRICULADOS, desmarcadas: [],
-    })
-    expect(r.titulo).toBe('1 aula para lançar')
-    expect(r.aMao).toHaveLength(1)
-    expect(r.botao).toBe('Preencher 1 aula')
   })
 })

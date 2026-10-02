@@ -14,8 +14,11 @@ export interface AulaDaFolha {
   /** Atrás do toque: o cartão mostra os números, e o nome só quando aberto (decidido em 27/09). */
   ausentes: { matricula: string; nome: string; faltas: number }[]
   marcada: boolean
-  /** Dia com mais aulas que o comum da planilha: quanto a falta vale, dito antes de preencher. */
-  aviso?: string
+  /**
+   * Quanto vale a falta, para o professor escolher: só na aula com mais aulas
+   * que o comum da planilha, ou onde o valor já não é o máximo (`docs/13`).
+   */
+  falta?: { valor: number; maximo: number }
   /** A chamada veio de outro dia, por decisão do professor. */
   de?: { dia: Dia; rotulo: string }
 }
@@ -29,16 +32,6 @@ export interface ChamadaSemLugar {
   explicacao: string
   /** As aulas que podem recebê-la, da mais perto para a mais longe. */
   opcoes: { dia: Dia; rotulo: string }[]
-}
-
-/** Aula com outro professor que outra pessoa já lançou: o professor soma a parte dele à mão (`docs/13`). */
-export interface AulaAMao {
-  dia: Dia
-  rotulo: string
-  parte: number
-  presentes: number
-  /** Atrás do toque, como nos cartões de aula. */
-  ausentes: { matricula: string; nome: string }[]
 }
 
 export interface DiferencaDaFolha {
@@ -57,7 +50,6 @@ export interface ResumoDaFolha {
   diferencas: DiferencaDaFolha[]
   aulas: AulaDaFolha[]
   semLugar: ChamadaSemLugar[]
-  aMao: AulaAMao[]
   informativos?: string
   /** Só quando há aula para lançar. */
   botao?: string
@@ -144,17 +136,15 @@ export function resumoDaFolha({
   const nomeDe = (matricula: string) => nomes.get(matricula) ?? `matrícula ${matricula}`
   const fora = new Set<string>(desmarcadas)
 
-  // O máximo mais comum da planilha (no empate, o menor): o dia fora dele avisa quanto a falta vale.
+  // O máximo mais comum da planilha (no empate, o menor): a aula fora dele mostra quanto a falta vale.
   const frequencia = new Map<number, number>()
   for (const c of leitura.colunas) if (c.maximo !== undefined) frequencia.set(c.maximo, (frequencia.get(c.maximo) ?? 0) + 1)
   const comum = [...frequencia].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0]
-  const maximoDoDia = new Map(leitura.colunas.map((c) => [c.dia as string, c.maximo]))
-  const compartilhado = new Map(relatorio.compartilhados.map((c) => [c.dia as string, c]))
-  const avisoDo = (dia: Dia) => {
-    const parte = compartilhado.get(dia)
-    if (parte) return `Aula com outro professor no mesmo dia. Quem faltou ao seu bloco leva ${parte.parte} de ${parte.maximo} faltas.`
-    const m = maximoDoDia.get(dia)
-    return m !== undefined && comum !== undefined && m > comum ? `Dia de ${m} aulas: quem faltou leva ${m} faltas.` : undefined
+  const valorNo = new Map(relatorio.valorDaFalta.map((v) => [v.dia as string, v]))
+  const faltaDo = (dia: Dia) => {
+    const v = valorNo.get(dia)
+    if (!v || comum === undefined) return undefined
+    return v.maximo > comum || v.valor !== v.maximo ? { falta: { valor: v.valor, maximo: v.maximo } } : {}
   }
 
   const vindaDe = new Map(relatorio.remanejadas.map((r) => [r.para as string, r.de]))
@@ -169,7 +159,7 @@ export function resumoDaFolha({
   for (const c of relatorio.celulas) {
     if (c.categoria === 'aLancar') {
       let aula = porDia.get(c.dia)
-      if (!aula) porDia.set(c.dia, (aula = { dia: c.dia, rotulo: rotuloDoDia(c.dia), presentes: 0, faltas: 0, ausentes: [], marcada: !fora.has(c.dia), aviso: avisoDo(c.dia), ...origemDe(c.dia) }))
+      if (!aula) porDia.set(c.dia, (aula = { dia: c.dia, rotulo: rotuloDoDia(c.dia), presentes: 0, faltas: 0, ausentes: [], marcada: !fora.has(c.dia), ...faltaDo(c.dia), ...origemDe(c.dia) }))
       if (c.esperado === 0) aula.presentes += 1
       else {
         aula.faltas += 1
@@ -187,16 +177,9 @@ export function resumoDaFolha({
   const total = leitura.linhas.length
   const pelaMatricula = semPar === 0 ? 'todos pela matrícula' : `${total - semPar} pela matrícula`
   const semLugar = chamadasSemLugar(relatorio)
-  const aMao: AulaAMao[] = relatorio.lancadasPorOutro.map((a) => ({
-    dia: a.dia,
-    rotulo: rotuloDoDia(a.dia),
-    parte: a.parte,
-    presentes: a.presentes,
-    ausentes: a.ausentes.map((m) => ({ matricula: m, nome: nomeDe(m) })),
-  }))
   const informa = informativos(relatorio, leitura, new Set(semLugar.map((s) => s.dia)))
 
-  if (aulas.length === 0 && diferencas.length === 0 && semLugar.length === 0 && aMao.length === 0) {
+  if (aulas.length === 0 && diferencas.length === 0 && semLugar.length === 0) {
     const aceitasTexto = aceitas > 0 ? ` ${contar(aceitas, 'diferença aceita', 'diferenças aceitas')} por você.` : ''
     return {
       estado: 'tudoConfere',
@@ -205,7 +188,6 @@ export function resumoDaFolha({
       diferencas,
       aulas,
       semLugar,
-      aMao,
       informativos: informa,
     }
   }
@@ -218,14 +200,11 @@ export function resumoDaFolha({
         ? `${contar(aulas.length, 'aula', 'aulas')} para lançar`
         : diferencas.length > 0
           ? `${contar(diferencas.length, 'diferença', 'diferenças')} para olhar`
-          : semLugar.length > 0
-            ? `${contar(semLugar.length, 'chamada', 'chamadas')} sem lugar no SIGAA`
-            : `${contar(aMao.length, 'aula', 'aulas')} para lançar à mão`,
+          : `${contar(semLugar.length, 'chamada', 'chamadas')} sem lugar no SIGAA`,
     apoio: `${relatorio.turma}. Planilha lida agora, ${contar(total, 'aluno', 'alunos')}, ${pelaMatricula}.`,
     diferencas,
     aulas,
     semLugar,
-    aMao,
     informativos: informa,
     botao: aulas.length === 0 ? undefined : marcadas === 0 ? 'Nada marcado' : `Preencher ${contar(marcadas, 'aula', 'aulas')}`,
   }

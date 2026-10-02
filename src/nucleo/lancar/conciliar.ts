@@ -4,10 +4,9 @@
 // da planilha de faltas, para que o SIGAA e o arquivo da pasta nunca discordem.
 // Na dúvida, a célula fica fora e o motivo aparece: nunca se adivinha.
 
-import { chaveDeIdentidade, diaLocal, periodosDoBloco, presencasDoDia } from '../faltas.ts'
-import type { Aula } from '../grade.ts'
+import { chaveDeIdentidade, diaLocal, presencasDoDia } from '../faltas.ts'
 import type { Evento, Matriculado } from '../tipos.ts'
-import { comoDia, type AjusteSigaa, type Conciliada, type LinhaDeAuditoria, type Dia, type LeituraPlanilha, type Relatorio, type RemanejoSigaa, type SemOndeLancar } from './tipos.ts'
+import { comoDia, type AjusteSigaa, type Conciliada, type Dia, type LinhaDeAuditoria, type LeituraPlanilha, type Relatorio, type RemanejoSigaa, type SemOndeLancar } from './tipos.ts'
 
 export interface EntradaDaConciliacao {
   leitura: LeituraPlanilha
@@ -18,10 +17,10 @@ export interface EntradaDaConciliacao {
   ajustes: AjusteSigaa[]
   /** A aula dada em outra data: a decisão do professor de onde a chamada entra. */
   remanejos?: RemanejoSigaa[]
-  /** A grade deste professor: quantas aulas da coluna são dele (`docs/13`). */
-  aulas?: Aula[]
-  /** A auditoria da turma: as aulas que este Adsum já preencheu. */
+  /** A auditoria da turma: quanto valeu a falta nas aulas que o Adsum já lançou. */
   auditoria?: LinhaDeAuditoria[]
+  /** Quanto vale a falta em cada aula, escolhido pelo professor nesta folha. */
+  escolhas?: Partial<Record<Dia, number>>
 }
 
 /** O ajuste mais recente de cada (dia, matrícula) da turma. No mesmo instante, o gravado depois. */
@@ -71,7 +70,7 @@ function fontesDasAulas(leitura: LeituraPlanilha, turma: string, diasDeChamada: 
   return { fonte, saiu, remanejadas }
 }
 
-export function conciliar({ leitura, turma, matriculados, eventos, ajustes, remanejos = [], aulas = [], auditoria = [] }: EntradaDaConciliacao): Relatorio {
+export function conciliar({ leitura, turma, matriculados, eventos, ajustes, remanejos = [], auditoria = [], escolhas = {} }: EntradaDaConciliacao): Relatorio {
   const alunos = matriculados.filter((m) => m.turma === turma && m.papel === 'aluno')
   const daTurma = new Set(alunos.map((a) => a.matricula))
   const naPagina = new Set(leitura.linhas.map((l) => l.matricula))
@@ -95,19 +94,23 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes, rema
   const diaSemMaximo = new Set(semMaximo)
 
   /**
-   * Quantas aulas da coluna são deste professor: as da grade dele no dia da
-   * semana em que a chamada foi feita. Sem grade, ou com a grade cobrindo a
-   * coluna, todas: a coluna é só dele.
+   * Quanto vale a falta em cada aula (`docs/13`). Só o professor sabe se a
+   * chamada foi da aula inteira ou só do bloco dele, quando o dia tem outro
+   * professor: vale a escolha dele nesta folha; sem ela, o que o Adsum lançou
+   * naquela aula ou, antes, na última do mesmo dia da semana; sem nenhuma, o
+   * máximo da coluna. Sempre entre 1 e o máximo.
    */
-  const parteDe = (coluna: (typeof leitura.colunas)[number]): number | undefined => {
-    if (coluna.maximo === undefined) return undefined
-    const origem = fonte.get(coluna.dia)
-    if (!origem) return coluna.maximo
-    const semana = new Date(`${origem}T12:00:00`).getDay()
-    const daGrade = aulas.filter((a) => a.turma === turma && a.dia === semana).reduce((soma, b) => soma + periodosDoBloco(b.inicio, b.fim), 0)
-    return daGrade > 0 && daGrade < coluna.maximo ? daGrade : coluna.maximo
-  }
-  const partes = new Map(leitura.colunas.map((c) => [c.dia as string, parteDe(c)]))
+  const lancadas = auditoria
+    .filter((a) => a.turma === turma && a.acao === 'preenchimento' && Number(a.aplicado) > 0)
+    .sort((a, b) => b.quando.localeCompare(a.quando))
+  const semana = (dia: string) => new Date(`${dia}T12:00:00`).getDay()
+  const valorDaFalta = leitura.colunas.flatMap((c) => {
+    if (c.maximo === undefined || !fonte.has(c.dia)) return []
+    const anterior = lancadas.find((a) => a.dia === c.dia) ?? lancadas.find((a) => semana(a.dia) === semana(c.dia))
+    const valor = escolhas[c.dia] ?? (anterior ? Number(anterior.aplicado) : c.maximo)
+    return [{ dia: c.dia, valor: Math.min(c.maximo, Math.max(1, Math.round(valor))), maximo: c.maximo }]
+  })
+  const valorNo = new Map(valorDaFalta.map((v) => [v.dia as string, v.valor]))
 
   /**
    * O que o Adsum diria para a célula, ou `undefined` se não tem o que dizer.
@@ -119,45 +122,7 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes, rema
     if (ajuste) return ajuste.valor >= 0 && ajuste.valor <= coluna.maximo ? { valor: ajuste.valor, ajustada: true } : undefined
     const origem = fonte.get(coluna.dia)
     if (!daTurma.has(matricula) || !origem) return undefined
-    return { valor: presenteNo(origem, matricula) ? 0 : partes.get(coluna.dia)!, ajustada: false }
-  }
-
-  // As células que este Adsum preencheu e não desfez: a mais recente das duas ações vale.
-  const ultimaAcao = new Map<string, LinhaDeAuditoria>()
-  for (const a of auditoria) {
-    if (a.turma !== turma || (a.acao !== 'preenchimento' && a.acao !== 'desfeito')) continue
-    const chave = `${a.dia}|${a.matricula}`
-    const atual = ultimaAcao.get(chave)
-    if (!atual || a.quando >= atual.quando) ultimaAcao.set(chave, a)
-  }
-  const preenchidas = new Set([...ultimaAcao.values()].filter((a) => a.acao === 'preenchimento').map((a) => a.dia as string))
-
-  /**
-   * A aula compartilhada que já tem números (`docs/13`). Preenchida por este
-   * Adsum, o que passa da parte dele é do outro professor. Lançada à mão igual
-   * à chamada, confere. Lançada por outra pessoa, o Adsum não escreve nela, e
-   * a folha diz o que lançar à mão.
-   */
-  const compartilhados: Relatorio['compartilhados'] = []
-  const lancadasPorOutro: Relatorio['lancadasPorOutro'] = []
-  const modo = new Map<string, 'nossa' | 'deOutro'>()
-  for (const coluna of leitura.colunas) {
-    const parte = partes.get(coluna.dia)
-    if (coluna.maximo === undefined || parte === undefined || parte >= coluna.maximo || !fonte.has(coluna.dia)) continue
-    compartilhados.push({ dia: coluna.dia, parte, maximo: coluna.maximo })
-    const daColuna = leitura.linhas.map((l) => ({ matricula: l.matricula, sigaa: l.celulas[coluna.indice], e: esperado(l.matricula, coluna) }))
-    const lancadas = daColuna.filter((c) => c.sigaa.tipo === 'lancada')
-    if (lancadas.length === 0) continue
-    if (preenchidas.has(coluna.dia)) {
-      modo.set(coluna.dia, 'nossa')
-      continue
-    }
-    if (lancadas.every((c) => c.sigaa.tipo === 'lancada' && c.e?.valor === c.sigaa.faltas)) continue
-    modo.set(coluna.dia, 'deOutro')
-    const comChamada = daColuna.filter((c) => c.e !== undefined)
-    const ausentes = comChamada.filter((c) => c.e!.valor > 0).map((c) => c.matricula)
-    // Ninguém faltou ao bloco: nada a somar à mão.
-    if (ausentes.length > 0) lancadasPorOutro.push({ dia: coluna.dia, parte, presentes: comChamada.length - ausentes.length, ausentes })
+    return { valor: presenteNo(origem, matricula) ? 0 : valorNo.get(coluna.dia)!, ajustada: false }
   }
 
   const celulas: Conciliada[] = []
@@ -167,8 +132,7 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes, rema
       const posicao = { linha: linha.indice, coluna: coluna.indice, matricula: linha.matricula, dia: coluna.dia }
       const sigaa = linha.celulas[coluna.indice]
       const e = diaSemMaximo.has(coluna.dia) ? undefined : esperado(linha.matricula, coluna)
-      const doDia = modo.get(coluna.dia)
-      if (sigaa.tipo === 'bloqueada' || (diaSemMaximo.has(coluna.dia) && daTurma.has(linha.matricula)) || (doDia === 'deOutro' && sigaa.tipo === 'lancada')) {
+      if (sigaa.tipo === 'bloqueada' || (diaSemMaximo.has(coluna.dia) && daTurma.has(linha.matricula))) {
         celulas.push({ ...posicao, categoria: 'fora' })
       } else if (sigaa.tipo === 'vazia' && coluna.marca === 'lancado') {
         celulas.push({ ...posicao, categoria: 'fora' })
@@ -177,9 +141,6 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes, rema
         celulas.push(e ? { ...posicao, categoria: 'aLancar', esperado: e.valor } : { ...posicao, categoria: 'fora' })
       } else if (!e) {
         celulas.push({ ...posicao, categoria: 'soNoSigaa', sigaa: sigaa.faltas })
-      } else if (doDia === 'nossa' && sigaa.faltas > e.valor) {
-        // O que passa da parte deste professor é a soma do outro.
-        celulas.push({ ...posicao, categoria: 'fora' })
       } else if (sigaa.faltas === e.valor) {
         celulas.push({ ...posicao, categoria: 'confere', valor: e.valor, ajustada: e.ajustada })
       } else {
@@ -221,8 +182,7 @@ export function conciliar({ leitura, turma, matriculados, eventos, ajustes, rema
           leitura.linhas.some((l) => l.celulas[c.indice].tipo === 'vazia'),
       )
       .map((c) => c.dia),
-    compartilhados,
-    lancadasPorOutro,
+    valorDaFalta,
   }
 }
 

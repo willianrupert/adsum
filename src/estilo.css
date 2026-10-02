@@ -2870,21 +2870,18 @@ button:focus-visible {
   cursor: pointer;
 }
 
-.folha-sigaa__sem-lugar,
-.folha-sigaa__a-mao {
+.folha-sigaa__sem-lugar {
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
   padding: 14px 16px;
 }
 
-.folha-sigaa__sem-lugar small,
-.folha-sigaa__a-mao small {
+.folha-sigaa__sem-lugar small {
   color: var(--tinta-fraca);
 }
 
-.folha-sigaa__sem-lugar p,
-.folha-sigaa__a-mao p {
+.folha-sigaa__sem-lugar p {
   margin: 6px 0 4px;
   font-size: var(--t-menor);
 }
@@ -2941,17 +2938,6 @@ button:focus-visible {
   font-size: var(--t-menor);
 }
 
-/* No cartão à mão não há caixa de marcar: a lista começa na margem, e o toque que a abre é um link. */
-.folha-sigaa__a-mao .folha-sigaa__abrir {
-  flex: none;
-  color: var(--acao);
-  font-size: var(--t-menor);
-}
-
-.folha-sigaa__a-mao .folha-sigaa__ausentes {
-  margin-left: 0;
-}
-
 .folha-sigaa__detalhes {
   margin: 0;
   padding-left: 18px;
@@ -2965,9 +2951,44 @@ button:focus-visible {
   font-size: var(--t-corpo);
 }
 
-.folha-sigaa__aviso {
-  display: block;
-  color: var(--alerta);
+/* Quanto vale a falta: abaixo dos números da aula, alinhado com eles. */
+.folha-sigaa__falta {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 0 36px;
+  font-size: var(--t-menor);
+  color: var(--tinta-fraca);
+}
+
+.folha-sigaa__falta strong {
+  min-width: 1.5em;
+  color: var(--tinta);
+  font-size: var(--t-corpo);
+  text-align: center;
+}
+
+.folha-sigaa__falta button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  line-height: 1;
+  border-radius: 999px;
+  background: var(--acao-fraca);
+  color: var(--acao);
+  font: inherit;
+  font-size: var(--t-corpo);
+  cursor: pointer;
+}
+
+.folha-sigaa__falta button:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 /* ── O favorito do SIGAA, em Ajustes (`ui/ajustes/CartaoDoFavorito.tsx`) ── */

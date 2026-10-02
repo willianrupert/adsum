@@ -92,8 +92,9 @@ escrever**, com três mudanças de desenho e algumas regras novas.
    tabela; escreve o texto nas células, que é o que a coleta lê. O bruto
    provisório da camada 1 passa a ser esses dados.
 3. **O máximo não é fixo.** Há dias de 4 e de 12 aulas. Ausente num dia de 12
-   leva 12 faltas: a folha mostra quanto a falta vale quando o dia não é o
-   comum.
+   leva 12 faltas, a não ser que o professor escolha outro número: a folha
+   mostra quanto a falta vale quando o dia não é o comum, e deixa mudar
+   (`docs/13`, desde 02/10/2026).
 
 Regras da página que o favorito respeita como a própria página: não escreve
 em data futura nem fora do período letivo; não escreve em célula de
@@ -113,10 +114,10 @@ escrito no SIGAA, apenas acrescenta, e avisa o que não modificou e por quê. É
 a lei 2 ("nunca toca lançado") e a linha de informativos da folha, agora
 dita por ele.
 
-**Dia com mais de um professor (02/10/2026).** Numa coluna que soma os
-blocos de dois professores, ausente leva hoje o máximo da coluna, e não a
-parte do bloco. É um defeito da versão no ar. O desenho do conserto, e da
-soma sobre o número do outro professor, está em `docs/13_dia_compartilhado.md`.
+**Aula com mais de um professor (02/10/2026).** Numa coluna que soma os
+blocos de dois professores, ausente levava o máximo da coluna, e não a parte
+do bloco. Agora o professor escolhe na folha quanto vale a falta, e o
+Adsum lembra a escolha para o mesmo dia da semana: `docs/13_dia_compartilhado.md`.
 
 **O que não entra no repositório:** a página e os scripts do SIGAA. As
 páginas vieram do SIGAA da UFPE, pelo Prof. Paulo, e têm dados de alunos; o

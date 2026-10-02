@@ -1,9 +1,10 @@
-# Dia com mais de um professor
+# Aula com mais de um professor
 
-> **Especificação**, de 02/10/2026. Nada disto existe ainda. As decisões
-> marcadas como pendentes (§9) são do Prof. Paulo e do autor, e o código só
-> começa depois delas, a partir dos testes de
-> `src/nucleo/lancar/diaCompartilhado.test.ts`, que hoje falham de propósito.
+> As seções 1 a 4 descrevem a regra que está na branch `v2/dia-compartilhado`
+> desde 02/10/2026, e ainda não foi ao ar. Da seção 5 em diante são **ideias
+> guardadas**, nenhuma decidida: somar sobre o número do outro professor,
+> com chave por aula, livro-razão por computador e compare-and-set na
+> página. Ficaram para quando a regra simples incomodar.
 
 ## 1. O caso
 
@@ -19,25 +20,50 @@ A soma é feita à mão, sobre o número que o outro professor deixou. Se o
 Ricardo também usar o Adsum, a ordem pode ser qualquer uma, e os dois
 computadores nunca conversam.
 
-## 2. O que o Adsum faz hoje
+## 2. O defeito
 
-A conciliação (`nucleo/lancar/conciliar.ts`) põe 0 para quem esteve e **o
-máximo da coluna** para quem faltou. Num dia de dois blocos:
+A conciliação punha 0 para quem esteve e **o máximo da coluna** para quem
+faltou. Na quinta do Paulo, quem faltou ao bloco dele levava 4, e não 2. Se o
+Ricardo lançasse antes, o Adsum não escrevia nada (a aula já lançada é do
+professor, `docs/08`, §2) e mostrava como diferença cada célula em que o
+número dele não batia com o do Ricardo.
 
-1. **O Ricardo lança antes.** As células já têm número, e a regra "aula já
-   lançada é do professor" (`docs/08`, §2) faz o Adsum só conferir. Ele mostra
-   "Diverge" em quase toda linha e não escreve nada. Nada se estraga, mas a
-   chamada do Paulo não entra, e a folha se enche de divergências que não são
-   erro.
-2. **O Paulo lança antes.** Quem faltou ao bloco dele recebe **4 faltas, não
-   2**. **É um defeito da versão no ar**, e acontece em qualquer dia em que a
-   coluna do SIGAA cobre mais aulas que a grade do professor.
+## 3. A regra: o professor escolhe quanto vale a falta
 
-A planilha de faltas da pasta já faz a conta certa: ela usa os blocos da
-grade (`periodosDoBloco`, `nucleo/faltas.ts`) e daria 2. Só o lançamento no
-SIGAA usa o máximo da coluna.
+Só o professor sabe se a chamada foi da aula inteira ou só do bloco dele.
+Por isso o Adsum não deduz: em cada aula a lançar, a folha mostra quanto vale
+a falta, e o professor muda com − e +, de 1 até o máximo da coluna.
 
-## 3. Um sistema distribuído sem rede
+- **O valor inicial** é o que o Adsum lançou naquela aula; sem isso, o da
+  última aula do mesmo dia da semana que ele lançou; sem nenhuma, o máximo
+  da coluna, como sempre foi. A primeira quinta pede o ajuste para 2; as
+  seguintes já vêm com 2. A memória é a auditoria da pasta, que já guarda o
+  valor escrito em cada célula: nada novo é gravado.
+- **O seletor aparece onde importa:** na aula com mais aulas que o comum da
+  planilha (a quinta de 4, o dia especial de 12), ou onde o valor já não é
+  o máximo. Na terça comum de 2 aulas, a folha não muda.
+- **A conferência depois** compara a aula lançada com o valor escolhido, e
+  não com o máximo: a quinta lançada com 2 não vira diferença na semana
+  seguinte.
+- **A coluna já lançada por outra pessoa** continua como toda aula lançada:
+  o Adsum não escreve nela, e mostra as diferenças. Em aula com dois
+  professores, quem lança depois soma a sua parte à mão.
+
+A grade não entra na conta. Ela não tem data de vigência: mudar a grade no
+meio do semestre mudaria o passado. E não diz se há outro professor no dia.
+
+## 4. O que fica em aberto
+
+- **A planilha de faltas da pasta** (`faltas/<turma>.csv`) ainda conta a
+  falta pela grade atual (`periodosDoBloco`), e é recalculada do zero: uma
+  grade mudada no semestre muda os dias antigos, e o número pode não bater
+  com o escolhido no SIGAA. Juntar as duas contas é o próximo passo natural.
+- **Se o outro professor lançar antes**, as diferenças da quinta aparecem na
+  folha do Paulo. Nada é escrito, mas o aviso aparece. Se incomodar, o
+  cartão "lance à mão", com uma pergunta ao professor, é a primeira ideia
+  guardada a voltar.
+
+## 5. Um sistema distribuído sem rede
 
 Cada computador com o Adsum é um **nó**. Os nós não têm canal entre si: não
 há servidor, e a pasta de cada professor é só dele. O único estado
@@ -51,21 +77,15 @@ um guarda a própria parte no seu livro-razão, a auditoria da pasta
 lido e o valor aplicado. Um nó sabe do outro de uma forma só: o número da
 célula mudou depois que ele escreveu.
 
-## 4. O modelo
+## 6. O modelo
 
 ### A parte de cada nó
 
-A **parte** do Adsum num dia é quantas aulas daquele dia são do professor:
-a soma de `periodosDoBloco` dos blocos da grade dele naquele dia da semana.
-Na quinta do Paulo (10h às 12h), 2.
-
-- Sem grade para aquele dia, ou com a parte maior ou igual ao máximo da
-  coluna, a parte é o máximo, e o dia funciona como hoje.
-- Com a parte menor que o máximo, o dia é **compartilhado**: quem faltou ao
-  bloco leva a parte, não o máximo. A folha diz quanto vale a falta e por
-  quê ("ausente vale 2 de 4: a sua grade de quinta é 10h às 12h").
-
-Isso sozinho conserta o cenário 2 da §2, e não toca em célula lançada.
+A **parte** de cada professor é quanto vale a falta no bloco dele: o número
+que ele escolhe na folha (§3). A primeira versão desta ideia tirava a parte
+da grade, e foi descartada: a grade não tem data de vigência, não diz se há
+outro professor, e transformaria em "compartilhado" o dia especial de 12
+aulas de um professor só.
 
 ### O livro-razão
 
@@ -111,11 +131,11 @@ soma.
 | *V* = *L* | não confirmada | ligada | **não chegou**: a somar de novo | *L*+*p* |
 
 "Mudou depois" quer dizer que alguém tirou faltas depois da soma: uma
-correção, ou uma gravação concorrente (§6). O Adsum não sabe qual das duas, e
+correção, ou uma gravação concorrente (§8). O Adsum não sabe qual das duas, e
 por isso só avisa, com os três números: o que leu, o que somou e o que está
 lá agora.
 
-## 5. A escrita: compare-and-set na página
+## 7. A escrita: compare-and-set na página
 
 Hoje toda instrução leva `antes: 'vazia'`, e o favorito recusa escrever em
 célula que não esteja vazia (`validarPlano`, e o próprio favorito na página).
@@ -135,14 +155,14 @@ Compatibilidade: o favorito de hoje (`VERSAO_DO_FAVORITO = 1`) recusa
 seguro. O Adsum, que recebe a versão do favorito em toda leitura, pede para
 arrastar o favorito novo antes de oferecer a chave.
 
-## 6. Concorrência: o que se detecta e o que não
+## 8. Concorrência: o que se detecta e o que não
 
 O SIGAA guarda o que a página manda, e a página manda o que tem: se duas
 abas estão abertas na mesma planilha, a que grava por último vale para as
 células que ela envia. O salvamento automático a cada 5 minutos faz isso sem
 ninguém clicar. A página manda **a grade inteira**, não só o que mudou
 (`docs/12`, "Como o Gravar coleta"). Falta medir se o servidor regrava todas
-as células enviadas ou só as que mudaram (§10). O pior caso supõe a primeira
+as células enviadas ou só as que mudaram (§12). O pior caso supõe a primeira
 opção: uma aba do Ricardo aberta desde antes de o Paulo lançar, gravando
 depois, devolve os números antigos.
 
@@ -161,17 +181,17 @@ para fazer é **estreitar a janela**:
 
 1. o favorito sabe quando a página foi carregada, e com a chave ligada pede
    para recarregar antes de preencher se ela tiver mais de alguns minutos;
-2. o compare-and-set (§5) recusa escrever sobre um número que mudou entre a
+2. o compare-and-set (§7) recusa escrever sobre um número que mudou entre a
    leitura e o Preencher;
 3. depois do Gravar, a próxima leitura confere *V* contra *A*. Assim todo
    desaparecimento visível aparece na primeira oportunidade, para quem somou.
 
-## 7. Correção depois de somar
+## 9. Correção depois de somar
 
 O Paulo somou 2 e depois descobre que o aluno estava presente. Desfazer a
-soma é tirar 2: modificar o que está no SIGAA. Pendente (§9, D2).
+soma é tirar 2: modificar o que está no SIGAA. Pendente (§11, D2).
 
-## 8. Leis novas
+## 10. Leis novas
 
 Somam-se às leis de `docs/08`, §4, e são testadas em massa, com entradas
 geradas:
@@ -189,7 +209,7 @@ geradas:
 A lei 4 (faixa) muda em um ponto: num dia compartilhado, ausente vale a
 parte, não o máximo.
 
-## 9. Decisões pendentes
+## 11. Decisões pendentes
 
 - **D1 (Paulo).** "O Adsum nunca modifica o que está no SIGAA, apenas
   acrescenta" cobre somar faltas sobre o número de outro professor, com a
@@ -202,18 +222,9 @@ parte, não o máximo.
 - **D4 (autor).** A parte vem da grade sem perguntar, mostrada na folha, ou
   o professor confirma na primeira vez?
 
-## 10. O que medir na bancada
+## 12. O que medir na bancada
 
 - O Gravar e o salvamento automático mandam a coluna inteira ou só as
   células que mudaram? E o servidor regrava o que veio igual?
 - Uma aba aberta antes de outra gravar, e deixada aberta, sobrescreve no
   próximo salvamento automático?
-
-## 11. A ordem do trabalho
-
-1. **Antes da quinta, 08/10:** o Paulo não usa o "Lançar no SIGAA" na
-   quinta. A planilha de faltas da pasta continua certa.
-2. **A parte pela grade** (§4), sozinha: conserta o defeito no ar sem tocar
-   em célula lançada, sem favorito novo e sem decisão pendente. Pode ir ao
-   ar depois da aula de terça, pela regra de sempre.
-3. **A chave e a soma**, depois de D1 a D4 e das medições da §10.

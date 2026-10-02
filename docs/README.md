@@ -45,7 +45,7 @@ envelheceu também é informação.
 | [`10_codigo.md`](10_codigo.md) | vivo | As camadas, o caminho de um crachá, as garantias sob carga, o porquê de cada módulo e a convenção de comentários |
 | [`11_roteiro_v2.md`](11_roteiro_v2.md) | vivo | O passo a passo da v2 que não depende do HTML do SIGAA, com peso e andamento |
 | [`12_planilha_sigaa.md`](12_planilha_sigaa.md) | vivo | A planilha e o calendário do SIGAA da UFPE, por dentro: modelo de dados, clique, coleta, salvamento automático |
-| [`13_dia_compartilhado.md`](13_dia_compartilhado.md) | especificação | Dois professores na mesma coluna do SIGAA: a parte de cada um pela grade, a chave de somar, o livro-razão e o que a concorrência esconde |
+| [`13_dia_compartilhado.md`](13_dia_compartilhado.md) | especificação | Aula com mais de um professor: o professor escolhe quanto vale a falta. E, guardadas, a soma sobre o número do outro, o livro-razão e o que a concorrência esconde |
 | [`Adsum-manual-e-LGPD.docx`](Adsum-manual-e-LGPD.docx) | vivo | Manual do professor e descrição do tratamento de dados. Gerado por `scripts/gerar_manual.cjs`; o app baixa este arquivo da `main` |
 
 As imagens (`arquitetura.png`, `cracha-para-hash.png`, `mapa-estados.png`,

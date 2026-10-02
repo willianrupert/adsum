@@ -395,6 +395,12 @@ sem conversa antes.
   A aula na UFPE é de 50 min (Portaria Normativa 07/2022, citada pelo
   próprio SIGAA): `periodosDoBloco` está certo; o "60" do manual é antigo.
 
+- **Somar sobre o número de outro professor, em aula com dois professores.**
+  Hoje cada professor escolhe quanto vale a falta, e quem lança depois do
+  outro soma à mão. O desenho de um Adsum que soma sozinho (chave por aula,
+  livro-razão por computador, compare-and-set na página, e o caso de
+  concorrência que nenhum número revela) está guardado em
+  `docs/13_dia_compartilhado.md`, da seção 5 em diante.
 - **`INTERVALO_MINIMO_MS` (400 ms, contra dois crachás na mesma mão) continua
   chutado.** O diagnóstico já mostra o intervalo entre leituras; dava para
   guardar esse histórico localmente e sugerir um valor medido, a partir do

@@ -42,8 +42,7 @@ describe('planejar', () => {
     vaziasEmAulaLancada: [],
     remanejadas: [],
     aulasSemChamada: [],
-    compartilhados: [],
-    lancadasPorOutro: [],
+    valorDaFalta: [],
   }
 
   it('uma instrução por célula "a lançar", e nenhuma de outra categoria', () => {
