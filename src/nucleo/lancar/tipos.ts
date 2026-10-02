@@ -89,6 +89,18 @@ export interface AjusteSigaa {
 }
 
 /**
+ * A chave do dia compartilhado (`docs/13`): o professor autoriza somar a
+ * parte dele sobre o número que outro professor já lançou naquela aula.
+ * Decisão datada, só acrescentada; a mais nova vale.
+ */
+export interface ChaveDeSoma {
+  turma: string
+  dia: Dia
+  ligada: boolean
+  em: string
+}
+
+/**
  * Uma linha de `sigaa/<turma>.csv`: cada célula tocada ou divergente, em cada
  * conferência, preenchimento e aceite. Sem nome. Só acréscimo.
  */

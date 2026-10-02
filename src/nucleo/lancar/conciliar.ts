@@ -5,8 +5,9 @@
 // Na dúvida, a célula fica fora e o motivo aparece: nunca se adivinha.
 
 import { chaveDeIdentidade, diaLocal, presencasDoDia } from '../faltas.ts'
+import type { Aula } from '../grade.ts'
 import type { Evento, Matriculado } from '../tipos.ts'
-import { comoDia, type AjusteSigaa, type Conciliada, type Dia, type LeituraPlanilha, type Relatorio, type RemanejoSigaa, type SemOndeLancar } from './tipos.ts'
+import { comoDia, type AjusteSigaa, type ChaveDeSoma, type Conciliada, type LinhaDeAuditoria, type Dia, type LeituraPlanilha, type Relatorio, type RemanejoSigaa, type SemOndeLancar } from './tipos.ts'
 
 export interface EntradaDaConciliacao {
   leitura: LeituraPlanilha
@@ -17,6 +18,14 @@ export interface EntradaDaConciliacao {
   ajustes: AjusteSigaa[]
   /** A aula dada em outra data: a decisão do professor de onde a chamada entra. */
   remanejos?: RemanejoSigaa[]
+  // Dia com mais de um professor (`docs/13`). Ainda não lidos: os testes de
+  // `diaCompartilhado.test.ts` falham até a conciliação usá-los.
+  /** A grade deste professor: a parte dele num dia compartilhado. */
+  aulas?: Aula[]
+  /** O livro-razão deste computador: o que ele já somou em cada célula. */
+  auditoria?: LinhaDeAuditoria[]
+  /** As chaves de soma que o professor ligou ou desligou. */
+  chaves?: ChaveDeSoma[]
 }
 
 /** O ajuste mais recente de cada (dia, matrícula) da turma. No mesmo instante, o gravado depois. */

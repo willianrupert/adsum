@@ -26,6 +26,7 @@ envelheceu também é informação.
 | A v2, lançar no SIGAA | [`08_lancar_no_sigaa.md`](08_lancar_no_sigaa.md) e [`09_esboco_da_janela.md`](09_esboco_da_janela.md) |
 | Em quantos por cento está a v2 | [`11_roteiro_v2.md`](11_roteiro_v2.md) |
 | Como a planilha do SIGAA funciona por dentro | [`12_planilha_sigaa.md`](12_planilha_sigaa.md) |
+| Dois professores na mesma aula do SIGAA | [`13_dia_compartilhado.md`](13_dia_compartilhado.md) |
 
 ## Todos
 
@@ -44,6 +45,7 @@ envelheceu também é informação.
 | [`10_codigo.md`](10_codigo.md) | vivo | As camadas, o caminho de um crachá, as garantias sob carga, o porquê de cada módulo e a convenção de comentários |
 | [`11_roteiro_v2.md`](11_roteiro_v2.md) | vivo | O passo a passo da v2 que não depende do HTML do SIGAA, com peso e andamento |
 | [`12_planilha_sigaa.md`](12_planilha_sigaa.md) | vivo | A planilha e o calendário do SIGAA da UFPE, por dentro: modelo de dados, clique, coleta, salvamento automático |
+| [`13_dia_compartilhado.md`](13_dia_compartilhado.md) | especificação | Dois professores na mesma coluna do SIGAA: a parte de cada um pela grade, a chave de somar, o livro-razão e o que a concorrência esconde |
 | [`Adsum-manual-e-LGPD.docx`](Adsum-manual-e-LGPD.docx) | vivo | Manual do professor e descrição do tratamento de dados. Gerado por `scripts/gerar_manual.cjs`; o app baixa este arquivo da `main` |
 
 As imagens (`arquitetura.png`, `cracha-para-hash.png`, `mapa-estados.png`,

@@ -113,6 +113,11 @@ escrito no SIGAA, apenas acrescenta, e avisa o que não modificou e por quê. É
 a lei 2 ("nunca toca lançado") e a linha de informativos da folha, agora
 dita por ele.
 
+**Dia com mais de um professor (02/10/2026).** Numa coluna que soma os
+blocos de dois professores, ausente leva hoje o máximo da coluna, e não a
+parte do bloco. É um defeito da versão no ar. O desenho do conserto, e da
+soma sobre o número do outro professor, está em `docs/13_dia_compartilhado.md`.
+
 **O que não entra no repositório:** a página e os scripts do SIGAA. As
 páginas vieram do SIGAA da UFPE, pelo Prof. Paulo, e têm dados de alunos; o
 software é da UFRN, licenciado à UFPE. A descrição detalhada de ambas está
