@@ -2870,18 +2870,21 @@ button:focus-visible {
   cursor: pointer;
 }
 
-.folha-sigaa__sem-lugar {
+.folha-sigaa__sem-lugar,
+.folha-sigaa__a-mao {
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
   padding: 14px 16px;
 }
 
-.folha-sigaa__sem-lugar small {
+.folha-sigaa__sem-lugar small,
+.folha-sigaa__a-mao small {
   color: var(--tinta-fraca);
 }
 
-.folha-sigaa__sem-lugar p {
+.folha-sigaa__sem-lugar p,
+.folha-sigaa__a-mao p {
   margin: 6px 0 4px;
   font-size: var(--t-menor);
 }
@@ -2936,6 +2939,17 @@ button:focus-visible {
   padding: 0;
   list-style: none;
   font-size: var(--t-menor);
+}
+
+/* No cartão à mão não há caixa de marcar: a lista começa na margem, e o toque que a abre é um link. */
+.folha-sigaa__a-mao .folha-sigaa__abrir {
+  flex: none;
+  color: var(--acao);
+  font-size: var(--t-menor);
+}
+
+.folha-sigaa__a-mao .folha-sigaa__ausentes {
+  margin-left: 0;
 }
 
 .folha-sigaa__detalhes {

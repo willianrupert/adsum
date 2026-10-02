@@ -89,18 +89,6 @@ export interface AjusteSigaa {
 }
 
 /**
- * A chave do dia compartilhado (`docs/13`): o professor autoriza somar a
- * parte dele sobre o número que outro professor já lançou naquela aula.
- * Decisão datada, só acrescentada; a mais nova vale.
- */
-export interface ChaveDeSoma {
-  turma: string
-  dia: Dia
-  ligada: boolean
-  em: string
-}
-
-/**
  * Uma linha de `sigaa/<turma>.csv`: cada célula tocada ou divergente, em cada
  * conferência, preenchimento e aceite. Sem nome. Só acréscimo.
  */
@@ -180,4 +168,14 @@ export interface Relatorio {
    * suspensa, com máximo e com alguma célula que aceita valor.
    */
   aulasSemChamada: Dia[]
+  /**
+   * Aulas em que a grade do professor cobre só parte das aulas da coluna: há
+   * outro professor no mesmo dia (`docs/13`). Quem faltou leva a `parte`.
+   */
+  compartilhados: { dia: Dia; parte: number; maximo: number }[]
+  /**
+   * Aulas compartilhadas que outra pessoa já lançou: o Adsum não escreve sobre
+   * elas, e o professor lança à mão a `parte` de quem faltou ao bloco dele.
+   */
+  lancadasPorOutro: { dia: Dia; parte: number; presentes: number; ausentes: string[] }[]
 }

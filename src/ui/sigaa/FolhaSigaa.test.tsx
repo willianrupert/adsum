@@ -354,3 +354,22 @@ describe('a aula dada em outra data', () => {
     expect(screen.getByRole('button', { name: 'Seg, 19/10' })).toBeInTheDocument()
   })
 })
+
+describe('a aula com outro professor (docs/13)', () => {
+  it('lançada por outra pessoa: o Adsum não escreve, e o cartão diz o que somar à mão, com os nomes atrás do toque', async () => {
+    // Na terça, a grade do professor é das 10h às 11h40: duas das quatro aulas da coluna.
+    await repositorio.gravarAula({ uidHashProfessor: 'p', dia: 2, inicio: '10:00', fim: '11:40', turma: TURMA })
+    const usuario = userEvent.setup()
+    abrir()
+    // O outro professor lançou a terça: o Breno faltou ao bloco dele. No Adsum, o Caio faltou.
+    ponte.ler(bruto([['0', '0'], ['2', '0'], ['0', '0']], () => {}, [4, 2]), 'l-1')
+    const cartao = await screen.findByRole('region', { name: 'Aula de Ter, 13/10, para lançar à mão' })
+    expect(within(cartao).getByText('Já lançada no SIGAA por outra pessoa.')).toBeInTheDocument()
+    expect(within(cartao).getByText('O Adsum não escreve sobre o que já está lá. Lance à mão: some 2 faltas ao número de quem faltou ao seu bloco.')).toBeInTheDocument()
+    expect(within(cartao).queryByText('Caio Dias')).not.toBeInTheDocument()
+    await usuario.click(within(cartao).getByRole('button', { name: '1 faltou ao seu bloco, 2 presentes' }))
+    expect(within(cartao).getByText('Caio Dias')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Preencher/ })).not.toBeInTheDocument()
+  })
+})
+

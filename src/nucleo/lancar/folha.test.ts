@@ -16,7 +16,7 @@ const leitura = (linhas: number): LeituraPlanilha => ({
 })
 const pos = (linha: number, dia = TER) => ({ linha, coluna: dia === TER ? 0 : 1, matricula: String(linha + 1), dia })
 const relatorio = (celulas: Conciliada[], extra: Partial<Relatorio> = {}): Relatorio => ({
-  turma: TURMA, celulas, semParSigaa: [], semParAdsum: [], semOndeLancar: [], semMaximo: [], vaziasEmAulaLancada: [], remanejadas: [], aulasSemChamada: [], ...extra,
+  turma: TURMA, celulas, semParSigaa: [], semParAdsum: [], semOndeLancar: [], semMaximo: [], vaziasEmAulaLancada: [], remanejadas: [], aulasSemChamada: [], compartilhados: [], lancadasPorOutro: [], ...extra,
 })
 
 describe('o resumo da folha', () => {
@@ -292,5 +292,38 @@ describe('a folha: o que a mutação achou sem teste', () => {
         ],
       }),
     ).toBe('a chamada de 15/12, fora do período letivo e o feriado de 12/10 ficam de fora.')
+  })
+})
+
+describe('a aula com outro professor (docs/13)', () => {
+  it('no cartão da aula, quanto vale a falta de quem faltou ao bloco', () => {
+    const r = resumoDaFolha({
+      relatorio: relatorio([{ ...pos(1, QUI), categoria: 'aLancar', esperado: 2 }], { compartilhados: [{ dia: QUI, parte: 2, maximo: 4 }] }),
+      leitura: leitura(3), matriculados: MATRICULADOS, desmarcadas: [],
+    })
+    expect(r.aulas[0].aviso).toBe('Aula com outro professor no mesmo dia. Quem faltou ao seu bloco leva 2 de 4 faltas.')
+  })
+
+  it('lançada por outra pessoa: um cartão para lançar à mão, com os nomes, e nada para preencher', () => {
+    const r = resumoDaFolha({
+      relatorio: relatorio([], { lancadasPorOutro: [{ dia: QUI, parte: 2, presentes: 1, ausentes: ['1', '2'] }] }),
+      leitura: leitura(3), matriculados: MATRICULADOS, desmarcadas: [],
+    })
+    expect(r.estado).toBe('lancar')
+    expect(r.titulo).toBe('1 aula para lançar à mão')
+    expect(r.aMao).toEqual([
+      { dia: QUI, rotulo: 'Qui, 15/10', parte: 2, presentes: 1, ausentes: [{ matricula: '1', nome: 'Ana Clara' }, { matricula: '2', nome: 'Breno Lima' }] },
+    ])
+    expect(r.botao).toBeUndefined()
+  })
+
+  it('com outras aulas para preencher, o título conta as que o Adsum preenche, e o cartão à mão vem junto', () => {
+    const r = resumoDaFolha({
+      relatorio: relatorio([{ ...pos(0), categoria: 'aLancar', esperado: 0 }], { lancadasPorOutro: [{ dia: QUI, parte: 2, presentes: 0, ausentes: ['1'] }] }),
+      leitura: leitura(1), matriculados: MATRICULADOS, desmarcadas: [],
+    })
+    expect(r.titulo).toBe('1 aula para lançar')
+    expect(r.aMao).toHaveLength(1)
+    expect(r.botao).toBe('Preencher 1 aula')
   })
 })

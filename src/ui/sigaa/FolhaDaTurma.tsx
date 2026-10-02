@@ -7,6 +7,7 @@ import { resumoDaFolha, type DiferencaDaFolha } from '../../nucleo/lancar/folha.
 import { planejar, validarPlano } from '../../nucleo/lancar/plano.ts'
 import { remanejosDaAuditoria } from '../../nucleo/lancar/auditoria.ts'
 import type { AjusteSigaa, Dia, LeituraPlanilha, LinhaDeAuditoria, RemanejoSigaa } from '../../nucleo/lancar/tipos.ts'
+import type { Aula } from '../../nucleo/grade.ts'
 import type { Evento, Matriculado } from '../../nucleo/tipos.ts'
 import type { PonteSigaa } from '../../portas/PonteSigaa.ts'
 import type { Repositorio } from '../../portas/Repositorio.ts'
@@ -82,7 +83,14 @@ export function FolhaDaTurma({
   avisos: string[]
   fechar: () => void
 }) {
-  const [dados, setDados] = useState<{ eventos: Evento[]; matriculados: Matriculado[]; ajustes: AjusteSigaa[]; remanejos: RemanejoSigaa[] }>()
+  const [dados, setDados] = useState<{
+    eventos: Evento[]
+    matriculados: Matriculado[]
+    ajustes: AjusteSigaa[]
+    remanejos: RemanejoSigaa[]
+    aulas: Aula[]
+    auditoria: LinhaDeAuditoria[]
+  }>()
   const [desmarcadas, setDesmarcadas] = useState<Dia[]>([])
   const [aberta, setAberta] = useState<Dia>()
   // Fechadas por padrão: nome de aluno só aparece quando o professor pede.
@@ -93,13 +101,14 @@ export function FolhaDaTurma({
   const avisada = useRef(false)
 
   const carregar = useCallback(async () => {
-    const [eventos, matriculados, ajustes, auditoria] = await Promise.all([
+    const [eventos, matriculados, ajustes, auditoria, aulas] = await Promise.all([
       repositorio.listarEventos({ turma }),
       repositorio.listarMatriculados(turma),
       repositorio.lerAjustesSigaa(turma),
       repositorio.listarAuditoriaSigaa(turma),
+      repositorio.listarAulas(),
     ])
-    setDados({ eventos, matriculados, ajustes, remanejos: remanejosDaAuditoria(auditoria) })
+    setDados({ eventos, matriculados, ajustes, remanejos: remanejosDaAuditoria(auditoria), aulas, auditoria })
   }, [repositorio, turma])
 
   useEffect(() => {
@@ -107,7 +116,18 @@ export function FolhaDaTurma({
   }, [carregar])
 
   const relatorio = useMemo(
-    () => dados && conciliar({ leitura, turma, matriculados: dados.matriculados, eventos: dados.eventos, ajustes: dados.ajustes, remanejos: dados.remanejos }),
+    () =>
+      dados &&
+      conciliar({
+        leitura,
+        turma,
+        matriculados: dados.matriculados,
+        eventos: dados.eventos,
+        ajustes: dados.ajustes,
+        remanejos: dados.remanejos,
+        aulas: dados.aulas,
+        auditoria: dados.auditoria,
+      }),
     [dados, leitura, turma],
   )
   const resumo = useMemo(
@@ -221,6 +241,22 @@ export function FolhaDaTurma({
               </button>
             ))}
           </div>
+        </section>
+      ))}
+
+      {resumo.aMao.map((a) => (
+        <section key={a.dia} aria-label={`Aula de ${a.rotulo}, para lançar à mão`} className="cartao folha-sigaa__a-mao">
+          <strong>{a.rotulo}</strong>
+          <small>Já lançada no SIGAA por outra pessoa.</small>
+          <p>{`O Adsum não escreve sobre o que já está lá. Lance à mão: some ${valorLegivel(a.parte)} ao número de quem faltou ao seu bloco.`}</p>
+          <button className="folha-sigaa__abrir" aria-expanded={aberta === a.dia} onClick={() => setAberta(aberta === a.dia ? undefined : a.dia)}>
+            {`${contar(a.ausentes.length, 'faltou', 'faltaram')} ao seu bloco, ${contar(a.presentes, 'presente', 'presentes')}`}
+          </button>
+          {aberta === a.dia && (
+            <ul className="folha-sigaa__ausentes">
+              {a.ausentes.length === 0 ? <li>Ninguém faltou.</li> : a.ausentes.map((p) => <li key={p.matricula}>{p.nome}</li>)}
+            </ul>
+          )}
         </section>
       ))}
 
