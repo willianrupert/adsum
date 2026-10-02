@@ -30,38 +30,47 @@ número dele não batia com o do Ricardo.
 
 ## 3. A regra: o professor escolhe quanto vale a falta
 
-Só o professor sabe se a chamada foi da aula inteira ou só do bloco dele.
-Por isso o Adsum não deduz: em cada aula a lançar, a folha mostra quanto vale
-a falta, e o professor muda com − e +, de 1 até o máximo da coluna.
+O "número de aulas" que o SIGAA guarda para cada data é um **teto**: até
+quanto a célula aceita. Não diz quantas aulas houve. A quinta de CIN0144
+aceita até 4 porque é de dois professores; a planilha de CIN0114 tem uma
+quarta que aceita até 12, e ninguém dá 12 aulas de uma disciplina num dia.
+Até 02/10/2026 o Adsum dava o teto a quem faltou; foi uma premissa errada
+desde o desenho de 29/09, escondida porque o teto quase sempre é 2.
 
-- **O valor inicial** é o que o Adsum lançou naquela aula; sem isso, o da
-  última aula do mesmo dia da semana que ele lançou; sem nenhuma, o máximo
-  da coluna, como sempre foi. A primeira quinta pede o ajuste para 2; as
-  seguintes já vêm com 2. A memória é a auditoria da pasta, que já guarda o
-  valor escrito em cada célula: nada novo é gravado.
-- **O seletor aparece onde importa:** na aula com mais aulas que o comum da
-  planilha (a quinta de 4, o dia especial de 12), ou onde o valor já não é
-  o máximo. Na terça comum de 2 aulas, a folha não muda.
-- **A conferência depois** compara a aula lançada com o valor escolhido, e
-  não com o máximo: a quinta lançada com 2 não vira diferença na semana
-  seguinte.
-- **A coluna já lançada por outra pessoa** continua como toda aula lançada:
-  o Adsum não escreve nela, e mostra as diferenças. Em aula com dois
-  professores, quem lança depois soma a sua parte à mão.
+Agora, em cada aula a lançar, quem faltou leva:
 
-A grade não entra na conta. Ela não tem data de vigência: mudar a grade no
-meio do semestre mudaria o passado. E não diz se há outro professor no dia.
+1. o que o professor escolher nesta folha, com − e +, de 1 até o teto;
+2. sem escolha, o que o Adsum já lançou naquela aula (para a conferência
+   depois não acusar diferença falsa);
+3. sem isso, **o que a grade do professor marca** para aquele dia da semana
+   (das 10h às 11h40, 2 aulas);
+4. sem grade, o teto mais comum da planilha (2);
+5. sempre limitado ao teto da aula.
+
+A folha mostra o seletor onde importa: na aula cujo teto foge do comum da
+planilha, ou onde o valor já não é o teto. Na terça comum de 2 aulas, nada
+muda na tela. O texto diz o número e, separado, o teto: "Quem faltou leva
+2 faltas. O SIGAA aceita até 4 nesta aula."
+
+A grade é a configuração do professor, e a escolha numa aula não vira o
+padrão da seguinte. A planilha de faltas da pasta já conta pela grade
+(`periodosDoBloco`): por padrão, as duas concordam.
+
+**A coluna já lançada por outra pessoa** continua como toda aula lançada: o
+Adsum não escreve nela, e mostra as diferenças. Em aula com dois
+professores, quem lança depois soma a sua parte à mão.
 
 ## 4. O que fica em aberto
 
-- **A planilha de faltas da pasta** (`faltas/<turma>.csv`) ainda conta a
-  falta pela grade atual (`periodosDoBloco`), e é recalculada do zero: uma
-  grade mudada no semestre muda os dias antigos, e o número pode não bater
-  com o escolhido no SIGAA. Juntar as duas contas é o próximo passo natural.
-- **Se o outro professor lançar antes**, as diferenças da quinta aparecem na
-  folha do Paulo. Nada é escrito, mas o aviso aparece. Se incomodar, o
-  cartão "lance à mão", com uma pergunta ao professor, é a primeira ideia
-  guardada a voltar.
+- **A grade não tem data de vigência.** Mudar a grade no meio do semestre
+  muda o padrão das aulas ainda não lançadas, e a planilha de faltas da
+  pasta, que é recalculada do zero. As aulas já lançadas pelo Adsum ficam
+  com o valor que tiveram. A folha mostra o número antes do Preencher, e o
+  professor confere.
+- **Se o outro professor lançar antes**, as diferenças daquela aula aparecem
+  na folha. Nada é escrito, mas o aviso aparece. Se incomodar, o cartão
+  "lance à mão", com uma pergunta ao professor, é a primeira ideia guardada
+  a voltar.
 
 ## 5. Um sistema distribuído sem rede
 
@@ -82,10 +91,7 @@ célula mudou depois que ele escreveu.
 ### A parte de cada nó
 
 A **parte** de cada professor é quanto vale a falta no bloco dele: o número
-que ele escolhe na folha (§3). A primeira versão desta ideia tirava a parte
-da grade, e foi descartada: a grade não tem data de vigência, não diz se há
-outro professor, e transformaria em "compartilhado" o dia especial de 12
-aulas de um professor só.
+da folha (§3), que vem da grade dele e que ele pode mudar.
 
 ### O livro-razão
 

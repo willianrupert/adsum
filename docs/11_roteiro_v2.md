@@ -303,7 +303,9 @@ passam a **dizer** cada caso, pela regra do professor de avisar o que não foi
 mexido e por quê: aula suspensa e chamada fora do período letivo viram "sem
 onde lançar", aluno bloqueado entra na linha do que fica de fora, e o dia com
 mais aulas que o comum da planilha avisa no cartão quanto a falta vale ("Dia
-de 12 aulas: quem faltou leva 12 faltas."), antes do Preencher. O dia
+de 12 aulas: quem faltou leva 12 faltas."), antes do Preencher. (Corrigido
+em 02/10/2026: o número de aulas do SIGAA é um teto, e ausente leva o que a
+grade marca, com o professor mudando na folha; `docs/13`.) O dia
 parcial não pede regra nova: quem está na página sem par no Adsum já fica
 vazio e dito.
 

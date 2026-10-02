@@ -91,10 +91,10 @@ escrever**, com três mudanças de desenho e algumas regras novas.
    `auxAlunos`, que são o modelo da própria página, em vez de raspar a
    tabela; escreve o texto nas células, que é o que a coleta lê. O bruto
    provisório da camada 1 passa a ser esses dados.
-3. **O máximo não é fixo.** Há dias de 4 e de 12 aulas. Ausente num dia de 12
-   leva 12 faltas, a não ser que o professor escolha outro número: a folha
-   mostra quanto a falta vale quando o dia não é o comum, e deixa mudar
-   (`docs/13`, desde 02/10/2026).
+3. **O máximo não é fixo, e é só um teto.** Há aulas que aceitam até 4 e até
+   12. **Corrigido em 02/10/2026:** o teto não diz quantas aulas houve, e
+   ausente não leva o teto. Leva o que a grade do professor marca para o
+   dia, e ele muda na folha, aula por aula (`docs/13`).
 
 Regras da página que o favorito respeita como a própria página: não escreve
 em data futura nem fora do período letivo; não escreve em célula de
@@ -116,8 +116,8 @@ dita por ele.
 
 **Aula com mais de um professor (02/10/2026).** Numa coluna que soma os
 blocos de dois professores, ausente levava o máximo da coluna, e não a parte
-do bloco. Agora o professor escolhe na folha quanto vale a falta, e o
-Adsum lembra a escolha para o mesmo dia da semana: `docs/13_dia_compartilhado.md`.
+do bloco. Agora o padrão é o que a grade do professor marca, e ele muda na
+folha quanto vale a falta: `docs/13_dia_compartilhado.md`.
 
 **O que não entra no repositório:** a página e os scripts do SIGAA. As
 páginas vieram do SIGAA da UFPE, pelo Prof. Paulo, e têm dados de alunos; o
@@ -228,7 +228,8 @@ Para cada linha (matrícula *m*) e coluna (dia *d*), o **esperado** é:
 - se existe **ajuste** (*m*, *d*): o valor do ajuste mais recente;
 - senão, se o Adsum tem chamada da turma em *d*: `0` se *m* esteve presente
   (`presencasDoDia`, o mesmo cálculo da planilha de faltas da v1, incluindo
-  presença à mão e "Não presente"), o **máximo** da coluna se não esteve;
+  presença à mão e "Não presente"), o **valor da falta** da aula se não
+  esteve (`docs/13`: a escolha do professor, a grade, ou o teto comum);
 - senão: **nenhum**.
 
 A categoria da célula decorre do par (SIGAA, esperado):
@@ -259,7 +260,8 @@ geradas, não só por exemplo:
 2. **Nunca toca lançado:** nenhuma instrução sai de célula lançada ou
    bloqueada.
 3. **Nunca inventa dia:** nenhuma instrução para dia sem chamada nem ajuste.
-4. **Faixa:** todo valor em 0…máximo; presente é 0, ausente é o máximo.
+4. **Faixa:** todo valor em 0…máximo; presente é 0, ausente é o valor da
+   falta da aula.
 5. **Idempotência:** aplicar as instruções e conciliar de novo dá zero a
    lançar.
 6. **Concordância com a v1:** o conjunto de presentes de cada dia é o mesmo
