@@ -140,8 +140,9 @@ arrastar o favorito novo antes de oferecer a chave.
 O SIGAA guarda o que a página manda, e a página manda o que tem: se duas
 abas estão abertas na mesma planilha, a que grava por último vale para as
 células que ela envia. O salvamento automático a cada 5 minutos faz isso sem
-ninguém clicar. Falta medir na bancada se o servidor regrava todas as
-células enviadas ou só as que mudaram (§10). O pior caso supõe a primeira
+ninguém clicar. A página manda **a grade inteira**, não só o que mudou
+(`docs/12`, "Como o Gravar coleta"). Falta medir se o servidor regrava todas
+as células enviadas ou só as que mudaram (§10). O pior caso supõe a primeira
 opção: uma aba do Ricardo aberta desde antes de o Paulo lançar, gravando
 depois, devolve os números antigos.
 

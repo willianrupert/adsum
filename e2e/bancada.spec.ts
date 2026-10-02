@@ -151,3 +151,37 @@ test('o favorito roda com os nativos do navegador, mesmo com o Prototype da pág
   await preencher(page)
   expect(await page.locator('iframe[data-adsum="favorito"]').count()).toBeGreaterThan(0)
 })
+
+test('a aba fechada antes de gravar, e reaberta: o Adsum oferece de novo o mesmo, e o SIGAA recebe uma vez só', async ({ page, context }) => {
+  // Relógio parado: o salvamento automático não dispara antes de a aba fechar.
+  await page.clock.install()
+  await page.goto(BANCADA)
+  const { prometido } = await preencher(page)
+  await page.close()
+  expect(await registros(page)).toEqual([])
+
+  const reaberta = await context.newPage()
+  await reaberta.goto(BANCADA)
+  const segundo = await preencher(reaberta)
+  expect(segundo.prometido).toEqual(prometido)
+  await Promise.all([reaberta.waitForURL(/gravado=/), reaberta.getByRole('button', { name: 'Gravar Frequências' }).click()])
+
+  const gravados = await registros(reaberta)
+  expect(gravados).toHaveLength(1)
+  expect(gravados[0].mudaram).toHaveLength(prometido.celulas)
+  await conferirTudoIgual(reaberta)
+})
+
+test('a aba fechada depois do salvamento automático, e reaberta: tudo confere, e nada é preenchido de novo', async ({ page, context }) => {
+  await page.clock.install()
+  await page.goto(BANCADA)
+  const { prometido } = await preencher(page)
+  await page.clock.fastForward('05:05')
+  await expect.poll(async () => (await registros(page)).flatMap((r) => r.mudaram ?? []).length).toBe(prometido.celulas)
+  await page.close()
+
+  const reaberta = await context.newPage()
+  await reaberta.goto(BANCADA)
+  await conferirTudoIgual(reaberta)
+  expect((await registros(reaberta)).flatMap((r) => r.mudaram ?? [])).toHaveLength(prometido.celulas)
+})
