@@ -217,7 +217,9 @@ test('do zero ao SIGAA: cadastro, três aulas com cada tipo de presença, e o la
     await expect(janela.getByText('2 presentes, 43 faltas')).toBeVisible()
     await expect(janela.getByText('Qua, 18/11')).toBeVisible()
     await expect(janela.getByText('1 presente, 44 faltas')).toBeVisible()
-    await expect(janela.getByText('Dia de 12 aulas: quem faltou leva 12 faltas.')).toBeVisible()
+    // Os dias fora do comum (o de 12 aulas, aqui) mostram quanto vale a falta, para o professor
+    // escolher; a jornada fica com o máximo.
+    await expect(janela.getByText('de 12.')).toBeVisible()
     await Promise.all([janela.waitForEvent('close'), janela.getByRole('button', { name: 'Preencher 3 aulas' }).click()])
     await expect(page.locator('[data-adsum="barra"]')).toContainText('Adsum preencheu 3 aulas')
     await page.getByRole('button', { name: 'Gravar Frequências' }).click()
